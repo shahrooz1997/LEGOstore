@@ -1,0 +1,21 @@
+{
+    "quorum": {
+		"total_nodes": "5",
+		"read_nodes": "3",
+		"write_nodes": "3",
+		"policy": "all_sync",
+        "dimensions": "2"
+    },
+	"datacenters": [
+		{"id" : "1",
+		 "host" : "localhost",
+         "port": "5000"
+		},
+		{"id" : "2",
+		 "host" : "localhost",
+         "port" : "50001"
+		}
+	],
+    "placement_policy": "AllInOne",
+    "timeout_per_request": "120"
+}

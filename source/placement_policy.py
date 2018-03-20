@@ -11,13 +11,13 @@ class PlacementFactory(object):
 
     def get_policy(self):
         if self.policy == "AllInOne":
-            return AllInOnePolicy()
+            return AllInOnePolicy
 
         if self.policy == "MajorityinOne":
-            return MajorityInOnePolicy()
+            return MajorityInOnePolicy
 
         if self.policy == "UniformDistribution":
-            return UniformDistributionPolicy()
+            return UniformDistributionPolicy
 
         raise Exception("No placement policy found")
 
@@ -25,38 +25,43 @@ class PlacementFactory(object):
 class PlacementPolicy(object):
     """ Parent class for placement policies.
         Abstract class - Do not use directly"""
-    def __init__(self):
+    def __init__(self, write_servers):
         self.config = json.load(open('config.json'))
-        self.write_nodes = self.config['write_nodes']
+        self.write_nodes = write_servers or self.config['write_nodes']
         self.dc_ids = [dc['id'] for dc in self.config['datacenters']]
         self.num_dc = len(self.dc_ids)
         self.num_local = 0
         self.num_remote = 0
 
-    def get_local_dc_list(self, local_node_id):
+    def get_dc(self, local_node_id):
+        total_dc = self.get_local_dc(local_node_id)
+        total_dc.update(self.get_remote_dc(local_node_id))
+        return total_dc
+
+    def get_local_dc(self, local_node_id):
         return {local_node_id: self.num_local}
 
-    def get_remote_dc_list(self, local_node_id):
+    def get_remote_dc(self, local_node_id):
         raise NotImplementedError()
 
 
 class AllInOnePolicy(PlacementPolicy):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, write_servers):
+        super().__init__(write_servers)
         self.num_local = self.write_nodes
 
-    def get_remote_dc_list(self, local_node_id):
+    def get_remote_dc(self, local_node_id):
         return {}
 
 
 class MajorityInOnePolicy(PlacementPolicy):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, write_servers):
+        super().__init__(write_servers)
         divide = lambda n: ceil(n/2) if n % 2 else int(n/2) + 1
         self.num_local = divide(self.write_nodes)
         self.num_remote = self.write_nodes - self.num_local
 
-    def get_remote_dc_list(self, local_node_id):
+    def get_remote_dc(self, local_node_id):
         dc_ids = deepcopy(self.dc_ids)
         dc_ids.remove(local_node_id)
         num_dc = self.num_dc - 1
@@ -68,12 +73,12 @@ class MajorityInOnePolicy(PlacementPolicy):
 
 
 class UniformDistributionPolicy(PlacementPolicy):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, write_servers):
+        super().__init__(write_servers)
         self.num_local = 1
         self.num_remote = self.write_nodes - 1
 
-    def get_remote_dc_list(self, local_node_id):
+    def get_remote_dc(self, local_node_id):
         dc_ids = deepcopy(self.dc_ids)
         dc_ids.remove(local_node_id)
         num_dc = self.num_dc - 1

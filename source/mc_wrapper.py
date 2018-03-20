@@ -15,7 +15,7 @@ class MCWrapper:
         self.dimension = int(properties["quorum"]["dimensions"])
         self.quorum = Quorum(properties["quorum_policy"])
         self.ping_policy = self.quorum.get_ping_policy()
-        self.placement_policy = PlacementFactory(properties["placement_policy"]).get_policy()
+        self.placement_class = PlacementFactory(properties["placement_policy"]).get_policy()
 
     def put(self,
             key,
@@ -30,15 +30,16 @@ class MCWrapper:
         if not write_servers:
             write_servers = self.write_servers
 
-        servers_to_ping, servers_to_wait = self.ping_policy.fetch_metrics(number_of_servers, write_servers)
+        num_servers_to_ping, num_servers_to_wait = self.ping_policy.fetch_metrics(number_of_servers, write_servers)
+        dc_to_ping = self.placement_class(num_servers_to_ping).get_dc()
 
         # Prefix for the keys to ensure storing them on different servers
         key_prefix = int(hashlib.sha1(key.encode('utf-8')).hexdigest(), 16) % number_of_servers
 
-        sem = threading.Barrier(servers_to_wait + 1, timeout=120)
+        sem = threading.Barrier(num_servers_to_wait + 1, timeout=120)
         thread_list = []
 
-        for i in range(servers_to_ping):
+        for i in range(num_servers_to_ping):
             new_key = str(key_prefix) + ":" + key
             thread_list.append(threading.Thread(target=self._put, args=(new_key, value, sem)))
             thread_list[i].start()
@@ -65,18 +66,19 @@ class MCWrapper:
         if not read_servers:
             read_servers = self.read_servers
 
-        servers_to_ping, servers_to_wait = self.ping_policy.fetch_metrics(number_of_servers, read_servers)
+        num_servers_to_ping, num_servers_to_wait = self.ping_policy.fetch_metrics(number_of_servers, write_servers)
+        dc_to_ping = self.placement_class(num_servers_to_ping).get_dc()
 
         # Prefix for the keys to ensure storing them on different servers
         key_prefix = int(hashlib.sha1(key.encode('utf-8')).hexdigest(), 16) % number_of_servers
 
-        sem = threading.Barrier(servers_to_wait + 1, timeout=120)
+        sem = threading.Barrier(num_servers_to_wait + 1, timeout=120)
 
         thread_list = []
         lock = threading.Lock()
 
         output = []
-        for i in range(servers_to_ping):
+        for i in range(num_servers_to_ping):
             new_key = str(key_prefix) + ":" + key
             thread_list.append(threading.Thread(target=self._get, args=(new_key, lock, sem, output)))
             key_prefix = (key_prefix + 1) % number_of_servers

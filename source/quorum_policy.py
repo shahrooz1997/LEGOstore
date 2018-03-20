@@ -1,3 +1,5 @@
+
+
 class QuorumPolicy:
     def __init__(config):
         if config["type"] == "PingAll":

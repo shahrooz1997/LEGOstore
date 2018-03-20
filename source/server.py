@@ -2,8 +2,7 @@ from flask import Flask, request
 import json
 from flask import jsonify
 from flask_cors import CORS, cross_origin
-import uuid
-from mc_wrapper import MC_Wrapper
+from mc_wrapper import MCWrapper
 
 # Using Flask server of python for now
 app = Flask(__name__)
@@ -11,6 +10,7 @@ CORS(app)
 
 # Global variable for the mc_wrapper
 mc = None
+
 
 @app.route('/get/<key>', methods=['GET'], strict_slashes=False)
 def get_data(key):
@@ -60,6 +60,6 @@ if __name__ == "__main__":
     global mc
 
     properties = json.load(open('config.json'))
-    mc = MC_Wrapper(properties)
+    mc = MCWrapper(properties)
 
     app.run(debug=True, port=8080, host="0.0.0.0")

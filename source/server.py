@@ -3,28 +3,32 @@ import json
 from flask import jsonify
 from flask_cors import CORS, cross_origin
 import uuid
-from mc_wrapper import MC_wrapper
+from mc_wrapper import MC_Wrapper
 
 # Using Flask server of python for now
 app = Flask(__name__)
 CORS(app)
 
-# Global mc
-mc = MC_wrapper()
+# Global variable for the mc_wrapper
+mc = None
 
 @app.route('/get/<key>', methods=['GET'], strict_slashes=False)
-def get_search_data(search_string):
-    
-    output = mc.get(key)      
-	return json.dumps({key: output})
+def get_data(key):
+    global mc
+    print("serving get request ...\n")
+    output = mc.get(key)
+    return json.dumps({key: output})
 
 
 @app.route('/put', methods=['PUT'], strict_slashes=False)
-def put_bid_item_data():
-        data = json.loads(request.data)
+def put_data():
+    global mc
+    print("serving put request ...\n")
+    print(type(request.data), type(request.get_data()), type(request.get_json()))
+    data = json.loads(request.data.decode('utf-8'))
 
-        output = mc.put(data['key'], data['put'])
-        return json.dumps({"updated": output})
+    output = mc.put(data['key'], data['value'])
+    return json.dumps({"updated": output})
 
 
 class CustomWebException(Exception):
@@ -52,5 +56,10 @@ def handle_custom_exception(error):
     return response
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8080, host="0.0.0.0")
+    global properties
+    global mc
 
+    properties = json.load(open('config.json'))
+    mc = MC_Wrapper(properties)
+
+    app.run(debug=True, port=8080, host="0.0.0.0")

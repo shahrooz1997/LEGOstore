@@ -4,4 +4,6 @@ class QuorumPolicy:
             return PingAllPolicy()
 
         if config["type"] == "PingMin":
-            return PingMinPolicy() 
+            return PingMinPolicy()
+
+        raise Exception("Quorum Policy not found")

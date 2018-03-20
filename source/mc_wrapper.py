@@ -1,4 +1,4 @@
-import memcache
+from pymemcache.client.base import Client
 import threading
 from threading import Thread
 
@@ -7,14 +7,16 @@ import hashlib
 class MC_Wrapper:
     def __init__(self, properties):
         # Read the config file and setup MC router as per its settings
-         self.mc = memcache.client(['127.0.0.1:5000'])
+         self.mc = Client(('127.0.0.1', 5000))
          self.number_of_servers = int(properties["quorum"]["total_nodes"])
-         self.read_server = int(properties["quorum"]["read_nodes"])
-         self.write_server = int(properties["quorum"]["write_nodes"])
-         self.dimension = int(properties["quorum"]["dimension"])
+         self.read_servers = int(properties["quorum"]["read_nodes"])
+         self.write_servers = int(properties["quorum"]["write_nodes"])
+         self.dimension = int(properties["quorum"]["dimensions"])
+         self.quorum_policy = QuorumPolicy(properties["quorum_policy"])
+         self.placement_policy = PlacementPolicy(properties["placement_policy"])
 
 
-    def _get(key, value, lock, sem,  output):
+    def _get(self, key, value, lock, sem,  output):
         data = self.mc.get(key, value)
         lock.acquire()
         output.append(data)
@@ -22,12 +24,12 @@ class MC_Wrapper:
         sem.wait()
 
 
-    def _put(key, value, sem):
+    def _put(self, key, value, sem):
         data = self.mc.set(key, value)
         sem.wait()
 
 
-    def put(key, value, dimension = None, number_of_servers = None, write_servers = None):
+    def put(self, key, value, dimension = None, number_of_servers = None, write_servers = None):
         # Put the value
         if not number_of_servers:
             number_of_servers = self.number_of_servers
@@ -36,14 +38,16 @@ class MC_Wrapper:
             write_servers = self.write_servers
 
         # Prefix for the keys to ensure storing them on different servers
-        int key_prefix = int(hashlib.sha1(key).hexdigest(), 16) % number_of_servers
+        key_prefix = int(hashlib.sha1(key.encode('utf-8')).hexdigest(), 16) % number_of_servers
 
-        sem = threading.Barrier(write_server + 1, timeout = 120)
+        sem = threading.Barrier(write_servers + 1, timeout = 120)
         thread_list = []
 
+        
         for i in range(0, self.number_of_servers):
             new_key = str(key_prefix) + ":" + key
-            thread_list.append(threading.Thread(target=_put, args = (new_key, value, sem)))
+            thread_list.append(threading.Thread(target=self._put, args = (new_key, value, sem)))
+            thread_list[i].start()
             key_prefix = (key_prefix + 1) % number_of_servers
 
         sem.wait()
@@ -52,7 +56,7 @@ class MC_Wrapper:
         return True
 
 
-    def get(key, value, dimension = None, number_of_servers = None, read_servers = None):
+    def get(self, key,  dimension = None, number_of_servers = None, read_servers = None):
         # Get the value
         if not number_of_servers:
             number_of_servers = self.number_of_servers
@@ -61,16 +65,16 @@ class MC_Wrapper:
             read_servers = self.read_servers
 
         # Prefix for the keys to ensure storing them on different servers
-        int key_prefix = int(hashlib.sha1(key).hexdigest(), 16) % number_of_servers
+        key_prefix = int(hashlib.sha1(key.encode('utf-8')).hexdigest(), 16) % number_of_servers
 
-        sem = threading.Barrier(read_server + 1, timeout = 120)
+        sem = threading.Barrier(read_servers + 1, timeout = 120)
         thread_list = []
         lock = threading.lock()
 
         output = []
         for i in range(0, number_of_servers):
             new_key = str(key_prefix) + ":" + key
-            thread_list.append(threading.Thread(target=_get, args = (new_key, value, lock, sem, output)))
+            thread_list.append(threading.Thread(target=self._get, args = (new_key, value, lock, sem, output)))
             key_prefix = (key_prefix + 1) % number_of_servers
         
         sem.wait()

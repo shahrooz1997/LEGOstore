@@ -1,31 +1,21 @@
 from pymemcache.client.base import Client
 import threading
 import hashlib
-from quorum_policy import QuorumPolicy
-from placement_policy import PlacementPolicy
+from quorum_policy import Quorum
+from placement_policy import PlacementFactory
 
 
 class MCWrapper:
     def __init__(self, properties):
         # Read the config file and setup MC router as per its settings
-         self.mc = Client(('127.0.0.1', 5000))
-         self.number_of_servers = int(properties["quorum"]["total_nodes"])
-         self.read_servers = int(properties["quorum"]["read_nodes"])
-         self.write_servers = int(properties["quorum"]["write_nodes"])
-         self.dimension = int(properties["quorum"]["dimensions"])
-         self.quorum_policy = QuorumPolicy(properties["quorum_policy"])
-         self.placement_policy = PlacementPolicy(properties["placement_policy"])
-
-    def _get(self, key, lock, sem,  output):
-        data = self.mc.get(key)
-        lock.acquire()
-        output.append(data)
-        lock.release()
-        sem.wait()
-
-    def _put(self, key, value, sem):
-        self.mc.set(key, value)
-        sem.wait()
+        self.mc = Client(('127.0.0.1', 5000))
+        self.number_of_servers = int(properties["quorum"]["total_nodes"])
+        self.read_servers = int(properties["quorum"]["read_nodes"])
+        self.write_servers = int(properties["quorum"]["write_nodes"])
+        self.dimension = int(properties["quorum"]["dimensions"])
+        self.quorum = Quorum(properties["quorum_policy"])
+        self.ping_policy = self.quorum.get_ping_policy()
+        self.placement_policy = PlacementFactory(properties["placement_policy"]).get_policy()
 
     def put(self,
             key,
@@ -40,15 +30,17 @@ class MCWrapper:
         if not write_servers:
             write_servers = self.write_servers
 
+        servers_to_ping, servers_to_wait = self.ping_policy.fetch_metrics(number_of_servers, write_servers)
+
         # Prefix for the keys to ensure storing them on different servers
         key_prefix = int(hashlib.sha1(key.encode('utf-8')).hexdigest(), 16) % number_of_servers
 
-        sem = threading.Barrier(write_servers + 1, timeout = 120)
+        sem = threading.Barrier(servers_to_wait + 1, timeout=120)
         thread_list = []
 
-        for i in range(self.number_of_servers):
+        for i in range(servers_to_ping):
             new_key = str(key_prefix) + ":" + key
-            thread_list.append(threading.Thread(target=self._put, args = (new_key, value, sem)))
+            thread_list.append(threading.Thread(target=self._put, args=(new_key, value, sem)))
             thread_list[i].start()
             key_prefix = (key_prefix + 1) % number_of_servers
 
@@ -56,6 +48,10 @@ class MCWrapper:
 
         # XXX: Need an implementation to safely kill other threads
         return True
+
+    def _put(self, key, value, sem):
+        self.mc.set(key, value)
+        sem.wait()
 
     def get(self,
             key,
@@ -69,16 +65,18 @@ class MCWrapper:
         if not read_servers:
             read_servers = self.read_servers
 
+        servers_to_ping, servers_to_wait = self.ping_policy.fetch_metrics(number_of_servers, read_servers)
+
         # Prefix for the keys to ensure storing them on different servers
         key_prefix = int(hashlib.sha1(key.encode('utf-8')).hexdigest(), 16) % number_of_servers
 
-        sem = threading.Barrier(read_servers + 1, timeout=120)
+        sem = threading.Barrier(servers_to_wait + 1, timeout=120)
 
         thread_list = []
         lock = threading.Lock()
 
         output = []
-        for i in range(0, number_of_servers):
+        for i in range(servers_to_ping):
             new_key = str(key_prefix) + ":" + key
             thread_list.append(threading.Thread(target=self._get, args=(new_key, lock, sem, output)))
             key_prefix = (key_prefix + 1) % number_of_servers
@@ -87,3 +85,10 @@ class MCWrapper:
 
         # XXX: Need an implementation to safely kill other threads
         return output[0]
+
+    def _get(self, key, lock, sem,  output):
+        data = self.mc.get(key)
+        lock.acquire()
+        output.append(data)
+        lock.release()
+        sem.wait()

@@ -5,7 +5,7 @@ class PingPolicy(object):
         self.servers_to_wait = None
 
     def fetch_metrics(self, number_of_servers, required_servers):
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class PingMinPolicy(PingPolicy):

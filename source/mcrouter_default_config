@@ -1,0 +1,15 @@
+{
+   "pools": {
+     "workload1": { "servers": ["127.0.0.1:11211"] },
+     "workload2": { "servers": ["35.161.132.7:11211" ] },
+     "workload3": { "servers": ["52.37.58.111:11211"] },
+   },
+   "route": {
+     "type": "PrefixSelectorRoute",
+     "policies": {
+       "1": "PoolRoute|workload1",
+       "2": "PoolRoute|workload2"
+     },
+     "wildcard": "PoolRoute|workload3"
+   }
+ }

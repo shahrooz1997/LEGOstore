@@ -17,5 +17,7 @@
 		}
 	],
     "placement_policy": "AllInOne",
-    "timeout_per_request": "120"
+    "timeout_per_request": "120",
+	"history_version_in_cache": 3,
+	"dimension": 2
 }

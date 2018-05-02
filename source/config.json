@@ -1,23 +1,51 @@
 {
-    "quorum": {
-		"total_nodes": "3",
-		"read_nodes": "2",
-		"write_nodes": "2",
-		"policy": "all_sync",
-        "dimensions": "2"
-    },
+	"local_datacenter":
+	{
+		"id": "1",
+		"host": "localhost",
+		"port": "5000",
+		"total_servers": 5
+	},
 	"datacenters": [
-		{"id" : "1",
-		 "host" : "localhost",
-         "port": "5000"
+		{
+			"id": "2",
+			"host": "localhost",
+			"port": "5001"
 		},
-		{"id" : "2",
-		 "host" : "localhost",
-         "port" : "5001"
+		{
+			"id": "3",
+			"host": "localhost",
+			"port" : "5002"
 		}
 	],
-    "placement_policy": "AllInOne",
-    "timeout_per_request": "120",
-	"history_version_in_cache": 3,
-	"dimension": 2
+	"classes": {
+		"ABD": {
+			"placement_policy": "AllInOne",
+    		"timeout_per_request": "120",
+			"history_version_in_cache": 3,
+			"quorum": {
+				"total_nodes": "3",
+				"read_nodes": "2",
+				"write_nodes": "2",
+				"policy": "pingAll",
+       	 		"dimensions": "2",
+				"retry_attemps": 1
+    		}
+		},
+		"viveck_1": {
+			"placement_policy": "AllInOne",
+			"timeout_per_request": "120",
+			"history_version_in_cache": 3,
+			"dimension": 2,
+			"quorum": {
+				"Q1": "3",
+				"Q2": "3",
+				"Q3": "3",
+				"Q4": "3",
+				"policy": "pingAll",
+				"dimensions": "2",
+				"retry_attempts": 1
+			}
+		}
+	}
 }

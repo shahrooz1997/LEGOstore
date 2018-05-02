@@ -1,0 +1,67 @@
+{
+    "local_datacenter" : "1",
+	"datacenters":
+	{
+		"1" : {
+			"metadata_server" : {
+				"host": "0.0.0.0",
+				"port": "30000"
+			},
+			"servers" : {
+              "1" : {
+                "host" : "0.0.0.0",
+                "port" : "10001"
+              },
+              "2" : {
+                "host" : "0.0.0.0",
+                "port" : "10002"
+              }
+            }
+		},
+		"2" : {
+			"metadata_server" : {
+				"host": "0.0.0.0",
+				"port": "30001"
+			},
+			"servers" : {
+              "1" : {
+                "host" : "0.0.0.0",
+                "port" : "20001"
+              },
+              "2" : {
+                "host" : "0.0.0.0",
+                "port" : "20002"
+              }
+            }
+		}
+	},
+	"classes": {
+		"ABD": {
+			"placement_policy": "AllInOne",
+    		"timeout_per_request": "120",
+			"history_version_in_cache": 3,
+            "ping_policy": "PingAll",
+			"quorum": {
+				"total_nodes": "3",
+				"read_nodes": "2",
+				"write_nodes": "2"
+    		}
+		},
+		"ErasureCoding": {
+			"placement_policy": "AllInOne",
+			"timeout_per_request": "120",
+			"history_version_in_cache": 3,
+            "ping_policy": "PingAll",
+			"dimension": 2,
+			"quorum": {
+				"total_nodes": "3",
+				"read_nodes": "2",
+				"write_nodes": "2",
+				"dimensions": "2"
+			}
+		},
+      "default_class": "ABD"
+	},
+    "retry_attempts": 3,
+    "metadata_server_timeout": "120"
+}

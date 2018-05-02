@@ -1,10 +1,11 @@
 import threading
 
 class Key:
-    def __init__(self, dimension):
+    def __init__(self, key_class, server_list):
+        #XXX: Local server list is not used currently but I just kept it for future.
         self.local_server_list = []
-        self.external_server_list = {}
-        self.dimension = dimension
+        self.server_list = server_list
+        self.key_class = key_class
         self.external_server_list_lock = threading.lock()
         self.internal_server_list_lock = threading.lock()
 
@@ -17,17 +18,17 @@ class Key:
         return self.dimension
 
 
-    def get_external_server_list(self):
-        return self.external_server_list
+    def get_server_list(self):
+        return self.server_list
 
 
-    def update_external_server_list(self, id):
+    def update_server_list(self, id):
         self.external_server_list_lock.acquire()
         #Todo: Make it thread safe per key wise, not sure if required but still marking for now
-        if id in self.external_server_list:
-            self.external_server_list[id] = self.external_server_list[id] + 1
+        if id in self.server_list:
+            self.server_list[id] = self.server_list[id] + 1
         else:
-            self.external_server_list[id] = 1
+            self.server_list[id] = 1
 
         self.external_server_list_lock.release()
         return

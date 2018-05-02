@@ -4,7 +4,9 @@ import socket
 import json
 
 from pymemcache.client.base import Client
-from adb_protocol import ABD
+from quorum_policy import Quorum
+from placement_policy import PlacementFactory
+from key import Key
 
 
 class MCWrapper:
@@ -18,23 +20,20 @@ class MCWrapper:
         self.datacenter_id = None
         self.key_metadata = {}
         self.parent_datacenter = parent_datacenter
-        self.class_name_to_object = {}
 
+        # Intiate singleton class for each key_class
         self.initiate_key_classes()
+
+#        self.read_servers = int(properties_["quorum"]["read_nodes"])
+#        self.write_servers = int(properties_["quorum"]["write_nodes"])
+#        self.dimension = int(properties_["quorum"]["dimensions"])
+#        self.dimension = int(properties["dimension"])
+#        self.history_in_cache = int(properties_["history_version_in_cache"])
 
 
     def initiate_key_classes(self):
         for class_name, value in self.properties:
-            if class_name == "ABD":
-                self.class_name_to_object[class_name] = ABD(self.properties["classes"]["ABD"],
-                                                            self.number_of_servers,
-                                                            self.parent_datacenter,
-                                                            self.mc,
-                                                            self.key_metadata)
-
-            # Add more class intiations here
-
-        return
+            return
 
 
     def get_class_locally(self, key, connection=None):
@@ -154,11 +153,49 @@ class MCWrapper:
 
         # Step1: Get the class details about the key
         data = self.get_class_details_from_key(key, first)
-        class_info = data["key_class"]
+        class_details = self.properties["classes"][data["key_class"]]
         server_list = data["server_list"]
 
-        # Step2 : Call the appropriate class based on the class name
-        return self.class_name_to_object[class_info].put(key, value, server_list)
+        number_of_servers = class_details["quorum"]["number_of_servers"]
+        write_servers = class_details["quorum"]["write_servers"]
+
+        num_servers_to_ping, num_servers_to_wait = self.ping_policy.fetchx_metrics(number_of_servers,
+                                                                                  write_servers)
+        if not server_list:
+            server_list = self.placement_class(num_servers_to_ping).get_dc(self.datacenter_id)
+
+        # Step2 : Number of local servers to ping
+        local_servers = server_list[self.datacenter_id]
+        key_info = Key(server_list, data["key_class"])
+
+        # Prefix for the keys to ensure storing them on different servers
+        server_id = int(hashlib.sha1(key.encode('utf-8')).hexdigest(), 16) % number_of_servers
+
+        sem = threading.Barrier(num_servers_to_wait + 1, timeout=120)
+        thread_list = []
+
+        for i in range(local_servers):
+            new_key = str(server_id) + ":" + key
+            thread_list.append(threading.Thread(target=self._put, args=(new_key, value, sem, server_id, key_info)))
+            thread_list[i].deamon = True
+            thread_list[i].start()
+            server_id = (server_id + 1) % number_of_servers
+
+        for datacenter_id, replication_number in server_list.items():
+            if self.is_datacenter_local(datacenter_id):
+                continue
+
+            thread_list.append(threading.Thread(target=self.external_put, args=(datacenter_id,
+                                                                                key,
+                                                                                [value]*replication_number,
+                                                                                sem,
+                                                                                key_info)))
+
+        sem.wait()
+        self.key_metadata[key] = key_info
+        # XXX: Need an implementation to safely kill other threads although since deamon = True we can exit
+
+        return {"received": True}
 
 
     def _put(self, key, value, lock, sem, server_id, key_info, connection=None):
@@ -206,28 +243,21 @@ class MCWrapper:
         return
 
 
-    def internal_put(self, key, values, key_info, connection):
+    def internal_put(self, key, values, dimension, connection):
         sem = threading.Barrier(len(values) + 1, timeout=120)
         server_id = int(hashlib.sha1(key.encode('utf-8')).hexdigest(), 16) % self.number_of_servers
 
+        key_info = Key(key_class, )
+
         thread_list = []
-        protocol = self.class_name_to_object[key_info["key_class"]]
         for value in values:
             new_key = str(server_id) + ":" + key
-            thread_list.append(threading.Thread(target=protocol._put, args=(new_key,
-                                                                            value,
-                                                                            sem,
-                                                                            key_info,
-                                                                            connection)))
-
+            thread_list.append(threading.Thread(target=self._put, args=(new_key, value, sem, server_id, key_info, connection)))
             thread_list[-1].deamon = True
             thread_list[-1].start()
             server_id = (server_id + 1) % self.number_of_servers
 
-        self.key_metadata[key] = key_info
-
         sem.wait()
-
         return
 
 

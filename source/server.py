@@ -80,8 +80,10 @@ def server_connection(connection, address):
     if method == "get":
         connection.send(bytes(mc.internal_get(data["key"], data["value"])))
     elif method == "put":
-        connection.send(bytes(mc.internal_put(data["key"], data["value"], data["dimension"])))
-    else:
+        mc.internal_put(data["key"], data["values"], data["key_info"], connection)
+    elif method == "get_class":
+        connection.send(bytes(mc.get_class(data["key"])))
+    elif method:
         connection.send(bytes("MethodNotFound: Unknown method is called"))
     return
 

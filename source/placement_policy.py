@@ -1,8 +1,8 @@
-import json
 from copy import deepcopy
 from collections import Counter
 from random import sample
 from math import ceil
+import hashlib
 
 
 class PlacementFactory(object):
@@ -25,62 +25,80 @@ class PlacementFactory(object):
 class PlacementPolicy(object):
     """ Parent class for placement policies.
         Abstract class - Do not use directly"""
-    def __init__(self, write_servers):
-        self.config = json.load(open('config.json'))
-        self.write_nodes = write_servers or self.config['write_nodes']
-        self.dc_ids = [dc['id'] for dc in self.config['datacenters']]
-        self.num_dc = len(self.dc_ids)
-        self.num_local = 0
-        self.num_remote = 0
+    @staticmethod
+    def get_dc(write_servers, dc_list, local_dc_id, key):
+        raise NotImplementedError()
 
-    def get_dc(self, local_node_id):
-        total_dc = self.get_local_dc(local_node_id)
-        total_dc.update(self.get_remote_dc(local_node_id))
-        return total_dc
-
-    def get_local_dc(self, local_node_id):
-        return {local_node_id: self.num_local}
-
-    def get_remote_dc(self, local_node_id):
+    @staticmethod
+    def get_local_dc(write_servers, dc_list, local_dc_id, key):
         raise NotImplementedError()
 
 
-class AllInOnePolicy(PlacementPolicy):
-    def __init__(self, write_servers):
-        super().__init__(write_servers)
-        self.num_local = self.write_nodes
+    @staticmethod
+    def get_remote_dc(write_servers, dc_list, local_dc_id, key):
+        raise NotImplementedError()
 
-    def get_remote_dc(self, local_node_id):
-        return {}
+    @staticmethod
+    def get_server_list(server_list, dc_list, key):
+        for dc_id, number_of_servers in server_list.items():
+            servers_in_dc = len(dc_list[dc_id]["servers"])
+            server_id = int(hashlib.sha1(key.encode('utf-8')).hexdigest(),
+                            16) % servers_in_dc
+            server_list[dc_id] = [str(((server_id + i) % servers_in_dc) + 1) for i in range(0, number_of_servers)]
+
+        return server_list
+
+
+class AllInOnePolicy(PlacementPolicy):
+
+    @staticmethod
+    def get_dc(write_servers, dc_list, local_dc_id, key):
+        server_list = {local_dc_id: write_servers}
+
+        return PlacementPolicy.get_server_list(server_list, dc_list, key)
 
 
 class MajorityInOnePolicy(PlacementPolicy):
-    def __init__(self, write_servers):
-        super().__init__(write_servers)
-        divide = lambda n: ceil(n/2) if n % 2 else int(n/2) + 1
-        self.num_local = divide(self.write_nodes)
-        self.num_remote = self.write_nodes - self.num_local
 
-    def get_remote_dc(self, local_node_id):
-        dc_ids = deepcopy(self.dc_ids)
-        dc_ids.remove(local_node_id)
-        num_dc = self.num_dc - 1
-        if num_dc >= self.num_remote:
-            return Counter(sample(dc_ids, self.num_remote))
+    @staticmethod
+    def get_dc(write_servers, dc_list, local_dc_id, key):
+        divide = lambda n: ceil(n/2) if n % 2 else int(n/2) + 1
+
+        num_local = divide(write_servers)
+        num_remote = write_servers - num_local
+
+        new_dc_ids = deepcopy(dc_list)
+        new_dc_ids.remove(local_dc_id)
+
+        num_dc = len(dc_list) - 1
+
+        if num_dc >= num_remote:
+            server_list = Counter(sample(new_dc_ids, num_remote))
         else:
-            return Counter(dc_ids * (self.num_remote // num_dc) +
-                           dc_ids[:self.num_remote % num_dc])
+            server_list =  Counter(new_dc_ids * (num_remote // num_dc) +
+                                   new_dc_ids[:num_remote % num_dc])
+
+        server_list[local_dc_id] = num_local
+
+        return super().get_server_list(server_list, dc_list, key)
 
 
 class UniformDistributionPolicy(PlacementPolicy):
-    def __init__(self, write_servers):
-        super().__init__(write_servers)
-        self.num_local = 1
-        self.num_remote = self.write_nodes - 1
 
-    def get_remote_dc(self, local_node_id):
-        dc_ids = deepcopy(self.dc_ids)
-        dc_ids.remove(local_node_id)
-        num_dc = self.num_dc - 1
-        return Counter(dc_ids * (self.num_remote // num_dc) +
-                       dc_ids[:self.num_remote % num_dc])
+    @staticmethod
+    def get_remote_dc(write_servers, dc_list, local_dc_id, key):
+
+        new_dc_ids = deepcopy(dc_list)
+        new_dc_ids.remove(local_dc_id)
+
+        num_local = max((write_servers/len(dc_list)), 1)
+        num_remote = write_servers - num_local
+
+        num_dc = len(dc_list) - 1
+
+        server_list = Counter(new_dc_ids * (num_remote // num_dc) +
+                             new_dc_ids[:num_remote % num_dc])
+
+        server_list[local_dc_id] = num_local
+
+        return super().get_server_list(server_list, dc_list, key)

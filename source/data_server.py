@@ -1,15 +1,15 @@
 import socket
 import threading
 import json
-import shelve
 
-from multiprocessing import Process
 from reader_writer_lock import ReadWriteLock
 from cache import Cache
 from abd_server_protocol import ABDServer
 from garbage_collector import garbage_collector
 from persistent import Persistent
-# TODO: Currently supporting only ABD
+from viveck_1_server import Viveck_1Server
+
+
 class DataServer:
 
     def __init__(self, sock=None, enable_garbage_collector = False):
@@ -36,7 +36,7 @@ class DataServer:
 
 
 
-    def get(self, key, current_class):
+    def get(self, key, timestamp, current_class):
         '''
         Get call to the server
 
@@ -46,7 +46,9 @@ class DataServer:
         raises NotImplementedError if the class is not found
         '''
         if current_class == "ABD":
-            return ABDServer.get(key, self.cache, self.persistent, self.lock)
+            return ABDServer.get(key, timestamp, self.cache, self.persistent, self.lock)
+        elif current_class == "Viveck_1":
+            return Viveck_1Server.get(key, timestamp, self.cache, self.persistent, self.lock)
 
         raise NotImplementedError
 
@@ -61,9 +63,10 @@ class DataServer:
         '''
         if current_class == "ABD":
             return ABDServer.get_timestamp(key, self.cache, self.persistent, self.lock)
+        elif current_class == "Viveck_1":
+            return Viveck_1Server.get_timestamp(key, self.cache, self.persistent, self.lock)
 
         raise NotImplementedError
-
 
     def put(self, key, value, timestamp, current_class):
         '''
@@ -79,9 +82,10 @@ class DataServer:
 
         if current_class == "ABD":
             return ABDServer.put(key, value, timestamp, self.cache, self.persistent, self.lock)
+        elif current_class == "Viveck_1":
+            return Viveck_1Server.put(key, value, timestamp, self.cache, self.persistent, self.lock)
 
         raise NotImplementedError
-
 
 def server_connection(connection, dataserver):
     data = connection.recv(64000)
@@ -96,7 +100,6 @@ def server_connection(connection, dataserver):
         return
 
     method = data["method"]
-
     try:
         if method == "put":
             connection.sendall(json.dumps(dataserver.put(data["key"],
@@ -145,7 +148,6 @@ if __name__ == "__main__":
         thread_list.append(threading.Thread(target=test, args=(data_server,)))
         thread_list[-1].deamon = True
         thread_list[-1].start()
-
 
     #
     # while 1:

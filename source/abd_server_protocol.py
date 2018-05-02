@@ -1,7 +1,8 @@
 class ABDServer:
 
     @staticmethod
-    def get(key, cache, persistent, lock):
+    def get(key, timestamp, cache, persistent, lock):
+        # timestamp is of no use in case of ABD but sending to maintain the same input for all
         # TODO:
         # Replace it with per key reader writer lock.
         # Current customized lock is just for generic lock not key specific.

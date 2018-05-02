@@ -47,17 +47,18 @@
 				"write_nodes": "2"
     		}
 		},
-		"ErasureCoding": {
+		"Viveck_1": {
 			"placement_policy": "AllInOne",
 			"timeout_per_request": "120",
 			"history_version_in_cache": 3,
             "ping_policy": "PingAll",
 			"dimension": 2,
 			"quorum": {
-				"total_nodes": "3",
-				"read_nodes": "2",
-				"write_nodes": "2",
-				"dimensions": "2"
+				"Q1": "3",
+				"Q2": "3",
+				"Q3": "3",
+				"Q4": "3",
+				"total_nodes": "3"
 			}
 		},
       "default_class": "ABD"

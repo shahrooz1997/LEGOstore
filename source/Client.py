@@ -62,10 +62,12 @@ class Client:
         # @ Raises Exception in case of timeout or socket error
         ######################
         if key in self.local_cache:
-            data = self.local_cache[key]["value"]
+            print(self.local_cache[key])
+            data = self.local_cache[key]
             return (data["class_name"], data["server_list"])
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print(self.metadata_server["host"], int(self.metadata_server["port"]))
         sock.connect((self.metadata_server["host"], int(self.metadata_server["port"])))
 
         data = json.dumps({"method": "get_metadata", "key": key})
@@ -78,10 +80,12 @@ class Client:
         except socket.error:
             raise Exception("Unbale to get value from metadata server")
         else:
+            data = data.decode("utf-8")
             data = json.loads(data)
-
             if data["status"] == "OK":
-                self.local_cache.update({key, data["value"]})
+                print("reached here")
+                self.local_cache[key] = data["value"]
+                print("tadaaa")
                 return (data["value"]["class_name"], data["value"]["server_list"])
 
         return (None, None)
@@ -144,7 +148,7 @@ class Client:
             else:
                 if data["status"] == "OK":
                     # TODO: Check once if the key is required else remove it
-                    self.local_cache[key] = {"key": key, "value": meta_data}
+                    self.local_cache[key] = meta_data
                     return {"status" : "OK"}
 
             total_attempts -= 1
@@ -165,7 +169,7 @@ class Client:
         try:
             class_name, server_list = self.look_up_metadata(key)
         except Exception as e:
-            return {"status": "FAILURE", "message" : "Timeout or socket error for getting metadata"}
+            return {"status": "FAILURE", "message" : "Timeout or socket error for getting metadata" + str(e)}
 
         if not class_name or not server_list:
             return {"status": "FAILURE", "message" : "Key doesn't exist in system"}
@@ -195,7 +199,7 @@ class Client:
         try:
             class_name, server_list = self.look_up_metadata(key)
         except Exception as e:
-            return {"status": "FAILURE", "message" : "Timeout or socket error for getting metadata"}
+            return {"status": "FAILURE", "message" : "Timeout or socket error for getting metadata" + str(e)}
 
         if not class_name or not server_list:
             return {"status": "FAILURE", "message": "Key doesn't exist in system"}

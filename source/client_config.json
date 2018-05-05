@@ -51,7 +51,7 @@
 			"placement_policy": "AllInOne",
 			"timeout_per_request": "120",
 			"history_version_in_cache": 3,
-            "ping_policy": "PingAll",
+            		"ping_policy": "PingAll",
 			"k": 2,
 			"m": 1,
 			"erasure_coding_type":"isa_l_rs_vand",

@@ -29,12 +29,12 @@ class Viveck_1(ProtocolInterface):
         self.quorum_4 = int(properties["quorum"]["Q4"])
 
         # Erasure coding parameters
-        self.k = int(properties["quorum"]["k"])
-        self.m = int(properties["quorum"]["m"])
+        self.k = int(properties["k"])
+        self.m = int(properties["m"])
         # https://github.com/openstack/pyeclib . Check out the supported types.
-        self.ec_type = properties["quorum"]["ec_type"]
+        self.ec_type = properties["erasure_coding_type"]
 
-        self.ec_driver = ECDriver(self.k, self.m, self.ec_type)
+        self.ec_driver = ECDriver(k=self.k, m=self.m, ec_type=self.ec_type)
 
 
         # Generic timeout for everything

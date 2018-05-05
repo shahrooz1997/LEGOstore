@@ -54,7 +54,7 @@ class ABDServer:
 
         if data:
             current_value, current_timestamp = data
-            lock.release()
+            lock.release_read()
 
             return {"status": "OK", "timestamp": current_timestamp}
 

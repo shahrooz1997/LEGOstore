@@ -11,8 +11,7 @@ from viveck_1_server import Viveck_1Server
 
 
 class DataServer:
-
-    def __init__(self, sock=None, enable_garbage_collector = False):
+    def __init__(self, db, sock=None, enable_garbage_collector = False):
         if not sock:
             self.sock = socket.socket(
                 socket.AF_INET, socket.SOCK_STREAM)
@@ -28,12 +27,11 @@ class DataServer:
         # Change cache size here if you want. Ideally there should be a config for it
         # If more configurable variable are there add config and read from it.
         self.cache = Cache(1000)
-        self.persistent = Persistent()
-        self.lock = threading.Lock()
+        self.persistent = Persistent(db)
+        self.lock = ReadWriteLock()
 
         if enable_garbage_collector:
             threading.Thread(target=garbage_collector, args=(self.lock, self.cache, self.persistent))
-
 
 
     def get(self, key, timestamp, current_class):
@@ -45,12 +43,14 @@ class DataServer:
         :return:
         raises NotImplementedError if the class is not found
         '''
+        
         if current_class == "ABD":
             return ABDServer.get(key, timestamp, self.cache, self.persistent, self.lock)
         elif current_class == "Viveck_1":
             return Viveck_1Server.get(key, timestamp, self.cache, self.persistent, self.lock)
 
         raise NotImplementedError
+
 
     def get_timestamp(self, key, current_class):
         '''
@@ -67,6 +67,7 @@ class DataServer:
             return Viveck_1Server.get_timestamp(key, self.cache, self.persistent, self.lock)
 
         raise NotImplementedError
+
 
     def put(self, key, value, timestamp, current_class):
         '''
@@ -86,6 +87,7 @@ class DataServer:
             return Viveck_1Server.put(key, value, timestamp, self.cache, self.persistent, self.lock)
 
         raise NotImplementedError
+
 
 def server_connection(connection, dataserver):
     data = connection.recv(64000)
@@ -108,6 +110,7 @@ def server_connection(connection, dataserver):
                                                          data["class"])).encode("utf-8"))
         elif method == "get":
             connection.sendall(json.dumps(dataserver.get(data["key"],
+							 data["timestamp"],
                                                          data["class"])).encode("utf-8"))
         elif method == "get_timestamp":
             connection.sendall(json.dumps(dataserver.get_timestamp(data["key"],
@@ -133,14 +136,15 @@ if __name__ == "__main__":
 
     # For purpose of testing the whole code
     socket_port = [10001, 10002, 20001, 20002]
+    db_list = ["db.temp", "db.temp1", "db.temp2", "db.temp3"] 
 
     socket_list = []
     data_server_list = []
-    for port in socket_port:
+    for index, port in enumerate(socket_port):
         socket_list.append(socket.socket(socket.AF_INET, socket.SOCK_STREAM))
         socket_list[-1].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         socket_list[-1].bind(('0.0.0.0', port))
-        data_server_list.append(DataServer(socket_list[-1]))
+        data_server_list.append(DataServer(db_list[index], socket_list[-1]))
 
     # For purpose of testing only
     thread_list = []

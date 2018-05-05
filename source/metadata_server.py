@@ -56,6 +56,7 @@ class MetadataServer:
 
         # Step1: Check if locally available
         if key in self.data:
+            print("Reached here")
             return {"status": "OK", "value": self.data[key]}
 
         # Step2: Check if available globally

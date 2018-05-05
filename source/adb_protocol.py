@@ -56,7 +56,7 @@ class ABD(ProtocolInterface):
             print("Server with host: {1} and port: {2} timeout for getTimestamp in ABD", (server["host"],
                                                                                           server["port"]))
         else:
-            data = json.loads(data)
+            data = json.loads(data.decode("utf-8"))
             print("data is here:")
             print(data)
             lock.acquire()
@@ -144,7 +144,8 @@ class ABD(ProtocolInterface):
             print("Server with host: {1} and port: {2} timeout for put request in ABD", (server["host"],
                                                                                          server["port"]))
         else:
-            data = json.loads(data)
+            print(data)
+            data = json.loads(data.decode("utf-8"))
             lock.acquire()
             output.append(data)
             lock.release()
@@ -227,6 +228,7 @@ class ABD(ProtocolInterface):
 
         data = {"method": "get",
                 "key": key,
+		"timestamp": None,
                 "class": self.current_class}
 
         sock.sendall(json.dumps(data).encode("utf-8"))
@@ -238,7 +240,7 @@ class ABD(ProtocolInterface):
             print("Server with host: {1} and port: {2} timeout for get request in ABD", (server["host"],
                                                                                          server["port"]))
         else:
-            data = json.loads(data)
+            data = json.loads(data.decode("utf-8"))
             lock.acquire()
             output.append(data)
             lock.release()

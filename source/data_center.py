@@ -1,8 +1,8 @@
 import json
-from mc_wrapper import MCWrapper
 
 class Datacenter:
-    # Each data center wil store the information about the servers it has and also periodically checks the health of servers in it.
+    # Each data center wil store the information about the servers it has and
+    # Also periodically checks the health of servers in it.
     def __init__(self, datacenter_list):
         self.data_center_list = datacenter_list
 

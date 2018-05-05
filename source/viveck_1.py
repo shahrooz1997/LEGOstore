@@ -7,6 +7,8 @@ import socket
 import copy
 from placement_policy import PlacementFactory
 from protocol_interface import ProtocolInterface
+from pyeclib.ec_iface import ECDriver
+
 
 class Viveck_1(ProtocolInterface):
 
@@ -25,7 +27,15 @@ class Viveck_1(ProtocolInterface):
         self.quorum_2 = int(properties["quorum"]["Q2"])
         self.quorum_3 = int(properties["quorum"]["Q3"])
         self.quorum_4 = int(properties["quorum"]["Q4"])
+
+        # Erasure coding parameters
         self.k = int(properties["quorum"]["k"])
+        self.m = int(properties["quorum"]["m"])
+        # https://github.com/openstack/pyeclib . Check out the supported types.
+        self.ec_type = properties["quorum"]["ec_type"]
+
+        self.ec_driver = ECDriver(self.k, self.m, self.ec_type)
+
 
         # Generic timeout for everything
         self.timeout = int(properties["timeout_per_request"])
@@ -136,8 +146,8 @@ class Viveck_1(ProtocolInterface):
 
 
     def encode(self, value, output):
-        output.append(value)
-        return output
+        output = self.ec_driver.encode(value)
+        return
 
 
     def _put_fin(self, key, timestamp, sem, server, output, lock):
@@ -306,8 +316,7 @@ class Viveck_1(ProtocolInterface):
 
 
     def decode(self, chunk_list):
-        pass
-
+        return self.ec_driver.decode(chunk_list)
 
     def get(self, key, server_list):
         # Step1: Get the timestamp for the key
@@ -347,8 +356,11 @@ class Viveck_1(ProtocolInterface):
         if (len(output) < self.k):
             lock.release()
             return {"status": "TimeOut", "message": "Timeout/Concurrency error during get call"}
+        try:
+            value = self.decode(output)
+        except Exception as e:
+            lock.relase()
+            return {"status": "TimeOut", "message": e}
 
-        value = self.decode(output)
-
-
+        lock.relase()
         return {"status": "OK", "value": value, "timestamp": timestamp}

@@ -52,12 +52,14 @@
 			"timeout_per_request": "120",
 			"history_version_in_cache": 3,
             "ping_policy": "PingAll",
-			"dimension": 2,
+			"k": 2,
+			"m": 1,
+			"erasure_coding_type":"isa_l_rs_vand",
 			"quorum": {
-				"Q1": "3",
-				"Q2": "3",
-				"Q3": "3",
-				"Q4": "3",
+				"Q1": "2",
+				"Q2": "2",
+				"Q3": "2",
+				"Q4": "2",
 				"total_nodes": "3"
 			}
 		},

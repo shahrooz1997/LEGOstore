@@ -119,7 +119,7 @@ class Viveck_1(ProtocolInterface):
 
         data = json.dumps({"method": "put",
                            "key": key,
-                           "value": value,
+                           "value": value.decode("latin-1"),
                            "timestamp": timestamp,
                            "class": self.current_class})
 
@@ -145,8 +145,8 @@ class Viveck_1(ProtocolInterface):
         return
 
 
-    def encode(self, value, output):
-        output = self.ec_driver.encode(value)
+    def encode(self, value, codes):
+        codes.extend(self.ec_driver.encode(value.encode('ASCII')))
         return
 
 
@@ -209,6 +209,7 @@ class Viveck_1(ProtocolInterface):
 
         # Wait for erasure coding to finish
         erasure_coding_thread.join()
+        print(type(codes[0]))
 
 
         # Step2 : Send the message with codes

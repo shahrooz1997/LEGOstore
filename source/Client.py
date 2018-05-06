@@ -234,7 +234,7 @@ if __name__ == "__main__":
         data = input()
         method, key, value = data.split(",")
         if method == "insert":
-            print(json.dumps(client.insert(key, value, "ABD")))
+            print(json.dumps(client.insert(key, value, "Viveck_1")))
         elif method == "put":
             print(json.dumps(client.put(key, value)))
         elif method == "get":

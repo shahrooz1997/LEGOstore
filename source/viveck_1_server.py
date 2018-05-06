@@ -61,10 +61,10 @@ class Viveck_1Server:
         # If the key exist in the cache or new entry it will be updated in the cache
         # Else it will return false
         data = cache.get(key)
-
+        print(cache)
         if not data:
             return False
-
+        print(data)
         current_value, current_timestamp, label = data[0]
 
         # If new timestamp is greater than the recent one in cache
@@ -97,16 +97,16 @@ class Viveck_1Server:
         values = cache.get(key)
 
         if not values:
-            cache.put(key, [value, timestamp, label])
+            cache.put(key, [[value, timestamp, label]])
             return
 
         for index, current_value in enumerate(values):
             if timestamp > current_value[1]:
-                new_values = values[0:index] + [value, timestamp, label] + values[index:]
+                new_values = values[0:index] + [[value, timestamp, label]] + [values[index:]]
                 cache.put(key, new_values)
                 return
 
-        cache.put(key, values + [value, timestamp, label])
+        cache.put(key, values + [[value, timestamp, label]])
         return
 
 

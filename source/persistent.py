@@ -9,7 +9,10 @@ class Persistent:
 
 
     def get(self, key):
-        return self.db.get(str(key).encode()).decode("utf-8")
+        data = self.db.get(str(key).encode())
+        if data:
+            return data.decode("utf-8")
+        return None
 
 
     def put(self, key, value):

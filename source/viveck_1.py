@@ -46,23 +46,25 @@ class Viveck_1(ProtocolInterface):
         self.current_class = "Viveck_1"
 
 
-    def _get_timestamp(self, key, sem, server, output, lock):
+    def _get_timestamp(self, key, sem, server, output, lock, current_class):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
         data = {"method": "get_timestamp",
-                "key": key}
+                "key": key,
+                "class": current_class}
+
 
         sock.sendall(json.dumps(data).encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
 
         try:
             data = sock.recv(1024)
-        except:
+        except Exception as e:
             print("Server with host: {1} and port: {2} timeout for getTimestamp in ABD", (server["host"],
                                                                                           server["port"]))
         else:
-            data = json.loads(data)
+            data = json.loads(data.decode("utf-8"))
             lock.acquire()
             output.append(data["timestamp"])
             lock.release()
@@ -107,7 +109,6 @@ class Viveck_1(ProtocolInterface):
             lock.release()
             raise Exception("Timeout during timestamps")
 
-
         time = TimeStamp.get_max_timestamp(output)
         lock.release()
         return time
@@ -119,7 +120,7 @@ class Viveck_1(ProtocolInterface):
 
         data = json.dumps({"method": "put",
                            "key": key,
-                           "value": value.decode("latin-1"),
+                           "value": value,
                            "timestamp": timestamp,
                            "class": self.current_class})
 
@@ -132,7 +133,7 @@ class Viveck_1(ProtocolInterface):
             print("Server with host: {1} and port: {2} timeout for put request in Viceck_1", (server["host"],
                                                                                               server["port"]))
         else:
-            data = json.loads(data)
+            data = json.loads(data.decode("utf-8"))
             lock.acquire()
             output.append(data)
             lock.release()
@@ -146,7 +147,11 @@ class Viveck_1(ProtocolInterface):
 
 
     def encode(self, value, codes):
-        codes.extend(self.ec_driver.encode(value.encode('ASCII')))
+        codes.extend(self.ec_driver.encode(value.encode("utf-8")))
+        for index in range(len(codes)):
+           #print(type(codes[index]))
+           codes[index] = codes[index].decode("latin-1")
+
         return
 
 
@@ -154,7 +159,6 @@ class Viveck_1(ProtocolInterface):
         # TODO : Generic function to send all get put request rather than different for all
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
-        print(server)
 
         data = json.dumps({"method": "put_fin",
                            "key": key,
@@ -170,11 +174,11 @@ class Viveck_1(ProtocolInterface):
             print("Server with host: {1} and port: {2} timeout for put fin request in Viveck",
                   (server["host"], server["port"]))
         else:
-            data = json.loads(data)
+            data = json.loads(data.decode("utf-8"))
             lock.acquire()
             output.append(data)
             lock.release()
-
+        
         try:
             sem.wait()
         except threading.BrokenBarrierError:
@@ -209,7 +213,6 @@ class Viveck_1(ProtocolInterface):
 
         # Wait for erasure coding to finish
         erasure_coding_thread.join()
-        print(type(codes[0]))
 
 
         # Step2 : Send the message with codes
@@ -292,7 +295,8 @@ class Viveck_1(ProtocolInterface):
 
         data = {"method": "get",
                 "key": key,
-                "timestamp": timestamp}
+                "timestamp": timestamp,
+                "class": self.current_class}
 
         sock.sendall(json.dumps(data).encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
@@ -303,10 +307,10 @@ class Viveck_1(ProtocolInterface):
             print("Server with host: {1} and port: {2} timeout for get request in ABD", (server["host"],
                                                                                          server["port"]))
         else:
-            data = json.loads(data)
+            data = json.loads(data.decode("utf-8"))
             if data["value"]:
                 lock.acquire()
-                output.append(data)
+                output.append(data["value"])
                 lock.release()
             try:
                 sem.wait()
@@ -317,7 +321,10 @@ class Viveck_1(ProtocolInterface):
 
 
     def decode(self, chunk_list):
-        return self.ec_driver.decode(chunk_list)
+        for i in range(len(chunk_list)):
+            chunk_list[i] = chunk_list[i].encode("latin-1")
+        return self.ec_driver.decode(chunk_list).decode("utf-8")
+
 
     def get(self, key, server_list):
         # Step1: Get the timestamp for the key
@@ -360,8 +367,8 @@ class Viveck_1(ProtocolInterface):
         try:
             value = self.decode(output)
         except Exception as e:
-            lock.relase()
+            lock.release()
             return {"status": "TimeOut", "message": e}
 
-        lock.relase()
+        lock.release()
         return {"status": "OK", "value": value, "timestamp": timestamp}

@@ -62,12 +62,10 @@ class Client:
         # @ Raises Exception in case of timeout or socket error
         ######################
         if key in self.local_cache:
-            print(self.local_cache[key])
             data = self.local_cache[key]
             return (data["class_name"], data["server_list"])
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        print(self.metadata_server["host"], int(self.metadata_server["port"]))
         sock.connect((self.metadata_server["host"], int(self.metadata_server["port"])))
 
         data = json.dumps({"method": "get_metadata", "key": key})
@@ -83,9 +81,7 @@ class Client:
             data = data.decode("utf-8")
             data = json.loads(data)
             if data["status"] == "OK":
-                print("reached here")
                 self.local_cache[key] = data["value"]
-                print("tadaaa")
                 return (data["value"]["class_name"], data["value"]["server_list"])
 
         return (None, None)
@@ -178,7 +174,6 @@ class Client:
         total_attempts = self.retry_attempts
         while total_attempts:
             output = self.class_name_to_object[class_name].put(key, value, server_list)
-            print(output)
             if self.check_validity(output):
                 return {"status" : "OK"}
 

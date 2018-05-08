@@ -15,6 +15,10 @@
               "2" : {
                 "host" : "0.0.0.0",
                 "port" : "10002"
+              },
+              "3" : {
+                "host" : "0.0.0.0",
+                "port" : "20001"
               }
             }
 		},
@@ -26,11 +30,11 @@
 			"servers" : {
               "1" : {
                 "host" : "0.0.0.0",
-                "port" : "20001"
+                "port" : "20002"
               },
               "2" : {
                 "host" : "0.0.0.0",
-                "port" : "20002"
+                "port" : "20003"
               }
             }
 		}
@@ -54,7 +58,7 @@
             		"ping_policy": "PingAll",
 			"k": 2,
 			"m": 1,
-			"erasure_coding_type":"isa_l_rs_vand",
+			"erasure_coding_type":"liberasurecode_rs_vand",
 			"quorum": {
 				"Q1": "2",
 				"Q2": "2",

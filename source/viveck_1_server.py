@@ -31,7 +31,7 @@ class Viveck_1Server:
 
         if timestamp:
             lock.release_read()
-            return timestamp
+            return {"status": "OK", "timestamp": timestamp}
 
         timestamp = persistent.get(key)
 
@@ -61,17 +61,15 @@ class Viveck_1Server:
         # If the key exist in the cache or new entry it will be updated in the cache
         # Else it will return false
         data = cache.get(key)
-        print(cache)
         if not data:
             return False
-        print(data)
         current_value, current_timestamp, label = data[0]
 
         # If new timestamp is greater than the recent one in cache
         # It implies that it is a new key and should be inserted
         if timestamp > current_timestamp:
             # TODO: Take care of discarded value
-            cache.put(key, [value, timestamp, False] + data)
+            cache.put(key, [[value, timestamp, False]] + data)
             return True
 
         # If timestamp is lesser than the least recent key
@@ -159,10 +157,11 @@ class Viveck_1Server:
     @staticmethod
     def update_with_new_label(key, timestamp, cache):
         data = cache.get(key)
-
+        #print(data)
         if not data:
             return (None, False)
-
+        
+        print("data ::" + str(data))
         current_value, current_timestamp, label = data[0]
 
         # If new timestamp is greater than the recent one in cache
@@ -182,16 +181,17 @@ class Viveck_1Server:
             if current_data[1] == current_timestamp:
                 # TODO: verify it it works! I.e. pass by reference works here or not
                 current_data[2] = True
-                return (current_data[1], True)
+                return (current_data[0], True)
 
 
         return (None, False)
+
 
     @staticmethod
     def put_fin(key, timestamp, cache, persistent, lock):
         # Using optimistic approach i.e. we assume that it will be in cache else we have to
         lock.acquire_write()
-
+        print("reaached here ==============")
         value, found = Viveck_1Server.update_with_new_label(key, timestamp, cache)
 
         if found:
@@ -273,7 +273,6 @@ class Viveck_1Server:
 
             lock.release_write()
             return {"status": "OK", "value": value}
-
         else:
             current_persisted_timestamp = persistent.get(key)
             current_timestamp = current_persisted_timestamp

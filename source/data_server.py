@@ -29,7 +29,8 @@ class DataServer:
         self.cache = Cache(1000)
         self.persistent = Persistent(db)
         self.lock = ReadWriteLock()
-
+        print("Reached here")
+        print(self.cache)
         if enable_garbage_collector:
             threading.Thread(target=garbage_collector, args=(self.lock, self.cache, self.persistent))
 
@@ -88,6 +89,24 @@ class DataServer:
 
         raise NotImplementedError
 
+    
+    def put_fin(self, key, timestamp, current_class):
+        '''
+        Put fin call to the server
+
+        :param key:
+        :param value:
+        :param timestamp:
+        :param current_class:
+        :return:
+        raises NotImplementedError if the class is not found
+        '''
+
+        if current_class == "Viveck_1":
+            return Viveck_1Server.put_fin(key, timestamp, self.cache, self.persistent, self.lock)
+
+        raise NotImplementedError
+
 
 def server_connection(connection, dataserver):
     data = connection.recv(64000)
@@ -115,6 +134,10 @@ def server_connection(connection, dataserver):
         elif method == "get_timestamp":
             connection.sendall(json.dumps(dataserver.get_timestamp(data["key"],
                                                                    data["class"])).encode("utf-8"))
+        elif method == "put_fin":
+            connection.sendall(json.dumps(dataserver.put_fin(data["key"],
+                                                             data["timestamp"],
+                                                             data["class"])).encode("utf-8")) 
         elif method:
             connection.sendall("MethodNotFound: Unknown method is called".encode("utf-8"))
     except socket.error:
@@ -135,8 +158,8 @@ def test(data_server):
 if __name__ == "__main__":
 
     # For purpose of testing the whole code
-    socket_port = [10001, 10002, 20001, 20002]
-    db_list = ["db.temp", "db.temp1", "db.temp2", "db.temp3"] 
+    socket_port = [10001, 10002, 20001, 20002, 20003]
+    db_list = ["db.temp", "db.temp1", "db.temp2", "db.temp3", "db.temp4"] 
 
     socket_list = []
     data_server_list = []

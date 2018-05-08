@@ -11,6 +11,7 @@ class Cache:
         # Converting size to Bytes
         self.size = size
 
+
     def put(self, key, value):
         data = self.cache.get(key)
 
@@ -35,6 +36,7 @@ class Cache:
     def get(self, key):
         return self.cache.get(key)
 
+
     def get_current_size(self):
         return self.current_size
 
@@ -43,3 +45,9 @@ class Cache:
         return self.cache.keys()
 
 
+    def get_without_modifying(self, key):
+        return self.cache.get_without_modifying(key)
+
+
+    def put_without_modifying(self, cache_value):
+        return self.cache.put_without_modifying(cache_value)

@@ -3,7 +3,8 @@ import time
 # TODO: Not happy with current design , modify it to be something better soon.
 # TODO: Have a way to evict last i.e. update it on the server and marked evict possible on the cache
 # Here we have something like : key+timestamp->(value, label, prev_timestmap)
-
+from persistent import Persistent
+from cache import  Cache
 
 def garbage_collector(lock, cache, persistent, allowed_in_cache = 1):
     '''
@@ -49,18 +50,16 @@ def garbage_collector(lock, cache, persistent, allowed_in_cache = 1):
 
         persistent.put(key, values[0][1])
 
-
         for index, value in enumerate(values):
             if index < len(values):
-                persistent[key+value[1]] = [value[0], value[2], values[index+1][1]]
+                persistent.put(key+value[1],  [value[0], value[2], values[index+1][1]])
             else:
-                persistent[key+value[1]] = [value[0], value[2], current_timestamp]
+                persistent.put(key+value[1], [value[0], value[2], current_timestamp])
 
         if count % 1000 == 999:
             # It will make sure that even if the key isn't there in cache it won't update it.
             # It will assume that it is revoked and stored in presist medium and we don't have to worry about it
             cache.put_without_modifying(cache_value)
-            persistent.sync()
             lock.release_write()
 
         # TODO: Implement how it will work for rocksdb

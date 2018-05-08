@@ -19,15 +19,15 @@ def garbage_collector(lock, cache, persistent, allowed_in_cache = 1):
     :return:
 
     '''
-    lock.acquire_reader_lock()
+    print("garbage_collector_called")
+    lock.acquire_read()
 
     # We will assume that keys of small size and all can be stored in single variable
     current_keys = cache.keys()
-    lock.release_reader_lock()
+    lock.release_read()
 
     # Lets go first with 1000 keys at a time
     count = 0
-    lock.release_reader_lock()
     persist_value = {}
     cache_value = {}
 
@@ -35,7 +35,7 @@ def garbage_collector(lock, cache, persistent, allowed_in_cache = 1):
 
     for key in current_keys:
         if count % 1000 == 0:
-            lock.acquire_writer_lock()
+            lock.acquire_write()
 
         values = cache.get_without_modifying(key)
 
@@ -63,7 +63,7 @@ def garbage_collector(lock, cache, persistent, allowed_in_cache = 1):
             # It will assume that it is revoked and stored in presist medium and we don't have to worry about it
             cache.put_without_modifying(cache_value)
             persistent.sync()
-            lock.release_writer_lock()
+            lock.release_write()
 
         # TODO: Implement how it will work for rocksdb
         # Although with current implementation it should work easily

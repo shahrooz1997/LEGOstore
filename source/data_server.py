@@ -29,10 +29,7 @@ class DataServer:
         self.cache = Cache(1000)
         self.persistent = Persistent(db)
         self.lock = ReadWriteLock()
-        print("Reached here")
-        print(self.cache)
-        if enable_garbage_collector:
-            threading.Thread(target=garbage_collector, args=(self.lock, self.cache, self.persistent))
+        self.enable_garbage_collector = True
 
 
     def get(self, key, timestamp, current_class):
@@ -82,6 +79,16 @@ class DataServer:
         raises NotImplementedError if the class is not found
         '''
 
+        if self.cache.get_current_size() > 100000:
+            self.lock.acquire_write()
+            if self.enable_garbage_collector == True:
+                self.enable_garbage_collector = False
+                thr = threading.Thread(target=garbage_collect, args=(self.lock, self.cache, self.persistent))
+		thr.deamon = True
+                thr.start()
+
+            self.lock.release_write()
+
         if current_class == "ABD":
             return ABDServer.put(key, value, timestamp, self.cache, self.persistent, self.lock)
         elif current_class == "Viveck_1":
@@ -89,7 +96,15 @@ class DataServer:
 
         raise NotImplementedError
 
-    
+
+    def garbage_collect(self, lock, cache, persistent):
+        garbage_collector(lock, cache, persistent)
+        sleep(30)
+        self.lock.write_acquire()
+        self.enable_garbage_collector = True
+        self.lock.write_release()
+
+
     def put_fin(self, key, timestamp, current_class):
         '''
         Put fin call to the server

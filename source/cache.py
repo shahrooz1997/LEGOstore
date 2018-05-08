@@ -38,6 +38,3 @@ class Cache:
 
     def get_current_size(self):
         return self.current_size
-
-
-

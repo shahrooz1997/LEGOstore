@@ -57,7 +57,7 @@ class Viveck_1Server:
 
 
     @staticmethod
-    def update_with_new_value(key, value, timestamp, cache):
+    def update_with_new_value(key, value, timestamp, cache, persistent):
         # If the key exist in the cache or new entry it will be updated in the cache
         # Else it will return false
         data = cache.get(key)
@@ -69,7 +69,9 @@ class Viveck_1Server:
         # It implies that it is a new key and should be inserted
         if timestamp > current_timestamp:
             # TODO: Take care of discarded value
-            cache.put(key, [[value, timestamp, False]] + data)
+            evicted_value = cache.put(key, [[value, timestamp, False]] + data)
+            if evicted_values:
+                persist_on_disk(evicted_values, persistent)
             return True
 
         # If timestamp is lesser than the least recent key
@@ -91,20 +93,29 @@ class Viveck_1Server:
 
 
     @staticmethod
-    def insert_in_cache(key, value, label, timestamp, cache):
+    def insert_in_cache(key, value, label, timestamp, cache, persistent):
         values = cache.get(key)
 
         if not values:
-            cache.put(key, [[value, timestamp, label]])
+            evicted_values = cache.put(key, [[value, timestamp, label]])
+            if evicted_values:
+                persist_on_disk(evicted_values, persistent)
             return
 
         for index, current_value in enumerate(values):
             if timestamp > current_value[1]:
                 new_values = values[0:index] + [[value, timestamp, label]] + [values[index:]]
-                cache.put(key, new_values)
+                evicted_values = cache.put(key, new_values)
+               
+                if evicted_values:
+                     persist_on_disk(evicted_values, persistent)
                 return
 
-        cache.put(key, values + [[value, timestamp, label]])
+        evicted_values = cache.put(key, values + [[value, timestamp, label]])
+        
+        if evicted_values:
+            persist_on_disk(evicted_values, persistent)
+        
         return
 
 
@@ -113,7 +124,7 @@ class Viveck_1Server:
         # Using optimistic approach i.e. we assume that it will be in cache else we have to
         lock.acquire_write()
 
-        result = Viveck_1Server.update_with_new_value(key, value, timestamp, cache)
+        result = Viveck_1Server.update_with_new_value(key, value, timestamp, cache, persistent)
         if result:
             lock.release_write()
             return {"status": "OK"}
@@ -122,7 +133,7 @@ class Viveck_1Server:
         current_timestamp = current_persisted_timestamp
 
         if not current_timestamp:
-            Viveck_1Server.insert_in_cache(key, value, False, timestamp, cache)
+            Viveck_1Server.insert_in_cache(key, value, False, timestamp, cache, persistent)
             lock.release_write()
             return {"status": "OK"}
 
@@ -155,7 +166,7 @@ class Viveck_1Server:
 
 
     @staticmethod
-    def update_with_new_label(key, timestamp, cache):
+    def update_with_new_label(key, timestamp, cache, persistent):
         data = cache.get(key)
         #print(data)
         if not data:
@@ -168,7 +179,10 @@ class Viveck_1Server:
         # It implies that it is a new key and should be inserted
         if timestamp > current_timestamp:
             # TODO: Take care of discarded value
-            cache.put(key, [None, timestamp, True] + data)
+            evicted_values = cache.put(key, [None, timestamp, True] + data)
+            if evicted_values:
+                persist_on_disk(evicted_values, persisten)
+
             return (None, True)
 
         # If timestamp is lesser than the least recent key
@@ -192,7 +206,7 @@ class Viveck_1Server:
         # Using optimistic approach i.e. we assume that it will be in cache else we have to
         lock.acquire_write()
         print("reaached here ==============")
-        value, found = Viveck_1Server.update_with_new_label(key, timestamp, cache)
+        value, found = Viveck_1Server.update_with_new_label(key, timestamp, cache, persistent)
 
         if found:
             lock.release_write()
@@ -202,7 +216,7 @@ class Viveck_1Server:
         current_timestamp = current_persisted_timestamp
 
         if not current_timestamp:
-            Viveck_1Server.insert_in_cache(key, None, True, timestamp, cache)
+            Viveck_1Server.insert_in_cache(key, None, True, timestamp, cache, persistent)
             lock.release_write()
             return {"status": "OK"}
 
@@ -245,7 +259,7 @@ class Viveck_1Server:
         # Ideally it should take key as input and do locking key wise
 
         lock.acquire_write()
-        value, found = Viveck_1Server.update_with_new_label(key, timestamp, cache)
+        value, found = Viveck_1Server.update_with_new_label(key, timestamp, cache, persistent)
 
         if found:
             lock.release_write()

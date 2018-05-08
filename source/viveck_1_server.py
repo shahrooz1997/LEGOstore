@@ -19,6 +19,33 @@ class Viveck_1Server:
 
         return None
 
+    
+    @staticmethod
+    def persist_on_disk(data_list, persistent):
+        '''
+        This is the generic method which inserts key, value in the disk
+        :param key:
+        :param value:
+        :param timestamp:
+        :param cache:
+        :param persistent:
+        :return:
+        '''
+
+        for key, value_list in data_list:
+            current_timestamp = persistent.get(key)
+            if not current_timestamp:
+                current_timestamp = None
+
+            for value, timestamp, label in reversed(value_list):
+                persistent.put(key+timestamp, [value, label, current_timestamp])
+                current_timestamp = timestamp
+
+
+            persistent.put(key, current_timestamp)
+
+        return
+
 
     @staticmethod
     def get_timestamp(key, cache, persistent, lock):
@@ -71,7 +98,7 @@ class Viveck_1Server:
             # TODO: Take care of discarded value
             evicted_values = cache.put(key, [[value, timestamp, False]] + data)
             if evicted_values:
-                persist_on_disk(evicted_values, persistent)
+                Viveck_1Server.persist_on_disk(evicted_values, persistent)
             return True
 
         # If timestamp is lesser than the least recent key
@@ -99,7 +126,7 @@ class Viveck_1Server:
         if not values:
             evicted_values = cache.put(key, [[value, timestamp, label]])
             if evicted_values:
-                persist_on_disk(evicted_values, persistent)
+                Viveck_1Server.persist_on_disk(evicted_values, persistent)
             return
 
         for index, current_value in enumerate(values):
@@ -108,13 +135,13 @@ class Viveck_1Server:
                 evicted_values = cache.put(key, new_values)
                
                 if evicted_values:
-                     persist_on_disk(evicted_values, persistent)
+                     Viveck_1Server.persist_on_disk(evicted_values, persistent)
                 return
 
         evicted_values = cache.put(key, values + [[value, timestamp, label]])
         
         if evicted_values:
-            persist_on_disk(evicted_values, persistent)
+            Viveck_1Server.persist_on_disk(evicted_values, persistent)
         
         return
 
@@ -154,7 +181,7 @@ class Viveck_1Server:
             # Same timestamp that means updating the value
             if current_timestamp == timestamp:
                 # Sanity check that if found existing timestamp it should be labeled as True
-                assert(label, True)
+                #assert(label, True)
                 persistent.put(key+timestamp, [curr_value, label, next_timestamp])
                 break
             elif next_timestamp == None or next_timestamp < timestamp:
@@ -181,7 +208,7 @@ class Viveck_1Server:
             # TODO: Take care of discarded value
             evicted_values = cache.put(key, [None, timestamp, True] + data)
             if evicted_values:
-                persist_on_disk(evicted_values, persisten)
+                Viveck_1Sever.persist_on_disk(evicted_values, persisten)
 
             return (None, True)
 
@@ -237,7 +264,7 @@ class Viveck_1Server:
             # Same timestamp that means updating the value
             if current_timestamp == timestamp:
                 # Sanity check that if found existing timestamp it should be labeled as True
-                assert(label, True)
+                #assert(label, True)
                 persistent.put(key+timestamp, [curr_value, True, next_timestamp])
                 break
 
@@ -320,28 +347,3 @@ class Viveck_1Server:
         lock.release_write()
         return {"status": "OK", "value": None}
 
-
-    def persist_on_disk(self, data_list, persistent):
-        '''
-        This is the generic method which inserts key, value in the disk
-        :param key:
-        :param value:
-        :param timestamp:
-        :param cache:
-        :param persistent:
-        :return:
-        '''
-
-        for key, value_list in data_list:
-            current_timestamp = persistent.get(key)
-            if not current_timestamp:
-                current_timestamp = None
-
-            for value, timestamp, label in reversed(value_list):
-                persistent.put(key+timestamp, [value, label, current_timestamp])
-                current_timestamp = timestamp
-
-
-            persistent.put(key, current_timestamp)
-
-        return

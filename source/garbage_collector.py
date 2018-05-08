@@ -31,8 +31,6 @@ def garbage_collector(lock, cache, persistent, allowed_in_cache = 1):
     persist_value = {}
     cache_value = {}
 
-
-
     for key in current_keys:
         if count % 1000 == 0:
             lock.acquire_write()

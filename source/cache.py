@@ -9,8 +9,7 @@ class Cache:
         self.current_size = 0
 
         # Converting size to Bytes
-        self.size = size * 1000
-
+        self.size = size
 
     def put(self, key, value):
         data = self.cache.get(key)

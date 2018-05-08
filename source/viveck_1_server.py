@@ -69,7 +69,7 @@ class Viveck_1Server:
         # It implies that it is a new key and should be inserted
         if timestamp > current_timestamp:
             # TODO: Take care of discarded value
-            evicted_value = cache.put(key, [[value, timestamp, False]] + data)
+            evicted_values = cache.put(key, [[value, timestamp, False]] + data)
             if evicted_values:
                 persist_on_disk(evicted_values, persistent)
             return True
@@ -321,11 +321,9 @@ class Viveck_1Server:
         return {"status": "OK", "value": None}
 
 
-    def put_on_disk(self, key, value, timestamp, label, cache, persistent):
+    def persist_on_disk(self, data_list, persistent):
         '''
-        # This is the generic method which inserts key, value in the disk
-        # It first checks if nothing exists on disk it tries to insert current one also in-memory
-        # It is already an old value on disk it will insert it into the disk.
+        This is the generic method which inserts key, value in the disk
         :param key:
         :param value:
         :param timestamp:
@@ -334,38 +332,16 @@ class Viveck_1Server:
         :return:
         '''
 
-        # Step1: If the key with timestamp already exists, if it does update and return
-        values = persistent.get(key+timestamp)
-        if values:
-            if not value:
-                value = values[0]
-            persistent.put(key+timestamp, [value, label, values[2]])
-            return {"status": "OK"}
+        for key, value_list in data_list:
+            current_timestamp = persistent.get(key)
+            if not current_timestamp:
+                current_timestamp = None
 
-        # Step2: No check the most recent timestamp for key in database
-        current_persisted_timestamp = persistent.get(key)
-        current_timestamp = current_persisted_timestamp
-        # If key doesn't exist just put it in cache and trust garbage collector ;-)
-        if not current_timestamp:
-            Viveck_1Server.insert_in_cache(key, value, label, timestamp, cache)
-            return {"status": "OK"}
+            for value, timestamp, label in reversed(value_list):
+                persistent.put(key+timestamp, [value, label, current_timestamp])
+                current_timestamp = timestamp
 
 
-        # Little complex code to get it from disk again and again and see
-        if current_timestamp < timestamp:
-            persistent.put(key+timestamp, [value, label, current_timestamp])
-            persistent.put(key, timestamp)
-            return {"status": "OK"}
+            persistent.put(key, current_timestamp)
 
-        # Case1 : When this is going to be the latest timestamp on disk
-        # Case2 : When it is going to be inserted in between
-        # Case3 : When it is going to be inserted in the end
-        while current_timestamp:
-            curr_value,  prev_label, next_timestamp = persistent.get(key + current_timestamp)
-
-            if next_timestamp == None or next_timestamp < timestamp:
-                persistent.put(key+current_timestamp, [curr_value, prev_label, timestamp])
-                persistent.put(key+timestamp, [value, label, next_timestamp])
-                break
-
-        return {"status": "OK"}
+        return

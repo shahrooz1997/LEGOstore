@@ -1,6 +1,7 @@
 import socket
 import threading
 import json
+import time
 
 from reader_writer_lock import ReadWriteLock
 from cache import Cache
@@ -23,7 +24,6 @@ class DataServer:
 
         # Max can handles 2048 connections at one time, can increase it if required
         self.sock.listen(2048)
-        self.lock = ReadWriteLock()
         # Change cache size here if you want. Ideally there should be a config for it
         # If more configurable variable are there add config and read from it.
         self.cache = Cache(1000)
@@ -67,6 +67,22 @@ class DataServer:
         raise NotImplementedError
 
 
+    def garbage_collect(self, lock, cache, persistent):
+        '''
+        Wrapper for calling garbage collector.
+        It waits 30 seconds after garbage collection before the next one is called
+        :param lock:
+        :param cache:
+        :param persistent:
+        :return:
+        '''
+        garbage_collector(lock, cache, persistent)
+        time.sleep(30)
+        self.lock.acquire_write()
+        self.enable_garbage_collector = True
+        self.lock.release_write()
+
+
     def put(self, key, value, timestamp, current_class):
         '''
         Put call to the server
@@ -83,8 +99,8 @@ class DataServer:
             self.lock.acquire_write()
             if self.enable_garbage_collector == True:
                 self.enable_garbage_collector = False
-                thr = threading.Thread(target=garbage_collect, args=(self.lock, self.cache, self.persistent))
-		thr.deamon = True
+                thr = threading.Thread(target=self.garbage_collect, args=(self.lock, self.cache, self.persistent))
+                thr.deamon = True
                 thr.start()
 
             self.lock.release_write()
@@ -95,14 +111,6 @@ class DataServer:
             return Viveck_1Server.put(key, value, timestamp, self.cache, self.persistent, self.lock)
 
         raise NotImplementedError
-
-
-    def garbage_collect(self, lock, cache, persistent):
-        garbage_collector(lock, cache, persistent)
-        sleep(30)
-        self.lock.write_acquire()
-        self.enable_garbage_collector = True
-        self.lock.write_release()
 
 
     def put_fin(self, key, timestamp, current_class):
@@ -144,7 +152,7 @@ def server_connection(connection, dataserver):
                                                          data["class"])).encode("utf-8"))
         elif method == "get":
             connection.sendall(json.dumps(dataserver.get(data["key"],
-							 data["timestamp"],
+                                                         data["timestamp"],
                                                          data["class"])).encode("utf-8"))
         elif method == "get_timestamp":
             connection.sendall(json.dumps(dataserver.get_timestamp(data["key"],
@@ -190,6 +198,7 @@ if __name__ == "__main__":
         thread_list.append(threading.Thread(target=test, args=(data_server,)))
         thread_list[-1].deamon = True
         thread_list[-1].start()
+
 
     #
     # while 1:

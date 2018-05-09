@@ -31,18 +31,22 @@ class Viveck_1Server:
         :param persistent:
         :return:
         '''
-
+	
         for key, value_list in data_list:
-            current_timestamp = persistent.get(key)
+            current_timestamp = persistent.get(key)[0]
+
             if not current_timestamp:
                 current_timestamp = None
 
             for value, timestamp, label in reversed(value_list):
+                print(value)
+                print(timestamp)
+                print(label)
                 persistent.put(key+timestamp, [value, label, current_timestamp])
                 current_timestamp = timestamp
 
 
-            persistent.put(key, current_timestamp)
+            persistent.put(key, [current_timestamp])
 
         return
 
@@ -60,14 +64,16 @@ class Viveck_1Server:
             lock.release_read()
             return {"status": "OK", "timestamp": timestamp}
 
-        timestamp = persistent.get(key)
+        timestamp = persistent.get(key)[0]
 
         final_timestamp = None
         # This part of code hits the disk again and again till reached the required timestamp
         # Confirm with Professor if he has alternate in mind
         if timestamp:
             while timestamp:
-                value, label,  prev_timestamp = persistent.get(key+timestamp)
+                data = persistent.get(key+timestamp)
+                #print("data is ==============================> : " + str(type(data)) + "  => " + persistent.get(key+timestamp))
+                value, label, prev_timestamp = persistent.get(key+timestamp)
 
                 if label == True:
                     final_timestamp = timestamp
@@ -150,13 +156,13 @@ class Viveck_1Server:
     def put(key, value, timestamp, cache, persistent, lock):
         # Using optimistic approach i.e. we assume that it will be in cache else we have to
         lock.acquire_write()
-
+        print("reached here vivieck ==========================================")
         result = Viveck_1Server.update_with_new_value(key, value, timestamp, cache, persistent)
         if result:
             lock.release_write()
             return {"status": "OK"}
 
-        current_persisted_timestamp = persistent.get(key)
+        current_persisted_timestamp = persistent.get(key)[0]
         current_timestamp = current_persisted_timestamp
 
         if not current_timestamp:
@@ -167,7 +173,7 @@ class Viveck_1Server:
         # Little complex code to get it from disk again and again and see
         if current_timestamp < timestamp:
             persistent.put(key+timestamp, [value, False, current_timestamp])
-            persistent.put(key, timestamp)
+            persistent.put(key, [timestamp])
             # TODO: Should be do sync here too
             lock.release_write()
             return {"status": "OK"}
@@ -239,7 +245,7 @@ class Viveck_1Server:
             lock.release_write()
             return {"status": "OK"}
 
-        current_persisted_timestamp = persistent.get(key)
+        current_persisted_timestamp = persistent.get(key)[0]
         current_timestamp = current_persisted_timestamp
 
         if not current_timestamp:
@@ -250,7 +256,7 @@ class Viveck_1Server:
         # Little complex code to get it from disk again and again and see
         if current_timestamp < timestamp:
             persistent.put(key+timestamp, [None, False, current_timestamp])
-            persistent.put(key, timestamp)
+            persistent.put(key, [timestamp])
             # TODO: Should we do sync here too??
             lock.release_write()
             return {"status": "OK"}
@@ -303,30 +309,30 @@ class Viveck_1Server:
             # Step1: First persist it on disk with new label
             if not label:
                 persistent.put(key+timestamp, [value, True, next_timestamp])
-                Viveck_1Server.insert_in_cache(key, value, label, timestamp, cache)
+                Viveck_1Server.insert_in_cache(key, value, label, timestamp, cache, persistent)
 
             # Step2: Get the most recent version in cache
             cache_values = cache.get(key)
             if not cache_values:
-                recent_timestamp_on_disk = persistent.get(key)
+                recent_timestamp_on_disk = persistent.get(key)[0]
                 data = persistent.get(key+timestamp)
-                Viveck_1Server.insert_in_cache(key, data[0], recent_timestamp_on_disk, data[1], cache)
+                Viveck_1Server.insert_in_cache(key, data[0], data[1], recent_timestamp_on_disk, cache, persistent)
 
             lock.release_write()
             return {"status": "OK", "value": value}
         else:
-            current_persisted_timestamp = persistent.get(key)
+            current_persisted_timestamp = persistent.get(key)[0]
             current_timestamp = current_persisted_timestamp
 
             if not current_timestamp:
-                Viveck_1Server.insert_in_cache(key, None, True, timestamp, cache)
+                Viveck_1Server.insert_in_cache(key, None, True, timestamp, cache, persistent)
                 lock.release_write()
                 return {"status": "OK", "value": None}
 
             # Little complex code to get it from disk again and again and see
             if current_timestamp < timestamp:
                 persistent.put(key + timestamp, [None, True, current_timestamp])
-                persistent.put(key, timestamp)
+                persistent.put(key, [timestamp])
                 # TODO: Should be do sync here too
                 lock.release_write()
                 return {"status": "OK", "value": None}

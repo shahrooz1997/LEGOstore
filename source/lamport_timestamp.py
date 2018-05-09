@@ -2,17 +2,17 @@ import datetime
 
 class TimeStamp:
     @staticmethod
-    def get_current_time(id):
-        return str(datetime.datetime.utcnow()) + '-' + id
+    def get_current_time(_id):
+        return str(datetime.datetime.utcnow()) + '-' + _id
 
 
     @staticmethod
-    def get_next_timestamp(timestamp_list, id):
+    def get_next_timestamp(timestamp_list, _id):
         timestamps = []
         for timestamp in timestamp_list:
             timestamps.append(timestamp.split("-")[0])
 
-        next_timestamp = max(max(timestamps), str(datetime.datetime.utcnow())) + '-' + id
+        next_timestamp = max(max(timestamps), str(datetime.datetime.utcnow())) + '-' + _id
 
         return next_timestamp
 

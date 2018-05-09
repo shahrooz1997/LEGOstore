@@ -129,7 +129,7 @@ class Viveck_1(ProtocolInterface):
 
         try:
             data = sock.recv(1024)
-        except:
+        except Exception as e:
             print("Server with host: {1} and port: {2} timeout for put request in Viceck_1", (server["host"],
                                                                                               server["port"]))
         else:
@@ -170,7 +170,7 @@ class Viveck_1(ProtocolInterface):
 
         try:
             data = sock.recv(1024)
-        except:
+        except Exception as e:
             print("Server with host: {1} and port: {2} timeout for put fin request in Viveck",
                   (server["host"], server["port"]))
         else:
@@ -207,7 +207,7 @@ class Viveck_1(ProtocolInterface):
                 # Unlike in ABD, here it returns the current timestamp
                 timestamp = self.get_timestamp(key, server_list)
                 timestamp = TimeStamp.get_next_timestamp([timestamp], self.id)
-            except:
+            except Exception as e:
                 return {"status": "TimeOut", "message": "Timeout during get timestamp call of Viveck_1"}
 
 
@@ -303,7 +303,7 @@ class Viveck_1(ProtocolInterface):
 
         try:
             data = sock.recv(1024)
-        except:
+        except Exception as e:
             print("Server with host: {1} and port: {2} timeout for get request in ABD", (server["host"],
                                                                                          server["port"]))
         else:
@@ -331,7 +331,7 @@ class Viveck_1(ProtocolInterface):
         # Error can imply either server busy or key doesn't exist
         try:
             timestamp = self.get_timestamp(key, server_list)
-        except:
+        except Exception as e:
             return {"status": "TimeOut", "message": "Timeout during get timestamp call of Viveck"}
 
         thread_list = []

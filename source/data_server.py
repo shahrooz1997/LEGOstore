@@ -26,7 +26,7 @@ class DataServer:
         self.sock.listen(2048)
         # Change cache size here if you want. Ideally there should be a config for it
         # If more configurable variable are there add config and read from it.
-        self.cache = Cache(10000)
+        self.cache = Cache(100)
         self.persistent = Persistent(db)
         self.lock = ReadWriteLock()
         self.enable_garbage_collector = True
@@ -94,17 +94,19 @@ class DataServer:
         :return:
         raises NotImplementedError if the class is not found
         '''
-
+        print("=====================   PUT CALLED =========================")
         if self.cache.get_current_size() > 1000:
             self.lock.acquire_write()
             if self.enable_garbage_collector == True:
                 self.enable_garbage_collector = False
                 thr = threading.Thread(target=self.garbage_collect, args=(self.lock, self.cache, self.persistent))
+                print("reached here and should be only once")
                 thr.deamon = True
                 thr.start()
 
             self.lock.release_write()
 
+        print("Reached here")
         if current_class == "ABD":
             return ABDServer.put(key, value, timestamp, self.cache, self.persistent, self.lock)
         elif current_class == "Viveck_1":

@@ -24,6 +24,9 @@ class Cache:
         # If we exceed the size we need to evict the previous value and insert new value
         while self.current_size + item_size >  self.size:
             data = self.cache.pop_last_item()
+            if data == None:
+                break
+
             self.current_size -= total_size(data)
             evicted_values.append(data)
 

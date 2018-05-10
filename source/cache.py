@@ -52,5 +52,5 @@ class Cache:
         return self.cache.get_without_modifying(key)
 
 
-    def put_without_modifying(self, cache_value):
-        return self.cache.put_without_modifying(cache_value)
+    def update_without_modifying(self, cache_value):
+        return self.cache.update_without_modifying(cache_value)

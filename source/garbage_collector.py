@@ -34,12 +34,13 @@ def garbage_collector(lock, cache, persistent, allowed_in_cache = 1):
         if count % 1000 == 0:
             lock.acquire_write()
             acquired = True
+            cache_value = {}
 
         values = cache.get_without_modifying(key)
 
         # TODO: For now its just the one value in cache. Rest all sits on disk
         if values and len(values) > allowed_in_cache:
-            cache_value[key] = values.pop(0)
+            cache_value[key] = [values.pop(0)]
         else:
             continue
 
@@ -58,7 +59,7 @@ def garbage_collector(lock, cache, persistent, allowed_in_cache = 1):
         if count % 1000 == 999:
             # It will make sure that even if the key isn't there in cache it won't update it.
             # It will assume that it is revoked and stored in presist medium and we don't have to worry about it
-            cache.put_without_modifying(cache_value)
+            cache.update_without_modifying(cache_value)
             if acquired:
                 acquired = False
 
@@ -69,4 +70,6 @@ def garbage_collector(lock, cache, persistent, allowed_in_cache = 1):
         count += 1
 
     if acquired:
+       if cache_value:
+           cache.update_without_modifying(cache_value)
        lock.release_write()

@@ -12,14 +12,21 @@ class Viveck_1Server:
     def get_latest_fin(values):
         # TODO: We can also store the index of the first fin timestamp if exist in list
         # TODO: This is the advice from Professor Viveck.
+        if not values:
+            return None
 
-        for value, timestamp, label in values:
+        for data in values:
+            if not data:
+                continue
+            print("data is --------> " + str(data))
+            print("data of 0 is -------> " + str(data[0]))
+            value, timestamp, label = data
             if label:
                 return timestamp
 
         return None
 
-    
+
     @staticmethod
     def persist_on_disk(data_list, persistent):
         '''
@@ -58,6 +65,7 @@ class Viveck_1Server:
         timestamp = None
 
         if data:
+            print(data)
             timestamp = Viveck_1Server.get_latest_fin(data)
 
         if timestamp:
@@ -194,7 +202,8 @@ class Viveck_1Server:
                 persistent.put(key+current_timestamp, [curr_value, label, timestamp])
                 persistent.put(key+timestamp, [value, False, next_timestamp])
                 break
-
+	
+        lock.release_write()
         return {"status": "OK"}
 
 
@@ -212,7 +221,7 @@ class Viveck_1Server:
         # It implies that it is a new key and should be inserted
         if timestamp > current_timestamp:
             # TODO: Take care of discarded value
-            evicted_values = cache.put(key, [None, timestamp, True] + data)
+            evicted_values = cache.put(key, [[None, timestamp, True]] + data)
             if evicted_values:
                 Viveck_1Server.persist_on_disk(evicted_values, persistent)
 
@@ -229,7 +238,6 @@ class Viveck_1Server:
                 # TODO: verify it it works! I.e. pass by reference works here or not
                 current_data[2] = True
                 return (current_data[0], True)
-
 
         return (None, False)
 

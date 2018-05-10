@@ -40,14 +40,14 @@ def garbage_collector(lock, cache, persistent, allowed_in_cache = 1):
         # TODO: For now its just the one value in cache. Rest all sits on disk
         if values and len(values) > allowed_in_cache:
             cache_value[key] = values.pop(0)
+        else:
+            continue
 
         # Storing current timestamp of persistent storage and
         # Updating the new current timestamp
-        current_timestamp = persistent.get(key)
-        if not current_timestamp:
-            current_timestamp = None
+        current_timestamp = persistent.get(key)[0]
 
-        persistent.put(key, values[0][1])
+        persistent.put(key, [values[0][1]])
 
         for index, value in enumerate(values):
             if index < len(values) - 1:

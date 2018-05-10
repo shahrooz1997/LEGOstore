@@ -214,7 +214,7 @@ class Viveck_1Server:
             # TODO: Take care of discarded value
             evicted_values = cache.put(key, [None, timestamp, True] + data)
             if evicted_values:
-                Viveck_1Sever.persist_on_disk(evicted_values, persisten)
+                Viveck_1Server.persist_on_disk(evicted_values, persistent)
 
             return (None, True)
 
@@ -238,7 +238,6 @@ class Viveck_1Server:
     def put_fin(key, timestamp, cache, persistent, lock):
         # Using optimistic approach i.e. we assume that it will be in cache else we have to
         lock.acquire_write()
-        print("reaached here ==============")
         value, found = Viveck_1Server.update_with_new_label(key, timestamp, cache, persistent)
 
         if found:

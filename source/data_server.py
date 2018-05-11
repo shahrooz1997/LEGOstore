@@ -8,8 +8,8 @@ from cache import Cache
 from abd_server_protocol import ABDServer
 from garbage_collector import garbage_collector
 from persistent import Persistent
-from viveck_1_server import Viveck_1Server
-
+#from viveck_1_server import Viveck_1Server
+from viveck_1_server_1 import Viveck_1Server
 
 class DataServer:
     def __init__(self, db, sock=None, enable_garbage_collector = False):

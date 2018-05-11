@@ -53,4 +53,13 @@ class Cache:
 
 
     def update_without_modifying(self, cache_value):
+        # TODO: Fix this
         return self.cache.update_without_modifying(cache_value)
+
+
+    def put_in_batch(self, batch):
+        output = []
+        for key, value in batch:
+            output.extend(self.put(key, value))
+
+        return output

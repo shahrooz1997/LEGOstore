@@ -19,3 +19,10 @@ class Persistent:
 
     def put(self, key, value):
         return self.db.put(str(key).encode(), str(value).encode())
+
+
+    def put_in_batch(self, batch):
+        for key, value in batch:
+            self.db.put(str(key).encode(), str(value).encode())
+
+        return

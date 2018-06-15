@@ -202,7 +202,7 @@ class Viveck_1Server:
                 persistent.put(key+current_timestamp, [curr_value, label, timestamp])
                 persistent.put(key+timestamp, [value, False, next_timestamp])
                 break
-	
+
         lock.release_write()
         return {"status": "OK"}
 

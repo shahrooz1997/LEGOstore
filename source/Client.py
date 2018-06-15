@@ -40,7 +40,6 @@ class Client:
                                                                                 self.local_datacenter,
                                                                                 self.datacenter_info,
                                                                                 self.id)
-
         return
 
 
@@ -213,6 +212,7 @@ class Client:
         return {"status": "FAILURE",
                 "message": "Unable to put message after {0} attemps".format(
                     self.class_properties[class_name]["retry_attemps"])}
+
 
 
 def call(key, value):

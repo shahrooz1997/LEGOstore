@@ -45,8 +45,16 @@ class Viveck_1(ProtocolInterface):
         self.local_datacenter_id = local_datacenter_id
         self.current_class = "Viveck_1"
 
+        self.manual_servers = {}
 
-    def _get_timestamp(self, key, sem, server, output, lock, current_class):
+        # This is only added for the prototype. In real system you would never use it.
+        self.latency_delay = properties["latency_between_DCs"][self.local_datacenter_id]
+
+        if "manual_dc_server_ids" in properties:
+            self.manual_servers = copy.deepcopy(properties["manual_dc_server_ids"])
+
+
+    def _get_timestamp(self, key, sem, server, output, lock, current_class, delay=0):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
@@ -92,7 +100,8 @@ class Viveck_1(ProtocolInterface):
                                                                                       copy.deepcopy(server_info),
                                                                                       output,
                                                                                       lock,
-                                                                                      self.current_class)))
+                                                                                      self.current_class,
+                                                                                      self.latency_delay[data_center_id])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -114,7 +123,7 @@ class Viveck_1(ProtocolInterface):
         return time
 
 
-    def _put(self, key, value, timestamp, sem, server, output, lock):
+    def _put(self, key, value, timestamp, sem, server, output, lock, delay=0):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
@@ -155,7 +164,7 @@ class Viveck_1(ProtocolInterface):
         return
 
 
-    def _put_fin(self, key, timestamp, sem, server, output, lock):
+    def _put_fin(self, key, timestamp, sem, server, output, lock, delay=0):
         # TODO : Generic function to send all get put request rather than different for all
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
@@ -231,7 +240,8 @@ class Viveck_1(ProtocolInterface):
                                                                             sem,
                                                                             copy.deepcopy(server_info),
                                                                             output,
-                                                                            lock)))
+                                                                            lock,
+                                                                            self.latency_delay[data_center_id])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -265,7 +275,8 @@ class Viveck_1(ProtocolInterface):
                                                                             sem_1,
                                                                             copy.deepcopy(server_info),
                                                                             output,
-                                                                            lock)))
+                                                                            lock,
+                                                                            self.latency_delay[data_center_id])))
 
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
@@ -289,7 +300,7 @@ class Viveck_1(ProtocolInterface):
         return {"status": "OK", "value": value, "timestamp": timestamp, "server_list": server_list}
 
 
-    def _get(self, key, timestamp, sem, server, output, lock):
+    def _get(self, key, timestamp, sem, server, output, lock, delay=0):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
@@ -349,7 +360,8 @@ class Viveck_1(ProtocolInterface):
                                                                             sem,
                                                                             copy.deepcopy(server_info),
                                                                             output,
-                                                                            lock)))
+                                                                            lock,
+                                                                            self.latency_delay[data_center_id])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 

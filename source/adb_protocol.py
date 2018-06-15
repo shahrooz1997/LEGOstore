@@ -6,8 +6,11 @@ import threading
 import json
 import socket
 import copy
+import time
+
 from placement_policy import PlacementFactory
 from protocol_interface import ProtocolInterface
+
 
 # TODO: INCOPERATE THE CLASS FOR EACH CALL AS DATASERVER WILL BE NEEDING IT
 class ABD(ProtocolInterface):
@@ -28,8 +31,16 @@ class ABD(ProtocolInterface):
         self.placement_policy = PlacementFactory(properties["placement_policy"]).get_policy()
         self.local_datacenter_id = local_datacenter_id
         self.current_class = "ABD"
+        self.manual_servers = {}
 
-        # TODO: For now only implementing ping all and wait for read or write quorum to respond
+        # This is only added for the prototype. In real system you would never use it.
+        self.latency_delay = properties["latency_between_DCs"][self.local_datacenter_id]
+
+        if "manual_dc_server_ids" in properties:
+            self.manual_servers = copy.deepcopy(properties["manual_dc_server_ids"])
+
+        # TODO: For now only implementing ping required numbers and wait for all to respond
+        # TODO: Please note that there is infracstructure for different policies too. Please look quorum_policy.
         # self.ping_policy = Quorum(properties["ping_policy"]).get_ping_policy()
         # self.num_nodes_to_ping_for_write, self.num_nodes_to_wait_for_write = \
         #     self.ping_policy.fetchx_metrics(self.total_nodes, self.write_nodes)
@@ -39,7 +50,9 @@ class ABD(ProtocolInterface):
 
 
 
-    def _get_timestamp(self, key, sem, server, output, lock):
+    def _get_timestamp(self, key, sem, server, output, lock, delay=0):
+        time.sleep(int(delay))
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
@@ -91,7 +104,8 @@ class ABD(ProtocolInterface):
                                                                                       sem,
                                                                                       copy.deepcopy(server_info),
                                                                                       output,
-                                                                                      lock)))
+                                                                                      lock,
+                                                                                      self.latency_delay[data_center_id])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -124,7 +138,9 @@ class ABD(ProtocolInterface):
         return (result, max_time)
 
 
-    def _put(self, key, value, timestamp, sem, server, output, lock):
+    def _put(self, key, value, timestamp, sem, server, output, lock, delay=0):
+        time.sleep(int(delay))
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
         print(server)
@@ -175,10 +191,15 @@ class ABD(ProtocolInterface):
         # If INSERT that means first time else Step1 i.e. get_timestamp from servers with the key
         if insert:
             timestamp = TimeStamp.get_current_time(self.id)
-            server_list = self.placement_policy.get_dc(self.total_nodes,
-                                                       self.data_center.get_datacenter_list(),
-                                                       self.local_datacenter_id,
-                                                       key)
+            if self.manual_servers and self.placement_policy.__name__ == "Manual":
+                server_list = self.manual_servers
+            else:
+                # It shouldn't be here if manual policy is used.
+                # It will throw exception in that case. NOT CATCHING IT AS PROGRAM SHOULD STOP.
+                server_list = self.placement_policy.get_dc(self.total_nodes,
+                                                           self.data_center.get_datacenter_list(),
+                                                           self.local_datacenter_id,
+                                                           key)
         else:
             try:
                 timestamp = self.get_timestamp(key, server_list)
@@ -194,13 +215,16 @@ class ABD(ProtocolInterface):
         for data_center_id, servers in server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
+                # Added the latency delay purely for porpuse of prototyping.
+                # Use default value of 0 otherwise.
                 thread_list.append(threading.Thread(target=self._put, args=(key,
                                                                             value,
                                                                             timestamp,
                                                                             sem,
                                                                             copy.deepcopy(server_info),
                                                                             output,
-                                                                            lock)))
+                                                                            lock,
+                                                                            self.latency_delay[data_center_id])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -222,13 +246,15 @@ class ABD(ProtocolInterface):
         return {"status": "OK", "value": value, "timestamp": timestamp, "server_list": server_list}
 
 
-    def _get(self, key, sem, server, output, lock):
+    def _get(self, key, sem, server, output, lock, delay=0):
+        time.sleep(int(delay))
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
         data = {"method": "get",
                 "key": key,
-		"timestamp": None,
+		        "timestamp": None,
                 "class": self.current_class}
 
         sock.sendall(json.dumps(data).encode("utf-8"))
@@ -274,12 +300,14 @@ class ABD(ProtocolInterface):
         output = []
         for data_center_id, servers in server_list.items():
             for server_id in servers:
+
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
                 thread_list.append(threading.Thread(target=self._get, args=(key,
                                                                             sem,
                                                                             copy.deepcopy(server_info),
                                                                             output,
-                                                                            lock)))
+                                                                            lock,
+                                                                            self.latency_delay[data_center_id])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -311,7 +339,8 @@ class ABD(ProtocolInterface):
                                                                             sem,
                                                                             copy.deepcopy(server_info),
                                                                             result,
-                                                                            lock)))
+                                                                            lock,
+                                                                            self.latency_delay[data_center_id])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 

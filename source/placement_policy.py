@@ -19,6 +19,9 @@ class PlacementFactory(object):
         if self.policy == "UniformDistribution":
             return UniformDistributionPolicy
 
+        if self.policy == "Manual":
+            return Manual
+
         raise Exception("No placement policy found")
 
 
@@ -102,3 +105,11 @@ class UniformDistributionPolicy(PlacementPolicy):
         server_list[local_dc_id] = num_local
 
         return super().get_server_list(server_list, dc_list, key)
+
+
+class Manual(PlacementPolicy):
+
+    @staticmethod
+    def get_dc(write_servers, dc_list, local_dc_id, key):
+        raise Exception("Bug: It shouldn't be called. For manual DC list is part of class itself.")
+

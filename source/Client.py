@@ -8,7 +8,7 @@ import threading
 
 
 class Client:
-    def __init__(self, properties):
+    def __init__(self, properties, _id=None):
         ''' Setting up basic properties of the server
         '''
         self.class_properties = properties["classes"]
@@ -26,7 +26,10 @@ class Client:
         # TODO: Update Datacenter to store local datacenter too
         self.datacenter_info = Datacenter(self.datacenter_list)
 
-        self.id = uuid.uuid4().hex
+        if _id == None:
+            self.id = uuid.uuid4().hex
+        else:
+            self.id = str(_id)
         self.retry_attempts = int(properties["retry_attempts"])
         self.metadata_timeout = int(properties["metadata_server_timeout"])
 
@@ -112,7 +115,7 @@ class Client:
         if not total_attempts:
             return {"status": "FAILURE",
                     "message": "Unable to insert message after {0} attempts".format(
-                        self.class_properties[class_name]["retry_attemps"])}
+                        self.retry_attempts)}
 
         # Step2 : Insert the metadata into the metadata server
         total_attempts = self.retry_attempts
@@ -150,7 +153,7 @@ class Client:
 
         return {"status": "Failure",
                 "message": "Unable to insert message after {0} attemps into the metadataserver".format(
-                    self.class_properties[class_name]["retry_attemps"])}
+                    self.retry_attempts)}
 
 
     def put(self, key, value):
@@ -211,7 +214,7 @@ class Client:
 
         return {"status": "FAILURE",
                 "message": "Unable to put message after {0} attemps".format(
-                    self.class_properties[class_name]["retry_attemps"])}
+                    self.retry_attempts)}
 
 
 
@@ -220,11 +223,11 @@ def call(key, value):
 
 
 if __name__ == "__main__":
-
     properties = json.load(open('client_config.json'))
     client = Client(properties)
 
     while 1:
+
         print("\n")
         data = input()
         method, key, value = data.split(",")
@@ -236,7 +239,6 @@ if __name__ == "__main__":
             print(json.dumps(client.get(key)))
         else:
             print("Invalid Call")
-
 
 
     #

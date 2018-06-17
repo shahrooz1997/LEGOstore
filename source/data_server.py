@@ -29,7 +29,7 @@ class DataServer:
         self.cache = Cache(20000)
         self.persistent = Persistent(db)
         self.lock = ReadWriteLock()
-        self.enable_garbage_collector = True
+        self.enable_garbage_collector = enable_garbage_collector
 
 
     def get(self, key, timestamp, current_class):
@@ -94,7 +94,6 @@ class DataServer:
         :return:
         raises NotImplementedError if the class is not found
         '''
-        print("=====================   PUT CALLED =========================")
         if self.cache.get_current_size() > 100:
             self.lock.acquire_write()
             if self.enable_garbage_collector == True:

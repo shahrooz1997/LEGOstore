@@ -1,5 +1,5 @@
 {
-    "local_datacenter" : "1",
+		"local_datacenter" : "1",
 	"datacenters":
 	{
 		"1" : {
@@ -8,11 +8,11 @@
 				"port": "30000"
 			},
 			"servers" : {
-              "1" : {
-				  "host" : "0.0.0.0",
-				  "port" : "10000"
-              }
-            }
+				"1" : {
+					"host" : "0.0.0.0",
+					"port" : "10000"
+										}
+								}
 		},
 		"2" : {
 			"metadata_server" : {
@@ -20,11 +20,11 @@
 				"port": "30000"
 			},
 			"servers" : {
-              "1" : {
-				  "host" : "0.0.0.0",
-				  "port" : "10000"
-              }
-            }
+				"1" : {
+					"host" : "0.0.0.0",
+					"port" : "10000"
+							}
+			}
 		},
 		"3" : {
 			"metadata_server" : {
@@ -32,11 +32,11 @@
 				"port": "30000"
 			},
 			"servers" : {
-              "1" : {
-				  "host" : "0.0.0.0",
-				  "port" : "10000"
-              }
-            }
+				"1" : {
+					 "host" : "0.0.0.0",
+					 "port" : "10000"
+				}	
+								}
 		},
 		"4" : {
 			"metadata_server" : {
@@ -44,11 +44,11 @@
 				"port": "30000"
 			},
 			"servers" : {
-              "1" : {
-				  "host" : "0.0.0.0",
-				  "port" : "10000"
-              }
-            }
+				"1" : {
+					"host" : "0.0.0.0",
+					"port" : "10000"
+				}
+			}
 		},
 		"5" : {
 			"metadata_server" : {
@@ -56,11 +56,11 @@
 				"port": "30000"
 			},
 			"servers" : {
-              "1" : {
-				  "host" : "0.0.0.0",
-				  "port" : "10000"
-              }
-            }
+				"1" : {
+					"host" : "0.0.0.0",
+					"port" : "10000"
+				}
+			}
 		},
 		"6" : {
 			"metadata_server" : {
@@ -68,11 +68,11 @@
 				"port": "30000"
 			},
 			"servers" : {
-              "1" : {
-				  "host" : "0.0.0.0",
-				  "port" : "10000"
-              }
-            }
+				"1" : {
+					"host" : "0.0.0.0",
+					"port" : "10000"
+				}
+			}
 		},
 		"7" : {
 			"metadata_server" : {
@@ -80,11 +80,11 @@
 				"port": "30000"
 			},
 			"servers" : {
-              "1" : {
-				  "host" : "0.0.0.0",
-				  "port" : "10000"
-              }
-            }
+				"1" : {
+					"host" : "0.0.0.0",
+					"port" : "10000"
+				}
+			}
 		},
 		"8" : {
 			"metadata_server" : {
@@ -92,11 +92,11 @@
 				"port": "30000"
 			},
 			"servers" : {
-              "1" : {
-				  "host" : "0.0.0.0",
-				  "port" : "10000"
-              }
-            }
+				"1" : {
+					"host" : "0.0.0.0",
+					"port" : "10000"
+				}
+			}
 		},
 		"9" : {
 			"metadata_server" : {
@@ -104,19 +104,19 @@
 				"port": "30000"
 			},
 			"servers" : {
-              "1" : {
-				  "host" : "0.0.0.0",
-				  "port" : "10000"
-              }
-            }
+				"1" : {
+					"host" : "0.0.0.0",
+					"port" : "10000"
+				}
+			}
 		}
 	},
 	"classes": {
 		"ABD": {
 			"placement_policy": "manual",
-    		"timeout_per_request": "120",
+			"timeout_per_request": "120",
 			"history_version_in_cache": 3,
-            "ping_policy": "PingAll",
+			"ping_policy": "PingAll",
 			"quorum": {
 				"total_nodes": "3",
 				"read_nodes": "2",
@@ -128,22 +128,22 @@
 			"placement_policy": "AllInOne",
 			"timeout_per_request": "120",
 			"history_version_in_cache": 3,
-            		"ping_policy": "PingAll",
-			"k": 2,
-			"m": 1,
+								"ping_policy": "PingAll",
+			"k": 1,
+			"m": 2,
 			"erasure_coding_type":"liberasurecode_rs_vand",
 			"quorum": {
-				"Q1": "2",
-				"Q2": "2",
-				"Q3": "2",
-				"Q4": "2",
+				"Q1": "1",
+				"Q2": "1",
+				"Q3": "1",
+				"Q4": "1",
 				"total_nodes": "3"
 			}
 		},
-      "default_class": "ABD"
+			"default_class": "ABD"
 	},
-    "retry_attempts": 3,
-    "metadata_server_timeout": "120",
+		"retry_attempts": 3,
+		"metadata_server_timeout": "120",
 	"latency_between_DCs" : {
 		"1": {
 			"1": "0",
@@ -227,7 +227,7 @@
 			"2": "150",
 			"3": "253",
 			"4": "149",
-			"5": "139"
+			"5": "139",
 			"6": "68",
 			"7": "197",
 			"8": "0",

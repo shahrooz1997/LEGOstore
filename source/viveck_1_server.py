@@ -18,8 +18,6 @@ class Viveck_1Server:
         for data in values:
             if not data:
                 continue
-            print("data is --------> " + str(data))
-            print("data of 0 is -------> " + str(data[0]))
             value, timestamp, label = data
             if label:
                 return timestamp

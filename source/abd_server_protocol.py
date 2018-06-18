@@ -38,7 +38,7 @@ class ABDServer:
             revoked_values.extend(cache.put(key, (value, timestamp)))
 
         for key, value in revoked_values:
-            persistent[key] = value
+            persistent.put(key, value)
 
         lock.release_write()
 

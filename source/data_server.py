@@ -29,7 +29,7 @@ class DataServer:
         self.cache = Cache(20000)
         self.persistent = Persistent(db)
         self.lock = ReadWriteLock()
-        self.enable_garbage_collector = True
+        self.enable_garbage_collector = enable_garbage_collector
 
 
     def get(self, key, timestamp, current_class):
@@ -94,7 +94,6 @@ class DataServer:
         :return:
         raises NotImplementedError if the class is not found
         '''
-        print("=====================   PUT CALLED =========================")
         if self.cache.get_current_size() > 100:
             self.lock.acquire_write()
             if self.enable_garbage_collector == True:
@@ -183,8 +182,8 @@ def test(data_server):
 if __name__ == "__main__":
 
     # For purpose of testing the whole code
-    socket_port = [10001, 10002, 20001, 20002, 20003]
-    db_list = ["db.temp", "db.temp1", "db.temp2", "db.temp3", "db.temp4"] 
+    socket_port = [10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008]
+    db_list = ["db.temp", "db.temp1", "db.temp2", "db.temp3", "db.temp4", "db.temp5", "db.temp6", "db.temp7", "db.temp8", "db.temp9"] 
 
     socket_list = []
     data_server_list = []

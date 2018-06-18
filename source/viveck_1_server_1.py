@@ -19,14 +19,14 @@ class Viveck_1Server:
 
         if not data:
             lock.release_read()
-            return {"status": "Failed", "value": None}
+            return {"status": "Failed", "timestamp": None}
 
         if not data[0]:
             lock.release_read()
-            return {"status": "OK", "value": None}
+            return {"status": "OK", "timestamp": None}
 
         lock.release_read()
-        return {"status": "OK", "value": data[1]}
+        return {"status": "OK", "timestamp": data[1]}
 
 
     @staticmethod
@@ -52,14 +52,17 @@ class Viveck_1Server:
         if cache.get(key+timestamp):
             return
 
+        print("insert_data:: reached checkpoint 1\n")
         current_storage = cache
         data = cache.get(key)
 
         if not data:
+            print("insert_data:: reached checkpoint 2\n")
             data = persistent.get(key)
             current_storage = persistent
 
         if not data[0]:
+            print("insert_data:: reached checkpoint 3\n")
             new_values = [(key, [timestamp, None]), (key+timestamp, [value, label, None])]
 
             cache_thread = threading.Thread(target=cache.put_in_batch, args=(new_values,))
@@ -106,7 +109,7 @@ class Viveck_1Server:
                               (key+timestamp, [value, label, next_timestamp])]
 
                 # Changing the fin timestamp to timestamp
-                if label and current_fin < timestamp:
+                if label and (not current_fin or current_fin < timestamp):
                     new_values.append((key, [current_final_timestamp, timestamp]))
 
                 cache_thread = threading.Thread(target=cache.put_in_batch, args=(new_values,))
@@ -130,7 +133,7 @@ class Viveck_1Server:
         # Using optimistic approach i.e. we assume that it will be in cache else we have to
         lock.acquire_write()
         data = cache.get(key+timestamp)
-
+        print("put_fin:: data is -> " + str(data))
         if not data:
             data = persistent.get(key+timestamp)
 
@@ -140,6 +143,7 @@ class Viveck_1Server:
             return {"status": "OK"}
         else:
             current_values = cache.get(key)
+            print("put_fin:: current_value of key : " + str(current_values))
             if not current_values:
                 current_values = persistent.get(key)
 
@@ -147,7 +151,7 @@ class Viveck_1Server:
 
             data_values = [(key+timestamp, [data[0], True, data[2]])]
 
-            if current_fin_timestamp < timestamp:
+            if not current_fin_timestamp or current_fin_timestamp < timestamp:
                 data_values.append((key, [current_timestamp, timestamp]))
 
             cache_thread = threading.Thread(target=cache.put_in_batch, args=(data_values,))
@@ -165,9 +169,7 @@ class Viveck_1Server:
 
     @staticmethod
     def put_back_in_cache(key, timestamp, data, cache, lock):
-        lock.acquire_write()
         cache.put(key+timestamp, data)
-        lock.release_write()
         return
 
 
@@ -179,7 +181,7 @@ class Viveck_1Server:
 
         lock.acquire_read()
         data = cache.get(key+timestamp)
-
+        print("get API :: checkpoint 1 " + str(data))
         if not data:
             data = persistent.get(key+timestamp)
             lock.release_read()
@@ -191,9 +193,8 @@ class Viveck_1Server:
                 return {"status": "OK", "value": None}
 
             lock.acquire_write()
-            Viveck_1Server.put_back_in_cache(key, timestamp, data, cache, lock)
+            Viveck_1Server.put_back_in_cache(key, timestamp, data, cache)
             lock.release_write()
 
-            return {"status": "OK", "value": data}
-
-        return {"status": "OK", "value": data}
+        lock.release_read()
+        return {"status": "OK", "value": data[0]}

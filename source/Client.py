@@ -33,6 +33,7 @@ class Client:
         self.retry_attempts = int(properties["retry_attempts"])
         self.metadata_timeout = int(properties["metadata_server_timeout"])
 
+        self.latency_between_DCs = properties["latency_between_DCs"] 
         self.initiate_key_classes()
 
 
@@ -42,7 +43,8 @@ class Client:
                                                                                 class_info,
                                                                                 self.local_datacenter,
                                                                                 self.datacenter_info,
-                                                                                self.id)
+                                                                                self.id,
+										self.latency_between_DCs)
         return
 
 
@@ -224,7 +226,8 @@ def call(key, value):
 
 if __name__ == "__main__":
     properties = json.load(open('client_config.json'))
-    client = Client(properties)
+    
+    client = Client(properties, "1")
 
     while 1:
 
@@ -232,7 +235,7 @@ if __name__ == "__main__":
         data = input()
         method, key, value = data.split(",")
         if method == "insert":
-            print(json.dumps(client.insert(key, value, "Viveck_1")))
+            print(json.dumps(client.insert(key, value, "ABD")))
         elif method == "put":
             print(json.dumps(client.put(key, value)))
         elif method == "get":

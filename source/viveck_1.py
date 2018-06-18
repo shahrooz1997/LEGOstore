@@ -12,7 +12,7 @@ from pyeclib.ec_iface import ECDriver
 
 class Viveck_1(ProtocolInterface):
 
-    def __init__(self, properties, local_datacenter_id, data_center, client_id):
+    def __init__(self, properties, local_datacenter_id, data_center, client_id, latency_between_DCs):
         self.timeout_per_request = int(properties["timeout_per_request"])
 
         ##########################
@@ -48,7 +48,7 @@ class Viveck_1(ProtocolInterface):
         self.manual_servers = {}
 
         # This is only added for the prototype. In real system you would never use it.
-        self.latency_delay = properties["latency_between_DCs"][self.local_datacenter_id]
+        self.latency_delay = latency_between_DCs[self.local_datacenter_id]
 
         if "manual_dc_server_ids" in properties:
             self.manual_servers = copy.deepcopy(properties["manual_dc_server_ids"])

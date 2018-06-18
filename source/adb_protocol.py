@@ -15,7 +15,7 @@ from protocol_interface import ProtocolInterface
 # TODO: INCOPERATE THE CLASS FOR EACH CALL AS DATASERVER WILL BE NEEDING IT
 class ABD(ProtocolInterface):
 
-    def __init__(self, properties, local_datacenter_id, data_center, client_id):
+    def __init__(self, properties, local_datacenter_id, data_center, client_id, latency_between_DCs):
 
         self.timeout_per_request = int(properties["timeout_per_request"])
 
@@ -34,7 +34,7 @@ class ABD(ProtocolInterface):
         self.manual_servers = {}
 
         # This is only added for the prototype. In real system you would never use it.
-        self.latency_delay = properties["latency_between_DCs"][self.local_datacenter_id]
+        self.latency_delay = latency_between_DCs[self.local_datacenter_id]
 
         if "manual_dc_server_ids" in properties:
             self.manual_servers = copy.deepcopy(properties["manual_dc_server_ids"])
@@ -51,7 +51,7 @@ class ABD(ProtocolInterface):
 
 
     def _get_timestamp(self, key, sem, server, output, lock, delay=0):
-        time.sleep(int(delay))
+        time.sleep(int(delay) * 0.001)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
@@ -139,7 +139,7 @@ class ABD(ProtocolInterface):
 
 
     def _put(self, key, value, timestamp, sem, server, output, lock, delay=0):
-        time.sleep(int(delay))
+        time.sleep(int(delay) * 0.001)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
@@ -247,7 +247,7 @@ class ABD(ProtocolInterface):
 
 
     def _get(self, key, sem, server, output, lock, delay=0):
-        time.sleep(int(delay))
+        time.sleep(int(delay) * 0.001)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))

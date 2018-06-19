@@ -33,7 +33,9 @@ class Client:
         self.retry_attempts = int(properties["retry_attempts"])
         self.metadata_timeout = int(properties["metadata_server_timeout"])
 
-        self.latency_between_DCs = properties["latency_between_DCs"] 
+        self.latency_between_DCs = properties["latency_between_DCs"]
+        self.dc_cost = properties["DC_cost"]
+ 
         self.initiate_key_classes()
 
 
@@ -44,7 +46,8 @@ class Client:
                                                                                 self.local_datacenter,
                                                                                 self.datacenter_info,
                                                                                 self.id,
-										self.latency_between_DCs)
+										self.latency_between_DCs,
+										self.dc_cost)
         return
 
 

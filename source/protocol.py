@@ -7,8 +7,8 @@ class Protocol(object):
         pass
 
     @staticmethod
-    def get_class_protocol(class_name, properties, local_data_center, data_center, id, latency_between_DCs):
+    def get_class_protocol(class_name, properties, local_data_center, data_center, id, latency_between_DCs, dc_cost):
         if class_name == "ABD":
-            return ABD(properties, local_data_center, data_center, id, latency_between_DCs)
+            return ABD(properties, local_data_center, data_center, id, latency_between_DCs, dc_cost)
         if class_name == "Viveck_1":
-            return Viveck_1(properties, local_data_center, data_center, id, latency_between_DCs)
+            return Viveck_1(properties, local_data_center, data_center, id, latency_between_DCs, dc_cost)

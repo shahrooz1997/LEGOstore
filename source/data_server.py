@@ -32,7 +32,7 @@ class DataServer:
         self.enable_garbage_collector = enable_garbage_collector
 
 
-    def get(self, key, timestamp, current_class):
+    def get(self, key, timestamp, current_class, value_required):
         '''
         Get call to the server
 
@@ -45,7 +45,7 @@ class DataServer:
         if current_class == "ABD":
             return ABDServer.get(key, timestamp, self.cache, self.persistent, self.lock)
         elif current_class == "Viveck_1":
-            return Viveck_1Server.get(key, timestamp, self.cache, self.persistent, self.lock)
+            return Viveck_1Server.get(key, timestamp, self.cache, self.persistent, self.lock, value_required)
 
         raise NotImplementedError
 
@@ -152,9 +152,12 @@ def server_connection(connection, dataserver):
                                                          data["timestamp"],
                                                          data["class"])).encode("utf-8"))
         elif method == "get":
+            if "value_required" not in data:
+                data["value_required"] = False
             connection.sendall(json.dumps(dataserver.get(data["key"],
                                                          data["timestamp"],
-                                                         data["class"])).encode("utf-8"))
+                                                         data["class"],
+                                                         data["value_required"])).encode("utf-8"))
         elif method == "get_timestamp":
             connection.sendall(json.dumps(dataserver.get_timestamp(data["key"],
                                                                    data["class"])).encode("utf-8"))
@@ -183,7 +186,8 @@ if __name__ == "__main__":
 
     # For purpose of testing the whole code
     socket_port = [10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008]
-    db_list = ["db.temp", "db.temp1", "db.temp2", "db.temp3", "db.temp4", "db.temp5", "db.temp6", "db.temp7", "db.temp8", "db.temp9"] 
+    db_list = ["db.temp", "db.temp1", "db.temp2", "db.temp3", "db.temp4", "db.temp5",
+               "db.temp6", "db.temp7", "db.temp8", "db.temp9"]
 
     socket_list = []
     data_server_list = []

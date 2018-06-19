@@ -15,7 +15,7 @@ from protocol_interface import ProtocolInterface
 # TODO: INCOPERATE THE CLASS FOR EACH CALL AS DATASERVER WILL BE NEEDING IT
 class ABD(ProtocolInterface):
 
-    def __init__(self, properties, local_datacenter_id, data_center, client_id, latency_between_DCs):
+    def __init__(self, properties, local_datacenter_id, data_center, client_id, latency_between_DCs, dc_cost):
 
         self.timeout_per_request = int(properties["timeout_per_request"])
 
@@ -33,11 +33,33 @@ class ABD(ProtocolInterface):
         self.current_class = "ABD"
         self.manual_servers = {}
 
+
+
         # This is only added for the prototype. In real system you would never use it.
-        self.latency_delay = latency_between_DCs[self.local_datacenter_id]
+        self.latency_delay = copy.deepcopy(latency_between_DCs[self.local_datacenter_id])
+
+        # Converting string values to float first
+        # Could also be done in next step eaisly but just for readability new step
+        for key, value in self.latency_delay.items():
+            self.latency_delay[key] = float(value)
+
+        # Sorting the datacenters as per the latency
+        self.latency_delay = [k for k in sorted(self.latency_delay, key=self.latency_delay.get,
+                                                reverse=False)]
 
         if "manual_dc_server_ids" in properties:
             self.manual_servers = copy.deepcopy(properties["manual_dc_server_ids"])
+
+        self.dc_cost = dc_cost
+
+        # Converting the data center cost as per latency
+        self.dc_cost[local_datacenter_id] = 0
+        for key, value in self.dc_cost.items():
+            self.dc_cost[key] = float(value)
+
+        # Sorting the datacenter id as per transfer cost
+        self.dc_cost = [k for k in sorted(self.dc_cost, key=self.dc_cost.get,
+                                                reverse=False)]
 
         # TODO: For now only implementing ping required numbers and wait for all to respond
         # TODO: Please note that there is infracstructure for different policies too. Please look quorum_policy.
@@ -48,6 +70,37 @@ class ABD(ProtocolInterface):
         # self.num_nodes_to_ping_for_read, self.num_nodes_to_wait_for_read = \
         #     self.ping_policy.fetchx_metrics(self.total_nodes, self.read_nodes)
 
+
+    def _get_cost_effective_server_list(self, server_list):
+        # Sort the DCs as per the minimal cost of data trasnfer for get
+        # Returns [(DC_ID, SERVER_ID), ]
+        output = []
+        for data_center_id in self.dc_cost:
+            if data_center_id in server_list:
+                output.append((data_center_id, self.dc_cost[data_center_id]))
+
+        return output
+
+
+    def _get_closest_servers(self, server_list, quorum_size):
+        # Select the DC and servers with minimal latencies for the quourm
+        total_servers = 0
+        expected_server_list = {}
+
+        for data_center_id in self.latency_delay:
+            if data_center_id in server_list:
+                expected_server_list[data_center_id] = server_list[data_center_id]
+                total_servers += len(server_list[data_center_id])
+
+            if total_servers == quorum_size:
+                break
+            # We want exact number of servers quorum size Q1
+            elif total_servers > quorum_size:
+                expected_server_list[data_center_id] = \
+                    server_list[data_center_id][:total_servers - quorum_size]
+                break
+
+        return expected_server_list
 
 
     def _get_timestamp(self, key, sem, server, output, lock, delay=0):
@@ -96,8 +149,10 @@ class ABD(ProtocolInterface):
         lock = threading.Lock()
         thread_list = []
 
+        new_server_list = self._get_closest_servers(server_list, self.read_nodes)
+
         output = []
-        for data_center_id, servers in server_list.items():
+        for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
                 thread_list.append(threading.Thread(target=self._get_timestamp, args=(key,
@@ -212,7 +267,9 @@ class ABD(ProtocolInterface):
 
         output = []
 
-        for data_center_id, servers in server_list.items():
+        new_server_list = self._get_closest_servers(server_list, self.write_nodes)
+
+        for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
                 # Added the latency delay purely for porpuse of prototyping.
@@ -298,7 +355,9 @@ class ABD(ProtocolInterface):
 
         # Step1: get the timestamp with recent value
         output = []
-        for data_center_id, servers in server_list.items():
+        new_server_list = self._get_closest_servers(server_list, self.read_nodes)
+
+        for data_center_id, servers in new_server_list.items():
             for server_id in servers:
 
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
@@ -330,7 +389,8 @@ class ABD(ProtocolInterface):
         # After abort can't use the same barrier
         sem = threading.Barrier(self.write_nodes + 1, timeout=self.timeout)
         result = []
-        for data_center_id, servers in server_list.items():
+        new_server_list = self._get_closest_servers(server_list, self.write_nodes)
+        for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
                 thread_list.append(threading.Thread(target=self._put, args=(key,

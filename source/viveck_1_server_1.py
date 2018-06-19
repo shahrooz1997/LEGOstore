@@ -174,7 +174,7 @@ class Viveck_1Server:
 
 
     @staticmethod
-    def get(key, timestamp, cache, persistent, lock):
+    def get(key, timestamp, cache, persistent, lock, required_value):
         # Replace it with per key reader writer lock.
         # Current customized lock is just for generic lock not key specific.
         # Ideally it should take key as input and do locking key wise
@@ -197,4 +197,7 @@ class Viveck_1Server:
             lock.release_write()
 
         lock.release_read()
-        return {"status": "OK", "value": data[0]}
+        if required_value:
+            return {"status": "OK", "value": data[0]}
+
+        return {"status": "OK", "value": None}

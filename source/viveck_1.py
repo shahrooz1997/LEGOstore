@@ -12,9 +12,9 @@ from pyeclib.ec_iface import ECDriver
 
 class Viveck_1(ProtocolInterface):
 
-    def __init__(self, properties, local_datacenter_id, data_center, client_id, latency_between_DCs):
+    def __init__(self, properties, local_datacenter_id, data_center, client_id,
+                 latency_between_DCs, dc_cost):
         self.timeout_per_request = int(properties["timeout_per_request"])
-
         ##########################
         ## Quorum relevant properties
         ## Q1 + Q3 > N
@@ -33,9 +33,7 @@ class Viveck_1(ProtocolInterface):
         self.m = int(properties["m"])
         # https://github.com/openstack/pyeclib . Check out the supported types.
         self.ec_type = properties["erasure_coding_type"]
-
         self.ec_driver = ECDriver(k=self.k, m=self.m, ec_type=self.ec_type)
-
 
         # Generic timeout for everything
         self.timeout = int(properties["timeout_per_request"])
@@ -48,10 +46,61 @@ class Viveck_1(ProtocolInterface):
         self.manual_servers = {}
 
         # This is only added for the prototype. In real system you would never use it.
-        self.latency_delay = latency_between_DCs[self.local_datacenter_id]
+        self.latency_delay = copy.deepcopy(latency_between_DCs[self.local_datacenter_id])
+
+        # Converting string values to float first
+        # Could also be done in next step eaisly but just for readability new step
+        for key, value in self.latency_delay.items():
+            self.latency_delay[key] = float(value)
+
+        # Sorting the datacenters as per the latency
+        self.latency_delay = [k for k in sorted(self.latency_delay, key=self.latency_delay.get,
+                                                reverse=False)]
 
         if "manual_dc_server_ids" in properties:
             self.manual_servers = copy.deepcopy(properties["manual_dc_server_ids"])
+
+        self.dc_cost = dc_cost
+
+        # Converting the data center cost as per latency
+        self.dc_cost[local_datacenter_id] = 0
+        for key, value in self.dc_cost.items():
+            self.dc_cost[key] = float(value)
+
+        # Sorting the datacenter id as per transfer cost
+        self.dc_cost = [k for k in sorted(self.dc_cost, key=self.dc_cost.get,
+                                                reverse=False)]
+
+    def _get_cost_effective_server_list(self, server_list):
+        # Sort the DCs as per the minimal cost of data trasnfer for get
+        # Returns [(DC_ID, SERVER_ID), ]
+        output = []
+        for data_center_id in self.dc_cost:
+            if data_center_id in server_list:
+                output.append((data_center_id, self.dc_cost[data_center_id]))
+
+        return output
+
+
+    def _get_closest_servers(self, server_list, quorum_size):
+        # Select the DC and servers with minimal latencies for the quourm
+        total_servers = 0
+        expected_server_list = {}
+
+        for data_center_id in self.latency_delay:
+            if data_center_id in server_list:
+                expected_server_list[data_center_id] = server_list[data_center_id]
+                total_servers += len(server_list[data_center_id])
+
+            if total_servers == quorum_size:
+                break
+            # We want exact number of servers quorum size Q1
+            elif total_servers > quorum_size:
+                expected_server_list[data_center_id] = \
+                    server_list[data_center_id][:total_servers - quorum_size]
+                break
+
+        return expected_server_list
 
 
     def _get_timestamp(self, key, sem, server, output, lock, current_class, delay=0):
@@ -92,7 +141,9 @@ class Viveck_1(ProtocolInterface):
         thread_list = []
 
         output = []
-        for data_center_id, servers in server_list.items():
+        new_server_list = self._get_closest_servers(server_list, self.quorum_1)
+
+        for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
                 thread_list.append(threading.Thread(target=self._get_timestamp, args=(key,
@@ -223,7 +274,6 @@ class Viveck_1(ProtocolInterface):
         # Wait for erasure coding to finish
         erasure_coding_thread.join()
 
-
         # Step2 : Send the message with codes
         sem = threading.Barrier(self.quorum_2 + 1, timeout=self.timeout)
         lock = threading.Lock()
@@ -231,7 +281,14 @@ class Viveck_1(ProtocolInterface):
         output = []
 
         index = 0
-        for data_center_id, servers in server_list.items():
+        # Sorting the servers as per the DC latencies and selecting nearest Q2.
+        # TODO: Retry feature with timeouts with any of those didn't respond.
+        # Although this might not be a bottleneck for now
+        new_server_list = self._get_closest_servers(server_list, self.quorum_2)
+
+        # Still sending to all for the request but wait for only required quorum to respond.
+        # If needed ping to only required quorum and then retry
+        for data_center_id, servers in new_server_list:
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
                 thread_list.append(threading.Thread(target=self._put, args=(key,
@@ -267,7 +324,10 @@ class Viveck_1(ProtocolInterface):
         sem_1 = threading.Barrier(self.quorum_3 + 1, timeout=self.timeout)
         lock = threading.Lock()
 
-        for data_center_id, servers in server_list.items():
+        new_server_list = self._get_closest_servers(server_list, self.quorum_3)
+        cost_optimised_server_list = self.dc_cost
+
+        for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
                 thread_list.append(threading.Thread(target=self._put_fin, args=(key,
@@ -280,8 +340,6 @@ class Viveck_1(ProtocolInterface):
 
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
-
-                index += 1
 
         try:
             sem_1.wait()
@@ -300,14 +358,15 @@ class Viveck_1(ProtocolInterface):
         return {"status": "OK", "value": value, "timestamp": timestamp, "server_list": server_list}
 
 
-    def _get(self, key, timestamp, sem, server, output, lock, delay=0):
+    def _get(self, key, timestamp, sem, server, output, lock, delay=0, value_required=False):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
         data = {"method": "get",
                 "key": key,
                 "timestamp": timestamp,
-                "class": self.current_class}
+                "class": self.current_class,
+                "value_required": value_required}
 
         sock.sendall(json.dumps(data).encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
@@ -347,24 +406,32 @@ class Viveck_1(ProtocolInterface):
 
         thread_list = []
 
-        sem = threading.Barrier(self.k + 1, timeout=self.timeout)
+        sem = threading.Barrier(self.quorum_4 + 1, timeout=self.timeout)
         lock = threading.Lock()
 
-        # Step1: get the timestamp with recent value
+        new_server_list = self._get_closest_servers(server_list, self.quorum_4)
+        minimum_cost_list = self._get_cost_effective_server_list(new_server_list)
+
+        # Step2: Get the encoded value
+        index = 0
         output = []
-        for data_center_id, servers in server_list.items():
+        # Sending the get request to the selected servers
+        for data_center_id, servers in minimum_cost_list:
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
-                thread_list.append(threading.Thread(target=self._get, args=(key,
-                                                                            timestamp,
-                                                                            sem,
-                                                                            copy.deepcopy(server_info),
-                                                                            output,
-                                                                            lock,
-                                                                            self.latency_delay[data_center_id])))
+                thread_list.append(threading.Thread(target=self._get,
+                                                    args=(key,
+                                                          timestamp,
+                                                          sem,
+                                                          copy.deepcopy(server_info),
+                                                          output,
+                                                          lock,
+                                                          self.latency_delay[data_center_id],
+                                                          index < self.k)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
+                index += 1
         try:
             sem.wait()
         except threading.BrokenBarrierError:

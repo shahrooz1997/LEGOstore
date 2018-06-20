@@ -121,7 +121,7 @@ class ABD(ProtocolInterface):
         sock.settimeout(self.timeout_per_request)
 
         try:
-            data = sock.recv(1024)
+            data = sock.recv(640000)
         except:
             print("Server with host: {1} and port: {2} timeout for getTimestamp in ABD", (server["host"],
                                                                                           server["port"]))
@@ -216,7 +216,7 @@ class ABD(ProtocolInterface):
         sock.settimeout(self.timeout_per_request)
 
         try:
-            data = sock.recv(1024)
+            data = sock.recv(640000)
         except:
             print("Server with host: {1} and port: {2} timeout for put request in ABD", (server["host"],
                                                                                          server["port"]))
@@ -325,7 +325,7 @@ class ABD(ProtocolInterface):
         sock.settimeout(self.timeout_per_request)
 
         try:
-            data = sock.recv(1024)
+            data = sock.recv(640000)
         except:
             print("Server with host: {1} and port: {2} timeout for get request in ABD", (server["host"],
                                                                                          server["port"]))

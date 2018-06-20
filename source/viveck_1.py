@@ -122,7 +122,7 @@ class Viveck_1(ProtocolInterface):
         sock.settimeout(self.timeout_per_request)
 
         try:
-            data = sock.recv(1024)
+            data = sock.recv(640000)
         except Exception as e:
             print("Server with host: {1} and port: {2} timeout for getTimestamp in ABD", (server["host"],
                                                                                           server["port"]))
@@ -196,7 +196,7 @@ class Viveck_1(ProtocolInterface):
         sock.settimeout(self.timeout_per_request)
 
         try:
-            data = sock.recv(1024)
+            data = sock.recv(640000)
         except Exception as e:
             print("Server with host: {1} and port: {2} timeout for put request in Viceck_1", (server["host"],
                                                                                               server["port"]))
@@ -239,7 +239,7 @@ class Viveck_1(ProtocolInterface):
         sock.settimeout(self.timeout_per_request)
 
         try:
-            data = sock.recv(1024)
+            data = sock.recv(640000)
         except Exception as e:
             print("Server with host: {1} and port: {2} timeout for put fin request in Viveck",
                   (server["host"], server["port"]))
@@ -389,7 +389,7 @@ class Viveck_1(ProtocolInterface):
         sock.settimeout(self.timeout_per_request)
 
         try:
-            data = sock.recv(1024)
+            data = sock.recv(640000)
         except Exception as e:
             print("Server with host: {1} and port: {2} timeout for get request in ABD", (server["host"],
                                                                                          server["port"]))

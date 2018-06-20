@@ -133,7 +133,7 @@ class DataServer:
 
 
 def server_connection(connection, dataserver):
-    data = connection.recv(64000)
+    data = connection.recv(640000)
 
     if not data:
         connection.send(json.dumps({"status": "failure", "message": "No data Found"}).encode("utf-8"))

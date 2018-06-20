@@ -231,7 +231,6 @@ def call(key, value):
 
 if __name__ == "__main__":
     properties = json.load(open('client_config.json'))
-    
     client = Client(properties, "1")
 
     while 1:

@@ -60,7 +60,6 @@ class Viveck_1(ProtocolInterface):
         self.latency_delay = [k for k in sorted(self.latency_delay, key=self.latency_delay.get,
                                                 reverse=False)]
 
-
         if "manual_dc_server_ids" in properties:
             self.manual_servers = copy.deepcopy(properties["manual_dc_server_ids"])
 
@@ -414,6 +413,43 @@ class Viveck_1(ProtocolInterface):
         return self.ec_driver.decode(chunk_list).decode("utf-8")
 
 
+    def _get_from_remaining(self, key, timestamp, server_list, called_data_center):
+        # Get the data from the servers except for called_data_center
+        # Please not here server_list is [(DC_ID, [server_list])]
+
+        thread_list = []
+        output = []
+        # Waiting for remaining all to return the value
+        sem = threading.Barrier(self.quorum_4 - self.k + 1, timeout=self.timeout)
+        lock = threading.Lock()
+
+        for data_center_id, servers in server_list:
+            for server_id in servers:
+                # If already called then just skip
+                if (data_center_id, server_id) in called_data_center:
+                    continue
+
+                server_info = self.data_center.get_server_info(data_center_id, server_id)
+                thread_list.append(threading.Thread(target=self._get,
+                                                    args=(key,
+                                                          timestamp,
+                                                          sem,
+                                                          copy.deepcopy(server_info),
+                                                          output,
+                                                          lock,
+                                                          self.dc_to_latency_map[data_center_id],
+                                                          True)))
+                thread_list[-1].deamon = True
+                thread_list[-1].start()
+
+        try:
+            sem.wait()
+        except threading.BrokenBarrierError:
+            pass
+
+        return output
+
+
     def get(self, key, server_list):
         # Step1: Get the timestamp for the key
         # Error can imply either server busy or key doesn't exist
@@ -434,6 +470,8 @@ class Viveck_1(ProtocolInterface):
         # Step2: Get the encoded value
         index = 0
         output = []
+        # This parameter is to mark the datacenter, servers which have already sent an request
+        called_data_center = set()
         # Sending the get request to the selected servers
         for data_center_id, servers in minimum_cost_list:
             for server_id in servers:
@@ -450,6 +488,7 @@ class Viveck_1(ProtocolInterface):
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
+                called_data_center.add((data_center_id, server_id))
                 index += 1
         try:
             sem.wait()
@@ -459,6 +498,15 @@ class Viveck_1(ProtocolInterface):
         sem.abort()
 
         lock.acquire()
+        # If we doesn't get requested data. We will try to ping all other servers for it.
+        if (len(output) < self.k):
+            additional_codes = self._get_from_remaining(key,
+                                                        timestamp,
+                                                        minimum_cost_list,
+                                                        called_data_center)
+            output.extend(additional_codes)
+
+        # We didn't get it from all other servers too. So basically we raise an error
         if (len(output) < self.k):
             lock.release()
             return {"status": "TimeOut", "message": "Timeout/Concurrency error during get call"}

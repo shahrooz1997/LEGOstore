@@ -258,10 +258,13 @@ class Viveck_1(ProtocolInterface):
         # If INSERT that means first time else Step1 i.e. get_timestamp from servers with the key
         if insert:
             timestamp = TimeStamp.get_current_time(self.id)
-            server_list = self.placement_policy.get_dc(self.total_nodes,
-                                                       self.data_center.get_datacenter_list(),
-                                                       self.local_datacenter_id,
-                                                       key)
+            if self.manual_servers and self.placement_policy.__name__ == "Manual":
+                server_list = self.manual_servers
+            else:
+                server_list = self.placement_policy.get_dc(self.total_nodes,
+                                                           self.data_center.get_datacenter_list(),
+                                                           self.local_datacenter_id,
+                                                           key)
         else:
             try:
                 # Unlike in ABD, here it returns the current timestamp

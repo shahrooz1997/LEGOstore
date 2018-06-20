@@ -422,7 +422,7 @@ class Viveck_1(ProtocolInterface):
         # Waiting for remaining all to return the value
         sem = threading.Barrier(self.quorum_4 - self.k + 1, timeout=self.timeout)
         lock = threading.Lock()
-
+        print("called data center is: " + str(called_data_center))
         for data_center_id, servers in server_list:
             for server_id in servers:
                 # If already called then just skip
@@ -487,8 +487,8 @@ class Viveck_1(ProtocolInterface):
                                                           index < self.k)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
-
-                called_data_center.add((data_center_id, server_id))
+                if index < self.k:
+                    called_data_center.add((data_center_id, server_id))
                 index += 1
         try:
             sem.wait()

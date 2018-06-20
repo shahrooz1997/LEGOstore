@@ -152,6 +152,7 @@ class ABD(ProtocolInterface):
         new_server_list = self._get_closest_servers(server_list, self.read_nodes)
 
         output = []
+        print(self.latency_delay)
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
@@ -160,7 +161,7 @@ class ABD(ProtocolInterface):
                                                                                       copy.deepcopy(server_info),
                                                                                       output,
                                                                                       lock,
-                                                                                      self.latency_delay[data_center_id])))
+                                                                                      self.latency_delay[int(data_center_id)])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -268,7 +269,7 @@ class ABD(ProtocolInterface):
         output = []
 
         new_server_list = self._get_closest_servers(server_list, self.write_nodes)
-
+        print(self.latency_delay)
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
@@ -281,7 +282,7 @@ class ABD(ProtocolInterface):
                                                                             copy.deepcopy(server_info),
                                                                             output,
                                                                             lock,
-                                                                            self.latency_delay[data_center_id])))
+                                                                            self.latency_delay[int(data_center_id)])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -366,7 +367,7 @@ class ABD(ProtocolInterface):
                                                                             copy.deepcopy(server_info),
                                                                             output,
                                                                             lock,
-                                                                            self.latency_delay[data_center_id])))
+                                                                            self.latency_delay[int(data_center_id)])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -400,7 +401,7 @@ class ABD(ProtocolInterface):
                                                                             copy.deepcopy(server_info),
                                                                             result,
                                                                             lock,
-                                                                            self.latency_delay[data_center_id])))
+                                                                            self.latency_delay[int(data_center_id)])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 

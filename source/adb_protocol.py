@@ -33,7 +33,7 @@ class ABD(ProtocolInterface):
         self.current_class = "ABD"
         self.manual_servers = {}
 
-
+        
 
         # This is only added for the prototype. In real system you would never use it.
         self.dc_to_latency_map = copy.deepcopy(latency_between_DCs[self.local_datacenter_id])
@@ -107,7 +107,8 @@ class ABD(ProtocolInterface):
 
 
     def _get_timestamp(self, key, sem, server, output, lock, delay=0):
-        time.sleep(int(delay) * 0.001)
+        print("timestamp time: " + str(delay))
+        time.sleep(float(delay) * 0.001)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
@@ -198,6 +199,7 @@ class ABD(ProtocolInterface):
 
 
     def _put(self, key, value, timestamp, sem, server, output, lock, delay=0):
+        print("put time: " + str(delay))
         time.sleep(int(delay) * 0.001)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -308,7 +310,8 @@ class ABD(ProtocolInterface):
 
 
     def _get(self, key, sem, server, output, lock, delay=0):
-        time.sleep(int(delay) * 0.001)
+        print("get time: " + str(delay))
+        time.sleep(float(delay) * 0.001)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))

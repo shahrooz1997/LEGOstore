@@ -109,7 +109,8 @@ class Viveck_1(ProtocolInterface):
 
 
     def _get_timestamp(self, key, sem, server, output, lock, current_class, delay=0):
-        time.sleep(delay)
+        print("delay is : " + str(delay*0.001))
+        time.sleep(delay * 0.001)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
@@ -148,7 +149,7 @@ class Viveck_1(ProtocolInterface):
 
         output = []
         new_server_list = self._get_closest_servers(server_list, self.quorum_1)
-
+        print("timestamp server: " + str(new_server_list))
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
@@ -182,7 +183,7 @@ class Viveck_1(ProtocolInterface):
 
 
     def _put(self, key, value, timestamp, sem, server, output, lock, delay=0):
-        time.sleep(delay)
+        time.sleep(delay * 0.001)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
@@ -225,7 +226,7 @@ class Viveck_1(ProtocolInterface):
 
     def _put_fin(self, key, timestamp, sem, server, output, lock, delay=0):
         # TODO : Generic function to send all get put request rather than different for all
-        time.sleep(delay)
+        time.sleep(delay * 0.001)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
@@ -301,6 +302,7 @@ class Viveck_1(ProtocolInterface):
 
         # Still sending to all for the request but wait for only required quorum to respond.
         # If needed ping to only required quorum and then retry
+        print("q2: " + str(new_server_list))
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
@@ -340,6 +342,7 @@ class Viveck_1(ProtocolInterface):
 
         new_server_list = self._get_closest_servers(server_list, self.quorum_3)
 
+        print("q3: " + str(new_server_list))
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
@@ -372,6 +375,8 @@ class Viveck_1(ProtocolInterface):
 
 
     def _get(self, key, timestamp, sem, server, output, lock, delay=0, value_required=False):
+        time.sleep(delay * 0.001)
+        print("get_delay: " + str(delay*0.001))
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
@@ -441,8 +446,7 @@ class Viveck_1(ProtocolInterface):
                                                           output,
                                                           lock,
                                                           self.dc_to_latency_map[data_center_id],
-                                                          index < self.k
-                                                          )))
+                                                          index < self.k)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 

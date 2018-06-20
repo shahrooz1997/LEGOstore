@@ -3,6 +3,8 @@ import json
 
 from protocol import Protocol
 from data_center import Datacenter
+from datetime import datetime
+
 import uuid
 import threading
 
@@ -235,6 +237,7 @@ if __name__ == "__main__":
     while 1:
         data = input()
         method, key, value = data.split(",")
+        a = datetime.now()
         if method == "insert":
             print(json.dumps(client.insert(key, value, "Viveck_1")))
         elif method == "put":
@@ -243,6 +246,9 @@ if __name__ == "__main__":
             print(json.dumps(client.get(key)))
         else:
             print("Invalid Call")
+        b = datetime.now()
+        c = b - a
+        print(c.seconds * 1000 + c.microseconds * 0.001)
 
 
     #

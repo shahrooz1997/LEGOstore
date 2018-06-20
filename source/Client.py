@@ -46,8 +46,8 @@ class Client:
                                                                                 self.local_datacenter,
                                                                                 self.datacenter_info,
                                                                                 self.id,
-										self.latency_between_DCs,
-										self.dc_cost)
+                                                                                self.latency_between_DCs,
+                                                                                self.dc_cost)
         return
 
 

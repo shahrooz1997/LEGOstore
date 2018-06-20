@@ -151,8 +151,7 @@ class Viveck_1(ProtocolInterface):
                                                                                       copy.deepcopy(server_info),
                                                                                       output,
                                                                                       lock,
-                                                                                      self.current_class,
-                                                                                      self.latency_delay[data_center_id])))
+                                                                                      self.current_class)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -300,8 +299,7 @@ class Viveck_1(ProtocolInterface):
                                                                             sem,
                                                                             copy.deepcopy(server_info),
                                                                             output,
-                                                                            lock,
-                                                                            self.latency_delay[data_center_id])))
+                                                                            lock)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -338,8 +336,7 @@ class Viveck_1(ProtocolInterface):
                                                                             sem_1,
                                                                             copy.deepcopy(server_info),
                                                                             output,
-                                                                            lock,
-                                                                            self.latency_delay[data_center_id])))
+                                                                            lock)))
 
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
@@ -429,7 +426,7 @@ class Viveck_1(ProtocolInterface):
                                                           copy.deepcopy(server_info),
                                                           output,
                                                           lock,
-                                                          self.latency_delay[data_center_id],
+                                                          0,
                                                           index < self.k)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()

@@ -101,8 +101,8 @@ if __name__ == '__main__':
                 bandwidth[row][col] = bandwidth[row][col] * 125
 
     # Read / Write Ration (read + write == 1)
-    read_percentage = 0.9
-    write_percentage = 0.1
+    read_percentage = 0.1
+    write_percentage = 0.9
 
     # Time to decode the object
     # NO NEED FOR TIME TO ENCODE AS IT CAN BE CONCURRENTLY DONE WHILE GETTING LATEST TIMESTAMP 
@@ -187,7 +187,7 @@ if __name__ == '__main__':
                     curr_index += 1
                 sorted_possible_cost = sorted(possible_cost, reverse=True)
 
-                for _index in range(0, k):
+                for _index in range(0, q4):
                     total_read_transfer_cost += sorted_possible_cost[_index] * per_server_ratio[i]
 
                # total_read_transfer_cost += total_read_transfer_cost * per_server_ratio[i]

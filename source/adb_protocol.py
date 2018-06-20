@@ -36,12 +36,15 @@ class ABD(ProtocolInterface):
 
 
         # This is only added for the prototype. In real system you would never use it.
+        self.dc_to_latency_map = copy.deepcopy(latency_between_DCs[self.local_datacenter_id])
         self.latency_delay = copy.deepcopy(latency_between_DCs[self.local_datacenter_id])
 
         # Converting string values to float first
         # Could also be done in next step eaisly but just for readability new step
         for key, value in self.latency_delay.items():
             self.latency_delay[key] = float(value)
+            self.dc_to_latency_map[key] = float(value)
+
 
         # Sorting the datacenters as per the latency
         self.latency_delay = [k for k in sorted(self.latency_delay, key=self.latency_delay.get,
@@ -161,7 +164,7 @@ class ABD(ProtocolInterface):
                                                                                       copy.deepcopy(server_info),
                                                                                       output,
                                                                                       lock,
-                                                                                      self.latency_delay[int(data_center_id)])))
+                                                                                      self.dc_to_latency_map[data_center_id])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -282,7 +285,7 @@ class ABD(ProtocolInterface):
                                                                             copy.deepcopy(server_info),
                                                                             output,
                                                                             lock,
-                                                                            self.latency_delay[int(data_center_id)])))
+                                                                            self.dc_to_latency_map[data_center_id])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -312,7 +315,7 @@ class ABD(ProtocolInterface):
 
         data = {"method": "get",
                 "key": key,
-		        "timestamp": None,
+                "timestamp": None,
                 "class": self.current_class}
 
         sock.sendall(json.dumps(data).encode("utf-8"))
@@ -367,7 +370,7 @@ class ABD(ProtocolInterface):
                                                                             copy.deepcopy(server_info),
                                                                             output,
                                                                             lock,
-                                                                            self.latency_delay[int(data_center_id)])))
+                                                                            self.dc_to_latency_map[data_center_id])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -401,7 +404,7 @@ class ABD(ProtocolInterface):
                                                                             copy.deepcopy(server_info),
                                                                             result,
                                                                             lock,
-                                                                            self.latency_delay[int(data_center_id)])))
+                                                                            self.dc_to_latency_map[data_center_id])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 

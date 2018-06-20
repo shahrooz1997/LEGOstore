@@ -8,6 +8,7 @@ import copy
 from placement_policy import PlacementFactory
 from protocol_interface import ProtocolInterface
 from pyeclib.ec_iface import ECDriver
+import time
 
 
 class Viveck_1(ProtocolInterface):
@@ -46,16 +47,19 @@ class Viveck_1(ProtocolInterface):
         self.manual_servers = {}
 
         # This is only added for the prototype. In real system you would never use it.
+        self.dc_to_latency_map = copy.deepcopy(latency_between_DCs[self.local_datacenter_id])
         self.latency_delay = copy.deepcopy(latency_between_DCs[self.local_datacenter_id])
 
         # Converting string values to float first
         # Could also be done in next step eaisly but just for readability new step
         for key, value in self.latency_delay.items():
             self.latency_delay[key] = float(value)
+            self.dc_to_latency_map[key] = float(value)
 
         # Sorting the datacenters as per the latency
         self.latency_delay = [k for k in sorted(self.latency_delay, key=self.latency_delay.get,
                                                 reverse=False)]
+
 
         if "manual_dc_server_ids" in properties:
             self.manual_servers = copy.deepcopy(properties["manual_dc_server_ids"])
@@ -105,6 +109,7 @@ class Viveck_1(ProtocolInterface):
 
 
     def _get_timestamp(self, key, sem, server, output, lock, current_class, delay=0):
+        time.sleep(delay)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
@@ -147,12 +152,14 @@ class Viveck_1(ProtocolInterface):
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
-                thread_list.append(threading.Thread(target=self._get_timestamp, args=(key,
-                                                                                      sem,
-                                                                                      copy.deepcopy(server_info),
-                                                                                      output,
-                                                                                      lock,
-                                                                                      self.current_class)))
+                thread_list.append(threading.Thread(target=self._get_timestamp,
+                                                    args=(key,
+                                                          sem,
+                                                          copy.deepcopy(server_info),
+                                                          output,
+                                                          lock,
+                                                          self.current_class,
+                                                          self.dc_to_latency_map[data_center_id])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -175,6 +182,7 @@ class Viveck_1(ProtocolInterface):
 
 
     def _put(self, key, value, timestamp, sem, server, output, lock, delay=0):
+        time.sleep(delay)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
@@ -217,6 +225,8 @@ class Viveck_1(ProtocolInterface):
 
     def _put_fin(self, key, timestamp, sem, server, output, lock, delay=0):
         # TODO : Generic function to send all get put request rather than different for all
+        time.sleep(delay)
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
@@ -294,13 +304,15 @@ class Viveck_1(ProtocolInterface):
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
-                thread_list.append(threading.Thread(target=self._put, args=(key,
-                                                                            codes[index],
-                                                                            timestamp,
-                                                                            sem,
-                                                                            copy.deepcopy(server_info),
-                                                                            output,
-                                                                            lock)))
+                thread_list.append(threading.Thread(target=self._put,
+                                                    args=(key,
+                                                          codes[index],
+                                                          timestamp,
+                                                          sem,
+                                                          copy.deepcopy(server_info),
+                                                          output,
+                                                          lock,
+                                                          self.dc_to_latency_map[data_center_id])))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -327,7 +339,6 @@ class Viveck_1(ProtocolInterface):
         lock = threading.Lock()
 
         new_server_list = self._get_closest_servers(server_list, self.quorum_3)
-        cost_optimised_server_list = self.dc_cost
 
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
@@ -337,7 +348,8 @@ class Viveck_1(ProtocolInterface):
                                                                             sem_1,
                                                                             copy.deepcopy(server_info),
                                                                             output,
-                                                                            lock)))
+                                                                            lock,
+                                                                            self.dc_to_latency_map[data_center_id])))
 
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
@@ -409,7 +421,7 @@ class Viveck_1(ProtocolInterface):
 
         sem = threading.Barrier(self.quorum_4 + 1, timeout=self.timeout)
         lock = threading.Lock()
-		
+
         new_server_list = self._get_closest_servers(server_list, self.quorum_4)
         print("get list: " + str(new_server_list))
         minimum_cost_list = self._get_cost_effective_server_list(new_server_list)
@@ -428,8 +440,9 @@ class Viveck_1(ProtocolInterface):
                                                           copy.deepcopy(server_info),
                                                           output,
                                                           lock,
-                                                          0,
-                                                          index < self.k)))
+                                                          self.dc_to_latency_map[data_center_id],
+                                                          index < self.k
+                                                          )))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 

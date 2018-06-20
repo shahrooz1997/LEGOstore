@@ -71,13 +71,14 @@ class Viveck_1(ProtocolInterface):
         self.dc_cost = [k for k in sorted(self.dc_cost, key=self.dc_cost.get,
                                                 reverse=False)]
 
+
     def _get_cost_effective_server_list(self, server_list):
         # Sort the DCs as per the minimal cost of data trasnfer for get
         # Returns [(DC_ID, SERVER_ID), ]
         output = []
         for data_center_id in self.dc_cost:
             if data_center_id in server_list:
-                output.append((data_center_id, self.dc_cost[data_center_id]))
+                output.append((data_center_id, server_list[data_center_id]))
 
         return output
 
@@ -290,7 +291,7 @@ class Viveck_1(ProtocolInterface):
 
         # Still sending to all for the request but wait for only required quorum to respond.
         # If needed ping to only required quorum and then retry
-        for data_center_id, servers in new_server_list:
+        for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
                 thread_list.append(threading.Thread(target=self._put, args=(key,
@@ -408,10 +409,11 @@ class Viveck_1(ProtocolInterface):
 
         sem = threading.Barrier(self.quorum_4 + 1, timeout=self.timeout)
         lock = threading.Lock()
-
+		
         new_server_list = self._get_closest_servers(server_list, self.quorum_4)
+        print("get list: " + str(new_server_list))
         minimum_cost_list = self._get_cost_effective_server_list(new_server_list)
-
+        print("get optimal cost: " + str(minimum_cost_list))
         # Step2: Get the encoded value
         index = 0
         output = []

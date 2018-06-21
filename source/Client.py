@@ -260,7 +260,7 @@ def get_logger(log_path):
     # XXX: TODO: Check if needed
     handler.setFormatter(logging.Formatter('%(message)s'))
     logger_.addHandler(handler)
-
+    return logger_
 
 if __name__ == "__main__":
     properties = json.load(open('client_config.json'))
@@ -277,7 +277,6 @@ if __name__ == "__main__":
 
     workload = Workload("uniform", arrival_rate, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
     inter_arrival_time, request_type, key, value = workload.next()
-
     request_count = 0
 
     while request_count < arrival_rate * experiment_duration:

@@ -2,7 +2,7 @@ import random
 import string
 
 class Workload:
-    def __init__(self, arrival_rate, arrival_distribution, read_ratio, write_ratio, insert_ratio,
+    def __init__(self,arrival_distribution, arrival_rate, read_ratio, write_ratio, insert_ratio,
                  initial_count, value_size):
         self.arrival_class = Arrival(arrival_rate, arrival_distribution)
 

@@ -16,7 +16,7 @@ sudo python3 setup.py install
 cd
 git clone https://github.com/openstack/pyeclib.git
 cd pyeclib
-sudo apt-get install build-essential python-dev python-pip python3-pip liberasurecode-dev -y
+sudo apt install build-essential python-dev python-pip python3-pip liberasurecode-dev -y
 sudo pip3 install -U bindep -r test-requirements.txt
 sudo python3 setup.py install
 sudo sh -c "echo '/usr/local/lib' >> /etc/ld.so.conf"

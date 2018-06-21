@@ -267,11 +267,11 @@ if __name__ == "__main__":
     client = Client(properties, "1")
 
     arrival_rate = 11
-    experiment_duration = 3600
-    read_ratio = 0.9
-    write_ratio = 0.1
+    experiment_duration = 5
+    read_ratio = 0.5
+    write_ratio = 0.5
     insert_ratio = 0
-    initial_count = 110000
+    initial_count = 100
     value_size = 100000
 
 

@@ -15,15 +15,15 @@ def get_logger(log_path):
     # XXX: TODO: Check if needed
     handler.setFormatter(logging.Formatter('%(message)s'))
     logger_.addHandler(handler)
-
+    return logger_
 
 def thread_wrapper(output_logger, start_index, end_index, value_size=100000):
     # We will assume fixed class for wrapper for now
 
-    for i in range(start_index, end_index):
+    for i in range(int(start_index), int(end_index)):
         value = ''.join(random.choice(string.ascii_uppercase + string.digits)
                         for _ in range(value_size))
-        output_logger.info(json.dumps(client.insert("key"+str(i), value, "Viveck")))
+        output_logger.info("key:"+str(i)+json.dumps(client.insert("key"+str(i), value, "Viveck_1")))
 
     return
 
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     client = Client(properties, client_id)
     output_logger = get_logger("insert.log")
 
-    keys_to_write = 110000
+    keys_to_write = 200
     start_index = keys_to_write * (int(client_id) - 1)
     end_index = start_index + keys_to_write
     number_of_thread = 20

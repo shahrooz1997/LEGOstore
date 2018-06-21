@@ -185,9 +185,8 @@ def test(data_server):
 if __name__ == "__main__":
 
     # For purpose of testing the whole code
-    socket_port = [10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008]
-    db_list = ["db.temp", "db.temp1", "db.temp2", "db.temp3", "db.temp4", "db.temp5",
-               "db.temp6", "db.temp7", "db.temp8", "db.temp9"]
+    socket_port = [10000]
+    db_list = ["db.temp"]
 
     socket_list = []
     data_server_list = []

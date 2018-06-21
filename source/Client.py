@@ -1,5 +1,6 @@
 import socket
 import json
+import time
 
 from protocol import Protocol
 from data_center import Datacenter
@@ -7,6 +8,9 @@ from datetime import datetime
 
 import uuid
 import threading
+from workload import Workload
+
+import logging
 
 
 class Client:
@@ -229,28 +233,83 @@ def call(key, value):
     print(json.dumps(client.put(key, str(value))))
 
 
+def thread_wrapper(method, latency_logger, output_logger, key, value=None):
+    # We will assume fixed class for wrapper for now
+
+    a = datetime.now()
+    if method == "insert":
+        output_logger.info(json.dumps(client.insert(key, value, "ABD")))
+    elif method == "put":
+        output_logger.info(json.dumps(client.put(key, value)))
+    elif method == "get":
+        output_logger.info(json.dumps(client.get(key)))
+    else:
+        output_logger.info("Invalid Call")
+    b = datetime.now()
+    c = b - a
+
+    latency_logger.info(method + ":" + str(c.seconds * 1000 + c.microseconds * 0.001))
+
+    return
+
+
+def get_logger(log_path):
+    logger_ = logging.getLogger('log')
+    logger_.setLevel(logging.INFO)
+    handler = logging.FileHandler(log_path)
+    # XXX: TODO: Check if needed
+    handler.setFormatter(logging.Formatter('%(message)s'))
+    logger_.addHandler(handler)
+
+
 if __name__ == "__main__":
     properties = json.load(open('client_config.json'))
     client = Client(properties, "1")
 
-    while 1:
-        data = input()
-        method, key, value = data.split(",")
-        a = datetime.now()
-        if method == "insert":
-            print(json.dumps(client.insert(key, value, "ABD")))
-        elif method == "put":
-            print(json.dumps(client.put(key, value)))
-        elif method == "get":
-            print(json.dumps(client.get(key)))
-        else:
-            print("Invalid Call")
-        b = datetime.now()
-        c = b - a
-        print(c.seconds * 1000 + c.microseconds * 0.001)
+    arrival_rate = 11
+    experiment_duration = 3600
+    read_ratio = 0.9
+    write_ratio = 0.1
+    insert_ratio = 0
+    initial_count = 110000
+    value_size = 100000
 
 
-    #
+    workload = Workload("uniform", arrival_rate, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
+    inter_arrival_time, request_type, key, value = workload.next()
+
+    request_count = 0
+
+    while request_count < arrival_rate * experiment_duration:
+        time.sleep(inter_arrival_time * 0.001)
+        latency_logger = get_logger("latency.log")
+        output_logger = get_logger("output.log")
+
+        new_thread = threading.Thread(target = thread_wrapper, args=(request_type,
+                                                                     latency_logger,
+                                                                     output_logger,
+                                                                     key,
+                                                                     value))
+
+        request_count += 1
+        new_thread.start()
+
+    # while 1:
+    #     data = input()
+    #     method, key, value = data.split(",")
+    #     a = datetime.now()
+    #     if method == "insert":
+    #         print(json.dumps(client.insert(key, value, "ABD")))
+    #     elif method == "put":
+    #         print(json.dumps(client.put(key, value)))
+    #     elif method == "get":
+    #         print(json.dumps(client.get(key)))
+    #     else:
+    #         print("Invalid Call")
+    #     b = datetime.now()
+    #     c = b - a
+    #     print(c.seconds * 1000 + c.microseconds * 0.001)
+    # #
     # threadlist = []
     # for i in range(1,100):
     #     threadlist.append(threading.Thread(target=call, args=("chetan", i,)))

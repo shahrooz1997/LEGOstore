@@ -6,6 +6,7 @@ import random
 import logging
 import string
 from datetime import datetime
+import copy
 
 
 def get_logger(log_path):
@@ -21,9 +22,9 @@ def thread_wrapper(output_logger, start_index, end_index, value_size=100000):
     # We will assume fixed class for wrapper for now
 
     for i in range(int(start_index), int(end_index)):
-        value = ''.join(random.choice(string.ascii_uppercase + string.digits)
+        value = ''.join(random.choice(string.ascii_uppercase)
                         for _ in range(value_size))
-        output_logger.info("key:"+str(i)+json.dumps(client.insert("key"+str(i), value, "Viveck_1")))
+        output_logger.info("key:"+str(i)+json.dumps(client.insert("key"+str(i), copy.deepcopy(value), "Viveck_1")))
 
     return
 

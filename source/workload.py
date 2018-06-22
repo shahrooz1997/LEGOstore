@@ -20,7 +20,6 @@ class Workload:
     def next(self):
         # Return (interarrival time, key, request_type)
         random_ratio = random.randint(0, 100)/100.0
-
         if random_ratio < self.read_ratio:
             request_type = "get"
         elif random_ratio < self.read_ratio + self.write_ratio:
@@ -38,7 +37,7 @@ class Workload:
 
         value = None
         if request_type != "get":
-            value = ''.join(random.choice(string.ascii_uppercase + string.digits)
+            value = ''.join(random.choice(string.ascii_uppercase)
                             for _ in range(self.value_size))
 
         return (inter_arrival_time, request_type, key, value)

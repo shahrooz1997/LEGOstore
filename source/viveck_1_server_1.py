@@ -52,17 +52,14 @@ class Viveck_1Server:
         if cache.get(key+timestamp):
             return
 
-        print("insert_data:: reached checkpoint 1\n")
         current_storage = cache
         data = cache.get(key)
 
         if not data:
-            print("insert_data:: reached checkpoint 2\n")
             data = persistent.get(key)
             current_storage = persistent
 
         if not data[0]:
-            print("insert_data:: reached checkpoint 3\n")
             new_values = [(key, [timestamp, None]), (key+timestamp, [value, label, None])]
 
             cache_thread = threading.Thread(target=cache.put_in_batch, args=(new_values,))
@@ -133,7 +130,6 @@ class Viveck_1Server:
         # Using optimistic approach i.e. we assume that it will be in cache else we have to
         lock.acquire_write()
         data = cache.get(key+timestamp)
-        print("put_fin:: data is -> " + str(data))
         if not data:
             data = persistent.get(key+timestamp)
 
@@ -143,7 +139,6 @@ class Viveck_1Server:
             return {"status": "OK"}
         else:
             current_values = cache.get(key)
-            print("put_fin:: current_value of key : " + str(current_values))
             if not current_values:
                 current_values = persistent.get(key)
 
@@ -168,7 +163,7 @@ class Viveck_1Server:
 
 
     @staticmethod
-    def put_back_in_cache(key, timestamp, data, cache, lock):
+    def put_back_in_cache(key, timestamp, data, cache):
         cache.put(key+timestamp, data)
         return
 
@@ -178,10 +173,8 @@ class Viveck_1Server:
         # Replace it with per key reader writer lock.
         # Current customized lock is just for generic lock not key specific.
         # Ideally it should take key as input and do locking key wise
-
         lock.acquire_read()
         data = cache.get(key+timestamp)
-        print("get API :: checkpoint 1 " + str(data))
         if not data:
             data = persistent.get(key+timestamp)
             lock.release_read()

@@ -1,6 +1,7 @@
 import socket
 import json
 import time
+import copy
 
 from protocol import Protocol
 from data_center import Datacenter
@@ -87,7 +88,7 @@ class Client:
         sock.settimeout(self.metadata_timeout)
 
         try:
-            data = sock.recv(1024)
+            data = sock.recv(640000)
         except socket.error:
             raise Exception("Unbale to get value from metadata server")
         else:
@@ -150,7 +151,7 @@ class Client:
             # Setting up timeout as per class policies
             sock.settimeout(self.metadata_timeout)
             try:
-                data = sock.recv(1024)
+                data = sock.recv(640000)
                 data = json.loads(data.decode("utf-8"))
             except socket.error:
                 print("Failed attempt to send data to metadata server...")
@@ -233,23 +234,28 @@ def call(key, value):
     print(json.dumps(client.put(key, str(value))))
 
 
-def thread_wrapper(method, latency_logger, output_logger, key, value=None):
+def thread_wrapper(method, latency_file, output_logger, lock, key, value=None):
     # We will assume fixed class for wrapper for now
 
     a = datetime.now()
     if method == "insert":
-        output_logger.info(json.dumps(client.insert(key, value, "ABD")))
+        ouput = key + json.dumps(client.insert(key, value, "Viveck_1"))
     elif method == "put":
-        output_logger.info(json.dumps(client.put(key, value)))
+        output  = key + json.dumps(client.put(key, value))
     elif method == "get":
-        output_logger.info(json.dumps(client.get(key)))
+        output = key + json.dumps(client.get(key))
     else:
-        output_logger.info("Invalid Call")
+        output = "Invalid Call"
     b = datetime.now()
     c = b - a
 
-    latency_logger.info(method + ":" + str(c.seconds * 1000 + c.microseconds * 0.001))
-
+    # Flush every latency on disk. May not be a good idea in long term.
+    lock.acquire()
+    latency_file.write(method + ":" + str(c.seconds * 1000 + c.microseconds * 0.001))
+    latency_file.flush()
+    output_logger.info(output)
+    lock.release()
+    
     return
 
 
@@ -273,42 +279,42 @@ if __name__ == "__main__":
     insert_ratio = 0
     initial_count = 100
     value_size = 100000
-
-
+    latency_file = open("latency.txt")
+    lock = threading.Lock()
     workload = Workload("uniform", arrival_rate, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
-    inter_arrival_time, request_type, key, value = workload.next()
     request_count = 0
 
     while request_count < arrival_rate * experiment_duration:
+        inter_arrival_time, request_type, key, value = workload.next()
         time.sleep(inter_arrival_time * 0.001)
-        latency_logger = get_logger("latency.log")
         output_logger = get_logger("output.log")
 
         new_thread = threading.Thread(target = thread_wrapper, args=(request_type,
-                                                                     latency_logger,
+                                                                     latency_file,
                                                                      output_logger,
+                                                                     lock,
                                                                      key,
                                                                      value))
 
         request_count += 1
         new_thread.start()
 
-    # while 1:
-    #     data = input()
-    #     method, key, value = data.split(",")
-    #     a = datetime.now()
-    #     if method == "insert":
-    #         print(json.dumps(client.insert(key, value, "ABD")))
-    #     elif method == "put":
-    #         print(json.dumps(client.put(key, value)))
-    #     elif method == "get":
-    #         print(json.dumps(client.get(key)))
-    #     else:
-    #         print("Invalid Call")
-    #     b = datetime.now()
-    #     c = b - a
-    #     print(c.seconds * 1000 + c.microseconds * 0.001)
-    # #
+#    while 1:
+#         data = input()
+#         method, key, value = data.split(",")
+#         a = datetime.now()
+#         if method == "insert":
+#             print(json.dumps(client.insert(key, value, "ABD")))
+#         elif method == "put":
+#             print(json.dumps(client.put(key, value)))
+#         elif method == "get":
+#             print(json.dumps(client.get(key)))
+#         else:
+#             print("Invalid Call")
+#         b = datetime.now()
+#         c = b - a
+#         print(c.seconds * 1000 + c.microseconds * 0.001)
+#    # #
     # threadlist = []
     # for i in range(1,100):
     #     threadlist.append(threading.Thread(target=call, args=("chetan", i,)))

@@ -23,10 +23,10 @@ class DataServer:
         #self.sock.bind(('0.0.0.0', 10000))
 
         # Max can handles 2048 connections at one time, can increase it if required
-        self.sock.listen(2048)
+        self.sock.listen(20048)
         # Change cache size here if you want. Ideally there should be a config for it
         # If more configurable variable are there add config and read from it.
-        self.cache = Cache(20000)
+        self.cache = Cache(10000)
         self.persistent = Persistent(db)
         self.lock = ReadWriteLock()
         self.enable_garbage_collector = enable_garbage_collector
@@ -41,7 +41,6 @@ class DataServer:
         :return:
         raises NotImplementedError if the class is not found
         '''
-        
         if current_class == "ABD":
             return ABDServer.get(key, timestamp, self.cache, self.persistent, self.lock)
         elif current_class == "Viveck_1":
@@ -99,13 +98,11 @@ class DataServer:
             if self.enable_garbage_collector == True:
                 self.enable_garbage_collector = False
                 thr = threading.Thread(target=self.garbage_collect, args=(self.lock, self.cache, self.persistent))
-                print("reached here and should be only once")
                 thr.deamon = True
                 thr.start()
 
             self.lock.release_write()
 
-        print("Reached here")
         if current_class == "ABD":
             return ABDServer.put(key, value, timestamp, self.cache, self.persistent, self.lock)
         elif current_class == "Viveck_1":
@@ -136,7 +133,7 @@ def server_connection(connection, dataserver):
     data = connection.recv(640000)
 
     if not data:
-        connection.send(json.dumps({"status": "failure", "message": "No data Found"}).encode("utf-8"))
+        connection.sendall(json.dumps({"status": "failure", "message": "No data Found"}).encode("utf-8"))
     try:
         data = json.loads(data.decode('utf-8'))
     except Exception as e:

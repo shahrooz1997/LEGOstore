@@ -108,8 +108,7 @@ class Viveck_1(ProtocolInterface):
 
 
     def _get_timestamp(self, key, sem, server, output, lock, current_class, delay=0):
-        print("delay is : " + str(delay*0.001))
-        time.sleep(delay * 0.001)
+        #time.sleep(delay * 0.001)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
@@ -182,7 +181,7 @@ class Viveck_1(ProtocolInterface):
 
 
     def _put(self, key, value, timestamp, sem, server, output, lock, delay=0):
-        time.sleep(delay * 0.001)
+        #time.sleep(delay * 0.001)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
@@ -225,7 +224,7 @@ class Viveck_1(ProtocolInterface):
 
     def _put_fin(self, key, timestamp, sem, server, output, lock, delay=0):
         # TODO : Generic function to send all get put request rather than different for all
-        time.sleep(delay * 0.001)
+        #time.sleep(delay * 0.001)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
@@ -301,7 +300,6 @@ class Viveck_1(ProtocolInterface):
 
         # Still sending to all for the request but wait for only required quorum to respond.
         # If needed ping to only required quorum and then retry
-        print("q2: " + str(new_server_list))
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
@@ -341,7 +339,6 @@ class Viveck_1(ProtocolInterface):
 
         new_server_list = self._get_closest_servers(server_list, self.quorum_3)
 
-        print("q3: " + str(new_server_list))
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
@@ -374,8 +371,8 @@ class Viveck_1(ProtocolInterface):
 
 
     def _get(self, key, timestamp, sem, server, output, lock, delay=0, value_required=False):
-        time.sleep(delay * 0.001)
-        print("get_delay: " + str(delay*0.001))
+        #time.sleep(delay * 0.001)
+        #print("get_delay: " + str(delay*0.001))
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
@@ -394,7 +391,8 @@ class Viveck_1(ProtocolInterface):
             print("Server with host: {1} and port: {2} timeout for get request in ABD", (server["host"],
                                                                                          server["port"]))
         else:
-            data = json.loads(data.decode("utf-8"))
+        #    print(data.decode("utf-8"))
+            data = json.loads(data.decode("utf-8"), strict=False)
             if data["value"]:
                 lock.acquire()
                 output.append(data["value"])
@@ -422,7 +420,6 @@ class Viveck_1(ProtocolInterface):
         # Waiting for remaining all to return the value
         sem = threading.Barrier(self.quorum_4 - self.k + 1, timeout=self.timeout)
         lock = threading.Lock()
-        print("called data center is: " + str(called_data_center))
         for data_center_id, servers in server_list:
             for server_id in servers:
                 # If already called then just skip
@@ -464,9 +461,7 @@ class Viveck_1(ProtocolInterface):
         lock = threading.Lock()
 
         new_server_list = self._get_closest_servers(server_list, self.quorum_4)
-        print("get list: " + str(new_server_list))
         minimum_cost_list = self._get_cost_effective_server_list(new_server_list)
-        print("get optimal cost: " + str(minimum_cost_list))
         # Step2: Get the encoded value
         index = 0
         output = []

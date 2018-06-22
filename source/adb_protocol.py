@@ -165,7 +165,6 @@ class ABD(ProtocolInterface):
         thread_list = []
 
         new_server_list = self._get_closest_servers(server_list, self.read_nodes)
-
         output = []
         print(self.latency_delay)
         for data_center_id, servers in new_server_list.items():
@@ -199,8 +198,11 @@ class ABD(ProtocolInterface):
 
 
     def get_final_value(self, values):
-        result, max_time = values[0]["value"]
+        max_time = "0"
+        result = None
         for data in values:
+            if data["status"] != "OK":
+                 continue
             temp_result, temp_time = data["value"]
             if temp_time > max_time:
                 result = temp_result
@@ -393,15 +395,16 @@ class ABD(ProtocolInterface):
             pass
 
         sem.abort()
-
         lock.acquire()
         if (len(output) < self.read_nodes):
             lock.release()
             return {"status": "TimeOut", "message": "Timeout during get call of ABD"}
-
         value, timestamp = self.get_final_value(output)
 
         lock.release()
+
+        if timestamp == "0":
+            return {"status": "Error", "message": "No timestap found. Check quorum again"}
 
         # After abort can't use the same barrier
         sem = threading.Barrier(self.write_nodes + 1, timeout=self.timeout)

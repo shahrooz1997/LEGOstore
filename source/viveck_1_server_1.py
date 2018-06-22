@@ -17,6 +17,7 @@ class Viveck_1Server:
         if not data:
             data = persistent.get(key)
 
+        #Redundant code. Get rid of this if here.
         if not data:
             lock.release_read()
             return {"status": "Failed", "timestamp": None}

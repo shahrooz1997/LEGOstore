@@ -490,7 +490,7 @@ class Viveck_1(ProtocolInterface):
                                                           output,
                                                           lock,
                                                           self.dc_to_latency_map[data_center_id],
-                                                          index < self.k)))
+                                                          True)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
                 if index < self.k:
@@ -505,12 +505,12 @@ class Viveck_1(ProtocolInterface):
 
         lock.acquire()
         # If we doesn't get requested data. We will try to ping all other servers for it.
-        if (len(output) < self.k):
-            additional_codes = self._get_from_remaining(key,
-                                                        timestamp,
-                                                        minimum_cost_list,
-                                                        called_data_center)
-            output.extend(additional_codes)
+#        if (len(output) < self.k):
+#            additional_codes = self._get_from_remaining(key,
+#                                                        timestamp,
+#                                                        minimum_cost_list,
+#                                                        called_data_center)
+#            output.extend(additional_codes)
 
         # We didn't get it from all other servers too. So basically we raise an error
         if (len(output) < self.k):

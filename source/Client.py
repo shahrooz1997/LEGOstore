@@ -80,8 +80,7 @@ class Client:
             return (data["class_name"], data["server_list"])
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((self.metadata_server["host"], int(self.metadata_server["port"]))
-
+        sock.connect((self.metadata_server["host"], int(self.metadata_server["port"])))
         data = json.dumps({"method": "get_metadata", "key": key})
 
         sock.sendall(data.encode("utf-8"))
@@ -276,7 +275,7 @@ def get_logger(log_path):
 
 if __name__ == "__main__":
     properties = json.load(open('client_config.json'))
-    client = Client(properties, properties["local_datacenter"]))
+    client = Client(properties, properties["local_datacenter"])
 
     arrival_rate = 11
     experiment_duration = 3600

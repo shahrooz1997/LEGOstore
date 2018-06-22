@@ -203,6 +203,7 @@ class ABD(ProtocolInterface):
         for data in values:
             if data["status"] != "OK":
                  continue
+
             temp_result, temp_time = data["value"]
             if temp_time > max_time:
                 result = temp_result
@@ -278,6 +279,9 @@ class ABD(ProtocolInterface):
                 timestamp = self.get_timestamp(key, server_list)
             except:
                 return {"status": "TimeOut", "message": "Timeout during get timestamp call of ABD"}
+
+        if timestamp == "0-" + self.id:
+            return {"status": "Failure", "message": "Unable to get valid time from the quorum"}
 
         # Step2 : Send the message to put
         sem = threading.Barrier(self.write_nodes + 1, timeout=self.timeout)
@@ -366,7 +370,6 @@ class ABD(ProtocolInterface):
         #
         # @ Raises Exception in case of timeout or socket error
         ######################
-
         thread_list = []
 
         sem = threading.Barrier(self.read_nodes + 1, timeout=self.timeout)

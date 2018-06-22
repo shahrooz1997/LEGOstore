@@ -18,7 +18,7 @@ def get_logger(log_path):
     logger_.addHandler(handler)
     return logger_
 
-def thread_wrapper(output_logger, start_index, end_index, value_size=100000):
+def thread_wrapper(output_logger, start_index, end_index, value_size=10000):
     # We will assume fixed class for wrapper for now
 
     for i in range(int(start_index), int(end_index)):

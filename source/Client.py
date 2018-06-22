@@ -80,7 +80,7 @@ class Client:
             return (data["class_name"], data["server_list"])
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((self.metadata_server["host"], int(self.metadata_server["port"])))
+        sock.connect((self.metadata_server["host"], int(self.metadata_server["port"]))
 
         data = json.dumps({"method": "get_metadata", "key": key})
 

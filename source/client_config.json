@@ -81,7 +81,7 @@
 			},
 			"servers" : {
 				"1" : {
-					"host" : "18.228.42.206",
+					"host" : "18.231.24.84",
 					"port" : "10000"
 				}
 			}
@@ -130,18 +130,18 @@
 			"history_version_in_cache": 3,
 			"ping_policy": "PingAll",
 			"k": 3,
-			"m": 8,
+			"m": 7,
 			"erasure_coding_type":"liberasurecode_rs_vand",
 			"quorum": {
 				"Q1": "3",
 				"Q2": "5",
-				"Q3": "6",
-				"Q4": "6",
-				"total_nodes": "8"
+				"Q3": "5",
+				"Q4": "5",
+				"total_nodes": "7"
 			},
-			"manual_dc_server_ids": {"1": ["1"], "2": ["1"], "3": ["1"], "4": ["1"], "5": ["1"], "6": ["1"], "7": ["1"], "8": ["1"]}
+			"manual_dc_server_ids": {"1": ["1"], "2": ["1"], "3": ["1"], "4": ["1"], "5": ["1"], "7": ["1"], "8": ["1"]}
 		},
-			"default_class": "ABD"
+			"default_class": "Viveck_1"
 	},
 	"retry_attempts": 3,
 	"metadata_server_timeout": "120",

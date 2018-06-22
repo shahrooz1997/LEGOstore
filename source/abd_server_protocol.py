@@ -17,7 +17,7 @@ class ABDServer:
 
         value = persistent.get(key)
 
-        if value:
+        if value[0]:
             lock.release_read()
             return {"status": "OK", "value": value}
 
@@ -52,7 +52,7 @@ class ABDServer:
         if not data:
             data = persistent.get(key)
 
-        if data:
+        if data[0]:
             current_value, current_timestamp = data
             lock.release_read()
 
@@ -60,4 +60,4 @@ class ABDServer:
 
         lock.release_read()
 
-        return {"status": "Failed", "message": "No key"}
+        return {"status": "Failed", "timestamp": "0-0"}

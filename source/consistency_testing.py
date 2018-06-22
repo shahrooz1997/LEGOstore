@@ -77,6 +77,7 @@ if __name__ == "__main__":
 #    possible_configs = [(3, 2, 2, 1), (5, 3, 3, 2), (10, 6, 6, 4)]
 #    
     properties = json.load(open('client_config.json'))
+    datacenter_id = properties["local_datacenter"]
 #    starting_server_address = 20000    
 #
 #    for total_servers, quorum_servers, n, k in possible_configs:  
@@ -98,7 +99,7 @@ if __name__ == "__main__":
     lock = Lock()
 
     for i in range(0,10):
-        process_list.append(Process(target=run_client, args=("data1", file_name, lock, 100, i)))
+        process_list.append(Process(target=run_client, args=("data1", file_name, lock, 100, datacenter_id + str(i))))
 
     for process in process_list:
         process.start()

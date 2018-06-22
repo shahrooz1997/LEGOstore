@@ -276,7 +276,7 @@ def get_logger(log_path):
 
 if __name__ == "__main__":
     properties = json.load(open('client_config.json'))
-    client = Client(properties, "1")
+    client = Client(properties, properties["local_datacenter"]))
 
     arrival_rate = 11
     experiment_duration = 5

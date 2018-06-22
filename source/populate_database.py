@@ -32,7 +32,7 @@ def thread_wrapper(output_logger, start_index, end_index, value_size=1000):
 if __name__ == "__main__":
     properties = json.load(open('client_config.json'))
     client_id = "1"
-    client = Client(properties, client_id)
+    client = Client(properties, properties["local_datacenter"])
     output_logger = get_logger("insert.log")
 
     keys_to_write = 200

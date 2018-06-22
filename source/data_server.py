@@ -26,7 +26,7 @@ class DataServer:
         self.sock.listen(20048)
         # Change cache size here if you want. Ideally there should be a config for it
         # If more configurable variable are there add config and read from it.
-        self.cache = Cache(10000)
+        self.cache = Cache(500000000)
         self.persistent = Persistent(db)
         self.lock = ReadWriteLock()
         self.enable_garbage_collector = enable_garbage_collector

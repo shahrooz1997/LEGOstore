@@ -18,7 +18,7 @@ def get_logger(log_path):
     logger_.addHandler(handler)
     return logger_
 
-def thread_wrapper(output_logger, start_index, end_index, value_size=1000):
+def thread_wrapper(output_logger, start_index, end_index, value_size=100000):
     # We will assume fixed class for wrapper for now
 
     for i in range(int(start_index), int(end_index)):
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     client = Client(properties, properties["local_datacenter"])
     output_logger = get_logger("insert.log")
 
-    keys_to_write = 200
+    keys_to_write = 110000
     start_index = keys_to_write * (int(client_id) - 1)
     end_index = start_index + keys_to_write
     number_of_thread = 20

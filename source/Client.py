@@ -249,7 +249,7 @@ def thread_wrapper(method, latency_file, output_logger, lock, key, value=None):
     elif method == "put":
         output  = key + json.dumps(client.put(key, value))
     elif method == "get":
-        output = key + json.dumps(client.get(key))
+        output = key + json.dumps(client.get(key)["status"])
     else:
         output = "Invalid Call"
     b = datetime.now()
@@ -279,12 +279,12 @@ if __name__ == "__main__":
     client = Client(properties, properties["local_datacenter"]))
 
     arrival_rate = 11
-    experiment_duration = 5
+    experiment_duration = 3600
     read_ratio = 0.5
     write_ratio = 0.5
     insert_ratio = 0
     initial_count = 100
-    value_size = 1000
+    value_size = 100000
     latency_file = open("latency.txt", "w+")
     lock = threading.Lock()
     workload = Workload("uniform", arrival_rate, read_ratio, write_ratio, insert_ratio, initial_count, value_size)

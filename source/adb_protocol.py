@@ -107,8 +107,8 @@ class ABD(ProtocolInterface):
 
 
     def _get_timestamp(self, key, sem, server, output, lock, delay=0):
-        print("timestamp time: " + str(delay))
-        time.sleep(float(delay) * 0.001)
+      #  print("timestamp time: " + str(delay))
+      #  time.sleep(float(delay) * 0.001)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
@@ -199,8 +199,8 @@ class ABD(ProtocolInterface):
 
 
     def _put(self, key, value, timestamp, sem, server, output, lock, delay=0):
-        print("put time: " + str(delay))
-        time.sleep(int(delay) * 0.001)
+     #   print("put time: " + str(delay))
+     #   time.sleep(int(delay) * 0.001)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
@@ -310,8 +310,8 @@ class ABD(ProtocolInterface):
 
 
     def _get(self, key, sem, server, output, lock, delay=0):
-        print("get time: " + str(delay))
-        time.sleep(float(delay) * 0.001)
+      #  print("get time: " + str(delay))
+      #  time.sleep(float(delay) * 0.001)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))

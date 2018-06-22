@@ -129,43 +129,44 @@ class Client:
                     "message": "Unable to insert message after {0} attempts".format(
                         self.retry_attempts)}
 
-        # Step2 : Insert the metadata into the metadata server
-        total_attempts = self.retry_attempts
-        server_list = output["server_list"]
-        meta_data = {"class_name": class_name, "server_list": server_list}
-
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            sock.connect((self.metadata_server["host"], int(self.metadata_server["port"])))
-        except:
-            return {"status": "FAILURE",
-                    "message": "Unable to connect the socket to metadata server"}
-
-        data = json.dumps({"method": "set_metadata",
-                           "key": key,
-                           "value": meta_data})
-
-        while total_attempts:
-            sock.send(data.encode("utf-8"))
-
-            # Setting up timeout as per class policies
-            sock.settimeout(self.metadata_timeout)
-            try:
-                data = sock.recv(640000)
-                data = json.loads(data.decode("utf-8"))
-            except socket.error:
-                print("Failed attempt to send data to metadata server...")
-            else:
-                if data["status"] == "OK":
-                    # TODO: Check once if the key is required else remove it
-                    self.local_cache[key] = meta_data
-                    return {"status" : "OK"}
-
-            total_attempts -= 1
-
-        return {"status": "Failure",
-                "message": "Unable to insert message after {0} attemps into the metadataserver".format(
-                    self.retry_attempts)}
+        return {"status": "OK"}
+#        # Step2 : Insert the metadata into the metadata server
+#        total_attempts = self.retry_attempts
+#        server_list = output["server_list"]
+#        meta_data = {"class_name": class_name, "server_list": server_list}
+#
+#        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#        try:
+#            sock.connect((self.metadata_server["host"], int(self.metadata_server["port"])))
+#        except:
+#            return {"status": "FAILURE",
+#                    "message": "Unable to connect the socket to metadata server"}
+#
+#        data = json.dumps({"method": "set_metadata",
+#                           "key": key,
+#                           "value": meta_data})
+#
+#        while total_attempts:
+#            sock.send(data.encode("utf-8"))
+#
+#            # Setting up timeout as per class policies
+#            sock.settimeout(self.metadata_timeout)
+#            try:
+#                data = sock.recv(640000)
+#                data = json.loads(data.decode("utf-8"))
+#            except socket.error:
+#                print("Failed attempt to send data to metadata server...")
+#            else:
+#                if data["status"] == "OK":
+#                    # TODO: Check once if the key is required else remove it
+#                    self.local_cache[key] = meta_data
+#                    return {"status" : "OK"}
+#
+#            total_attempts -= 1
+#
+#        return {"status": "Failure",
+#                "message": "Unable to insert message after {0} attemps into the metadataserver".format(
+#                    self.retry_attempts)}
 
 
     def put(self, key, value):
@@ -177,7 +178,10 @@ class Client:
 
         # Step1: Look for the class details and server details for key.
         try:
-            class_name, server_list = self.look_up_metadata(key)
+        # TODO: Last moment changes to disable metadata server
+            class_name = self.default_class
+            server_list = copy.deepcopy(self.class_properties[self.default_class]["manual_dc_server_ids"])
+            #class_name, server_list = self.look_up_metadata(key)
         except Exception as e:
             return {"status": "FAILURE", "message" : "Timeout or socket error for getting metadata" + str(e)}
 
@@ -206,7 +210,9 @@ class Client:
 
         # Step1: Get the relevant metadata for the key
         try:
-            class_name, server_list = self.look_up_metadata(key)
+            class_name = self.default_class 
+            server_list = copy.deepcopy(self.class_properties[self.default_class]["manual_dc_server_ids"])
+            #class_name, server_list = self.look_up_metadata(key)
         except Exception as e:
             return {"status": "FAILURE", "message" : "Timeout or socket error for getting metadata" + str(e)}
 
@@ -251,7 +257,7 @@ def thread_wrapper(method, latency_file, output_logger, lock, key, value=None):
 
     # Flush every latency on disk. May not be a good idea in long term.
     lock.acquire()
-    latency_file.write(method + ":" + str(c.seconds * 1000 + c.microseconds * 0.001))
+    latency_file.write(method + ":" + str(c.seconds * 1000 + c.microseconds * 0.001) + '\n')
     latency_file.flush()
     output_logger.info(output)
     lock.release()
@@ -278,8 +284,8 @@ if __name__ == "__main__":
     write_ratio = 0.5
     insert_ratio = 0
     initial_count = 100
-    value_size = 100000
-    latency_file = open("latency.txt")
+    value_size = 1000
+    latency_file = open("latency.txt", "w+")
     lock = threading.Lock()
     workload = Workload("uniform", arrival_rate, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
     request_count = 0

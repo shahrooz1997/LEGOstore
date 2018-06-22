@@ -147,7 +147,7 @@ class Viveck_1(ProtocolInterface):
 
         output = []
         new_server_list = self._get_closest_servers(server_list, self.quorum_1)
-        print("timestamp server: " + str(new_server_list))
+        #print("timestamp server: " + str(new_server_list))
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)

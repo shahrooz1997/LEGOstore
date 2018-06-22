@@ -86,6 +86,17 @@ class Viveck_1(ProtocolInterface):
         return output
 
 
+    def recvall(self, sock):
+        fragments = []
+        while True:
+            chunck = sock.recv(64000)
+            if not chunck:
+                break
+            fragments.append(chunck)
+
+        return b''.join(fragments)
+
+
     def _get_closest_servers(self, server_list, quorum_size):
         # Select the DC and servers with minimal latencies for the quourm
         total_servers = 0
@@ -386,7 +397,7 @@ class Viveck_1(ProtocolInterface):
         sock.settimeout(self.timeout_per_request)
 
         try:
-            data = sock.recv(640000)
+            data = self.recvall(sock)
         except Exception as e:
             print("Server with host: {1} and port: {2} timeout for get request in ABD", (server["host"],
                                                                                          server["port"]))

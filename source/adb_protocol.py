@@ -74,6 +74,17 @@ class ABD(ProtocolInterface):
         #     self.ping_policy.fetchx_metrics(self.total_nodes, self.read_nodes)
 
 
+    def recvall(self, sock):
+        fragments = []
+        while True:
+            chunck = sock.recv(64000)
+            if not chunck:
+                break
+            fragments.append(chunck)
+
+        return b''.join(fragments)
+
+
     def _get_cost_effective_server_list(self, server_list):
         # Sort the DCs as per the minimal cost of data trasnfer for get
         # Returns [(DC_ID, SERVER_ID), ]
@@ -128,8 +139,8 @@ class ABD(ProtocolInterface):
         else:
             data = json.loads(data.decode("utf-8"))
             print("data is here:")
-            print(data)
             lock.acquire()
+            print(data)
             output.append(data["timestamp"])
             lock.release()
 
@@ -221,7 +232,6 @@ class ABD(ProtocolInterface):
             print("Server with host: {1} and port: {2} timeout for put request in ABD", (server["host"],
                                                                                          server["port"]))
         else:
-            print(data)
             data = json.loads(data.decode("utf-8"))
             lock.acquire()
             output.append(data)
@@ -325,7 +335,7 @@ class ABD(ProtocolInterface):
         sock.settimeout(self.timeout_per_request)
 
         try:
-            data = sock.recv(640000)
+            data = self.recvall(sock)
         except:
             print("Server with host: {1} and port: {2} timeout for get request in ABD", (server["host"],
                                                                                          server["port"]))

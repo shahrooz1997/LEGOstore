@@ -242,15 +242,14 @@ def call(key, value):
 def thread_wrapper(method, latency_file, output_logger, lock, key, value=None):
     # We will assume fixed class for wrapper for now
 
+    output = method + key + "Empty"
     a = datetime.now()
-    if method == "insert":
-        ouput = key + json.dumps(client.insert(key, value, "Viveck_1"))
-    elif method == "put":
+    if method == "put":
         output  = key + json.dumps(client.put(key, value))
-    elif method == "get":
-        output = key + json.dumps(client.get(key)["status"])
     else:
-        output = "Invalid Call"
+        output = key + json.dumps(client.get(key)["status"])
+  #  else:
+   #     output = "Invalid Call"
     b = datetime.now()
     c = b - a
 
@@ -258,7 +257,7 @@ def thread_wrapper(method, latency_file, output_logger, lock, key, value=None):
     lock.acquire()
     latency_file.write(method + ":" + str(c.seconds * 1000 + c.microseconds * 0.001) + '\n')
     latency_file.flush()
-    output_logger.info(output)
+    output_logger.info(method + ":" + str(output))
     lock.release()
     
     return
@@ -283,16 +282,16 @@ if __name__ == "__main__":
     write_ratio = 0.5
     insert_ratio = 0
     initial_count = 100
-    value_size = 100000
+    value_size = 10000
     latency_file = open("latency.txt", "w+")
     lock = threading.Lock()
     workload = Workload("uniform", arrival_rate, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
     request_count = 0
+    output_logger = get_logger("output.log")
 
     while request_count < arrival_rate * experiment_duration:
         inter_arrival_time, request_type, key, value = workload.next()
         time.sleep(inter_arrival_time * 0.001)
-        output_logger = get_logger("output.log")
 
         new_thread = threading.Thread(target = thread_wrapper, args=(request_type,
                                                                      latency_file,

@@ -244,6 +244,8 @@ def thread_wrapper(method, latency_file, output_logger, lock, key, value=None):
 
     output = method + key + "Empty"
     a = datetime.now()
+    if method == "insert":
+        return
     if method == "put":
         output  = key + json.dumps(client.put(key, value))
     else:
@@ -277,7 +279,7 @@ if __name__ == "__main__":
     client = Client(properties, properties["local_datacenter"])
 
     arrival_rate = 22
-    experiment_duration = 7200
+    experiment_duration = 3600
     read_ratio = 0.5
     write_ratio = 0.5
     insert_ratio = 0

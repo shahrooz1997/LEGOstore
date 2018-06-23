@@ -2,7 +2,7 @@ import socket
 import threading
 import json
 import time
-
+import struct
 from reader_writer_lock import ReadWriteLock
 from cache import Cache
 from abd_server_protocol import ABDServer
@@ -30,6 +30,7 @@ class DataServer:
         self.persistent = Persistent(db)
         self.lock = ReadWriteLock()
         self.enable_garbage_collector = enable_garbage_collector
+
 
 
     def get(self, key, timestamp, current_class, value_required):
@@ -128,20 +129,55 @@ class DataServer:
 
         raise NotImplementedError
 
+def recv_msg(sock):
+    # Read message length and unpack it into an integer
+    raw_msglen = recvall(sock, 4)
+    print("reached here")
+    if not raw_msglen:
+        return None
+    
+    msglen = struct.unpack('>I', raw_msglen)[0]
+    # Read the message data
+    return recvall(sock, msglen)
+
+
+def recvall(sock, n):
+#    fragments = []
+    data = b''
+    print("reached here too")
+    while len(data) < n:
+        packet = sock.recv(n - len(data))
+        print("current packet size: " + str(packet))
+        if not packet:
+            print("packet size " + str(packet))
+            return None
+        data += packet
+    return data
+#    while True:
+#        chunck = sock.recv(6400)
+#        print("reched chinch is :" + str(chunck))
+#        if not chunck:
+#            break
+#        fragments.append(chunck)
+#
+#    print("reached the final point================================>")
+#    return b''.join(fragments)
 
 def server_connection(connection, dataserver):
-    data = connection.recv(640000)
-
+    #data = recvall(connection)
+    #data = connection.recv(6400)
+    data = recv_msg(connection)
     if not data:
         connection.sendall(json.dumps({"status": "failure", "message": "No data Found"}).encode("utf-8"))
     try:
         data = json.loads(data.decode('utf-8'))
     except Exception as e:
-        connection.sendall(json.dumps({"status": "failure", "message": "unable to parse data:" + str(e)}).encode("utf-8"))
+        connection.sendall(json.dumps({"status": "failure", "message": "sevre1: unable to parse data:" + str(e)}).encode("utf-8"))
         connection.close()
         return
 
     method = data["method"]
+    print(str(data))
     try:
         if method == "put":
             connection.sendall(json.dumps(dataserver.put(data["key"],

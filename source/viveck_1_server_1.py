@@ -27,7 +27,6 @@ class Viveck_1Server:
             return {"status": "Failed", "timestamp": None}
 
         lock.release_read()
-        print(timestamp)
         return {"status": "OK", "timestamp": data[1]}
 
 

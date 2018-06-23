@@ -19,7 +19,12 @@ class TimeStamp:
 
     @staticmethod
     def get_max_timestamp(timestamp_list):
-        return max(timestamp_list)
+        max_timestamp = "0"
+        for time_ in timestamp_list:
+            if time_ and time_ > max_timestamp:
+                max_timestamp = time_
+
+        return max_timestamp
 
 
     @staticmethod

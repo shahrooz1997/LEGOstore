@@ -1,5 +1,6 @@
 from lamport_timestamp import TimeStamp
 
+import struct
 import hashlib
 import threading
 import json
@@ -127,19 +128,22 @@ class Viveck_1(ProtocolInterface):
                 "key": key,
                 "class": current_class}
 
-
-        sock.sendall(json.dumps(data).encode("utf-8"))
+        self.send_msg(sock, json.dumps(data).encode("utf-8"))
+        #sock.sendall(json.dumps(data).encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
 
         try:
             data = sock.recv(640000)
+            sock.close()
         except Exception as e:
             print("Server with host: {1} and port: {2} timeout for getTimestamp in ABD", (server["host"],
                                                                                           server["port"]))
         else:
             data = json.loads(data.decode("utf-8"))
             lock.acquire()
+            print(str(data))
             output.append(data["timestamp"])
+            print(str(server) + str(data["timestamp"]))
             lock.release()
 
         try:
@@ -158,7 +162,7 @@ class Viveck_1(ProtocolInterface):
 
         output = []
         new_server_list = self._get_closest_servers(server_list, self.quorum_1)
-        #print("timestamp server: " + str(new_server_list))
+        print("timestamp server: " + str(new_server_list))
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
@@ -180,16 +184,23 @@ class Viveck_1(ProtocolInterface):
 
         # Removing barrier for all the waiting threads
         sem.abort()
-
+      
         lock.acquire()
         if (len(output) < self.quorum_1):
             lock.release()
             raise Exception("Timeout during timestamps")
-
+        print(output)
         time = TimeStamp.get_max_timestamp(output)
+        print(time)
         lock.release()
         return time
 
+
+    def send_msg(self, sock, msg):
+        # Prefix each message with a 4-byte length (network byte order)
+        msg = struct.pack('>I', len(msg)) + msg
+        sock.sendall(msg)
+        
 
     def _put(self, key, value, timestamp, sem, server, output, lock, delay=0):
         #time.sleep(delay * 0.001)
@@ -202,11 +213,13 @@ class Viveck_1(ProtocolInterface):
                            "timestamp": timestamp,
                            "class": self.current_class})
 
-        sock.sendall(data.encode("utf-8"))
+        self.send_msg(sock, data.encode("utf-8"))
+        #sock.sendall(data.encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
 
         try:
             data = sock.recv(640000)
+        #    sock.close()
         except Exception as e:
             print("Server with host: {1} and port: {2} timeout for put request in Viceck_1", (server["host"],
                                                                                               server["port"]))
@@ -244,12 +257,13 @@ class Viveck_1(ProtocolInterface):
                            "key": key,
                            "timestamp": timestamp,
                            "class": self.current_class})
-
-        sock.sendall(data.encode("utf-8"))
+        self.send_msg(sock, data.encode("utf-8"))
+        #sock.sendall(data.encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
 
         try:
             data = sock.recv(640000)
+            sock.close()
         except Exception as e:
             print("Server with host: {1} and port: {2} timeout for put fin request in Viveck",
                   (server["host"], server["port"]))
@@ -308,7 +322,7 @@ class Viveck_1(ProtocolInterface):
         # TODO: Retry feature with timeouts with any of those didn't respond.
         # Although this might not be a bottleneck for now
         new_server_list = self._get_closest_servers(server_list, self.quorum_2)
-
+        print("closest servers are :" + str(new_server_list))
         # Still sending to all for the request but wait for only required quorum to respond.
         # If needed ping to only required quorum and then retry
         for data_center_id, servers in new_server_list.items():
@@ -337,6 +351,7 @@ class Viveck_1(ProtocolInterface):
         sem.abort()
 
         lock.acquire()
+        print("Problem :" + str(output))
         if (len(output) < self.quorum_2):
             lock.release()
             return {"status": "TimeOut", "message": "Timeout during put code call of Viceck_1"}
@@ -393,15 +408,18 @@ class Viveck_1(ProtocolInterface):
                 "class": self.current_class,
                 "value_required": value_required}
 
-        sock.sendall(json.dumps(data).encode("utf-8"))
+        self.send_msg(sock, json.dumps(data).encode("utf-8"))
+       # sock.sendall(json.dumps(data).encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
 
         try:
             data = self.recvall(sock)
+            sock.close()
         except Exception as e:
             print("Server with host: {1} and port: {2} timeout for get request in ABD", (server["host"],
                                                                                          server["port"]))
         else:
+            print("recived data is :" + str(data.decode("utf-8")))
         #    print(data.decode("utf-8"))
             data = json.loads(data.decode("utf-8"), strict=False)
             if data["value"]:
@@ -470,12 +488,13 @@ class Viveck_1(ProtocolInterface):
 
         sem = threading.Barrier(self.quorum_4 + 1, timeout=self.timeout)
         lock = threading.Lock()
-        print(str(timestamp))
+        print("reached here: " + str(timestamp))
         new_server_list = self._get_closest_servers(server_list, self.quorum_4)
         minimum_cost_list = self._get_cost_effective_server_list(new_server_list)
         # Step2: Get the encoded value
         index = 0
         output = []
+        print("minimum list: " + str(minimum_cost_list))
         # This parameter is to mark the datacenter, servers which have already sent an request
         called_data_center = set()
         # Sending the get request to the selected servers

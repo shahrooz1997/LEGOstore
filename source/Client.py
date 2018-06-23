@@ -277,8 +277,8 @@ if __name__ == "__main__":
     properties = json.load(open('client_config.json'))
     client = Client(properties, properties["local_datacenter"])
 
-    arrival_rate = 11
-    experiment_duration = 3600
+    arrival_rate = 22
+    experiment_duration = 7200
     read_ratio = 0.5
     write_ratio = 0.5
     insert_ratio = 0

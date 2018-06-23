@@ -132,7 +132,6 @@ class DataServer:
 def recv_msg(sock):
     # Read message length and unpack it into an integer
     raw_msglen = recvall(sock, 4)
-    print("reached here")
     if not raw_msglen:
         return None
     
@@ -144,12 +143,9 @@ def recv_msg(sock):
 def recvall(sock, n):
 #    fragments = []
     data = b''
-    print("reached here too")
     while len(data) < n:
         packet = sock.recv(n - len(data))
-        print("current packet size: " + str(packet))
         if not packet:
-            print("packet size " + str(packet))
             return None
         data += packet
     return data

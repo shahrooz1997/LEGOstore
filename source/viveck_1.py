@@ -141,7 +141,6 @@ class Viveck_1(ProtocolInterface):
         else:
             data = json.loads(data.decode("utf-8"))
             lock.acquire()
-            print(str(data))
             output.append(data["timestamp"])
             print(str(server) + str(data["timestamp"]))
             lock.release()
@@ -189,9 +188,7 @@ class Viveck_1(ProtocolInterface):
         if (len(output) < self.quorum_1):
             lock.release()
             raise Exception("Timeout during timestamps")
-        print(output)
         time = TimeStamp.get_max_timestamp(output)
-        print(time)
         lock.release()
         return time
 
@@ -351,7 +348,6 @@ class Viveck_1(ProtocolInterface):
         sem.abort()
 
         lock.acquire()
-        print("Problem :" + str(output))
         if (len(output) < self.quorum_2):
             lock.release()
             return {"status": "TimeOut", "message": "Timeout during put code call of Viceck_1"}

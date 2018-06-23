@@ -51,19 +51,15 @@ class Viveck_1Server:
     def insert_data(key, value, timestamp, label, cache, persistent):
         # Verify once more if anyone else has insterted the key value in between
         if cache.get(key+timestamp):
-            print("key already inserted")
             return
 
         current_storage = cache
         data = cache.get(key)
-        print("cache data is" + str(data))
         if not data:
             data = persistent.get(key)
-            print("key in persistent is: " + str(data))
             current_storage = persistent
 
         if not data[0]:
-            print("should not happen in current implementation")
             new_values = [(key, [timestamp, None]), (key+timestamp, [value, label, None])]
 
             cache_thread = threading.Thread(target=cache.put_in_batch, args=(new_values,))
@@ -136,7 +132,6 @@ class Viveck_1Server:
         data = cache.get(key+timestamp)
         if not data:
             data = persistent.get(key+timestamp)
-        print("fin tag data is : ==> " + str(data))
 
         if not data[0]:
             Viveck_1Server.insert_data(key, None, timestamp, True, cache, persistent)
@@ -147,7 +142,6 @@ class Viveck_1Server:
             if not current_values:
                 current_values = persistent.get(key)
 
-            print("current persisten key : " + str(current_values))
             current_timestamp, current_fin_timestamp = current_values
 
             data_values = [(key+timestamp, [data[0], True, data[2]])]
@@ -183,7 +177,6 @@ class Viveck_1Server:
         data = cache.get(key+timestamp)
         if not data:
             data = persistent.get(key+timestamp)
-            print("persistent data on get is :" + str(data))
             lock.release_read()
 
             if len(data) == 1:

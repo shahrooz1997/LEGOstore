@@ -142,7 +142,6 @@ class Viveck_1(ProtocolInterface):
             data = json.loads(data.decode("utf-8"))
             lock.acquire()
             output.append(data["timestamp"])
-            print(str(server) + str(data["timestamp"]))
             lock.release()
 
         try:
@@ -415,7 +414,6 @@ class Viveck_1(ProtocolInterface):
             print("Server with host: {1} and port: {2} timeout for get request in ABD", (server["host"],
                                                                                          server["port"]))
         else:
-            print("recived data is :" + str(data.decode("utf-8")))
         #    print(data.decode("utf-8"))
             data = json.loads(data.decode("utf-8"), strict=False)
             if data["value"]:

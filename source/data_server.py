@@ -173,7 +173,7 @@ def server_connection(connection, dataserver):
         return
 
     method = data["method"]
-    print(str(data))
+    print(str(data["method"]))
     try:
         if method == "put":
             connection.sendall(json.dumps(dataserver.put(data["key"],

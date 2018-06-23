@@ -470,7 +470,7 @@ class Viveck_1(ProtocolInterface):
 
         sem = threading.Barrier(self.quorum_4 + 1, timeout=self.timeout)
         lock = threading.Lock()
-
+        print(str(timestamp))
         new_server_list = self._get_closest_servers(server_list, self.quorum_4)
         minimum_cost_list = self._get_cost_effective_server_list(new_server_list)
         # Step2: Get the encoded value

@@ -225,7 +225,7 @@ class Client:
             output = self.class_name_to_object[class_name].get(key, server_list)
 
             if self.check_validity(output):
-                return {"status": "OK", "value": output["value"]}
+                return {"status": "OK", "value": None}
 
             total_attempts -= 1
 
@@ -247,7 +247,7 @@ def thread_wrapper(method, latency_file, output_logger, lock, key, value=None):
     if method == "put":
         output  = key + json.dumps(client.put(key, value))
     else:
-        output = key + json.dumps(client.get(key)["status"])
+        output = key + json.dumps(client.get(key))
   #  else:
    #     output = "Invalid Call"
     b = datetime.now()
@@ -281,7 +281,7 @@ if __name__ == "__main__":
     read_ratio = 0.5
     write_ratio = 0.5
     insert_ratio = 0
-    initial_count = 100
+    initial_count = 990000
     value_size = 10000
     latency_file = open("latency.txt", "w+")
     lock = threading.Lock()

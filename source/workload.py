@@ -31,7 +31,7 @@ class Workload:
 
         if request_type == "insert":
             key = "key" + str(self.key_count)
-            self.key_count += 1
+#            self.key_count += 1
         else:
             key = "key" + str(random.randint(0, self.key_count))
 

@@ -236,7 +236,9 @@ class Viveck_1(ProtocolInterface):
     def encode(self, value, codes):
         # Updated for viveck
         if self.k == 1:
-            return [value] * self.m
+            codes.extend([value]*self.m)
+            return codes
+
         codes.extend(self.ec_driver.encode(value.encode("utf-8")))
         for index in range(len(codes)):
            #print(type(codes[index]))
@@ -434,7 +436,7 @@ class Viveck_1(ProtocolInterface):
     def decode(self, chunk_list):
         if self.k == 1:
             return chunk_list[0]
-        
+
         for i in range(len(chunk_list)):
             chunk_list[i] = chunk_list[i].encode("latin-1")
         return self.ec_driver.decode(chunk_list).decode("utf-8")

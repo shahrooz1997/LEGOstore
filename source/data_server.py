@@ -3,6 +3,8 @@ import threading
 import json
 import time
 import struct
+import sys
+
 from reader_writer_lock import ReadWriteLock
 from cache import Cache
 from abd_server_protocol import ABDServer
@@ -10,6 +12,7 @@ from garbage_collector import garbage_collector
 from persistent import Persistent
 #from viveck_1_server import Viveck_1Server
 from viveck_1_server_1 import Viveck_1Server
+
 
 class DataServer:
     def __init__(self, db, sock=None, enable_garbage_collector = False):
@@ -31,6 +34,8 @@ class DataServer:
         self.lock = ReadWriteLock()
         self.enable_garbage_collector = enable_garbage_collector
 
+        self.encoding_scheme = "latin-1"
+
 
 
     def get(self, key, timestamp, current_class, value_required):
@@ -42,10 +47,13 @@ class DataServer:
         :return:
         raises NotImplementedError if the class is not found
         '''
+
         if current_class == "ABD":
             return ABDServer.get(key, timestamp, self.cache, self.persistent, self.lock)
         elif current_class == "Viveck_1":
-            return Viveck_1Server.get(key, timestamp, self.cache, self.persistent, self.lock, value_required)
+            output = Viveck_1Server.get(key, timestamp, self.cache, self.persistent, self.lock, value_required)
+            sys.getsizeof(output)
+            return output["status"] + ":" + output["value"]
 
         raise NotImplementedError
 
@@ -164,38 +172,51 @@ def server_connection(connection, dataserver):
     #data = connection.recv(6400)
     data = recv_msg(connection)
     if not data:
-        connection.sendall(json.dumps({"status": "failure", "message": "No data Found"}).encode("utf-8"))
+        connection.sendall(json.dumps({"status": "failure", "message": "No data Found"}).encode("latin-1"))
     try:
-        data = json.loads(data.decode('utf-8'))
+        data = data.decode("latin-1")
+        data_list = data.split(":")
+        #data = json.loads(data.decode('utf-8'))
     except Exception as e:
-        connection.sendall(json.dumps({"status": "failure", "message": "sevre1: unable to parse data:" + str(e)}).encode("utf-8"))
+        connection.sendall(json.dumps({"status": "failure", "message": "sevre1: unable to parse data:" + str(e)}).encode("latin-1"))
         connection.close()
         return
 
-    method = data["method"]
-    print(str(data["method"]))
+    method = data[0]
+    #method = data["method"]
+    #print(str(data["method"]))
     try:
         if method == "put":
-            connection.sendall(json.dumps(dataserver.put(data["key"],
-                                                         data["value"],
-                                                         data["timestamp"],
-                                                         data["class"])).encode("utf-8"))
+            connection.sendall(json.dumps(dataserver.put(data_list[0],
+                                                         data_list[1],
+                                                         data_list[2],
+                                                         data_list[3])).encode("latin-1"))
+            # connection.sendall(json.dumps(dataserver.put(data["key"],
+            #                                              data["value"],
+            #                                              data["timestamp"],
+            #                                              data["class"])).encode("utf-8"))
+
         elif method == "get":
-            if "value_required" not in data:
-                data["value_required"] = False
-            connection.sendall(json.dumps(dataserver.get(data["key"],
-                                                         data["timestamp"],
-                                                         data["class"],
-                                                         data["value_required"])).encode("utf-8"))
+            # if "value_required" not in data:
+            #     data["value_required"] = False
+            required_value = False
+            if len(data) > 4:
+                required_value = data[4]
+
+            connection.sendall(dataserver.get(data[0], data[1], data[2], data[3], required_value).encode("latin-1"))
+            # connection.sendall(json.dumps(dataserver.get(data["key"],
+            #                                              data["timestamp"],
+            #                                              data["class"],
+            #                                              data["value_required"])).encode("utf-8"))
         elif method == "get_timestamp":
-            connection.sendall(json.dumps(dataserver.get_timestamp(data["key"],
-                                                                   data["class"])).encode("utf-8"))
+            connection.sendall(json.dumps(dataserver.get_timestamp(data[0],
+                                                                   data[1])).encode("latin-1"))
         elif method == "put_fin":
-            connection.sendall(json.dumps(dataserver.put_fin(data["key"],
-                                                             data["timestamp"],
-                                                             data["class"])).encode("utf-8")) 
+            connection.sendall(json.dumps(dataserver.put_fin(data[0],
+                                                             data[1],
+                                                             data[2])).encode("latin-1"))
         elif method:
-            connection.sendall("MethodNotFound: Unknown method is called".encode("utf-8"))
+            connection.sendall("MethodNotFound: Unknown method is called".encode("latin-1"))
     except socket.error:
         pass
 

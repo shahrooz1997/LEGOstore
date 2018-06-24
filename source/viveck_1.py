@@ -10,7 +10,7 @@ from placement_policy import PlacementFactory
 from protocol_interface import ProtocolInterface
 from pyeclib.ec_iface import ECDriver
 import time
-
+import sys
 
 class Viveck_1(ProtocolInterface):
 
@@ -74,6 +74,7 @@ class Viveck_1(ProtocolInterface):
         # Sorting the datacenter id as per transfer cost
         self.dc_cost = [k for k in sorted(self.dc_cost, key=self.dc_cost.get,
                                                 reverse=False)]
+        self.encoding_byte = "latin-1"
 
 
     def _get_cost_effective_server_list(self, server_list):
@@ -127,8 +128,8 @@ class Viveck_1(ProtocolInterface):
         data = {"method": "get_timestamp",
                 "key": key,
                 "class": current_class}
-
-        self.send_msg(sock, json.dumps(data).encode("utf-8"))
+        data_to_send = "get_timestamp" + ":" + key + ":" + current_class
+        self.send_msg(sock, data_to_send.encode(self.encoding_byte))
         #sock.sendall(json.dumps(data).encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
 
@@ -139,7 +140,7 @@ class Viveck_1(ProtocolInterface):
             print("Server with host: {1} and port: {2} timeout for getTimestamp in ABD", (server["host"],
                                                                                           server["port"]))
         else:
-            data = json.loads(data.decode("utf-8"))
+            data = json.loads(data.decode(self.encoding_byte))
             lock.acquire()
             output.append(data["timestamp"])
             lock.release()
@@ -196,20 +197,16 @@ class Viveck_1(ProtocolInterface):
         # Prefix each message with a 4-byte length (network byte order)
         msg = struct.pack('>I', len(msg)) + msg
         sock.sendall(msg)
-        
+
 
     def _put(self, key, value, timestamp, sem, server, output, lock, delay=0):
         #time.sleep(delay * 0.001)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
-        data = json.dumps({"method": "put",
-                           "key": key,
-                           "value": value,
-                           "timestamp": timestamp,
-                           "class": self.current_class})
-
-        self.send_msg(sock, data.encode("utf-8"))
+        data_to_put = "put" + ":" + key + ":" + value + ":" + timestamp + ":" + self.current_class
+        print("current put size is : " + sys.getsizeof(data_to_put))
+        self.send_msg(sock, data_to_put.encode(self.encoding_byte))
         #sock.sendall(data.encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
 
@@ -220,7 +217,7 @@ class Viveck_1(ProtocolInterface):
             print("Server with host: {1} and port: {2} timeout for put request in Viceck_1", (server["host"],
                                                                                               server["port"]))
         else:
-            data = json.loads(data.decode("utf-8"))
+            data = json.loads(data.decode(self.encoding_byte))
             lock.acquire()
             output.append(data)
             lock.release()
@@ -239,10 +236,10 @@ class Viveck_1(ProtocolInterface):
             codes.extend([value]*self.m)
             return codes
 
-        codes.extend(self.ec_driver.encode(value.encode("utf-8")))
+        codes.extend(self.ec_driver.encode(value.encode(self.encoding_byte)))
         for index in range(len(codes)):
            #print(type(codes[index]))
-           codes[index] = codes[index].decode("latin-1")
+           codes[index] = codes[index].decode(self.encoding_byte)
 
         return
 
@@ -254,11 +251,9 @@ class Viveck_1(ProtocolInterface):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
-        data = json.dumps({"method": "put_fin",
-                           "key": key,
-                           "timestamp": timestamp,
-                           "class": self.current_class})
-        self.send_msg(sock, data.encode("utf-8"))
+        data_to_send = "put_fin" + ":" + key + ":" + timestamp + ":" + self.current_class
+
+        self.send_msg(sock, data_to_send.encode(self.encoding_byte))
         #sock.sendall(data.encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
 
@@ -269,7 +264,7 @@ class Viveck_1(ProtocolInterface):
             print("Server with host: {1} and port: {2} timeout for put fin request in Viveck",
                   (server["host"], server["port"]))
         else:
-            data = json.loads(data.decode("utf-8"))
+            data = json.loads(data.decode(self.encoding_byte))
             lock.acquire()
             output.append(data)
             lock.release()
@@ -402,13 +397,9 @@ class Viveck_1(ProtocolInterface):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
-        data = {"method": "get",
-                "key": key,
-                "timestamp": timestamp,
-                "class": self.current_class,
-                "value_required": value_required}
+        data_to_send = "get" + ":" + key + ":" + timestamp + ":" + self.current_class + ":" + value_required
 
-        self.send_msg(sock, json.dumps(data).encode("utf-8"))
+        self.send_msg(sock, data_to_send.encode(self.encoding_byte))
        # sock.sendall(json.dumps(data).encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
 
@@ -419,11 +410,13 @@ class Viveck_1(ProtocolInterface):
             print("Server with host: {1} and port: {2} timeout for get request in ABD", (server["host"],
                                                                                          server["port"]))
         else:
-        #    print(data.decode("utf-8"))
-            data = json.loads(data.decode("utf-8"), strict=False)
-            if data["value"]:
+            data = data.decode(self.encoding_byte)
+            data_list = data.split(":")
+            print("recieved data size is" + sys.getsizeof(data))
+
+            if data_list[1] != "None":
                 lock.acquire()
-                output.append(data["value"])
+                output.append(data_list[1])
                 lock.release()
             try:
                 sem.wait()
@@ -438,8 +431,8 @@ class Viveck_1(ProtocolInterface):
             return chunk_list[0]
 
         for i in range(len(chunk_list)):
-            chunk_list[i] = chunk_list[i].encode("latin-1")
-        return self.ec_driver.decode(chunk_list).decode("utf-8")
+            chunk_list[i] = chunk_list[i].encode(self.encoding_byte)
+        return self.ec_driver.decode(chunk_list).decode(self.encoding_byte)
 
 
     def _get_from_remaining(self, key, timestamp, server_list, called_data_center):
@@ -536,12 +529,12 @@ class Viveck_1(ProtocolInterface):
         # We didn't get it from all other servers too. So basically we raise an error
         if (len(output) < self.k):
             lock.release()
-            return {"status": "TimeOut", "message": "Timeout/Concurrency error during get call"}
+            return {"status": "TimeOut", "value": "None", "message": "Timeout/Concurrency error during get call"}
         try:
             value = self.decode(output)
         except Exception as e:
             lock.release()
-            return {"status": "TimeOut", "message": e}
+            return {"status": "TimeOut", "value": "None","message": e}
 
         lock.release()
         return {"status": "OK", "value": value, "timestamp": timestamp}

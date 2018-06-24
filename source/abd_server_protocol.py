@@ -22,7 +22,7 @@ class ABDServer:
             return {"status": "OK", "value": value}
 
         lock.release_read()
-        return {"status": "Failed", "message": "No key found"}
+        return {"status": "Failed", "value":"None", "message": "No key found"}
 
 
     @staticmethod

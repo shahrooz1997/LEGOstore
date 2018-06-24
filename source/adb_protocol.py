@@ -7,6 +7,7 @@ import json
 import socket
 import copy
 import time
+import struct
 
 from placement_policy import PlacementFactory
 from protocol_interface import ProtocolInterface
@@ -85,6 +86,12 @@ class ABD(ProtocolInterface):
         return b''.join(fragments)
 
 
+    def send_msg(self, sock, msg):
+        # Prefix each message with a 4-byte length (network byte order)
+        msg = struct.pack('>I', len(msg)) + msg
+        sock.sendall(msg)
+
+
     def _get_cost_effective_server_list(self, server_list):
         # Sort the DCs as per the minimal cost of data trasnfer for get
         # Returns [(DC_ID, SERVER_ID), ]
@@ -128,7 +135,7 @@ class ABD(ProtocolInterface):
                 "key": key,
                 "class": self.current_class}
 
-        sock.sendall(json.dumps(data).encode("utf-8"))
+        self.send_msg(sock, json.dumps(data).encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
 
         try:
@@ -226,7 +233,7 @@ class ABD(ProtocolInterface):
                            "timestamp": timestamp,
                            "class": self.current_class})
 
-        sock.sendall(data.encode("utf-8"))
+        self.send_msg(sock, data.encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
 
         try:
@@ -337,7 +344,7 @@ class ABD(ProtocolInterface):
                 "timestamp": None,
                 "class": self.current_class}
 
-        sock.sendall(json.dumps(data).encode("utf-8"))
+        self.send_msg(sock, json.dumps(data).encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
 
         try:

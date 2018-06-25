@@ -52,8 +52,8 @@ class DataServer:
             return ABDServer.get(key, timestamp, self.cache, self.persistent, self.lock)
         elif current_class == "Viveck_1":
             output = Viveck_1Server.get(key, timestamp, self.cache, self.persistent, self.lock, value_required)
-            sys.getsizeof(output)
-            return output["status"] + ":" + output["value"]
+            print("server side size is " + str(sys.getsizeof(str(output))))
+            return output["status"] + "+:+" + str(output["value"])
 
         raise NotImplementedError
 
@@ -175,22 +175,22 @@ def server_connection(connection, dataserver):
         connection.sendall(json.dumps({"status": "failure", "message": "No data Found"}).encode("latin-1"))
     try:
         data = data.decode("latin-1")
-        data_list = data.split(":")
+        data_list = data.split("+:+")
         #data = json.loads(data.decode('utf-8'))
     except Exception as e:
         connection.sendall(json.dumps({"status": "failure", "message": "sevre1: unable to parse data:" + str(e)}).encode("latin-1"))
         connection.close()
         return
 
-    method = data[0]
+    method = data_list[0]
     #method = data["method"]
     #print(str(data["method"]))
     try:
         if method == "put":
-            connection.sendall(json.dumps(dataserver.put(data_list[0],
-                                                         data_list[1],
+            connection.sendall(json.dumps(dataserver.put(data_list[1],
                                                          data_list[2],
-                                                         data_list[3])).encode("latin-1"))
+                                                         data_list[3],
+                                                         data_list[4])).encode("latin-1"))
             # connection.sendall(json.dumps(dataserver.put(data["key"],
             #                                              data["value"],
             #                                              data["timestamp"],
@@ -200,21 +200,21 @@ def server_connection(connection, dataserver):
             # if "value_required" not in data:
             #     data["value_required"] = False
             required_value = False
-            if len(data) > 4:
-                required_value = data[4]
+            if len(data_list) > 4 and data_list[4] == "True":
+                required_value = True
 
-            connection.sendall(dataserver.get(data[0], data[1], data[2], data[3], required_value).encode("latin-1"))
+            connection.sendall(dataserver.get(data_list[1], data_list[2], data_list[3], required_value).encode("latin-1"))
             # connection.sendall(json.dumps(dataserver.get(data["key"],
             #                                              data["timestamp"],
             #                                              data["class"],
             #                                              data["value_required"])).encode("utf-8"))
         elif method == "get_timestamp":
-            connection.sendall(json.dumps(dataserver.get_timestamp(data[0],
-                                                                   data[1])).encode("latin-1"))
+            connection.sendall(json.dumps(dataserver.get_timestamp(data_list[1],
+                                                                   data_list[2])).encode("latin-1"))
         elif method == "put_fin":
-            connection.sendall(json.dumps(dataserver.put_fin(data[0],
-                                                             data[1],
-                                                             data[2])).encode("latin-1"))
+            connection.sendall(json.dumps(dataserver.put_fin(data_list[1],
+                                                             data_list[2],
+                                                             data_list[3])).encode("latin-1"))
         elif method:
             connection.sendall("MethodNotFound: Unknown method is called".encode("latin-1"))
     except socket.error:

@@ -12,17 +12,17 @@ class Persistent:
         data = self.db.get(str(key).encode())
 
         if data:
-            return eval(data.decode())
+            return eval(data.decode("latin-1"))
 
         return [None]
 
 
     def put(self, key, value):
-        return self.db.put(str(key).encode(), str(value).encode())
+        return self.db.put(str(key).encode(), str(value).encode("latin-1"))
 
 
     def put_in_batch(self, batch):
         for key, value in batch:
-            self.db.put(str(key).encode(), str(value).encode())
+            self.db.put(str(key).encode(), str(value).encode("latin-1"))
 
         return

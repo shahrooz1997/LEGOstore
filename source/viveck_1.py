@@ -128,7 +128,7 @@ class Viveck_1(ProtocolInterface):
         data = {"method": "get_timestamp",
                 "key": key,
                 "class": current_class}
-        data_to_send = "get_timestamp" + ":" + key + ":" + current_class
+        data_to_send = "get_timestamp" + "+:+" + key + "+:+" + current_class
         self.send_msg(sock, data_to_send.encode(self.encoding_byte))
         #sock.sendall(json.dumps(data).encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
@@ -205,7 +205,7 @@ class Viveck_1(ProtocolInterface):
         sock.connect((server["host"], int(server["port"])))
 
         data_to_put = "put" + ":" + key + ":" + value + ":" + timestamp + ":" + self.current_class
-        print("current put size is : " + sys.getsizeof(data_to_put))
+        print("current size is : " + str(sys.getsizeof(data_to_put)))
         self.send_msg(sock, data_to_put.encode(self.encoding_byte))
         #sock.sendall(data.encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
@@ -240,6 +240,7 @@ class Viveck_1(ProtocolInterface):
         for index in range(len(codes)):
            #print(type(codes[index]))
            codes[index] = codes[index].decode(self.encoding_byte)
+           print(sys.sizeof(codes[index]))
 
         return
 
@@ -251,7 +252,7 @@ class Viveck_1(ProtocolInterface):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
-        data_to_send = "put_fin" + ":" + key + ":" + timestamp + ":" + self.current_class
+        data_to_send = "put_fin" + "+:+" + key + "+:+" + timestamp + "+:+" + self.current_class
 
         self.send_msg(sock, data_to_send.encode(self.encoding_byte))
         #sock.sendall(data.encode("utf-8"))
@@ -397,7 +398,7 @@ class Viveck_1(ProtocolInterface):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
-        data_to_send = "get" + ":" + key + ":" + timestamp + ":" + self.current_class + ":" + value_required
+        data_to_send = "get" + "+:+" + key + "+:+" + timestamp + "+:+" + self.current_class + "+:+" + str(value_required)
 
         self.send_msg(sock, data_to_send.encode(self.encoding_byte))
        # sock.sendall(json.dumps(data).encode("utf-8"))
@@ -411,8 +412,8 @@ class Viveck_1(ProtocolInterface):
                                                                                          server["port"]))
         else:
             data = data.decode(self.encoding_byte)
-            data_list = data.split(":")
-            print("recieved data size is" + sys.getsizeof(data))
+            data_list = data.split("+:+")
+            print("recieved data size is" + str(sys.getsizeof(data)))
 
             if data_list[1] != "None":
                 lock.acquire()

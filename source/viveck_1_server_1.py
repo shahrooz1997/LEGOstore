@@ -183,7 +183,7 @@ class Viveck_1Server:
                 lock.acquire_write()
                 Viveck_1Server.insert_data(key, None, timestamp, True, cache, persistent)
                 lock.release_write()
-                return {"status": "OK", "value": None}
+                return {"status": "OK", "value": "None"}
 
             lock.acquire_write()
             Viveck_1Server.put_back_in_cache(key, timestamp, data, cache)
@@ -191,7 +191,6 @@ class Viveck_1Server:
 
         lock.release_read()
         if required_value:
-            print("always required value ")
             return {"status": "OK", "value": data[0]}
 
-        return {"status": "OK", "value": None}
+        return {"status": "OK", "value": "None"}

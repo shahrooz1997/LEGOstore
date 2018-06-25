@@ -54,7 +54,7 @@ class DataServer:
             output = Viveck_1Server.get(key, timestamp, self.cache, self.persistent, self.lock, value_required)
             print("server side size is " + str(sys.getsizeof(output["value"])))
             
-            return output["status"] + "+:+" + output["value"]
+            return output["status"] + "+:--:+" + output["value"]
 
         raise NotImplementedError
 
@@ -176,7 +176,7 @@ def server_connection(connection, dataserver):
         connection.sendall(json.dumps({"status": "failure", "message": "No data Found"}).encode("latin-1"))
     try:
         data = data.decode("latin-1")
-        data_list = data.split("+:+")
+        data_list = data.split("+:--:+")
         #data = json.loads(data.decode('utf-8'))
     except Exception as e:
         connection.sendall(json.dumps({"status": "failure", "message": "sevre1: unable to parse data:" + str(e)}).encode("latin-1"))

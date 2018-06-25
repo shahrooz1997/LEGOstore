@@ -204,7 +204,7 @@ class Viveck_1(ProtocolInterface):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server["host"], int(server["port"])))
 
-        data_to_put = "put" + ":" + key + ":" + value + ":" + timestamp + ":" + self.current_class
+        data_to_put = "put" + "+:+" + key + "+:+" + value + "+:+" + timestamp + "+:+" + self.current_class
         print("current size is : " + str(sys.getsizeof(data_to_put)))
         self.send_msg(sock, data_to_put.encode(self.encoding_byte))
         #sock.sendall(data.encode("utf-8"))
@@ -240,7 +240,7 @@ class Viveck_1(ProtocolInterface):
         for index in range(len(codes)):
            #print(type(codes[index]))
            codes[index] = codes[index].decode(self.encoding_byte)
-           print(sys.sizeof(codes[index]))
+           print(sys.getsizeof(codes[index]))
 
         return
 

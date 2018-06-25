@@ -52,8 +52,9 @@ class DataServer:
             return ABDServer.get(key, timestamp, self.cache, self.persistent, self.lock)
         elif current_class == "Viveck_1":
             output = Viveck_1Server.get(key, timestamp, self.cache, self.persistent, self.lock, value_required)
-            print("server side size is " + str(sys.getsizeof(str(output))))
-            return output["status"] + "+:+" + str(output["value"])
+            print("server side size is " + str(sys.getsizeof(output["value"])))
+            
+            return output["status"] + "+:+" + output["value"]
 
         raise NotImplementedError
 

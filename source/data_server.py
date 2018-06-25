@@ -54,6 +54,10 @@ class DataServer:
             output = Viveck_1Server.get(key, timestamp, self.cache, self.persistent, self.lock, value_required)
             print("server side size is " + str(sys.getsizeof(output["value"])))
             
+            if output["value"] == None:
+                output["value"] = "None"
+                print(key + ":something fishy : " + str(output["value"]))
+
             return output["status"] + "+:--:+" + output["value"]
 
         raise NotImplementedError

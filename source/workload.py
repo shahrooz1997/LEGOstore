@@ -35,7 +35,7 @@ class Workload:
 #            self.key_count += 1
         else:
             if popularity_distribution < 90:
-                key = "key" + str(random.randint(0, self.key_count) / 10)
+                key = "key" + str(int(random.randint(0, self.key_count) / 10))
             else:
                 key = "key" + str(random.randint(0, self.key_count))
 

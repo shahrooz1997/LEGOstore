@@ -280,8 +280,8 @@ if __name__ == "__main__":
 
     arrival_rate = 22
     experiment_duration = 3600
-    read_ratio = 0.1
-    write_ratio = 0.9
+    read_ratio = 0.9
+    write_ratio = 0.1
     insert_ratio = 0
     initial_count = 990000
     value_size = 10000

@@ -279,7 +279,7 @@ if __name__ == "__main__":
     client = Client(properties, properties["local_datacenter"])
 
     arrival_rate = 22
-    experiment_duration = 3600
+    experiment_duration = 7200
     read_ratio = 0.9
     write_ratio = 0.1
     insert_ratio = 0

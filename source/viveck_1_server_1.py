@@ -60,7 +60,12 @@ class Viveck_1Server:
             current_storage = persistent
 
         if not data[0]:
-            new_values = [(key, [timestamp, None]), (key+timestamp, [value, label, None])]
+            if label:
+                fin_timestamp = timestamp
+            else:
+                fin_timestamp = None
+
+            new_values = [(key, [timestamp, fin_timestamp]), (key+timestamp, [value, label, None])]
 
             cache_thread = threading.Thread(target=cache.put_in_batch, args=(new_values,))
             persistent_thread = threading.Thread(target=persistent.put_in_batch, args=(new_values,))

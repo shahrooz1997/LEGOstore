@@ -559,7 +559,6 @@ class Viveck_1(ProtocolInterface):
             self.lock_latency_log.acquire()
             delta_time = int((end_time - start_time)*1000)
             self.latency_log.write("get:Q1:" + str(delta_time) + "\n")
-            self.latency_log.flush()
             self.lock_latency_log.release()
         except Exception as e:
             return {"status": "TimeOut", "message": "Timeout during get timestamp call of Viveck"}
@@ -604,7 +603,6 @@ class Viveck_1(ProtocolInterface):
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
         self.latency_log.write("get:Q4:" + str(delta_time) + "\n")
-        self.latency_log.flush()
         self.lock_latency_log.release()
         sem.abort()
 

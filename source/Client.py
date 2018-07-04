@@ -6,7 +6,7 @@ import copy
 from protocol import Protocol
 from data_center import Datacenter
 from datetime import datetime
-
+from multiprocessing import Process
 import uuid
 import threading
 from workload import Workload
@@ -42,7 +42,7 @@ class Client:
 
         self.latency_between_DCs = properties["latency_between_DCs"]
         self.dc_cost = properties["DC_cost"]
- 
+
         self.initiate_key_classes()
 
 
@@ -209,7 +209,7 @@ class Client:
 
         # Step1: Get the relevant metadata for the key
         try:
-            class_name = self.default_class 
+            class_name = self.default_class
             server_list = copy.deepcopy(self.class_properties[self.default_class]["manual_dc_server_ids"])
             #class_name, server_list = self.look_up_metadata(key)
         except Exception as e:
@@ -235,35 +235,35 @@ class Client:
 
 
 
-def call(key, value):
-    print(json.dumps(client.put(key, str(value))))
-
-
-def thread_wrapper(method, latency_file, output_logger, lock, key, value=None):
-    # We will assume fixed class for wrapper for now
-
-    output = method + key + "Empty"
-    a = datetime.now()
-    if method == "insert":
-        return
-    if method == "put":
-        output  = key + json.dumps(client.put(key, value))
-    else:
-        output = key + json.dumps(client.get(key))
-  #  else:
-   #     output = "Invalid Call"
-    b = datetime.now()
-    c = b - a
-
-    # Flush every latency on disk. May not be a good idea in long term.
-    lock.acquire()
-    latency_file.write(method + ":" + str(c.seconds * 1000 + c.microseconds * 0.001) + '\n')
-    latency_file.flush()
-    output_logger.info(method + ":" + str(output))
-    lock.release()
-    
-    return
-
+# def call(key, value):
+#     print(json.dumps(client.put(key, str(value))))
+#
+#
+# def thread_wrapper(method, latency_file, output_logger, lock, key, value=None):
+#     # We will assume fixed class for wrapper for now
+#
+#     output = method + key + "Empty"
+#     a = datetime.now()
+#     if method == "insert":
+#         return
+#     if method == "put":
+#         output  = key + json.dumps(client.put(key, value))
+#     else:
+#         output = key + json.dumps(client.get(key))
+#   #  else:
+#    #     output = "Invalid Call"
+#     b = datetime.now()
+#     c = b - a
+#
+#     # Flush every latency on disk. May not be a good idea in long term.
+#     lock.acquire()
+#     latency_file.write(method + ":" + str(c.seconds * 1000 + c.microseconds * 0.001) + '\n')
+#     latency_file.flush()
+#     output_logger.info(method + ":" + str(output))
+#     lock.release()
+#
+#     return
+#
 
 def get_logger(log_path):
     logger_ = logging.getLogger('log')
@@ -274,43 +274,105 @@ def get_logger(log_path):
     logger_.addHandler(handler)
     return logger_
 
+def run_session(arrival_rate, workload, properties, experiment_duration, session_id=None):
+
+
+    if not session_id:
+        session_id = uuid.uuid4().int
+
+
+    filename = "output_" + str(session_id) + ".txt"
+    output_file = open(filename, "w")
+    client = Client(properties, session_id)
+    request_count = 0
+
+    while request_count < arrival_rate * experiment_duration:
+        inter_arrival_time, request_type, key, value = workload.next()
+
+        start_time = time.time()
+        if request_type == "insert":
+            continue
+        elif request_type == "put":
+            output = key + json.dumps(client.put(key, value))
+        else:
+            output = key + json.dumps(client.get(key))
+
+        # Since each process has its own file no need to even flush it.
+        output_file.write(request_type + ":" + str(output) + "\n")
+        output_file.flush()
+        request_time = time.time() - start_time
+
+        if request_time < arrival_rate:
+            # Multiply with 1.0 just to make sure float ubstraction happens (not int float conflicts)
+            time.sleep(arrival_rate * 1.0 - request_time)
+
+        request_count += 1
+
+
+    output_file.close()
+
+
 if __name__ == "__main__":
     properties = json.load(open('client_config.json'))
-    client = Client(properties, properties["local_datacenter"])
+    #client = Client(properties, properties["local_datacenter"])
 
+    # General properties for this group of requests
     arrival_rate = 22
-    experiment_duration = 7200
+    experiment_duration = 10800
     read_ratio = 0.9
     write_ratio = 0.1
     insert_ratio = 0
     initial_count = 990000
     value_size = 10000
-    latency_file = open("latency.txt", "w+")
-    lock = threading.Lock()
-    workload = Workload("uniform", arrival_rate, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
-    request_count = 0
-    output_logger = get_logger("output.log")
 
-    while request_count < arrival_rate * experiment_duration:
-        inter_arrival_time, request_type, key, value = workload.next()
-        time.sleep(inter_arrival_time * 0.001)
+    #workload = Workload("uniform", arrival_rate, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
+    ## don't need latency file, let class generate it instead
+    #latency_file = open("latency.txt", "w+")
+    #lock = threading.Lock()
+    #each each client has its own request count and output log
+    #request_count = 0
+    #output_logger = get_logger("output.log")
 
-        new_thread = threading.Thread(target = thread_wrapper, args=(request_type,
-                                                                     latency_file,
-                                                                     output_logger,
-                                                                     lock,
-                                                                     key,
-                                                                     value))
+    # socket_logger = get_logger("socket_times.log")
+    # individual_logger = get_logger("individual_times.log")
 
-        request_count += 1
-        new_thread.start()
+    process_list = []
+    # XXX: ASSUMPTION: IN WORST CASE IT TAKES 1 SECOND TO SERVE THE REQUEST
+    workload = Workload("uniform", 1, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
+
+    for i in range(arrival_rate):
+        client_uid = properties['local_datacenter'] + str(i)
+        process_list.append(Process(target=run_session, args=(1,
+                                                              workload,
+                                                              properties,
+                                                              experiment_duration,
+                                                              client_uid)))
+    for process in process_list:
+        process.start()
+
+    for process in process_list:
+        process.join()
+
+#  XXX: Previous code : TODO: Delete it once we know new one is working
+#        inter_arrival_time, request_type, key, value = workload.next()
+#        time.sleep(inter_arrival_time * 0.001)
+#
+#        new_thread = threading.Thread(target = thread_wrapper, args=(request_type,
+#                                                                     latency_file,
+#                                                                     output_logger,
+#                                                                     lock,
+#                                                                     key,
+#                                                                     value))
+#
+#        request_count += 1
+#        new_thread.start()
 
 #    while 1:
 #         data = input()
 #         method, key, value = data.split(",")
 #         a = datetime.now()
 #         if method == "insert":
-#             print(json.dumps(client.insert(key, value, "Viveck_1")))
+#             print(json.dumps(client.insert(key, value, "ABD")))
 #         elif method == "put":
 #             print(json.dumps(client.put(key, value)))
 #         elif method == "get":

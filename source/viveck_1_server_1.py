@@ -83,7 +83,9 @@ class Viveck_1Server:
         current_timestamp = data[0]
         current_fin = data[1]
         if timestamp > current_timestamp:
-            new_values = [(key, [timestamp, timestamp]),
+            if label:
+                current_fin = timestamp
+            new_values = [(key, [timestamp, current_fin]),
                           (key+timestamp, [value, label, current_timestamp])]
 
             cache_thread = threading.Thread(target=cache.put_in_batch, args=(new_values,))

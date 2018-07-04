@@ -76,6 +76,17 @@ class Viveck_1(ProtocolInterface):
                                                 reverse=False)]
         self.encoding_byte = "latin-1"
 
+        # Since we are running multiple clients on same machine. We want different latency files
+        latency_log_file_name = "individual_times_" + str(self.id) + ".txt"
+        socket_log_file_name = "socket_times_" + str(self.id) + ".txt"
+        coding_log_file_name = "coding_times_" + str(self.id) + ".txt"
+        self.latency_log = open(latency_log_file_name, "w")
+        self.socket_log  = open(socket_log_file_name, "w")
+        self.coding_log = open(coding_log_file_name, "w")
+        self.lock_latency_log = threading.Lock()
+        self.lock_socket_log = threading.Lock()
+        self.lock_coding_log = threading.Lock()
+
 
     def _get_cost_effective_server_list(self, server_list):
         # Sort the DCs as per the minimal cost of data trasnfer for get
@@ -123,7 +134,17 @@ class Viveck_1(ProtocolInterface):
     def _get_timestamp(self, key, sem, server, output, lock, current_class, delay=0):
         #time.sleep(delay * 0.001)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        start_time = time.time()
         sock.connect((server["host"], int(server["port"])))
+        end_time = time.time()
+
+        self.lock_socket_log.acquire()
+        delta_time = int((end_time - start_time)*1000)
+        self.socket_log.write(server["host"] + ":" + str(delta_time) + "\n")
+        self.socket_log.flush()
+        self.lock_socket_log.release()
+
 
         data = {"method": "get_timestamp",
                 "key": key,
@@ -183,7 +204,7 @@ class Viveck_1(ProtocolInterface):
 
         # Removing barrier for all the waiting threads
         sem.abort()
-      
+
         lock.acquire()
         if (len(output) < self.quorum_1):
             lock.release()
@@ -202,7 +223,14 @@ class Viveck_1(ProtocolInterface):
     def _put(self, key, value, timestamp, sem, server, output, lock, delay=0):
         #time.sleep(delay * 0.001)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        start_time = time.time()
         sock.connect((server["host"], int(server["port"])))
+        end_time = time.time()
+        self.lock_socket_log.acquire()
+        delta_time = int((end_time - start_time)*1000)
+        self.socket_log.write(server["host"] + ":" + str(delta_time) + "\n")
+        self.socket_log.flush()
+        self.lock_socket_log.release()
 
         data_to_put = "put" + "+:--:+" + key + "+:--:+" + value + "+:--:+" + timestamp + "+:--:+" + self.current_class
         print("current size is : " + str(sys.getsizeof(data_to_put)))
@@ -232,6 +260,7 @@ class Viveck_1(ProtocolInterface):
 
     def encode(self, value, codes):
         # Updated for viveck
+        start_time = time.time()
         if self.k == 1:
             codes.extend([value]*self.m)
             return codes
@@ -241,6 +270,11 @@ class Viveck_1(ProtocolInterface):
            #print(type(codes[index]))
            codes[index] = codes[index].decode(self.encoding_byte)
            print(sys.getsizeof(codes[index]))
+        end_time = time.time()
+        self.lock_coding_log.acquire()
+        delta_time = int((end_time - start_time)*1000)
+        self.coding_log.write("encode:" + str(delta_time) + "\n")
+        self.lock_coding_log.release()
 
         return
 
@@ -250,7 +284,15 @@ class Viveck_1(ProtocolInterface):
         #time.sleep(delay * 0.001)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        start_time = time.time()
         sock.connect((server["host"], int(server["port"])))
+        end_time = time.time()
+
+        self.lock_socket_log.acquire()
+        delta_time = int((end_time - start_time)*1000)
+        self.socket_log.write(server["host"] + ":" + str(delta_time) + "\n")
+        self.socket_log.flush()
+        self.lock_socket_log.release()
 
         data_to_send = "put_fin" + "+:--:+" + key + "+:--:+" + timestamp + "+:--:+" + self.current_class
 
@@ -269,7 +311,7 @@ class Viveck_1(ProtocolInterface):
             lock.acquire()
             output.append(data)
             lock.release()
-        
+
         try:
             sem.wait()
         except threading.BrokenBarrierError:
@@ -299,8 +341,15 @@ class Viveck_1(ProtocolInterface):
         else:
             try:
                 # Unlike in ABD, here it returns the current timestamp
+                start_time = time.time()
                 timestamp = self.get_timestamp(key, server_list)
                 timestamp = TimeStamp.get_next_timestamp([timestamp], self.id)
+                end_time = time.time()
+
+                self.lock_latency_log.acquire()
+                delta_time = int((end_time - start_time)*1000)
+                self.latency_log.write("put:Q1:" + str(delta_time) + "\n")
+                self.lock_latency_log.release()
             except Exception as e:
                 return {"status": "TimeOut", "message": "Timeout during get timestamp call of Viveck_1"}
 
@@ -322,6 +371,7 @@ class Viveck_1(ProtocolInterface):
         print("closest servers are :" + str(new_server_list))
         # Still sending to all for the request but wait for only required quorum to respond.
         # If needed ping to only required quorum and then retry
+        start_time = time.time()
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
@@ -343,7 +393,12 @@ class Viveck_1(ProtocolInterface):
             sem.wait()
         except threading.BrokenBarrierError:
             pass
-
+        end_time = time.time()
+        self.lock_latency_log.acquire()
+        delta_time = int((end_time - start_time)*1000)
+        self.latency_log.write("put:Q2:" + str(delta_time) + "\n")
+        self.latency_log.flush()
+        self.lock_latency_log.release()
         # Removing barrier for all the waiting threads
         sem.abort()
 
@@ -360,7 +415,7 @@ class Viveck_1(ProtocolInterface):
         lock = threading.Lock()
 
         new_server_list = self._get_closest_servers(server_list, self.quorum_3)
-
+        start_time = time.time()
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
@@ -379,7 +434,12 @@ class Viveck_1(ProtocolInterface):
             sem_1.wait()
         except threading.BrokenBarrierError:
             pass
-
+        end_time =  time.time()
+        self.lock_latency_log.acquire()
+        delta_time = int((end_time - start_time)*1000)
+        self.latency_log.write("put:Q3:" + str(delta_time) + "\n")
+        self.latency_log.flush()
+        self.lock_latency_log.release()
         # Removing barrier for all the waiting threads
         sem_1.abort()
 
@@ -396,7 +456,15 @@ class Viveck_1(ProtocolInterface):
         #time.sleep(delay * 0.001)
         #print("get_delay: " + str(delay*0.001))
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        start_time = time.time()
         sock.connect((server["host"], int(server["port"])))
+        end_time = time.time()
+
+        self.lock_socket_log.acquire()
+        delta_time = int((end_time - start_time)*1000)
+        self.socket_log.write(server["host"] + ":" + str(delta_time) + "\n")
+        self.socket_log.flush()
+        self.lock_socket_log.release()
 
         data_to_send = "get" + "+:--:+" + key + "+:--:+" + timestamp + "+:--:+" + self.current_class + "+:--:+" + str(value_required)
 
@@ -428,12 +496,20 @@ class Viveck_1(ProtocolInterface):
 
 
     def decode(self, chunk_list):
+
+
+        start_time = time.time()
         if self.k == 1:
             return chunk_list[0]
 
         for i in range(len(chunk_list)):
             chunk_list[i] = chunk_list[i].encode(self.encoding_byte)
         return self.ec_driver.decode(chunk_list).decode(self.encoding_byte)
+        end_time = time.time()
+        self.lock_coding_log.acquire()
+        delta_time = int((end_time - start_time)*1000)
+        self.coding_log.write("decode:" + str(delta_time) + "\n")
+        self.lock_coding_log.release()
 
 
     def _get_from_remaining(self, key, timestamp, server_list, called_data_center):
@@ -476,7 +552,15 @@ class Viveck_1(ProtocolInterface):
         # Step1: Get the timestamp for the key
         # Error can imply either server busy or key doesn't exist
         try:
+            start_time = time.time()
             timestamp = self.get_timestamp(key, server_list)
+            end_time = time.time()
+
+            self.lock_latency_log.acquire()
+            delta_time = int((end_time - start_time)*1000)
+            self.latency_log.write("get:Q1:" + str(delta_time) + "\n")
+            self.latency_log.flush()
+            self.lock_latency_log.release()
         except Exception as e:
             return {"status": "TimeOut", "message": "Timeout during get timestamp call of Viveck"}
 
@@ -494,6 +578,7 @@ class Viveck_1(ProtocolInterface):
         # This parameter is to mark the datacenter, servers which have already sent an request
         called_data_center = set()
         # Sending the get request to the selected servers
+        start_time = time.time()
         for data_center_id, servers in minimum_cost_list:
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
@@ -515,7 +600,12 @@ class Viveck_1(ProtocolInterface):
             sem.wait()
         except threading.BrokenBarrierError:
             pass
-
+        end_time = time.time()
+        self.lock_latency_log.acquire()
+        delta_time = int((end_time - start_time)*1000)
+        self.latency_log.write("get:Q4:" + str(delta_time) + "\n")
+        self.latency_log.flush()
+        self.lock_latency_log.release()
         sem.abort()
 
         lock.acquire()

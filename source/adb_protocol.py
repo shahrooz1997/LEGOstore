@@ -34,7 +34,7 @@ class ABD(ProtocolInterface):
         self.current_class = "ABD"
         self.manual_servers = {}
 
-        
+
 
         # This is only added for the prototype. In real system you would never use it.
         self.dc_to_latency_map = copy.deepcopy(latency_between_DCs[self.local_datacenter_id])
@@ -64,6 +64,14 @@ class ABD(ProtocolInterface):
         # Sorting the datacenter id as per transfer cost
         self.dc_cost = [k for k in sorted(self.dc_cost, key=self.dc_cost.get,
                                                 reverse=False)]
+
+        # Output files initilization
+        latency_log_file_name = "individual_times_" + str(self.id) + ".txt"
+        socket_log_file_name = "socket_times_" + str(self.id) + ".txt"
+        self.latency_log = open(latency_log_file_name, "w")
+        self.socket_log  = open(socket_log_file_name, "w")
+        self.lock_latency_log = threading.Lock()
+        self.lock_socket_log = threading.Lock()
 
         # TODO: For now only implementing ping required numbers and wait for all to respond
         # TODO: Please note that there is infracstructure for different policies too. Please look quorum_policy.
@@ -129,7 +137,14 @@ class ABD(ProtocolInterface):
       #  time.sleep(float(delay) * 0.001)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        start_time = time.time()
         sock.connect((server["host"], int(server["port"])))
+        end_time = time.time()
+
+        self.lock_socket_log.acquire()
+        delta_time = int((end_time - start_time)*1000)
+        self.socket_log.write(server["host"] + str(delta_time) + "\n")
+        self.lock_socket_log.release()
 
         data = {"method": "get_timestamp",
                 "key": key,
@@ -224,7 +239,15 @@ class ABD(ProtocolInterface):
      #   time.sleep(int(delay) * 0.001)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        start_time = time.time()
         sock.connect((server["host"], int(server["port"])))
+        end_time = time.time()
+
+        self.lock_socket_log.acquire()
+        delta_time = int((end_time - start_time)*1000)
+        self.socket_log.write(server["host"] + str(delta_time) + "\n")
+        self.lock_socket_log.release()
+
         print(server)
 
         data = json.dumps({"method": "put",
@@ -282,10 +305,16 @@ class ABD(ProtocolInterface):
                                                            self.local_datacenter_id,
                                                            key)
         else:
+            start_time = time.time()
             try:
                 timestamp = self.get_timestamp(key, server_list)
             except:
                 return {"status": "TimeOut", "message": "Timeout during get timestamp call of ABD"}
+            end_time = time.time()
+            self.lock_latency_log.acquire()
+            delta_time = int((end_time - start_time)*1000)
+            self.latency_log.write("put:Q1:" + str(delta_time) + "\n")
+            self.lock_latency_log.release()
 
         if timestamp == "0-" + self.id:
             return {"status": "Failure", "message": "Unable to get valid time from the quorum"}
@@ -297,7 +326,8 @@ class ABD(ProtocolInterface):
         output = []
 
         new_server_list = self._get_closest_servers(server_list, self.write_nodes)
-        print(self.latency_delay)
+        #print(self.latency_delay)
+        start_time = time.time()
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
@@ -319,6 +349,12 @@ class ABD(ProtocolInterface):
         except threading.BrokenBarrierError:
             pass
 
+        end_time = time.time()
+        self.lock_latency_log.acquire()
+        delta_time = int((end_time - start_time)*1000)
+        self.latency_log.write("put:Q2:" + str(delta_time) + "\n")
+        self.lock_latency_log.release()
+
         # Removing barrier for all the waiting threads
         sem.abort()
 
@@ -337,7 +373,14 @@ class ABD(ProtocolInterface):
       #  time.sleep(float(delay) * 0.001)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        start_time = time.time()
         sock.connect((server["host"], int(server["port"])))
+        end_time = time.time()
+
+        self.lock_socket_log.acquire()
+        delta_time = int((end_time - start_time)*1000)
+        self.socket_log.write(server["host"] + str(delta_time) + "\n")
+        self.lock_socket_log.release()
 
         data = {"method": "get",
                 "key": key,
@@ -385,7 +428,7 @@ class ABD(ProtocolInterface):
         # Step1: get the timestamp with recent value
         output = []
         new_server_list = self._get_closest_servers(server_list, self.read_nodes)
-
+        start_time = time.time()
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
 
@@ -404,6 +447,12 @@ class ABD(ProtocolInterface):
         except threading.BrokenBarrierError:
             pass
 
+        end_time = time.time()
+        self.lock_latency_log.acquire()
+        delta_time = int((end_time - start_time)*1000)
+        self.latency_log.write("get:Q1:" + str(delta_time) + "\n")
+        self.lock_latency_log.release()
+
         sem.abort()
         lock.acquire()
         if (len(output) < self.read_nodes):
@@ -420,6 +469,7 @@ class ABD(ProtocolInterface):
         sem = threading.Barrier(self.write_nodes + 1, timeout=self.timeout)
         result = []
         new_server_list = self._get_closest_servers(server_list, self.write_nodes)
+        start_time = time.time()
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
@@ -438,6 +488,11 @@ class ABD(ProtocolInterface):
             sem.wait()
         except threading.BrokenBarrierError:
             pass
+        end_time = time.time()
+        self.lock_latency_log.acquire()
+        delta_time = int((end_time - start_time)*1000)
+        self.latency_log.write("get:Q2:" + str(delta_time) + "\n")
+        self.lock_latency_log.release()
 
         sem.abort()
 

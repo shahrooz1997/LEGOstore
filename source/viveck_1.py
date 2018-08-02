@@ -496,20 +496,19 @@ class Viveck_1(ProtocolInterface):
 
 
     def decode(self, chunk_list):
-
-
         start_time = time.time()
         if self.k == 1:
             return chunk_list[0]
 
         for i in range(len(chunk_list)):
             chunk_list[i] = chunk_list[i].encode(self.encoding_byte)
-        return self.ec_driver.decode(chunk_list).decode(self.encoding_byte)
+        decoded_data = self.ec_driver.decode(chunk_list).decode(self.encoding_byte)
         end_time = time.time()
         self.lock_coding_log.acquire()
         delta_time = int((end_time - start_time)*1000)
         self.coding_log.write("decode:" + str(delta_time) + "\n")
         self.lock_coding_log.release()
+        return decoded_data
 
 
     def _get_from_remaining(self, key, timestamp, server_list, called_data_center):

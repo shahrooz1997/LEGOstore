@@ -3,7 +3,7 @@ import json
 import time
 import copy
 
-from protocol import Protocol
+#from protocol import Protocol
 from data_center import Datacenter
 from datetime import datetime
 from multiprocessing import Process
@@ -276,11 +276,8 @@ def get_logger(log_path):
 
 def run_session(arrival_rate, workload, properties, experiment_duration, session_id=None):
 
-
     if not session_id:
         session_id = uuid.uuid4().int
-
-
     filename = "output_" + str(session_id) + ".txt"
     output_file = open(filename, "w")
     client = Client(properties, session_id)
@@ -316,14 +313,29 @@ if __name__ == "__main__":
     properties = json.load(open('client_config.json'))
     #client = Client(properties, properties["local_datacenter"])
 
-    # General properties for this group of requests
-    arrival_rate = 22
-    experiment_duration = 10800
+    # Parse trace file
+    trace = []
+    trace_file = open("trace.dat")
+    for line in trace_file.readlines():
+        p = line.split('\t')
+        trace.append([int(float(p[0])),int(float(p[1])]))
+    trace_file.close()
+
     read_ratio = 0.9
     write_ratio = 0.1
-    insert_ratio = 0
-    initial_count = 990000
-    value_size = 10000
+    total_number_of_requests = int(sum(row[1] for row in trace))
+    current_trace_time = 0
+
+
+
+    # General properties for this group of requests
+    #arrival_rate = 22
+    #experiment_duration = 10800
+    #read_ratio = 0.9
+    #write_ratio = 0.1
+    #insert_ratio = 0
+    #initial_count = 990000
+    #value_size = 10000
 
     #workload = Workload("uniform", arrival_rate, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
     ## don't need latency file, let class generate it instead
@@ -336,40 +348,44 @@ if __name__ == "__main__":
     # socket_logger = get_logger("socket_times.log")
     # individual_logger = get_logger("individual_times.log")
 
+else:
     process_list = []
     # XXX: ASSUMPTION: IN WORST CASE IT TAKES 1 SECOND TO SERVE THE REQUEST
     workload = Workload("uniform", 1, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
+    for point in trace:
+        arrival_rate = point[1]/(point[0]-current_trace_time)
+        current_trace_time = point[0]
+        workload.arrival_class.arrival_rate = arrival_rate
+        for i in range(arrival_rate):
+            client_uid = properties['local_datacenter'] + str(i)
+            process_list.append(Process(target=run_session, args=(1,
+                                                                  workload,
+                                                                  properties,
+                                                                  experiment_duration,
+                                                                  client_uid)))
+        for process in process_list:
+            process.start()
 
-    for i in range(arrival_rate):
-        client_uid = properties['local_datacenter'] + str(i)
-        process_list.append(Process(target=run_session, args=(1,
-                                                              workload,
-                                                              properties,
-                                                              experiment_duration,
-                                                              client_uid)))
-    for process in process_list:
-        process.start()
-
-    for process in process_list:
-        process.join()
+        for process in process_list:
+            process.join()
 
     # Merge quorum latency files
     files_to_combine = "individual_times_*.txt"
-	individual_times_files = glob.glob(files_to_combine)
-	combined_file_name = properties["local_datacenter"] + "_individual_times.txt"
-	with open(combined_file_name, "wb") as latency_file:
-		for f in individual_times_files:
-			with open(f, "rb") as infile:
-				latency_file.write(infile.read())
+    individual_times_files = glob.glob(files_to_combine)
+    combined_file_name = properties["local_datacenter"] + "_individual_times.txt"
+    with open(combined_file_name, "wb") as latency_file:
+        for f in individual_times_files:
+            with open(f, "rb") as infile:
+                latency_file.write(infile.read())
 
     # Merge socket connection recorded Time
     files_to_combine = "socket_times_*.txt"
-	socket_files = glob.glob(files_to_combine)
-	combined_file_name = properties["local_datacenter"] + "_socket_times.txt"
-	with open(combined_file_name, "wb") as socket_file:
-		for f in socket_files:
-			with open(f, "rb") as infile:
-				socket_file.write(infile.read())
+    socket_files = glob.glob(files_to_combine)
+    combined_file_name = properties["local_datacenter"] + "_socket_times.txt"
+    with open(combined_file_name, "wb") as socket_file:
+        for f in socket_files:
+            with open(f, "rb") as infile:
+                socket_file.write(infile.read())
 
     # Merge coding time files if protocol is Viveck's
     if self.default_class != "ABD":

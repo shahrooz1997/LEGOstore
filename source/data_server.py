@@ -26,7 +26,7 @@ class DataServer:
         #self.sock.bind(('0.0.0.0', 10000))
 
         # Max can handles 2048 connections at one time, can increase it if required
-        self.sock.listen(20048)
+        self.sock.listen(2048)
         # Change cache size here if you want. Ideally there should be a config for it
         # If more configurable variable are there add config and read from it.
         self.cache = Cache(500000000)
@@ -53,7 +53,7 @@ class DataServer:
         elif current_class == "Viveck_1":
             output = Viveck_1Server.get(key, timestamp, self.cache, self.persistent, self.lock, value_required)
             print("server side size is " + str(sys.getsizeof(output["value"])))
-            
+
             if output["value"] == None:
                 output["value"] = "None"
                 print(key + ":something fishy : " + str(output["value"]))
@@ -147,7 +147,7 @@ def recv_msg(sock):
     raw_msglen = recvall(sock, 4)
     if not raw_msglen:
         return None
-    
+
     msglen = struct.unpack('>I', raw_msglen)[0]
     # Read the message data
     return recvall(sock, msglen)
@@ -240,8 +240,8 @@ def test(data_server):
 if __name__ == "__main__":
 
     # For purpose of testing the whole code
-    socket_port = [10000]
-    db_list = ["db.temp"]
+    socket_port = [10000,10001,10002,10003,10004,10005,10006,10007,10008]
+    db_list = ["db1.temp","db2.temp","db3.temp","db4.temp","db5.temp","db6.temp","db7.temp","db8.temp"]
 
     socket_list = []
     data_server_list = []

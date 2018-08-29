@@ -51,7 +51,7 @@ if __name__ == '__main__':
     object_size = 100000.0
 
     # Mean arrival rate (request/second)
-    mean_arrival_rate = 100
+    mean_arrival_rate = 4
 
     # Total number of objects 
     total_number_of_objects = 1000000

@@ -3,8 +3,9 @@ import string
 
 class Workload:
     def __init__(self,arrival_distribution, arrival_rate, read_ratio, write_ratio, insert_ratio,
-                 initial_count, value_size):
-        self.arrival_class = Arrival(arrival_rate, arrival_distribution)
+                 initial_count, value_size, trace = None):
+
+        self.arrival_class = Arrival(arrival_rate, arrival_distribution,trace)
 
         self.read_ratio = read_ratio
         self.write_ratio = write_ratio
@@ -49,9 +50,8 @@ class Workload:
 
 class Arrival:
     def __init__(self, arrival_rate, arrival_distribution):
-        self.arrival_rate = arrival_rate
-        self.arrival_distribution = arrival_distribution
-
+            self.arrival_rate = arrival_rate
+            self.arrival_distribution = arrival_distribution
 
     def next(self):
         # Returns the interarrival time in millisecond

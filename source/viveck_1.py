@@ -80,9 +80,9 @@ class Viveck_1(ProtocolInterface):
         latency_log_file_name = "individual_times_" + str(self.id) + ".txt"
         socket_log_file_name = "socket_times_" + str(self.id) + ".txt"
         coding_log_file_name = "coding_times_" + str(self.id) + ".txt"
-        self.latency_log = open(latency_log_file_name, "w")
-        self.socket_log  = open(socket_log_file_name, "w")
-        self.coding_log = open(coding_log_file_name, "w")
+        self.latency_log = open(latency_log_file_name, "w+")
+        self.socket_log  = open(socket_log_file_name, "w+")
+        self.coding_log = open(coding_log_file_name, "w+")
         self.lock_latency_log = threading.Lock()
         self.lock_socket_log = threading.Lock()
         self.lock_coding_log = threading.Lock()

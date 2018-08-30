@@ -359,6 +359,7 @@ if __name__ == "__main__":
 		workload.arrival_class.arrival_rate = arrival_rate
 		for i in range(round(arrival_rate)):
 			client_uid = properties['local_datacenter'] + str(i)
+<<<<<<< Updated upstream
 	##		process_list.append(Process(target=run_session, args=(1,
 	#															  workload,
 	#															  properties,
@@ -366,6 +367,13 @@ if __name__ == "__main__":
 	#															  client_uid)))
 
 		print(arrival_rate)
+=======
+			process_list.append(Process(target=run_session, args=(1,
+																  workload,
+																  properties,
+																  experiment_duration,
+																  client_uid)))
+>>>>>>> Stashed changes
 
 		for process in process_list:
 			process.start()
@@ -390,6 +398,16 @@ if __name__ == "__main__":
 		for f in socket_files:
 			with open(f, "rb") as infile:
 				socket_file.write(infile.read())
+
+
+	# Merge socket connection recorded Time
+	files_to_combine = "output_*.txt"
+	output_files = glob.glob(files_to_combine)
+	combined_file_name = properties["local_datacenter"] + "_output.txt"
+	with open(combined_file_name, "wb") as output_file:
+		for f in output_files:
+			with open(f, "rb") as infile:
+				output_file.write(infile.read())
 
 	# Merge coding time files if protocol is Viveck's
 	if self.default_class != "ABD":

@@ -2,8 +2,9 @@ import socket
 import json
 import time
 import copy
+import glob
 
-#from protocol import Protocol
+from protocol import Protocol
 from data_center import Datacenter
 from datetime import datetime
 from multiprocessing import Process
@@ -320,13 +321,13 @@ if __name__ == "__main__":
 		p = line.split('\t')
 		trace.append([round(float(p[0])),round(float(p[1]))])
 	trace_file.close()
-
+	trace = [[1000,100], [2000,200]]
 	read_ratio = 0.9
 	write_ratio = 0.1
 	insert_ratio = 0.0
 	total_number_of_requests = int(sum(row[1] for row in trace))
 	current_trace_time = 0
-	initial_count = 990000
+	initial_count = 100
 	value_size = 10000
 
 	# General properties for this group of requests
@@ -354,15 +355,17 @@ if __name__ == "__main__":
 	# XXX: ASSUMPTION: IN WORST CASE IT TAKES 1 SECOND TO SERVE THE REQUEST
 	workload = Workload("uniform", 1, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
 	for point in trace:
-		arrival_rate = point[1]/(point[0]-current_trace_time)
-		current_trace_time = point[0]
+		number_of_requests = point[1]
+		next_trace_time = point[0]
+		arrival_rate = number_of_requests/(next_trace_time - current_trace_time)
 		workload.arrival_class.arrival_rate = arrival_rate
 		for i in range(round(arrival_rate)):
+			print(arrival_rate)
 			client_uid = properties['local_datacenter'] + str(i)
 			process_list.append(Process(target=run_session, args=(1,
 																  workload,
 																  properties,
-																  round(total_number_of_requests/arrival_rate),
+																  round(number_of_requests/arrival_rate),
 																  client_uid)))
 
 
@@ -371,7 +374,10 @@ if __name__ == "__main__":
 
 		for process in process_list:
 			process.join()
-
+		
+		process_list.clear()
+		current_trace_time = current_trace_time
+			
 	# Merge quorum latency files
 	files_to_combine = "individual_times_*.txt"
 	individual_times_files = glob.glob(files_to_combine)
@@ -401,7 +407,7 @@ if __name__ == "__main__":
 				output_file.write(infile.read())
 
 	# Merge coding time files if protocol is Viveck's
-	if self.default_class != "ABD":
+	if properties["classes"]["default_class"] != "ABD":
 		files_to_combine = "coding_times_*.txt"
 		coding_files = glob.glob(files_to_combine)
 		combined_file_name = properties["local_datacenter"] + "_coding_times.txt"

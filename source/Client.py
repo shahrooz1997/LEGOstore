@@ -328,7 +328,7 @@ if __name__ == "__main__":
 	current_trace_time = 0
 	initial_count = 990000
 	value_size = 10000
-	
+
 	# General properties for this group of requests
 	#arrival_rate = 22
 	#experiment_duration = 10800
@@ -359,21 +359,12 @@ if __name__ == "__main__":
 		workload.arrival_class.arrival_rate = arrival_rate
 		for i in range(round(arrival_rate)):
 			client_uid = properties['local_datacenter'] + str(i)
-<<<<<<< Updated upstream
-	##		process_list.append(Process(target=run_session, args=(1,
-	#															  workload,
-	#															  properties,
-	#															  round(total_number_of_requests/arrival_rate),
-	#															  client_uid)))
-
-		print(arrival_rate)
-=======
 			process_list.append(Process(target=run_session, args=(1,
 																  workload,
 																  properties,
-																  experiment_duration,
+																  round(total_number_of_requests/arrival_rate),
 																  client_uid)))
->>>>>>> Stashed changes
+
 
 		for process in process_list:
 			process.start()

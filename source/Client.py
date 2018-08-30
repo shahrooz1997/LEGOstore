@@ -274,16 +274,16 @@ def get_logger(log_path):
 	logger_.addHandler(handler)
 	return logger_
 
-def run_session(arrival_rate, workload, properties, experiment_duration, session_id=None):
+def run_session(arrival_rate, workload, properties, number_of_requests, session_id=None):
 
 	if not session_id:
 		session_id = uuid.uuid4().int
 	filename = "output_" + str(session_id) + ".txt"
-	output_file = open(filename, "w")
+	output_file = open(filename, "w+")
 	client = Client(properties, session_id)
 	request_count = 0
 
-	while request_count < arrival_rate * experiment_duration:
+	while request_count < number_of_requests:
 		inter_arrival_time, request_type, key, value = workload.next()
 
 		start_time = time.time()
@@ -318,16 +318,17 @@ if __name__ == "__main__":
 	trace_file = open("trace.dat")
 	for line in trace_file.readlines():
 		p = line.split('\t')
-		trace.append([int(float(p[0])),int(float(p[1])]))
+		trace.append([round(float(p[0])),round(float(p[1]))])
 	trace_file.close()
 
 	read_ratio = 0.9
 	write_ratio = 0.1
+	insert_ratio = 0.0
 	total_number_of_requests = int(sum(row[1] for row in trace))
 	current_trace_time = 0
-
-
-
+	initial_count = 990000
+	value_size = 10000
+	
 	# General properties for this group of requests
 	#arrival_rate = 22
 	#experiment_duration = 10800
@@ -348,7 +349,7 @@ if __name__ == "__main__":
 	# socket_logger = get_logger("socket_times.log")
 	# individual_logger = get_logger("individual_times.log")
 
-else:
+
 	process_list = []
 	# XXX: ASSUMPTION: IN WORST CASE IT TAKES 1 SECOND TO SERVE THE REQUEST
 	workload = Workload("uniform", 1, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
@@ -356,13 +357,16 @@ else:
 		arrival_rate = point[1]/(point[0]-current_trace_time)
 		current_trace_time = point[0]
 		workload.arrival_class.arrival_rate = arrival_rate
-		for i in range(arrival_rate):
+		for i in range(round(arrival_rate)):
 			client_uid = properties['local_datacenter'] + str(i)
-			process_list.append(Process(target=run_session, args=(1,
-																  workload,
-																  properties,
-																  experiment_duration,
-																  client_uid)))
+	##		process_list.append(Process(target=run_session, args=(1,
+	#															  workload,
+	#															  properties,
+	#															  round(total_number_of_requests/arrival_rate),
+	#															  client_uid)))
+
+		print(arrival_rate)
+
 		for process in process_list:
 			process.start()
 

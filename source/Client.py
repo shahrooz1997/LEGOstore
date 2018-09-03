@@ -280,10 +280,9 @@ def run_session(arrival_rate, workload, properties, number_of_requests, session_
 	if not session_id:
 		session_id = uuid.uuid4().int
 	filename = "output_" + str(session_id) + ".txt"
-	output_file = open(filename, "w+")
+	output_file = open(filename, "a+")
 	client = Client(properties, session_id)
 	request_count = 0
-
 	while request_count < number_of_requests:
 		inter_arrival_time, request_type, key, value = workload.next()
 
@@ -296,6 +295,7 @@ def run_session(arrival_rate, workload, properties, number_of_requests, session_
 			output = key + json.dumps(client.get(key))
 
 		# Since each process has its own file no need to even flush it.
+		# flushing the file is for monitoring the status
 		output_file.write(request_type + ":" + str(output) + "\n")
 		output_file.flush()
 		request_time = time.time() - start_time
@@ -315,13 +315,15 @@ if __name__ == "__main__":
 	#client = Client(properties, properties["local_datacenter"])
 
 	# Parse trace file
+	# Trace corrosponds to points [ 'time', 'arrival rate per second' ]
 	trace = []
 	trace_file = open("trace.dat")
 	for line in trace_file.readlines():
 		p = line.split('\t')
 		trace.append([round(float(p[0])),round(float(p[1]))])
 	trace_file.close()
-	trace = [[1000,100], [2000,200]]
+	
+	# TODO: get values from client config file
 	read_ratio = 0.9
 	write_ratio = 0.1
 	insert_ratio = 0.0
@@ -354,13 +356,15 @@ if __name__ == "__main__":
 	process_list = []
 	# XXX: ASSUMPTION: IN WORST CASE IT TAKES 1 SECOND TO SERVE THE REQUEST
 	workload = Workload("uniform", 1, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
+	current_trace_time = 0
 	for point in trace:
-		number_of_requests = point[1]
 		next_trace_time = point[0]
-		arrival_rate = number_of_requests/(next_trace_time - current_trace_time)
+		arrival_rate = point[1]
+		number_of_requests = arrival_rate*(next_trace_time - current_trace_time)
 		workload.arrival_class.arrival_rate = arrival_rate
-		for i in range(round(arrival_rate)):
-			print(arrival_rate)
+		# Client creates sessions that sends 1 request per second
+		# Process are used instead of threads to prevent from bottlenecks when writing to a single file
+		for i in range(arrival_rate):
 			client_uid = properties['local_datacenter'] + str(i)
 			process_list.append(Process(target=run_session, args=(1,
 																  workload,
@@ -376,7 +380,7 @@ if __name__ == "__main__":
 			process.join()
 		
 		process_list.clear()
-		current_trace_time = current_trace_time
+		current_trace_time = next_trace_time
 			
 	# Merge quorum latency files
 	files_to_combine = "individual_times_*.txt"

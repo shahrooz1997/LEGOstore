@@ -9,7 +9,7 @@ import threading
 
 class Viveck_1Server:
     #static veriable for timestamps
-    timstamp_log = {}
+    timestamp_log = {}
 
 
     @staticmethod

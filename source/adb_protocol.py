@@ -68,8 +68,8 @@ class ABD(ProtocolInterface):
         # Output files initilization
         latency_log_file_name = "individual_times_" + str(self.id) + ".txt"
         socket_log_file_name = "socket_times_" + str(self.id) + ".txt"
-        self.latency_log = open(latency_log_file_name, "w+")
-        self.socket_log  = open(socket_log_file_name, "w+")
+        self.latency_log = open(latency_log_file_name, "a+")
+        self.socket_log  = open(socket_log_file_name, "a+")
         self.lock_latency_log = threading.Lock()
         self.lock_socket_log = threading.Lock()
 

@@ -6,7 +6,6 @@
 # key -> [(value1, label1, timestamp1), (value1, label1, timestamp1), (value1, label1, timestamp1)]
 # Confirm this with Professor Bhuvan too.
 import threading
-import json
 
 class Viveck_1Server:
     #static veriable for timestamps

@@ -6,8 +6,23 @@
 # key -> [(value1, label1, timestamp1), (value1, label1, timestamp1), (value1, label1, timestamp1)]
 # Confirm this with Professor Bhuvan too.
 import threading
+import json
 
 class Viveck_1Server:
+    #static veriable for timestamps
+    timstamp_log = {}
+
+
+    @staticmethod
+    def record_timestamp(key, data, timstamp, label):
+        if Viveck_1Server.timestamp_log.get(key) is None:
+            Viveck_1Server.timestamp_log.update({key, {timestamp: [data, label]}})
+        else:
+            data_label_list = (Viveck_1Server.timstamp_log.get(key).get(timestamp))
+            data_label_list.append([data, label])
+            Viveck_1Server.timestamp_log.get(key).update({timestamp:data_label_list})
+        pass
+
 
     @staticmethod
     def get_timestamp(key, cache, persistent, lock):
@@ -42,6 +57,7 @@ class Viveck_1Server:
         '''
         lock.acquire_write()
         Viveck_1Server.insert_data(key, value, timestamp, False, cache, persistent)
+        Viveck_1Server.record_timestamp(key, value, timestamp, "pre")
         lock.release_write()
 
         return {"status": "OK"}
@@ -58,6 +74,7 @@ class Viveck_1Server:
         if not data:
             data = persistent.get(key)
             current_storage = persistent
+
 
         if not data[0]:
             if label:
@@ -142,9 +159,11 @@ class Viveck_1Server:
 
         if not data[0]:
             Viveck_1Server.insert_data(key, None, timestamp, True, cache, persistent)
+            Viveck_1Server.timstamp_log(key,None, timestamp, "Fin")
             lock.release_write()
             return {"status": "OK"}
         else:
+            Viveck_1Server.timstamp_log(key,data[0],timestamp,"Fin")
             current_values = cache.get(key)
             if not current_values:
                 current_values = persistent.get(key)

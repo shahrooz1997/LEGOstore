@@ -8,19 +8,47 @@
 import threading
 
 class Viveck_1Server:
-    #static veriable for timestamps
-    timestamp_log = {}
-
+    
+    #version ordererd
+    timeorder_log = {}
+    
+    #history of timestamps
+    timestamps_history = {}
 
     @staticmethod
-    def record_timestamp(key, data, timstamp, label):
-        if Viveck_1Server.timestamp_log.get(key) is None:
-            Viveck_1Server.timestamp_log.update({key, {timestamp: [data, label]}})
+    def record_timestamp_order(key, timestamp, current_timestamps):
+        # Check if key exists in dictionary
+        if Viveck_1Server.timeorder_log.get(key) is None:
+            Viveck_1Server.timeorder_log.update({key:[]}) 
+    
+        order = 0
+        for index, _timestamp in enumerate(current_timestamps):
+            if _timestamp == timestamp:
+                order = index
+                break
+            
+        #find the order counts
+        counts = Viveck_1Server.timeorder_log.get(key)
+        print("*************   ",counts)
+        if len(counts) == 0:
+            counts.append(0)
+        if len(counts) < order:
+            for _ in range(len(counts), order - len(counts)):
+                counts.append(0)
+
+
+        counts[order] += 1
+        Viveck_1Server.timeorder_log.update({key:counts})
+
+    @staticmethod
+    def insert_timestamp_history(key, timestamp):
+        if Viveck_1Server.timestamps_history.get(key) is None:
+            Viveck_1Server.timestamps_history.update({key:[timestamp]})
         else:
-            data_label_list = (Viveck_1Server.timstamp_log.get(key).get(timestamp))
-            data_label_list.append([data, label])
-            Viveck_1Server.timestamp_log.get(key).update({timestamp:data_label_list})
-        pass
+            _timestamps = Viveck_1Server.timestamps_history.get(key)
+            _timestamps = [timestamp] + _timestamps
+            Viveck_1Server.timestamps_history.update({key:[_timestamps]})
+        return
 
 
     @staticmethod
@@ -39,7 +67,9 @@ class Viveck_1Server:
         if not data[0]:
             lock.release_read()
             return {"status": "Failed", "timestamp": None}
-
+        
+        Viveck_1Server.insert_timestamp_history(key, data[1])
+        
         lock.release_read()
         return {"status": "OK", "timestamp": data[1]}
 
@@ -56,7 +86,6 @@ class Viveck_1Server:
         '''
         lock.acquire_write()
         Viveck_1Server.insert_data(key, value, timestamp, False, cache, persistent)
-        Viveck_1Server.record_timestamp(key, value, timestamp, "pre")
         lock.release_write()
 
         return {"status": "OK"}
@@ -73,8 +102,7 @@ class Viveck_1Server:
         if not data:
             data = persistent.get(key)
             current_storage = persistent
-
-
+    
         if not data[0]:
             if label:
                 fin_timestamp = timestamp
@@ -158,11 +186,9 @@ class Viveck_1Server:
 
         if not data[0]:
             Viveck_1Server.insert_data(key, None, timestamp, True, cache, persistent)
-            Viveck_1Server.timstamp_log(key,None, timestamp, "Fin")
             lock.release_write()
             return {"status": "OK"}
         else:
-            Viveck_1Server.timstamp_log(key,data[0],timestamp,"Fin")
             current_values = cache.get(key)
             if not current_values:
                 current_values = persistent.get(key)
@@ -199,6 +225,8 @@ class Viveck_1Server:
         # Current customized lock is just for generic lock not key specific.
         # Ideally it should take key as input and do locking key wise
         lock.acquire_read()
+        Viveck_1Server.record_timestamp_order(key,timestamp\
+                        , Viveck_1Server.timestamps_history.get(key))
         data = cache.get(key+timestamp)
         if not data:
             data = persistent.get(key+timestamp)

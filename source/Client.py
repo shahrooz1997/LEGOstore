@@ -317,9 +317,9 @@ if __name__ == "__main__":
 	# Parse trace file
 	# Trace corrosponds to points [ 'time', 'arrival rate per second' ]
 	trace = []
-	trace_file = open("trace.dat")
+	trace_file = open("temp_trace.dat")
 	for line in trace_file.readlines():
-		p = line.split('\t')
+		p = line.strip('\n').split(' ')
 		trace.append([round(float(p[0])),round(float(p[1]))])
 	trace_file.close()
 	

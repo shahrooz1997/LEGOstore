@@ -17,10 +17,6 @@ class Viveck_1Server:
 
     @staticmethod
     def record_timestamp_order(key, timestamp, current_timestamps):
-        # Check if key exists in dictionary
-        if Viveck_1Server.timeorder_log.get(key) is None:
-            Viveck_1Server.timeorder_log.update({key:[]}) 
-    
         order = 0
         for index, _timestamp in enumerate(current_timestamps):
             if _timestamp == timestamp:
@@ -29,25 +25,34 @@ class Viveck_1Server:
             
         #find the order counts
         counts = Viveck_1Server.timeorder_log.get(key)
-        print("*************   ",counts)
-        if len(counts) == 0:
-            counts.append(0)
-        if len(counts) < order:
-            for _ in range(len(counts), order - len(counts)):
+        if (len(counts)-1) < order:
+            for _ in range(order - (len(counts)-1)):
                 counts.append(0)
 
-
+        print("**************************")
+        print("**************************")
+        print("timestamp is ", timestamp)
+        print("counts is ", counts)
+        print("order is ", order)
+        print("**************************")
+        print("**************************")
         counts[order] += 1
         Viveck_1Server.timeorder_log.update({key:counts})
 
     @staticmethod
     def insert_timestamp_history(key, timestamp):
+        # first time in server
         if Viveck_1Server.timestamps_history.get(key) is None:
             Viveck_1Server.timestamps_history.update({key:[timestamp]})
+            # Check if key exists in dictionary
+            if Viveck_1Server.timeorder_log.get(key) is None:
+                Viveck_1Server.timeorder_log.update({key:[0]}) 
         else:
             _timestamps = Viveck_1Server.timestamps_history.get(key)
-            _timestamps = [timestamp] + _timestamps
-            Viveck_1Server.timestamps_history.update({key:[_timestamps]})
+            # Do not need to check if running expirement
+            if timestamp not in _timestamps:
+                _timestamps = [timestamp] + _timestamps    
+                Viveck_1Server.timestamps_history.update({key:_timestamps})
         return
 
 
@@ -68,7 +73,7 @@ class Viveck_1Server:
             lock.release_read()
             return {"status": "Failed", "timestamp": None}
         
-        Viveck_1Server.insert_timestamp_history(key, data[1])
+#        Viveck_1Server.insert_timestamp_history(key, data[1])
         
         lock.release_read()
         return {"status": "OK", "timestamp": data[1]}
@@ -87,6 +92,7 @@ class Viveck_1Server:
         lock.acquire_write()
         Viveck_1Server.insert_data(key, value, timestamp, False, cache, persistent)
         Viveck_1Server.insert_timestamp_history(key,timestamp)
+        print(Viveck_1Server.timestamps_history.get(key))
         lock.release_write()
 
         return {"status": "OK"}

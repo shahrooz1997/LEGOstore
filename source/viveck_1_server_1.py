@@ -86,6 +86,7 @@ class Viveck_1Server:
         '''
         lock.acquire_write()
         Viveck_1Server.insert_data(key, value, timestamp, False, cache, persistent)
+        Viveck_1Server.insert_timestamp_history(key,timestamp)
         lock.release_write()
 
         return {"status": "OK"}

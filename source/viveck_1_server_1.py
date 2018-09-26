@@ -21,7 +21,7 @@ class Viveck_1Server:
 
     @staticmethod
     def record_timestamp_order(key, timestamp, current_timestamps):
-        timestamp_lock.acquire()
+        Viveck_1Server.timestamp_lock.acquire()
         order = 0
         for index, _timestamp in enumerate(current_timestamps):
             if _timestamp == timestamp:
@@ -36,10 +36,10 @@ class Viveck_1Server:
 
         counts[order] += 1
         Viveck_1Server.timeorder_log.update({key:counts})
-        timestamp_lock.release()
+        Viveck_1Server.timestamp_lock.release()
     @staticmethod
     def insert_timestamp_history(key, timestamp):
-        timestamp_lock.acquire()
+        Viveck_1Server.timestamp_lock.acquire()
         # first time in server
         if Viveck_1Server.timestamps_history.get(key) is None:
             Viveck_1Server.timestamps_history.update({key:[timestamp]})
@@ -52,7 +52,7 @@ class Viveck_1Server:
             if timestamp not in _timestamps:
                 _timestamps = [timestamp] + _timestamps    
                 Viveck_1Server.timestamps_history.update({key:_timestamps})
-        timestamp_lock.release()
+        Viveck_1Server.timestamp_lock.release()
         return
 
 

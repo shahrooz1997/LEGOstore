@@ -382,8 +382,8 @@ if __name__ == "__main__":
 		process_list.clear()
 		current_trace_time = next_trace_time
 
-    with open("timestamp_order_result.json") as fd:
-        json.dumps(Viveck_1Server.timeorder_log,fd)
+	with open("timestamp_order_result.json") as fd:
+	    json.dumps(Viveck_1Server.timeorder_log,fd)
 
 	# Merge quorum latency files
 	files_to_combine = "individual_times_*.txt"

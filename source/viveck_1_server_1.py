@@ -16,7 +16,7 @@ class Viveck_1Server:
     timestamps_history = {}
 
     #lock for timstamp history and order
-    timestamp_lock = threading.lock()
+    timestamp_lock = threading.Lock()
 
 
     @staticmethod

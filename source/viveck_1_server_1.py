@@ -29,13 +29,6 @@ class Viveck_1Server:
             for _ in range(order - (len(counts)-1)):
                 counts.append(0)
 
-        print("**************************")
-        print("**************************")
-        print("timestamp is ", timestamp)
-        print("counts is ", counts)
-        print("order is ", order)
-        print("**************************")
-        print("**************************")
         counts[order] += 1
         Viveck_1Server.timeorder_log.update({key:counts})
 

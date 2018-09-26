@@ -15,8 +15,13 @@ class Viveck_1Server:
     #history of timestamps
     timestamps_history = {}
 
+    #lock for timstamp history and order
+    timestamp_lock = threading.lock()
+
+
     @staticmethod
     def record_timestamp_order(key, timestamp, current_timestamps):
+        timestamp_lock.acquire()
         order = 0
         for index, _timestamp in enumerate(current_timestamps):
             if _timestamp == timestamp:
@@ -31,9 +36,10 @@ class Viveck_1Server:
 
         counts[order] += 1
         Viveck_1Server.timeorder_log.update({key:counts})
-
+        timestamp_lock.release()
     @staticmethod
     def insert_timestamp_history(key, timestamp):
+        timestamp_lock.acquire()
         # first time in server
         if Viveck_1Server.timestamps_history.get(key) is None:
             Viveck_1Server.timestamps_history.update({key:[timestamp]})
@@ -46,6 +52,7 @@ class Viveck_1Server:
             if timestamp not in _timestamps:
                 _timestamps = [timestamp] + _timestamps    
                 Viveck_1Server.timestamps_history.update({key:_timestamps})
+        timestamp_lock.release()
         return
 
 
@@ -84,10 +91,8 @@ class Viveck_1Server:
         '''
         lock.acquire_write()
         Viveck_1Server.insert_data(key, value, timestamp, False, cache, persistent)
-        Viveck_1Server.insert_timestamp_history(key,timestamp)
-        print(Viveck_1Server.timestamps_history.get(key))
         lock.release_write()
-
+        Viveck_1Server.insert_timestamp_history(key,timestamp)
         return {"status": "OK"}
 
 
@@ -224,9 +229,11 @@ class Viveck_1Server:
         # Replace it with per key reader writer lock.
         # Current customized lock is just for generic lock not key specific.
         # Ideally it should take key as input and do locking key wise
-        lock.acquire_read()
+        
         Viveck_1Server.record_timestamp_order(key,timestamp\
                         , Viveck_1Server.timestamps_history.get(key))
+        
+        lock.acquire_read()
         data = cache.get(key+timestamp)
         if not data:
             data = persistent.get(key+timestamp)

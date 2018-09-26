@@ -226,8 +226,6 @@ def server_connection(connection, dataserver):
         pass
 
     connection.close()
-    with open('timestamp_result.json', 'w') as fp:
-        json.dump(Viveck_1Server.timeorder_log, fp)
     return
 
 

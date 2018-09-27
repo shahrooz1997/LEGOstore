@@ -23,6 +23,7 @@ class Viveck_1Server:
     def record_timestamp_order(key, timestamp, current_timestamps):
         Viveck_1Server.timestamp_lock.acquire()
         if current_timestamps == None:
+            Viveck_1Server.timeorder_log.update({key:[0]})
             Viveck_1Server.timestamps_history.update({key:[timestamp]})
         _current_timestamps = Viveck_1Server.timestamps_history.get(key)
         order = 0

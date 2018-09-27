@@ -320,7 +320,7 @@ if __name__ == "__main__":
 	trace_file = open("temp_trace.dat")
 	for line in trace_file.readlines():
 		p = line.strip('\n').split(' ')
-		trace.append([round(float(p[0])),round(float(p[1]))])
+		trace.append([int(p[0]),int(p[1])])
 	trace_file.close()
 	
 	# TODO: get values from client config file

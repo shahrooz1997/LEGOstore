@@ -3,7 +3,7 @@ import threading
 import json
 import time
 import struct
-import sys
+import sys, signal
 
 from reader_writer_lock import ReadWriteLock
 from cache import Cache
@@ -13,6 +13,14 @@ from persistent import Persistent
 #from viveck_1_server import Viveck_1Server
 from viveck_1_server_1 import Viveck_1Server
 
+def signal_handler(signal, frame):
+   Viveck_1Server.timestamp_lock.acquire()
+   with open("timestamp_order.json","w+") as fd:
+       json.dump(Viveck_1Server.timeorder_log,fd)
+   Viveck_1Server.timestamp_lock.release()
+   sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
 
 class DataServer:
     def __init__(self, db, sock=None, enable_garbage_collector = False):
@@ -231,21 +239,12 @@ def server_connection(connection, dataserver):
 
 def test(data_server):
     while 1:
-        try:
-            connection, address = data_server.sock.accept()
-            cthread = threading.Thread(target=server_connection, args=(connection, data_server,))
-            cthread.deamon = True
-            cthread.start()
-        except KeyboardInterrupt:
-            Viveck_1Server.timestamp_lock.acquire()
-            with open("timestamp_order.json","w+") as fd:
-                json.dump(Viveck_1Server.timeorder_log,fd)
-            Viveck_1Server.timestamp_lock.release()
-            raise
-
+        connection, address = data_server.sock.accept()
+        cthread = threading.Thread(target=server_connection, args=(connection, data_server,))
+        cthread.deamon = True
+        cthread.start()
 
 if __name__ == "__main__":
-
     # For purpose of testing the whole code
     socket_port = [10000]
     db_list = ["db.temp"]

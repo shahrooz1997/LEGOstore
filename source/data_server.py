@@ -231,14 +231,17 @@ def server_connection(connection, dataserver):
 
 def test(data_server):
     while 1:
-        connection, address = data_server.sock.accept()
-        cthread = threading.Thread(target=server_connection, args=(connection, data_server,))
-        cthread.deamon = True
-        cthread.start()
-        Viveck_1Server.timestamp_lock.acquire()
-        with open("timestamp_order.json","w+") as fd:
-            json.dump(Viveck_1Server.timeorder_log,fd)
-        Viveck_1Server.timestamp_lock.release()
+        try:
+            connection, address = data_server.sock.accept()
+            cthread = threading.Thread(target=server_connection, args=(connection, data_server,))
+            cthread.deamon = True
+            cthread.start()
+        except KeyboardInterrupt:
+            Viveck_1Server.timestamp_lock.acquire()
+            with open("timestamp_order.json","w+") as fd:
+                json.dump(Viveck_1Server.timeorder_log,fd)
+            Viveck_1Server.timestamp_lock.release()
+            raise
 
 
 if __name__ == "__main__":

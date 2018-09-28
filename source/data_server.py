@@ -235,6 +235,10 @@ def test(data_server):
         cthread = threading.Thread(target=server_connection, args=(connection, data_server,))
         cthread.deamon = True
         cthread.start()
+        Viveck_1Server.timestamp_lock.acquire()
+        with open("timestamp_order.json","w+") as fd:
+            json.dump(Viveck_1Server.timeorder_log,fd)
+        Viveck_1Server.timestamp_lock.release()
 
 
 if __name__ == "__main__":

@@ -226,7 +226,7 @@ class Client:
 			output = self.class_name_to_object[class_name].get(key, server_list)
 
 			if self.check_validity(output):
-				return {"status": "OK", "value": None}
+				return {"status": "OK", "value": output["value"]}
 
 			total_attempts -= 1
 

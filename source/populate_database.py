@@ -24,7 +24,7 @@ def thread_wrapper(output_logger, start_index, end_index, value_size=10000):
     for i in range(int(start_index), int(end_index)):
         value = ''.join(random.choice(string.ascii_uppercase)
                         for _ in range(value_size))
-        output_logger.info("key:"+str(i)+json.dumps(client.insert("key"+str(i), copy.deepcopy(value), "ABD")))
+        output_logger.info("key:"+str(i)+json.dumps(client.insert("key"+str(i), copy.deepcopy(value), "Viveck_1")))
 
     return
 

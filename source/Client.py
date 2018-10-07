@@ -324,8 +324,8 @@ if __name__ == "__main__":
 	trace_file.close()
 	
 	# TODO: get values from client config file
-	read_ratio = 0.1
-	write_ratio = 0.9
+	read_ratio = 0.9
+	write_ratio = 0.1
 	insert_ratio = 0.0
 	total_number_of_requests = int(sum(row[1] for row in trace))
 	current_trace_time = 0

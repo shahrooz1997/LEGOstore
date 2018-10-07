@@ -57,7 +57,8 @@ class DataServer:
         '''
 
         if current_class == "ABD":
-            return ABDServer.get(key, timestamp, self.cache, self.persistent, self.lock)
+            output = ABDServer.get(key, timestamp, self.cache, self.persistent, self.lock)
+            return output["status"] + "+:--:+" + output["value"][0] + "+:--:+" + output["value"][1] 
         elif current_class == "Viveck_1":
             output = Viveck_1Server.get(key, timestamp, self.cache, self.persistent, self.lock, value_required)
             print("server side size is " + str(sys.getsizeof(output["value"])))
@@ -198,6 +199,7 @@ def server_connection(connection, dataserver):
     method = data_list[0]
     #method = data["method"]
     #print(str(data["method"]))
+
     try:
         if method == "put":
             connection.sendall(json.dumps(dataserver.put(data_list[1],
@@ -214,8 +216,7 @@ def server_connection(connection, dataserver):
             #     data["value_required"] = False
             required_value = False
             if len(data_list) > 4 and data_list[4] == "True":
-                required_value = True
-
+                required_value = True 
             connection.sendall(dataserver.get(data_list[1], data_list[2], data_list[3], required_value).encode("latin-1"))
             # connection.sendall(json.dumps(dataserver.get(data["key"],
             #                                              data["timestamp"],

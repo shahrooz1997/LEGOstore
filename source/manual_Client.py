@@ -224,7 +224,7 @@ class Client:
 		# Step2: call the relevant protocol for the same
 		while total_attempts:
 			output = self.class_name_to_object[class_name].get(key, server_list)
-
+			print(output)
 			if self.check_validity(output):
 				return {"status": "OK", "value": output["value"]}
 
@@ -441,7 +441,7 @@ if __name__ == "__main__":
         method, key, value = data.split(",")
         a = datetime.now()
         if method == "insert":
-            print(json.dumps(client.insert(key, value, "ABD")))
+            print(json.dumps(client.insert(key, value)))
         elif method == "put":
             print(json.dumps(client.put(key, value)))
         elif method == "get":

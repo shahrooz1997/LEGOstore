@@ -35,7 +35,8 @@ class ABD(ProtocolInterface):
         self.manual_servers = {}
 
 
-
+        self.encoding_byte = "latin-1"
+        
         # This is only added for the prototype. In real system you would never use it.
         self.dc_to_latency_map = copy.deepcopy(latency_between_DCs[self.local_datacenter_id])
         self.latency_delay = copy.deepcopy(latency_between_DCs[self.local_datacenter_id])
@@ -149,8 +150,8 @@ class ABD(ProtocolInterface):
         data = {"method": "get_timestamp",
                 "key": key,
                 "class": self.current_class}
-
-        self.send_msg(sock, json.dumps(data).encode("utf-8"))
+        data_to_send = "get_timestamp" + "+:--:+" + key + "+:--:+" + self.current_class
+        self.send_msg(sock, data_to_send.encode(self.encoding_byte))
         sock.settimeout(self.timeout_per_request)
 
         try:
@@ -159,10 +160,8 @@ class ABD(ProtocolInterface):
             print("Server with host: {1} and port: {2} timeout for getTimestamp in ABD", (server["host"],
                                                                                           server["port"]))
         else:
-            data = json.loads(data.decode("utf-8"))
-            print("data is here:")
+            data = json.loads(data.decode(self.encoding_byte))
             lock.acquire()
-            print(data)
             output.append(data["timestamp"])
             lock.release()
 
@@ -223,10 +222,11 @@ class ABD(ProtocolInterface):
         max_time = "0"
         result = None
         for data in values:
-            if data["status"] != "OK":
+            if data[0] != "OK":
                  continue
 
-            temp_result, temp_time = data["value"]
+            temp_result = data[1]
+            temp_time = data[2]
             if temp_time > max_time:
                 result = temp_result
                 max_time = temp_time
@@ -255,8 +255,9 @@ class ABD(ProtocolInterface):
                            "value": value,
                            "timestamp": timestamp,
                            "class": self.current_class})
-
-        self.send_msg(sock, data.encode("utf-8"))
+        data_to_send = "put" + "+:--:+" + key + "+:--:+" + value +\
+                             "+:--:+" +timestamp + "+:--:+" + self.current_class
+        self.send_msg(sock, data_to_send.encode(self.encoding_byte))
         sock.settimeout(self.timeout_per_request)
 
         try:
@@ -265,7 +266,7 @@ class ABD(ProtocolInterface):
             print("Server with host: {1} and port: {2} timeout for put request in ABD", (server["host"],
                                                                                          server["port"]))
         else:
-            data = json.loads(data.decode("utf-8"))
+            data = json.loads(data.decode(self.encoding_byte))
             lock.acquire()
             output.append(data)
             lock.release()
@@ -387,7 +388,9 @@ class ABD(ProtocolInterface):
                 "timestamp": None,
                 "class": self.current_class}
 
-        self.send_msg(sock, json.dumps(data).encode("utf-8"))
+        data_to_send = "get" + "+:--:+" + key + "+:--:+" + "None" + "+:--:+" + self.current_class
+
+        self.send_msg(sock, data_to_send.encode(self.encoding_byte))
         sock.settimeout(self.timeout_per_request)
 
         try:
@@ -396,7 +399,7 @@ class ABD(ProtocolInterface):
             print("Server with host: {1} and port: {2} timeout for get request in ABD", (server["host"],
                                                                                          server["port"]))
         else:
-            data = json.loads(data.decode("utf-8"))
+            data = data.decode("latin-1").split("+:--:+")
             lock.acquire()
             output.append(data)
             lock.release()

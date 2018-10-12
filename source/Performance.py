@@ -96,12 +96,12 @@ class Performance_ABD(Performance):
 				else:
 					distenation_dc_id = possible_latencies[self.size_q2 - 1][0]
 					self.put_q2.append(int(p[2]) - socket_cost[distenation_dc_id])
-		self.mean_get_latency = np.average(self.get_q1) + np.average(self.get_q2)
-		self.mean_put_latency = np.average(self.put_q1) + np.average(self.put_q2)
-		self._90_per_get = np.percentile(self.get_q1, 90) + np.percentile(self.get_q2,90)
-		self._99_per_get = np.percentile(self.get_q1, 99) + np.percentile(self.get_q2,99)
-		self._90_per_put = np.percentile(self.put_q1, 90) + np.percentile(self.put_q2,90)
-		self._99_per_put = np.percentile(self.put_q1, 99) + np.percentile(self.put_q2,99)
+		self.mean_get_latency = int(np.average(self.get_q1) + np.average(self.get_q2))
+		self.mean_put_latency = int(np.average(self.put_q1) + np.average(self.put_q2))
+		self._90_per_get = int(np.percentile(self.get_q1, 90) + np.percentile(self.get_q2,90))
+		self._99_per_get = int(np.percentile(self.get_q1, 99) + np.percentile(self.get_q2,99))
+		self._90_per_put = int(np.percentile(self.put_q1, 90) + np.percentile(self.put_q2,90))
+		self._99_per_put = int(np.percentile(self.put_q1, 99) + np.percentile(self.put_q2,99))
 		####### format: dc_id:arrival_rate:value_size(bytes):get_latency(ms):put_latency(ms) ######
 		_row = [self.datacenter_id, arrival_rate, value_size,\
 						self.mean_get_latency, self.mean_put_latency]

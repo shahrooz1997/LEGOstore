@@ -273,7 +273,7 @@ if __name__ == "__main__":
 	insert_ratio = 0.0
 	total_number_of_requests = int(sum(row[1] for row in trace))
 	current_trace_time = 0
-	initial_count = 10
+	initial_count = 900
 	value_size = 100
 	arrival_process = "poisson"
 

@@ -3,7 +3,7 @@ import json
 import time
 import copy
 import glob
-
+import sys
 from protocol import Protocol
 from data_center import Datacenter
 from datetime import datetime
@@ -13,6 +13,7 @@ import threading
 from workload import Workload
 
 import logging
+from Performance import *
 
 
 class Client:
@@ -130,44 +131,6 @@ class Client:
 						self.retry_attempts)}
 
 		return {"status": "OK"}
-#        # Step2 : Insert the metadata into the metadata server
-#        total_attempts = self.retry_attempts
-#        server_list = output["server_list"]
-#        meta_data = {"class_name": class_name, "server_list": server_list}
-#
-#        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#        try:
-#            sock.connect((self.metadata_server["host"], int(self.metadata_server["port"])))
-#        except:
-#            return {"status": "FAILURE",
-#                    "message": "Unable to connect the socket to metadata server"}
-#
-#        data = json.dumps({"method": "set_metadata",
-#                           "key": key,
-#                           "value": meta_data})
-#
-#        while total_attempts:
-#            sock.send(data.encode("utf-8"))
-#
-#            # Setting up timeout as per class policies
-#            sock.settimeout(self.metadata_timeout)
-#            try:
-#                data = sock.recv(640000)
-#                data = json.loads(data.decode("utf-8"))
-#            except socket.error:
-#                print("Failed attempt to send data to metadata server...")
-#            else:
-#                if data["status"] == "OK":
-#                    # TODO: Check once if the key is required else remove it
-#                    self.local_cache[key] = meta_data
-#                    return {"status" : "OK"}
-#
-#            total_attempts -= 1
-#
-#        return {"status": "Failure",
-#                "message": "Unable to insert message after {0} attemps into the metadataserver".format(
-#                    self.retry_attempts)}
-
 
 	def put(self, key, value):
 		######################
@@ -234,38 +197,6 @@ class Client:
 				"message": "Unable to put message after {0} attemps".format(
 					self.retry_attempts)}
 
-
-
-# def call(key, value):
-#     print(json.dumps(client.put(key, str(value))))
-#
-#
-# def thread_wrapper(method, latency_file, output_logger, lock, key, value=None):
-#     # We will assume fixed class for wrapper for now
-#
-#     output = method + key + "Empty"
-#     a = datetime.now()
-#     if method == "insert":
-#         return
-#     if method == "put":
-#         output  = key + json.dumps(client.put(key, value))
-#     else:
-#         output = key + json.dumps(client.get(key))
-#   #  else:
-#    #     output = "Invalid Call"
-#     b = datetime.now()
-#     c = b - a
-#
-#     # Flush every latency on disk. May not be a good idea in long term.
-#     lock.acquire()
-#     latency_file.write(method + ":" + str(c.seconds * 1000 + c.microseconds * 0.001) + '\n')
-#     latency_file.flush()
-#     output_logger.info(method + ":" + str(output))
-#     lock.release()
-#
-#     return
-#
-
 def get_logger(log_path):
 	logger_ = logging.getLogger('log')
 	logger_.setLevel(logging.INFO)
@@ -275,7 +206,7 @@ def get_logger(log_path):
 	logger_.addHandler(handler)
 	return logger_
 
-def run_session(arrival_rate, workload, properties, number_of_requests, session_id=None):
+def run_session(workload, properties, running_time, session_id=None):
 
 	if not session_id:
 		session_id = uuid.uuid4().int
@@ -283,9 +214,9 @@ def run_session(arrival_rate, workload, properties, number_of_requests, session_
 	output_file = open(filename, "a+")
 	client = Client(properties, session_id)
 	request_count = 0
-	while request_count < number_of_requests:
+	_end_time = time.time() + running_time
+	while time.time() < _end_time:
 		inter_arrival_time, request_type, key, value = workload.next()
-
 		start_time = time.time()
 		if request_type == "insert":
 			continue
@@ -299,20 +230,33 @@ def run_session(arrival_rate, workload, properties, number_of_requests, session_
 		output_file.write(request_type + ":" + str(output) + "\n")
 		output_file.flush()
 		request_time = time.time() - start_time
-
-		if request_time < arrival_rate:
-			# Multiply with 1.0 just to make sure float ubstraction happens (not int float conflicts)
-			time.sleep(arrival_rate * 1.0 - request_time)
+		if request_time < inter_arrival_time * 0.001:
+			#interarrival time is in ms
+			time.sleep(inter_arrival_time * 0.001 - request_time)
 
 		request_count += 1
 
-
 	output_file.close()
+
+def merge_files(files_to_combine, output_file_name):
+    # Merge quorum latency files
+    allfiles = glob.glob(files_to_combine)
+    combined_file_name = properties["local_datacenter"] + "_" + output_file_name
+    with open(combined_file_name, "wb") as combined_file:
+    	for f in allfiles:
+    		with open(f, "rb") as infile:
+    			combined_file.write(infile.read())
+    return
 
 
 if __name__ == "__main__":
-	properties = json.load(open('client_config.json'))
+	properties = json.load(open("client_config.json"))
 	#client = Client(properties, properties["local_datacenter"])
+
+	performance_model = None
+	if properties["classes"]["default_class"]:
+		performance_model = Performance_ABD(properties)
+
 
 	# Parse trace file
 	# Trace corrosponds to points [ 'time', 'arrival rate per second' ]
@@ -324,52 +268,32 @@ if __name__ == "__main__":
 	trace_file.close()
 	
 	# TODO: get values from client config file
-	read_ratio = 0.1
-	write_ratio = 0.9
+	read_ratio = 0.9
+	write_ratio = 0.1
 	insert_ratio = 0.0
 	total_number_of_requests = int(sum(row[1] for row in trace))
 	current_trace_time = 0
-	initial_count = 990000
-	value_size = 10000
+	initial_count = 10
+	value_size = 100
+	arrival_process = "poisson"
 
-	# General properties for this group of requests
-	#arrival_rate = 22
-	#experiment_duration = 10800
-	#read_ratio = 0.9
-	#write_ratio = 0.1
-	#insert_ratio = 0
-	#initial_count = 990000
-	#value_size = 10000
-
-	#workload = Workload("uniform", arrival_rate, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
-	## don't need latency file, let class generate it instead
-	#latency_file = open("latency.txt", "w+")
-	#lock = threading.Lock()
-	#each each client has its own request count and output log
-	#request_count = 0
-	#output_logger = get_logger("output.log")
-
-	# socket_logger = get_logger("socket_times.log")
-	# individual_logger = get_logger("individual_times.log")
-
-
+	start_time = time.time()
 	process_list = []
 	# XXX: ASSUMPTION: IN WORST CASE IT TAKES 1 SECOND TO SERVE THE REQUEST
-	workload = Workload("uniform", 1, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
+	workload = Workload(arrival_process, 1, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
 	current_trace_time = 0
 	for point in trace:
 		next_trace_time = point[0]
+		running_time = next_trace_time - current_trace_time
 		arrival_rate = point[1]
 		number_of_requests = arrival_rate*(next_trace_time - current_trace_time)
-		workload.arrival_class.arrival_rate = arrival_rate
-		# Client creates sessions that sends 1 request per second
+        # Client creates sessions that sends 1 request per second
 		# Process are used instead of threads to prevent from bottlenecks when writing to a single file
 		for i in range(arrival_rate):
 			client_uid = properties['local_datacenter'] + str(i)
-			process_list.append(Process(target=run_session, args=(1,
-																  workload,
+			process_list.append(Process(target=run_session, args=(workload,
 																  properties,
-																  round(number_of_requests/arrival_rate),
+																  running_time,
 																  client_uid)))
 
 
@@ -381,82 +305,15 @@ if __name__ == "__main__":
 		
 		process_list.clear()
 		current_trace_time = next_trace_time
+	    
+		performance_model.calculateLatencies(arrival_rate,value_size)
+        
+        # Merge socket connection recorded Time
+		merge_files("output_*.txt", "output.txt")
+	    # Merge coding time files if protocol is Viveck's
+		if properties["classes"]["default_class"] == "Viveck_1":
+			merge_files("coding_times_*.txt", "coding_times.txt")
+	
 
-	# Merge quorum latency files
-	files_to_combine = "individual_times_*.txt"
-	individual_times_files = glob.glob(files_to_combine)
-	combined_file_name = properties["local_datacenter"] + "_individual_times.txt"
-	with open(combined_file_name, "wb") as latency_file:
-		for f in individual_times_files:
-			with open(f, "rb") as infile:
-				latency_file.write(infile.read())
-
-	# Merge socket connection recorded Time
-	files_to_combine = "socket_times_*.txt"
-	socket_files = glob.glob(files_to_combine)
-	combined_file_name = properties["local_datacenter"] + "_socket_times.txt"
-	with open(combined_file_name, "wb") as socket_file:
-		for f in socket_files:
-			with open(f, "rb") as infile:
-				socket_file.write(infile.read())
-
-
-	# Merge socket connection recorded Time
-	files_to_combine = "output_*.txt"
-	output_files = glob.glob(files_to_combine)
-	combined_file_name = properties["local_datacenter"] + "_output.txt"
-	with open(combined_file_name, "wb") as output_file:
-		for f in output_files:
-			with open(f, "rb") as infile:
-				output_file.write(infile.read())
-
-	# Merge coding time files if protocol is Viveck's
-	if properties["classes"]["default_class"] != "ABD":
-		files_to_combine = "coding_times_*.txt"
-		coding_files = glob.glob(files_to_combine)
-		combined_file_name = properties["local_datacenter"] + "_coding_times.txt"
-		with open(combined_file_name, "wb") as coding_file:
-			for f in coding_files:
-				with open(f, "rb") as infile:
-					coding_file.write(infile.read())
-
-
-
-#  XXX: Previous code : TODO: Delete it once we know new one is working
-#        inter_arrival_time, request_type, key, value = workload.next()
-#        time.sleep(inter_arrival_time * 0.001)
-#
-#        new_thread = threading.Thread(target = thread_wrapper, args=(request_type,
-#                                                                     latency_file,
-#                                                                     output_logger,
-#                                                                     lock,
-#                                                                     key,
-#                                                                     value))
-#
-#        request_count += 1
-#        new_thread.start()
-
-#    while 1:
-#         data = input()
-#         method, key, value = data.split(",")
-#         a = datetime.now()
-#         if method == "insert":
-#             print(json.dumps(client.insert(key, value, "ABD")))
-#         elif method == "put":
-#             print(json.dumps(client.put(key, value)))
-#         elif method == "get":
-#             print(json.dumps(client.get(key)))
-#         else:
-#             print("Invalid Call")
-#         b = datetime.now()
-#         c = b - a
-#         print(c.seconds * 1000 + c.microseconds * 0.001)
-#    # #
-	# threadlist = []
-	# for i in range(1,100):
-	#     threadlist.append(threading.Thread(target=call, args=("chetan", i,)))
-	#     threadlist[-1].deamon = True
-	#     threadlist[-1].start()
-	#
-	# for i in range(1,100):
-	#     threadlist[i].join()
+	client_time = time.time() - start_time
+	print("Client Time: ", client_time)

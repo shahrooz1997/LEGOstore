@@ -35,7 +35,7 @@ if __name__ == "__main__":
     client = Client(properties, client_id)
     output_logger = get_logger("insert.log")
 
-    keys_to_write = 110000 
+    keys_to_write = 100 
     start_index = keys_to_write * (int(client_id) - 1)
     end_index = start_index + keys_to_write
     number_of_thread = 20

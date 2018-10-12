@@ -216,7 +216,8 @@ def server_connection(connection, dataserver):
             #     data["value_required"] = False
             required_value = False
             if len(data_list) > 4 and data_list[4] == "True":
-                required_value = True 
+                required_value = True
+#            print("***** ", dataserver.get(data_list[1], data_list[2], data_list[3], required_value))
             connection.sendall(dataserver.get(data_list[1], data_list[2], data_list[3], required_value).encode("latin-1"))
             # connection.sendall(json.dumps(dataserver.get(data["key"],
             #                                              data["timestamp"],
@@ -247,8 +248,8 @@ def test(data_server):
 
 if __name__ == "__main__":
     # For purpose of testing the whole code
-    socket_port = [10000]
-    db_list = ["db.temp"]
+    socket_port = [10000, 10001,10002,10003,10004,10005,10006, 10007, 10008]
+    db_list = ["db1.temp","db2.temp","db3.temp","db4.temp","db5.temp","db6.temp","db7.temp","db8.temp","db9.temp"]
 
     socket_list = []
     data_server_list = []

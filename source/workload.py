@@ -1,6 +1,6 @@
 import random
 import string
-
+import math
 class Workload:
     def __init__(self,arrival_distribution, arrival_rate, read_ratio, write_ratio, insert_ratio,
                  initial_count, value_size, trace = None):
@@ -57,3 +57,8 @@ class Arrival:
         # Returns the interarrival time in millisecond
         if self.arrival_distribution == "uniform":
             return 1000.0/self.arrival_rate
+        elif self.arrival_distribution == "poisson":
+            return (-math.log(1.0 - random.random()) / self.arrival_rate) * 1000.0
+
+
+

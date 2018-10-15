@@ -1,16 +1,17 @@
 import numpy as np
 import glob
+import os
 
 
 
 def delete_session_files(properties, arrival_rate, running_time):
-    if properties["classes"]["defaultclass"] == "ABD":
-        os.system("rm calculated_latencies.txt output_* individual_times_* socket_times_* timestamp_order.json insert.log")
-    else:
-        os.system("rm calculated_latencies.txt output_* individual_times_* socket_times_* coding_times_* timestamp_order.json insert.log")
-    
-    if ans == 'y':
-	    os.system("rm *_individual_times.txt *_socket_times.txt *_coding_times.txt *_output.txt")
+	if properties["classes"]["defaultclass"] == "ABD":
+		os.system("rm calculated_latencies.txt output_* individual_times_* socket_times_* timestamp_order.json insert.log")
+	else:
+		os.system("rm calculated_latencies.txt output_* individual_times_* socket_times_* coding_times_* timestamp_order.json insert.log")
+	
+	if ans == 'y':
+		os.system("rm *_individual_times.txt *_socket_times.txt *_coding_times.txt *_output.txt")
 
 
 
@@ -61,6 +62,8 @@ class Performance_ABD(Performance):
 		#file to log the arrival rate, size of packets, and the latency
 		self.performance_error_log = open("performance_error_log.txt", "w+")
 		self.calculation_file = open("calculated_latencies.txt", "a+")
+		self._90_per_calculation_file = open("_90_per_calculated_latencies.txt", "a+")
+		self._99_per_calculation_file = open("_99_per_calculated_latencies.txt", "a+")
 		return
 	
 
@@ -69,7 +72,7 @@ class Performance_ABD(Performance):
 		if len(filenames) == 0:
 			return
 
-		self.merge_time_files()
+		self.merge_result_files()
 		socket_cost = self.calculate_socket_costs()
 						
 		_possible_latencies = []
@@ -102,12 +105,24 @@ class Performance_ABD(Performance):
 		self._99_per_get = int(np.percentile(self.get_q1, 99) + np.percentile(self.get_q2,99))
 		self._90_per_put = int(np.percentile(self.put_q1, 90) + np.percentile(self.put_q2,90))
 		self._99_per_put = int(np.percentile(self.put_q1, 99) + np.percentile(self.put_q2,99))
+
 		####### format: dc_id:arrival_rate:value_size(bytes):get_latency(ms):put_latency(ms) ######
+		#log mean latencies
 		_row = [self.datacenter_id, arrival_rate, value_size,\
 						self.mean_get_latency, self.mean_put_latency]
 		self.log_to_file(self.calculation_file, _row)
 
+		#log 90th per latencies
+		_row = [self.datacenter_id, arrival_rate, value_size,\
+						self._90_per_get, self._90_per_put]
+		self.log_to_file(self._90_per_calculation_file, _row)
+
+		#log 99th per latencies
+		_row = [self.datacenter_id, arrival_rate, value_size,\
+						self._99_per_get, self._99_per_put]
+		self.log_to_file(self._99_per_calculation_file, _row)
  
+
 	def log_to_file(self,fd,list_of_info = []):
 		if len(list_of_info) == 0:
 			return
@@ -141,22 +156,54 @@ class Performance_ABD(Performance):
 
 		return socket_costs
 		
-	def merge_time_files(self):
+	def merge_result_files(self):
 		# Merge quorum latency files
 		output_file_name = "individual_times.txt"
-		allfiles = glob.glob("individual_times_*.txt")
-		combined_file_name = self.properties["local_datacenter"] + "_" + output_file_name
-		with open(combined_file_name, "wb") as combined_file:
-			for f in allfiles:
-				with open(f, "rb") as infile:
-					combined_file.write(infile.read())
-		 
-		# Merge quorum latency files
+		files_to_combine = "individual_times_*.txt"
+		self.merge_files(files_to_combine, output_file_name)
+
+		#merge socket times
 		output_file_name = "socket_times.txt"
-		allfiles = glob.glob("socket_times_*.txt")
+		files_to_combine = "socket_times_*.txt"
+		self.merge_files(files_to_combine, output_file_name)
+		
+		#merge output files
+		output_file_name = "output.txt"
+		files_to_combine = "output_*.txt"
+		self.merge_files(files_to_combine, output_file_name)
+
+		return
+
+	def merge_files(self,files_to_combine, output_file_name):
+		# Merge quorum latency files
+		allfiles = glob.glob(files_to_combine)
 		combined_file_name = self.datacenter_id + "_" + output_file_name
 		with open(combined_file_name, "wb") as combined_file:
 			for f in allfiles:
 				with open(f, "rb") as infile:
 					combined_file.write(infile.read())
 		return
+	
+	def aggregate_results(self, arrival_rate, value_size):	
+			
+		self.merge_result_files()
+		exprt_file_name = self.datacenter_id + "_" + str(arrival_rate) + "_" + str(value_size)
+		result_directory = "ExpirementResults/" + exprt_file_name
+		os.system("mkdir -p " + result_directory)
+		cmd = "mv " + self.datacenter_id +"_* " + result_directory
+		os.system(cmd)
+		
+		#TODO: create a member function to delete files specified by the performance
+		os.system("rm individual_times_*.txt output_*.txt socket_times_*.txt coding_times_*.txt")
+		
+		return
+
+		
+
+
+
+
+
+
+
+

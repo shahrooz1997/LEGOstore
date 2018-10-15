@@ -35,18 +35,18 @@ if __name__ == "__main__":
     client = Client(properties, client_id)
     output_logger = get_logger("insert.log")
 
-    keys_to_write = 100 
+    keys_to_write = 1100 
     start_index = keys_to_write * (int(client_id) - 1)
     end_index = start_index + keys_to_write
     number_of_thread = 20
-
+    value_size = 100
     thread_list = []
     for i in range(0, number_of_thread):
         # Please not we assume client id starts from 1
         s_index = start_index + i * (keys_to_write/number_of_thread)
         e_index = start_index + (i + 1) * (keys_to_write/number_of_thread)
 
-        thread_list.append(threading.Thread(target=thread_wrapper, args=(output_logger, s_index, e_index)))
+        thread_list.append(threading.Thread(target=thread_wrapper, args=(output_logger, s_index, e_index, value_size)))
         thread_list[-1].start()
 
     for i in range(0, number_of_thread):

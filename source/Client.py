@@ -273,7 +273,7 @@ if __name__ == "__main__":
 	insert_ratio = 0.0
 	total_number_of_requests = int(sum(row[1] for row in trace))
 	current_trace_time = 0
-	initial_count = 900
+	initial_count = 9900
 	value_size = 100
 	arrival_process = "poisson"
 
@@ -307,13 +307,10 @@ if __name__ == "__main__":
 		current_trace_time = next_trace_time
 	    
 		performance_model.calculateLatencies(arrival_rate,value_size)
+		performance_model.aggregate_results(arrival_rate, value_size)
+		message = "Press enter to Continue lambda = " + str(arrival_rate) + " value_size = " + str(value_size)
+		input(message)
         
-        # Merge socket connection recorded Time
-		merge_files("output_*.txt", "output.txt")
-	    # Merge coding time files if protocol is Viveck's
-		if properties["classes"]["default_class"] == "Viveck_1":
-			merge_files("coding_times_*.txt", "coding_times.txt")
-	
-
+        
 	client_time = time.time() - start_time
 	print("Client Time: ", client_time)

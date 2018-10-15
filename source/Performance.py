@@ -132,6 +132,8 @@ class Performance_ABD(Performance):
 			_row = str(info) + ":"
 			fd.write(_row)
 		fd.write("\n")
+
+		fd.flush()
 		return
 
 	def calculate_socket_costs(self):		

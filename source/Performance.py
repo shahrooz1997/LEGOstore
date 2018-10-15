@@ -72,6 +72,8 @@ class Performance_ABD(Performance):
 		if len(filenames) == 0:
 			return
 
+		self.clear_results()
+
 		self.merge_result_files()
 		socket_cost = self.calculate_socket_costs()
 						
@@ -198,6 +200,18 @@ class Performance_ABD(Performance):
 		
 		return
 
+	#use to clear all calculations before calculating new
+	def clear_results(self):
+		self.mean_get_latency = 0
+		self.mean_put_latency = 0
+		self._90_per_get = 0
+		self._99_per_get = 0
+		self._90_per_put = 0
+		self._99_per_put = 0
+		self.get_q1.clear()
+		self.get_q2.clear()
+		self.put_q1.clear()
+		self.put_q2.clear()	
 		
 
 

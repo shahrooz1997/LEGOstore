@@ -284,7 +284,9 @@ if __name__ == "__main__":
 	current_trace_time = 0
 	for point in trace:
 		next_trace_time = point[0]
-		running_time = next_trace_time - current_trace_time
+#		running_time = next_trace_time - current_trace_time
+		running_time = next_trace_time	# XXX: this should be the difference between two times
+										# BUT for now use as the running time period
 		arrival_rate = point[1]
 		number_of_requests = arrival_rate*(next_trace_time - current_trace_time)
         # Client creates sessions that sends 1 request per second

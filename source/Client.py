@@ -274,7 +274,7 @@ if __name__ == "__main__":
 	total_number_of_requests = int(sum(row[1] for row in trace))
 	current_trace_time = 0
 	initial_count = 90000
-	value_size = 10000
+	value_size = 1000
 	arrival_process = "poisson"
 
 	start_time = time.time()
@@ -298,7 +298,12 @@ if __name__ == "__main__":
 																  running_time,
 																  client_uid)))
 
+		client_time = time.time() - start_time
+		print("Client Time: ", client_time)
+		message = "Press enter to Continue lambda = " + str(arrival_rate) + " value_size = " + str(value_size)
+		input(message)
 
+		start_time = time.time()
 		for process in process_list:
 			process.start()
 
@@ -310,8 +315,7 @@ if __name__ == "__main__":
 	    
 		performance_model.calculateLatencies(arrival_rate,value_size)
 		performance_model.aggregate_results(arrival_rate, value_size)
-		message = "Press enter to Continue lambda = " + str(arrival_rate) + " value_size = " + str(value_size)
-		input(message)
+
         
         
 	client_time = time.time() - start_time

@@ -187,7 +187,6 @@ class ABD(ProtocolInterface):
 
         new_server_list = self._get_closest_servers(server_list, self.read_nodes)
         output = []
-        print(self.latency_delay)
         for data_center_id, servers in new_server_list.items():
             for server_id in servers:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
@@ -248,7 +247,6 @@ class ABD(ProtocolInterface):
         self.socket_log.write(server["host"] + ":"+str(delta_time) + "\n")
         self.lock_socket_log.release()
 
-        print(server)
 
         data = json.dumps({"method": "put",
                            "key": key,

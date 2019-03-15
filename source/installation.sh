@@ -21,3 +21,5 @@ sudo pip3 install -U bindep -r test-requirements.txt
 sudo python3 setup.py install
 sudo sh -c "echo '/usr/local/lib' >> /etc/ld.so.conf"
 sudo ldconfig
+#ata for logging
+sudo pip3 install python3-logstash

@@ -355,21 +355,21 @@ if __name__ == "__main__":
 
     # Merge quorum latency files
     files_to_combine = "individual_times_*.txt"
-	individual_times_files = glob.glob(files_to_combine)
-	combined_file_name = properties["local_datacenter"] + "_individual_times.txt"
-	with open(combined_file_name, "wb") as latency_file:
-		for f in individual_times_files:
-			with open(f, "rb") as infile:
-				latency_file.write(infile.read())
+    individual_times_files = glob.glob(files_to_combine)
+    combined_file_name = properties["local_datacenter"] + "_individual_times.txt"
+    with open(combined_file_name, "wb") as latency_file:
+        for f in individual_times_files:
+            with open(f, "rb") as infile:
+                latency_file.write(infile.read())
 
     # Merge socket connection recorded Time
     files_to_combine = "socket_times_*.txt"
-	socket_files = glob.glob(files_to_combine)
-	combined_file_name = properties["local_datacenter"] + "_socket_times.txt"
-	with open(combined_file_name, "wb") as socket_file:
-		for f in socket_files:
-			with open(f, "rb") as infile:
-				socket_file.write(infile.read())
+    socket_files = glob.glob(files_to_combine)
+    combined_file_name = properties["local_datacenter"] + "_socket_times.txt"
+    with open(combined_file_name, "wb") as socket_file:
+        for f in socket_files:
+            with open(f, "rb") as infile:
+                socket_file.write(infile.read())
 
     # Merge coding time files if protocol is Viveck's
     if self.default_class != "ABD":
@@ -377,9 +377,9 @@ if __name__ == "__main__":
         coding_files = glob.glob(files_to_combine)
         combined_file_name = properties["local_datacenter"] + "_coding_times.txt"
         with open(combined_file_name, "wb") as coding_file:
-        	for f in coding_files:
-        		with open(f, "rb") as infile:
-        			coding_file.write(infile.read())
+            for f in coding_files:
+                with open(f, "rb") as infile:
+                    coding_file.write(infile.read())
 
 
 

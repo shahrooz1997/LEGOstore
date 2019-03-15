@@ -12,6 +12,12 @@ from pyeclib.ec_iface import ECDriver
 import time
 import sys
 
+#ata for logging
+import logging
+from logging import StreamHandler
+import logstash
+
+
 class Viveck_1(ProtocolInterface):
 
     def __init__(self, properties, local_datacenter_id, data_center, client_id,
@@ -80,9 +86,9 @@ class Viveck_1(ProtocolInterface):
         latency_log_file_name = "individual_times_" + str(self.id) + ".txt"
         socket_log_file_name = "socket_times_" + str(self.id) + ".txt"
         coding_log_file_name = "coding_times_" + str(self.id) + ".txt"
-        self.latency_log = open(latency_log_file_name, "a+")
-        self.socket_log  = open(socket_log_file_name, "a+")
-        self.coding_log = open(coding_log_file_name, "a+")
+        self.latency_log = self.get_logger("viveck_latency_log")
+        self.socket_log  = self.get_logger("viveck_socket_log")
+        self.coding_log = self.get_logger("viveck_coding_log")
         self.lock_latency_log = threading.Lock()
         self.lock_socket_log = threading.Lock()
         self.lock_coding_log = threading.Lock()
@@ -141,8 +147,8 @@ class Viveck_1(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.socket_log.write(server["host"] + ":" + str(delta_time) + "\n")
-        self.socket_log.flush()
+        self.socket_log.info(server["host"] + ":" + str(delta_time) + "\n")
+        # self.socket_log.flush()
         self.lock_socket_log.release()
 
 
@@ -228,8 +234,8 @@ class Viveck_1(ProtocolInterface):
         end_time = time.time()
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.socket_log.write(server["host"] + ":" + str(delta_time) + "\n")
-        self.socket_log.flush()
+        self.socket_log.info(server["host"] + ":" + str(delta_time) + "\n")
+        # self.socket_log.flush()
         self.lock_socket_log.release()
 
         data_to_put = "put" + "+:--:+" + key + "+:--:+" + value + "+:--:+" + timestamp + "+:--:+" + self.current_class
@@ -273,7 +279,7 @@ class Viveck_1(ProtocolInterface):
         end_time = time.time()
         self.lock_coding_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.coding_log.write("encode:" + str(delta_time) + "\n")
+        self.coding_log.info("encode:" + str(delta_time) + "\n")
         self.lock_coding_log.release()
 
         return
@@ -290,8 +296,8 @@ class Viveck_1(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.socket_log.write(server["host"] + ":" + str(delta_time) + "\n")
-        self.socket_log.flush()
+        self.socket_log.info(server["host"] + ":" + str(delta_time) + "\n")
+        # self.socket_log.flush()
         self.lock_socket_log.release()
 
         data_to_send = "put_fin" + "+:--:+" + key + "+:--:+" + timestamp + "+:--:+" + self.current_class
@@ -348,7 +354,7 @@ class Viveck_1(ProtocolInterface):
 
                 self.lock_latency_log.acquire()
                 delta_time = int((end_time - start_time)*1000)
-                self.latency_log.write("put:Q1:" + str(delta_time) + "\n")
+                self.latency_log.info("put:Q1:" + str(delta_time) + "\n")
                 self.lock_latency_log.release()
             except Exception as e:
                 return {"status": "TimeOut", "message": "Timeout during get timestamp call of Viveck_1"}
@@ -396,8 +402,8 @@ class Viveck_1(ProtocolInterface):
         end_time = time.time()
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.write("put:Q2:" + str(delta_time) + "\n")
-        self.latency_log.flush()
+        self.latency_log.info("put:Q2:" + str(delta_time) + "\n")
+        # self.latency_log.flush()
         self.lock_latency_log.release()
         # Removing barrier for all the waiting threads
         sem.abort()
@@ -437,8 +443,8 @@ class Viveck_1(ProtocolInterface):
         end_time =  time.time()
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.write("put:Q3:" + str(delta_time) + "\n")
-        self.latency_log.flush()
+        self.latency_log.info("put:Q3:" + str(delta_time) + "\n")
+        # self.latency_log.flush()
         self.lock_latency_log.release()
         # Removing barrier for all the waiting threads
         sem_1.abort()
@@ -462,8 +468,8 @@ class Viveck_1(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.socket_log.write(server["host"] + ":" + str(delta_time) + "\n")
-        self.socket_log.flush()
+        self.socket_log.info(server["host"] + ":" + str(delta_time) + "\n")
+        # self.socket_log.flush()
         self.lock_socket_log.release()
 
         data_to_send = "get" + "+:--:+" + key + "+:--:+" + timestamp + "+:--:+" + self.current_class + "+:--:+" + str(value_required)
@@ -506,7 +512,7 @@ class Viveck_1(ProtocolInterface):
         end_time = time.time()
         self.lock_coding_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.coding_log.write("decode:" + str(delta_time) + "\n")
+        self.coding_log.info("decode:" + str(delta_time) + "\n")
         self.lock_coding_log.release()
         return decoded_data
 
@@ -557,7 +563,7 @@ class Viveck_1(ProtocolInterface):
 
             self.lock_latency_log.acquire()
             delta_time = int((end_time - start_time)*1000)
-            self.latency_log.write("get:Q1:" + str(delta_time) + "\n")
+            self.latency_log.info("get:Q1:" + str(delta_time) + "\n")
             self.lock_latency_log.release()
         except Exception as e:
             return {"status": "TimeOut", "message": "Timeout during get timestamp call of Viveck"}
@@ -601,7 +607,7 @@ class Viveck_1(ProtocolInterface):
         end_time = time.time()
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.write("get:Q4:" + str(delta_time) + "\n")
+        self.latency_log.info("get:Q4:" + str(delta_time) + "\n")
         self.lock_latency_log.release()
         sem.abort()
 
@@ -626,3 +632,10 @@ class Viveck_1(ProtocolInterface):
 
         lock.release()
         return {"status": "OK", "value": value, "timestamp": timestamp}
+
+    def get_logger(self, tag):
+        logger_ = logging.getLogger(tag)
+        logger_.setLevel(logging.INFO)
+        logger_.addHandler(logstash.TCPLogstashHandler("localhost", 8080,  version=1))
+        logger_.addHandler(StreamHandler())
+        return logger_

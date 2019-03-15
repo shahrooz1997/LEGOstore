@@ -11,7 +11,10 @@ import struct
 
 from placement_policy import PlacementFactory
 from protocol_interface import ProtocolInterface
-
+#ata for logging
+import logging
+from logging import StreamHandler
+import logstash
 
 # TODO: INCOPERATE THE CLASS FOR EACH CALL AS DATASERVER WILL BE NEEDING IT
 class ABD(ProtocolInterface):
@@ -68,8 +71,8 @@ class ABD(ProtocolInterface):
         # Output files initilization
         latency_log_file_name = "individual_times_" + str(self.id) + ".txt"
         socket_log_file_name = "socket_times_" + str(self.id) + ".txt"
-        self.latency_log = open(latency_log_file_name, "w")
-        self.socket_log  = open(socket_log_file_name, "w")
+        self.latency_log = self.get_logger("abd_latency_log")
+        self.socket_log  = self.get_logger("abd_socket_log")
         self.lock_latency_log = threading.Lock()
         self.lock_socket_log = threading.Lock()
 
@@ -143,7 +146,7 @@ class ABD(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.socket_log.write(server["host"] + str(delta_time) + "\n")
+        self.socket_log.info(server["host"] + str(delta_time) + "\n")
         self.lock_socket_log.release()
 
         data = {"method": "get_timestamp",
@@ -245,7 +248,7 @@ class ABD(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.socket_log.write(server["host"] + str(delta_time) + "\n")
+        self.socket_log.info(server["host"] + str(delta_time) + "\n")
         self.lock_socket_log.release()
 
         print(server)
@@ -313,7 +316,7 @@ class ABD(ProtocolInterface):
             end_time = time.time()
             self.lock_latency_log.acquire()
             delta_time = int((end_time - start_time)*1000)
-            self.latency_log.write("put:Q1:" + str(delta_time) + "\n")
+            self.latency_log.info("put:Q1:" + str(delta_time) + "\n")
             self.lock_latency_log.release()
 
         if timestamp == "0-" + self.id:
@@ -352,7 +355,7 @@ class ABD(ProtocolInterface):
         end_time = time.time()
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.write("put:Q2:" + str(delta_time) + "\n")
+        self.latency_log.info("put:Q2:" + str(delta_time) + "\n")
         self.lock_latency_log.release()
 
         # Removing barrier for all the waiting threads
@@ -379,7 +382,7 @@ class ABD(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.socket_log.write(server["host"] + str(delta_time) + "\n")
+        self.socket_log.info(server["host"] + str(delta_time) + "\n")
         self.lock_socket_log.release()
 
         data = {"method": "get",
@@ -450,7 +453,7 @@ class ABD(ProtocolInterface):
         end_time = time.time()
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.write("get:Q1:" + str(delta_time) + "\n")
+        self.latency_log.info("get:Q1:" + str(delta_time) + "\n")
         self.lock_latency_log.release()
 
         sem.abort()
@@ -491,9 +494,15 @@ class ABD(ProtocolInterface):
         end_time = time.time()
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.write("get:Q2:" + str(delta_time) + "\n")
+        self.latency_log.info("get:Q2:" + str(delta_time) + "\n")
         self.lock_latency_log.release()
 
         sem.abort()
 
         return {"status": "OK", "value": value}
+    def get_logger(self, tag):
+        logger_ = logging.getLogger(tag)
+        logger_.setLevel(logging.INFO)
+        logger_.addHandler(logstash.TCPLogstashHandler("host-ip", 8080,  version=1))
+        logger_.addHandler(StreamHandler())
+        return logger_

@@ -20,6 +20,9 @@ class Client:
 	def __init__(self, properties, _id=None):
 		''' Setting up basic properties of the server
 		'''
+
+		self.groups = properties["groups"]
+
 		self.class_properties = properties["classes"]
 		self.local_datacenter = properties["local_datacenter"]
 
@@ -114,11 +117,16 @@ class Client:
 		if not class_name:
 			class_name = self.default_class
 
+		placement = self.get_placement(key)
+		print('insert', key, ", placement:", placement)
+		class_name= placement["protocol"]
+
+
 		total_attempts = self.retry_attempts
 
 		# Step1 : Putting key, value as per provided class protocol
 		while total_attempts:
-			output = self.class_name_to_object[class_name].put(key, value, None, True)
+			output = self.class_name_to_object[class_name].put(key, value, placement, True)
 
 			if self.check_validity(output):
 				break
@@ -142,19 +150,19 @@ class Client:
 		# Step1: Look for the class details and server details for key.
 		try:
 		# TODO: Last moment changes to disable metadata server
-			class_name = self.default_class
-			server_list = copy.deepcopy(self.class_properties[self.default_class]["manual_dc_server_ids"])
+			placement = self.get_placement(key)
+			class_name = placement["protocol"]
 			#class_name, server_list = self.look_up_metadata(key)
 		except Exception as e:
 			return {"status": "FAILURE", "message" : "Timeout or socket error for getting metadata" + str(e)}
 
-		if not class_name or not server_list:
+		if not class_name or not placement:
 			return {"status": "FAILURE", "message" : "Key doesn't exist in system"}
 
 		# Step2: Call the relevant protocol for the same.
 		total_attempts = self.retry_attempts
 		while total_attempts:
-			output = self.class_name_to_object[class_name].put(key, value, server_list)
+			output = self.class_name_to_object[class_name].put(key, value, placement)
 			if self.check_validity(output):
 				return {"status" : "OK"}
 
@@ -173,29 +181,50 @@ class Client:
 
 		# Step1: Get the relevant metadata for the key
 		try:
-			class_name = self.default_class
-			server_list = copy.deepcopy(self.class_properties[self.default_class]["manual_dc_server_ids"])
+
+
+			placement = self.get_placement(key)
+			class_name = placement["protocol"]
+
+			#XXX: delete this
+			#server_list = copy.deepcopy(self.class_properties[self.default_class]["manual_dc_server_ids"])
 			#class_name, server_list = self.look_up_metadata(key)
 		except Exception as e:
 			return {"status": "FAILURE", "message" : "Timeout or socket error for getting metadata" + str(e)}
 
-		if not class_name or not server_list:
+		if not class_name or not placement:
 			return {"status": "FAILURE", "message": "Key doesn't exist in system"}
 
 		total_attempts = self.retry_attempts
 
 		# Step2: call the relevant protocol for the same
 		while total_attempts:
-			output = self.class_name_to_object[class_name].get(key, server_list)
+			output = self.class_name_to_object[class_name].get(key, placement)
 
 			if self.check_validity(output):
-				return {"status": "OK", "value": None}
+				return {"status": "OK", "value": output["value"]}
 
 			total_attempts -= 1
 
 		return {"status": "FAILURE",
 				"message": "Unable to put message after {0} attemps".format(
 					self.retry_attempts)}
+
+
+
+	def get_placement(self, key):
+		#TODO: key with no group
+		placement = None
+		#XXX: key format 'key<int>'
+		assert(len(key.split('key')) == 2)
+		num = int(key.split('key')[1])
+		for group in self.groups:
+			#XXX: key format 
+			if num in self.groups[group]["keys"]:
+				placement = self.groups[group]["placement"]
+
+		return placement
+
 
 def get_logger(log_path):
 	logger_ = logging.getLogger('log')

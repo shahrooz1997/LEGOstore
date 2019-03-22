@@ -1,9 +1,11 @@
+#!/usr/bin/env python3
+
 import socket
 import threading
 import json
 import time
 import struct
-import sys, signal
+import sys
 
 from reader_writer_lock import ReadWriteLock
 from cache import Cache
@@ -13,14 +15,12 @@ from persistent import Persistent
 #from viveck_1_server import Viveck_1Server
 from viveck_1_server_1 import Viveck_1Server
 
-def signal_handler(signal, frame):
-   Viveck_1Server.timestamp_lock.acquire()
-   with open("timestamp_order.json","w+") as fd:
-       json.dump(Viveck_1Server.timeorder_log,fd)
-   Viveck_1Server.timestamp_lock.release()
-   sys.exit(0)
 
-signal.signal(signal.SIGINT, signal_handler)
+
+ENC_SCHM = "latin-1"
+DELIMITER = "+:--:+"
+
+
 
 class DataServer:
     def __init__(self, db, sock=None, enable_garbage_collector = False):
@@ -34,7 +34,7 @@ class DataServer:
         #self.sock.bind(('0.0.0.0', 10000))
 
         # Max can handles 2048 connections at one time, can increase it if required
-        self.sock.listen(2048)
+        self.sock.listen(20048)
         # Change cache size here if you want. Ideally there should be a config for it
         # If more configurable variable are there add config and read from it.
         self.cache = Cache(500000000)
@@ -57,12 +57,11 @@ class DataServer:
         '''
 
         if current_class == "ABD":
-            output = ABDServer.get(key, timestamp, self.cache, self.persistent, self.lock)
-            return output["status"] + "+:--:+" + output["value"][0] + "+:--:+" + output["value"][1] 
+            return ABDServer.get(key, timestamp, self.cache, self.persistent, self.lock)
         elif current_class == "Viveck_1":
             output = Viveck_1Server.get(key, timestamp, self.cache, self.persistent, self.lock, value_required)
             print("server side size is " + str(sys.getsizeof(output["value"])))
-
+            
             if output["value"] == None:
                 output["value"] = "None"
                 print(key + ":something fishy : " + str(output["value"]))
@@ -156,7 +155,7 @@ def recv_msg(sock):
     raw_msglen = recvall(sock, 4)
     if not raw_msglen:
         return None
-
+    
     msglen = struct.unpack('>I', raw_msglen)[0]
     # Read the message data
     return recvall(sock, msglen)
@@ -185,51 +184,39 @@ def server_connection(connection, dataserver):
     #data = recvall(connection)
     #data = connection.recv(6400)
     data = recv_msg(connection)
+
+    print("data= " , data)
+
+    
     if not data:
         connection.sendall(json.dumps({"status": "failure", "message": "No data Found"}).encode("latin-1"))
     try:
         data = data.decode("latin-1")
         data_list = data.split("+:--:+")
-        #data = json.loads(data.decode('utf-8'))
     except Exception as e:
         connection.sendall(json.dumps({"status": "failure", "message": "sevre1: unable to parse data:" + str(e)}).encode("latin-1"))
         connection.close()
         return
 
     method = data_list[0]
-    #method = data["method"]
-    #print(str(data["method"]))
-
     try:
         if method == "put":
-            connection.sendall(json.dumps(dataserver.put(data_list[1],
-                                                         data_list[2],
-                                                         data_list[3],
-                                                         data_list[4])).encode("latin-1"))
-            # connection.sendall(json.dumps(dataserver.put(data["key"],
-            #                                              data["value"],
-            #                                              data["timestamp"],
-            #                                              data["class"])).encode("utf-8"))
+            output = dataserver.put(data_list[1], data_list[2], data_list[3], data_list[4])
+            connection.sendall(json.dumps(output).encode(ENC_SCHM))
 
         elif method == "get":
-            # if "value_required" not in data:
-            #     data["value_required"] = False
             required_value = False
             if len(data_list) > 4 and data_list[4] == "True":
                 required_value = True
-#            print("***** ", dataserver.get(data_list[1], data_list[2], data_list[3], required_value))
-            connection.sendall(dataserver.get(data_list[1], data_list[2], data_list[3], required_value).encode("latin-1"))
-            # connection.sendall(json.dumps(dataserver.get(data["key"],
-            #                                              data["timestamp"],
-            #                                              data["class"],
-            #                                              data["value_required"])).encode("utf-8"))
+            output = dataserver.get(data_list[1], data_list[2], data_list[3], required_value)
+            print("data_server output: ", output)
+            connection.sendall(output.encode(ENC_SCHM))
         elif method == "get_timestamp":
-            connection.sendall(json.dumps(dataserver.get_timestamp(data_list[1],
-                                                                   data_list[2])).encode("latin-1"))
+            output = dataserver.get_timestamp(data_list[1], data_list[2])
+            connection.sendall(json.dumps(output).encode(ENC_SCHM))
         elif method == "put_fin":
-            connection.sendall(json.dumps(dataserver.put_fin(data_list[1],
-                                                             data_list[2],
-                                                             data_list[3])).encode("latin-1"))
+            output = dataserver.put_fin(data_list[1],data_list[2],data_list[3])
+            connection.sendall(json.dumps(output).encode(ENC_SCHM))
         elif method:
             connection.sendall("MethodNotFound: Unknown method is called".encode("latin-1"))
     except socket.error:
@@ -246,10 +233,12 @@ def test(data_server):
         cthread.deamon = True
         cthread.start()
 
+
 if __name__ == "__main__":
+
     # For purpose of testing the whole code
-    socket_port = [10000]
-    db_list = ["db.temp"]
+    socket_port = [10000,10001, 10002,10003,10004,10005,10006,10007,10008]
+    db_list = ["db1.temp","db2.temp","db3.temp","db4.temp","db5.temp","db6.temp","db7.temp","db8.temp","db9.temp"]
 
     socket_list = []
     data_server_list = []
@@ -267,9 +256,3 @@ if __name__ == "__main__":
         thread_list[-1].start()
 
 
-    #
-    # while 1:
-    #     connection, address = data_server.sock.accept()
-    #     cthread = threading.Thread(target=server_connection, args=(connection, data_server,))
-    #     cthread.deamon = True
-    #     cthread.start()

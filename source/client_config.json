@@ -9,7 +9,7 @@
 			},
 			"servers" : {
 				"1" : {
-					"host" : "52.195.2.67",
+					"host" : "localhost",
 					"port" : "10000"
 				}
 			}
@@ -21,8 +21,8 @@
 			},
 			"servers" : {
 				"1" : {
-					"host" : "13.124.193.209",
-					"port" : "10000"
+					"host" : "localhost",
+					"port" : "10001"
 				}
 			}
 		},
@@ -33,8 +33,8 @@
 			},
 			"servers" : {
 				"1" : {
-					 "host" : "13.233.138.125",
-					 "port" : "10000"
+					 "host" : "localhost",
+					 "port" : "10002"
 				}
 			}
 		},
@@ -45,8 +45,8 @@
 			},
 			"servers" : {
 				"1" : {
-					"host" : "54.93.229.79",
-					"port" : "10000"
+					"host" : "localhost",
+					"port" : "10003"
 				}
 			}
 		},
@@ -57,8 +57,8 @@
 			},
 			"servers" : {
 				"1" : {
-					"host" : "52.208.78.29",
-					"port" : "10000"
+					"host" : "localhost",
+					"port" : "10004"
 				}
 			}
 		},
@@ -69,8 +69,8 @@
 			},
 			"servers" : {
 				"1" : {
-					"host" : "52.91.208.175",
-					"port" : "10000"
+					"host" : "localhost",
+					"port" : "10005"
 				}
 			}
 		},
@@ -81,8 +81,8 @@
 			},
 			"servers" : {
 				"1" : {
-					"host" : "18.231.97.80",
-					"port" : "10000"
+					"host" : "localhost",
+					"port" : "10006"
 				}
 			}
 		},
@@ -93,8 +93,8 @@
 			},
 			"servers" : {
 				"1" : {
-					"host" : "54.183.200.134",
-					"port" : "10000"
+					"host" : "localhost",
+					"port" : "10007"
 				}
 			}
 		},
@@ -105,8 +105,8 @@
 			},
 			"servers" : {
 				"1" : {
-					"host" : "35.165.117.92",
-					"port" : "10000"
+					"host" : "localhost",
+					"port" : "10008"
 				}
 			}
 		}
@@ -118,11 +118,11 @@
 			"history_version_in_cache": 3,
 			"ping_policy": "PingAll",
 			"quorum": {
-				"total_nodes": "7",
-				"read_nodes": "4",
-				"write_nodes": "4"
+				"total_nodes": "5",
+				"read_nodes": "3",
+				"write_nodes": "3"
 			},
-			"manual_dc_server_ids": {"2": ["1"], "4": ["1"], "5": ["1"], "6": ["1"], "7": ["1"],"8": ["1"],"9": ["1"]}
+			"manual_dc_server_ids": {"1": ["1"], "2": ["1"], "3": ["1"], "4": ["1"], "5": ["1"]}
 		},
 		"Viveck_1": {
 			"placement_policy": "Manual",
@@ -142,6 +142,26 @@
 			"manual_dc_server_ids": {"1": ["1"], "2": ["1"] , "4": ["1"], "5": ["1"], "6": ["1"], "8": ["1"], "9": ["1"]}
 		},
 			"default_class": "ABD"
+	},
+	"groups":{
+		"g1":{
+			"keys":[0,1,2,3,4,5,6],
+			"placement":{
+			    "protocol": "ABD",
+			    "Q1"  : ["3","4","5"],
+			    "Q2"  : ["1","2","3"]
+			}
+		},
+		"g2":{
+			"keys":[7,8,9],
+			"placement":{
+				"protocol": "Viveck_1",
+				"Q1"  : ["1","4","5","8"],
+				"Q2"  : ["1","2","4","5","6"],
+				"Q3"  : ["5","6","8","9"],
+				"Q4"  : ["4","5","6","8"]
+			}
+		}
 	},
 	"retry_attempts": 3,
 	"metadata_server_timeout": "120",

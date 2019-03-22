@@ -1,4 +1,4 @@
-from lamport_timestamp import TimeStamp
+from lamport_timestamp import Timestamp
 
 import struct
 import hashlib

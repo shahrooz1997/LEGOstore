@@ -1,38 +1,51 @@
 import datetime
 
-class TimeStamp:
+class Timestamp:
     @staticmethod
-    def get_current_time(_id):
-        return str(datetime.datetime.utcnow()) + '-' + _id
+    def create_new_timestamp(_id):
+        assert(type(_id) == str)
+        return str(0)+'-'+_id
 
 
     @staticmethod
-    def get_next_timestamp(timestamp_list, _id):
-        timestamps = []
-        for timestamp in timestamp_list:
-            timestamps.append(timestamp.split("-")[0])
-
-        next_timestamp = max(max(timestamps), str(datetime.datetime.utcnow())) + '-' + _id
-
-        return next_timestamp
+    def increment_timestamp(timestamp, _id):
+        assert(len(timestamp.split('-')) == 2)
+        assert(type(_id) is str)        
+        _time_plus_one = int(timestamp.split('-')[0]) + 1
+        next_timestamp = str(_time_plus_one) + '-' + _id
+        return next_timestamp 
 
 
     @staticmethod
     def get_max_timestamp(timestamp_list):
-        max_timestamp = "0"
-        for time_ in timestamp_list:
-            if time_ and time_ > max_timestamp:
-                max_timestamp = time_
+        max_timestamp = None
+        max_time = None
+        for timestamp in timestamp_list:
+            time = int(timestamp.split('-')[0])
+            src_client = int(timestamp.split('-')[1])
+            if max_timestamp is None or time > max_time:
+                max_time = time
+                max_timestamp = "{}-{}".format(max_time, src_client)
 
         return max_timestamp
 
 
-    @staticmethod
-    def compare_time(time1, time2):
-        timestamp_1, id_1 = time1.split("-")
-        timestamp_2, id_2 = time2.split("-")
 
-        if timestamp_1 == timestamp_2:
-            return id_1 > id_2
+if __name__ == '__main__':
 
-        return timestamp_1 > timestamp_2
+    #TODO: use unittest instead
+    print("Testing Timestamp")
+    id_1 =  '1'
+    id_2 =  '2'
+    id_3 =  '3'
+    timestamp_1 = Timestamp.create_new_timestamp(id_1)
+    timestamp_2 = Timestamp.create_new_timestamp(id_2)
+    timestamp_2 = Timestamp.increment_timestamp(timestamp_2, id_2) 
+    print("current timestamp_1\t--> " , timestamp_1)
+    print("current timestamp_2\t--> " , timestamp_2)
+    max_timestamp = Timestamp.get_max_timestamp([timestamp_1, timestamp_2])
+    print("max timestamp\t-->", max_timestamp)
+    next_timestamp = Timestamp.increment_timestamp(max_timestamp, id_3)
+    print("next timestamp\t-->", next_timestamp)
+    print("done testing Timestamp")
+    

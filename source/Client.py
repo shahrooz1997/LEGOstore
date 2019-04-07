@@ -21,11 +21,9 @@ class Client:
 		''' Setting up basic properties of the server
 		'''
 
-		self.groups = properties["groups"]
 
-		self.class_properties = properties["classes"]
 		self.local_datacenter = properties["local_datacenter"]
-
+		self.groups = properties["groups"]
 		self.datacenter_list = properties["datacenters"]
 
 		# Same LRU data structure can be used for the same but for now using dictionary
@@ -33,10 +31,12 @@ class Client:
 		self.local_cache = {}
 
 		self.class_name_to_object = {}
-		self.default_class = self.class_properties["default_class"]
 		self.metadata_server = self.datacenter_list[self.local_datacenter]["metadata_server"]
 		# TODO: Update Datacenter to store local datacenter too
 		self.datacenter_info = Datacenter(self.datacenter_list)
+
+
+		self.class_name_to_object = {}
 
 		if _id == None:
 			self.id = uuid.uuid4().hex
@@ -45,28 +45,20 @@ class Client:
 		self.retry_attempts = int(properties["retry_attempts"])
 		self.metadata_timeout = int(properties["metadata_server_timeout"])
 
-		self.latency_between_DCs = properties["latency_between_DCs"]
-		self.dc_cost = properties["DC_cost"]
-
-		self.initiate_key_classes()
-
-
-	def initiate_key_classes(self):
-		for class_name, class_info in self.class_properties.items():
-			self.class_name_to_object[class_name] = Protocol.get_class_protocol(class_name,
-																				class_info,
-																				self.local_datacenter,
-																				self.datacenter_info,
-																				self.id,
-																				self.latency_between_DCs,
-																				self.dc_cost)
-		return
+		#TODO: BETTER DESIGN
+		for protocol_name in ["ABD", "CAS"]:
+			self.class_name_to_object.update({protocol_name:Protocol.get_class_protocol(protocol_name,
+																						properties,
+																						self.local_datacenter,
+																						self.datacenter_info,
+																						self.id,
+																						)})
 
 
 	def check_validity(self, output):
 		# Checks if the status is OK or not
 		# @ Returns true pr false based on the status
-
+		print("check_validity >> output == ", output)
 		if output["status"] == "OK":
 			return True
 
@@ -113,9 +105,6 @@ class Client:
 		#
 		# @ Returns dict with {"status" , "message" } keys
 		######################
-
-		if not class_name:
-			class_name = self.default_class
 
 		placement = self.get_placement(key)
 		print('insert', key, ", placement:", placement)
@@ -216,13 +205,11 @@ class Client:
 		#TODO: key with no group
 		placement = None
 		#XXX: key format 'key<int>'
-		assert(len(key.split('key')) == 2)
-		num = int(key.split('key')[1])
 		for group in self.groups:
 			#XXX: key format 
-			if num in self.groups[group]["keys"]:
+			if key in self.groups[group]["keys"]:
 				placement = self.groups[group]["placement"]
-
+		assert(placement is not None)
 		return placement
 
 

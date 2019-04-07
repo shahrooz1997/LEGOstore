@@ -18,15 +18,19 @@ class Timestamp:
 
     @staticmethod
     def get_max_timestamp(timestamp_list):
+        print(" >> get_max_timestamp >> timestamp_list = ", timestamp_list)
         max_timestamp = None
         max_time = None
         for timestamp in timestamp_list:
-            time = int(timestamp.split('-')[0])
+            if timestamp is not None:
+                time = int(timestamp.split('-')[0])
+            else:
+                continue
             src_client = int(timestamp.split('-')[1])
             if max_timestamp is None or time > max_time:
                 max_time = time
                 max_timestamp = "{}-{}".format(max_time, src_client)
-
+        assert(max_timestamp is not None)
         return max_timestamp
 
 

@@ -19,8 +19,7 @@ import logstash
 
 
 class Viveck_1(ProtocolInterface):
-    def __init__(self, properties, local_datacenter_id, data_center, client_id,
-                 latency_between_DCs, dc_cost):
+    def __init__(self, properties, local_datacenter_id, data_center, client_id):
         self.timeout_per_request = int(properties["timeout_per_request"])
         ##########################
         ## Quorum relevant properties
@@ -38,39 +37,8 @@ class Viveck_1(ProtocolInterface):
         self.timeout = int(properties["timeout_per_request"])
         self.data_center = data_center
         self.id = client_id
-        self.placement_policy = PlacementFactory(properties["placement_policy"]).get_policy()
         self.local_datacenter_id = local_datacenter_id
         self.current_class = "Viveck_1"
-
-        self.manual_servers = {}
-
-        # This is only added for the prototype. In real system you would never use it.
-        self.dc_to_latency_map = copy.deepcopy(latency_between_DCs[self.local_datacenter_id])
-        self.latency_delay = copy.deepcopy(latency_between_DCs[self.local_datacenter_id])
-
-        # Converting string values to float first
-        # Could also be done in next step eaisly but just for readability new step
-        for key, value in self.latency_delay.items():
-            self.latency_delay[key] = float(value)
-            self.dc_to_latency_map[key] = float(value)
-
-        # Sorting the datacenters as per the latency
-        self.latency_delay = [k for k in sorted(self.latency_delay, key=self.latency_delay.get,
-                                                reverse=False)]
-
-        if "manual_dc_server_ids" in properties:
-            self.manual_servers = copy.deepcopy(properties["manual_dc_server_ids"])
-
-        self.dc_cost = dc_cost
-
-        # Converting the data center cost as per latency
-        self.dc_cost[local_datacenter_id] = 0
-        for key, value in self.dc_cost.items():
-            self.dc_cost[key] = float(value)
-
-        # Sorting the datacenter id as per transfer cost
-        self.dc_cost = [k for k in sorted(self.dc_cost, key=self.dc_cost.get,
-                                                reverse=False)]
         self.encoding_byte = "latin-1"
 
         latency_log_file_name = "individual_times_" + str(self.id) + ".txt"
@@ -175,7 +143,7 @@ class Viveck_1(ProtocolInterface):
         
         print("getting timestamp")
         print("datacenter_list = ", datacenter_list)
-        sem = threading.Barrier(len(datacenter), timeout=self.timeout)
+        sem = threading.Barrier(len(datacenter_list) + 1, timeout=self.timeout)
         lock = threading.Lock()
         thread_list = []
 
@@ -190,8 +158,7 @@ class Viveck_1(ProtocolInterface):
                                                           copy.deepcopy(server_info),
                                                           output,
                                                           lock,
-                                                          self.current_class,
-                                                          self.dc_to_latency_map[data_center_id])))
+                                                          self.current_class)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -204,10 +171,12 @@ class Viveck_1(ProtocolInterface):
         sem.abort()
 
         lock.acquire()
-        if (len(output) < self.quorum_1):
+        if (len(output) < len(datacenter_list)):
             lock.release()
             raise Exception("Timeout during timestamps")
+        print("CAS::get_timestamp >> just before getting max_timestamp")
         timestamp = Timestamp.get_max_timestamp(output)
+        print("CAS::get_timestamp >> timestamp = ", timestamp)
         lock.release()
         
         
@@ -302,12 +271,17 @@ class Viveck_1(ProtocolInterface):
 
     def put(self, key, value, placement, insert=False):
 
+
+        print("CAS::put() >> key, value = " , key, value, sep =',')
+
         q1_dc_list = placement["Q1"]
         q2_dc_list = placement["Q2"]
         q3_dc_list = placement["Q3"]
         q4_dc_list = placement["Q4"]
         k = placement["k"]
         m = placement["m"]
+
+        print("CAS::put() >> m , k = " , m , ",", k)
         # Step1 : Concurrently encode while getting the latest timestamp from the servers
         codes = []
         thread_list = []
@@ -337,8 +311,9 @@ class Viveck_1(ProtocolInterface):
             try:
                 # Unlike in ABD, here it returns the current timestamp
                 start_time = time.time()
-                timestamp = self.get_timestamp(key, server_list)
+                timestamp = self.get_timestamp(key, q2_dc_list)
                 timestamp = Timestamp.increment_timestamp(timestamp, self.id)
+                print("CAS::put() >> new_timestamp = ", timestamp)
                 end_time = time.time()
 
                 self.lock_latency_log.acquire()
@@ -375,8 +350,7 @@ class Viveck_1(ProtocolInterface):
                                                           sem,
                                                           copy.deepcopy(server_info),
                                                           output,
-                                                          lock,
-                                                          self.dc_to_latency_map[data_center_id])))
+                                                          lock)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -395,7 +369,7 @@ class Viveck_1(ProtocolInterface):
         sem.abort()
 
         lock.acquire()
-        if (len(output) < self.quorum_2):
+        if (len(output) < len(q2_dc_list)):
             lock.release()
             return {"status": "TimeOut", "message": "Timeout during put code call of Viceck_1"}
 
@@ -416,8 +390,7 @@ class Viveck_1(ProtocolInterface):
                                                                             sem_1,
                                                                             copy.deepcopy(server_info),
                                                                             output,
-                                                                            lock,
-                                                                            self.dc_to_latency_map[data_center_id])))
+                                                                            lock)))
 
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
@@ -436,7 +409,7 @@ class Viveck_1(ProtocolInterface):
         sem_1.abort()
 
         lock.acquire()
-        if (len(output) < self.quorum_3):
+        if (len(output) < len(q3_dc_list)):
             lock.release()
             return {"status": "TimeOut", "message": "Timeout during put fin label call of Viceck_1"}
         lock.release()
@@ -472,6 +445,7 @@ class Viveck_1(ProtocolInterface):
                                                                                          server["port"]))
         else:
             data = data.decode(self.encoding_byte)
+            print(":::::: data is:", data)
             data_list = data.split("+:--:+")
             print("recieved data size is" + str(sys.getsizeof(data)))
 
@@ -526,9 +500,10 @@ class Viveck_1(ProtocolInterface):
         delta_time = int((end_time - start_time)*1000)
         self.coding_log.info("encode:" + str(delta_time) + "\n")
         self.lock_coding_log.release()
+        print("encoding is done")
         return
 
-
+    #TODO: TEST WHEN DEPLOYED IF NEEDED
     def _get_from_remaining(self, key, timestamp, server_list, called_data_center):
         # Get the data from the servers except for called_data_center
         # Please not here server_list is [(DC_ID, [server_list])]
@@ -552,7 +527,6 @@ class Viveck_1(ProtocolInterface):
                                                           copy.deepcopy(server_info),
                                                           output,
                                                           lock,
-                                                          self.dc_to_latency_map[data_center_id],
                                                           True)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
@@ -586,11 +560,12 @@ class Viveck_1(ProtocolInterface):
             self.latency_log.info("get:Q1:" + str(delta_time) + "\n")
             self.lock_latency_log.release()
         except Exception as e:
+            print("CAS::get>> Error: ",e)
             return {"status": "TimeOut", "message": "Timeout during get timestamp call of Viveck"}
 
         thread_list = []
 
-        sem = threading.Barrier(self.quorum_4 + 1, timeout=self.timeout)
+        sem = threading.Barrier(len(q4_dc_list) + 1, timeout=self.timeout)
         lock = threading.Lock()
         print("CLI >> CAS --> q1 timestamp = ", timestamp)
 
@@ -613,11 +588,11 @@ class Viveck_1(ProtocolInterface):
                                                           copy.deepcopy(server_info),
                                                           output,
                                                           lock,
-                                                          self.dc_to_latency_map[data_center_id],
+                                                          0,
                                                           True)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
-                if index < self.k:
+                if index < k:
                     called_data_center.add((data_center_id, server_id))
                 index += 1
         try:
@@ -645,7 +620,7 @@ class Viveck_1(ProtocolInterface):
             lock.release()
             return {"status": "TimeOut", "value": "None", "message": "Timeout/Concurrency error during get call"}
         try:
-            value = self.decode(output, k)
+            value = self.decode(output, m, k)
         except Exception as e:
             lock.release()
             return {"status": "TimeOut", "value": "None","message": e}

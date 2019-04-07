@@ -19,55 +19,18 @@ import logstash
 # TODO: INCOPERATE THE CLASS FOR EACH CALL AS DATASERVER WILL BE NEEDING IT
 class ABD(ProtocolInterface):
 
-    def __init__(self, properties, local_datacenter_id, data_center, client_id, latency_between_DCs, dc_cost):
+    def __init__(self, properties, local_datacenter_id, data_center, client_id):
 
         self.timeout_per_request = int(properties["timeout_per_request"])
-
-        # Quorum relevant properties
-        self.total_nodes  = int(properties["quorum"]["total_nodes"])
-        self.read_nodes = int(properties["quorum"]["read_nodes"])
-        self.write_nodes = int(properties["quorum"]["write_nodes"])
 
         # Generic timeout for everything
         self.timeout = int(properties["timeout_per_request"])
         self.data_center = data_center
         self.id = client_id
-        self.placement_policy = PlacementFactory(properties["placement_policy"]).get_policy()
         self.local_datacenter_id = local_datacenter_id
         self.current_class = "ABD"
-        self.manual_servers = {}
-
 
         self.encoding_byte = "latin-1"
-
-        # This is only added for the prototype. In real system you would never use it.
-        self.dc_to_latency_map = copy.deepcopy(latency_between_DCs[self.local_datacenter_id])
-        self.latency_delay = copy.deepcopy(latency_between_DCs[self.local_datacenter_id])
-
-        # Converting string values to float first
-        # Could also be done in next step eaisly but just for readability new step
-        for key, value in self.latency_delay.items():
-            self.latency_delay[key] = float(value)
-            self.dc_to_latency_map[key] = float(value)
-
-
-        # Sorting the datacenters as per the latency
-        self.latency_delay = [k for k in sorted(self.latency_delay, key=self.latency_delay.get,
-                                                reverse=False)]
-
-        if "manual_dc_server_ids" in properties:
-            self.manual_servers = copy.deepcopy(properties["manual_dc_server_ids"])
-
-        self.dc_cost = dc_cost
-
-        # Converting the data center cost as per latency
-        self.dc_cost[local_datacenter_id] = 0
-        for key, value in self.dc_cost.items():
-            self.dc_cost[key] = float(value)
-
-        # Sorting the datacenter id as per transfer cost
-        self.dc_cost = [k for k in sorted(self.dc_cost, key=self.dc_cost.get,
-                                                reverse=False)]
 
         # Output files initilization
         latency_log_file_name = "individual_times_" + str(self.id) + ".txt"
@@ -174,7 +137,7 @@ class ABD(ProtocolInterface):
         ######################
 
         # Step 1 : getting the timestamp
-        sem = threading.Barrier(self.read_nodes + 1, timeout=self.timeout)
+        sem = threading.Barrier(len(datacenter_list) + 1, timeout=self.timeout)
         lock = threading.Lock()
         thread_list = []
 
@@ -188,8 +151,7 @@ class ABD(ProtocolInterface):
                                                                                       sem,
                                                                                       copy.deepcopy(server_info),
                                                                                       output,
-                                                                                      lock,
-                                                                                      self.dc_to_latency_map[data_center_id])))
+                                                                                      lock)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -202,7 +164,7 @@ class ABD(ProtocolInterface):
         sem.abort()
 
         lock.acquire()
-        if (len(output) < self.read_nodes):
+        if (len(output) < len(datacenter_list)):
             lock.release()
             raise Exception("Timeout during timestamps")
 
@@ -288,6 +250,7 @@ class ABD(ProtocolInterface):
 
         q1_dc_list = placement["Q1"]
         q2_dc_list = placement["Q2"]
+
         dataceneters_list      = list(set(q1_dc_list) | set(q2_dc_list))
         # if INSERT, assume first write value ==> don't neeed to get timestamp from servers
         if insert:
@@ -311,7 +274,7 @@ class ABD(ProtocolInterface):
                 print("put phase 1: get timestamp : q1_list ", q1_dc_list)
                 timestamp = self.get_timestamp(key, q1_dc_list)
             except Exception as e:
-                print(e)
+                print("ABD::PUT >> ", e)
                 return {"status": "TimeOut", "message": "Timeout during get timestamp call of ABD"}
             end_time = time.time()
             self.lock_latency_log.acquire()
@@ -332,7 +295,7 @@ class ABD(ProtocolInterface):
 
 
         # Step2 : Send the message to put
-        sem = threading.Barrier(self.write_nodes + 1, timeout=self.timeout)
+        sem = threading.Barrier(len(q2_dc_list) + 1, timeout=self.timeout)
         lock = threading.Lock()
 
         output = []
@@ -355,8 +318,7 @@ class ABD(ProtocolInterface):
                                                                             sem,
                                                                             copy.deepcopy(server_info),
                                                                             output,
-                                                                            lock,
-                                                                            self.dc_to_latency_map[data_center_id])))
+                                                                            lock)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -375,7 +337,7 @@ class ABD(ProtocolInterface):
         sem.abort()
 
         lock.acquire()
-        if (len(output) < self.write_nodes):
+        if (len(output) < len(q2_dc_list)):
             lock.release()
             return {"status": "TimeOut", "message": "Timeout during put call of ABD"}
 
@@ -439,14 +401,16 @@ class ABD(ProtocolInterface):
         #
         # @ Raises Exception in case of timeout or socket error
         ######################
+        q1_dc_list = placement["Q1"]
+        q2_dc_list = placement["Q2"]
+
         thread_list = []
 
-        sem = threading.Barrier(self.read_nodes + 1, timeout=self.timeout)
+        sem = threading.Barrier(len(q1_dc_list) + 1, timeout=self.timeout)
         lock = threading.Lock()
 
 
-        q1_dc_list = placement["Q1"]
-        q2_dc_list = placement["Q2"]
+        
 
         #
         # Step1: get the timestamp with recent value
@@ -463,8 +427,7 @@ class ABD(ProtocolInterface):
                                                                             sem,
                                                                             copy.deepcopy(server_info),
                                                                             output,
-                                                                            lock,
-                                                                            self.dc_to_latency_map[data_center_id])))
+                                                                            lock)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -481,7 +444,7 @@ class ABD(ProtocolInterface):
 
         sem.abort()
         lock.acquire()
-        if (len(output) < self.read_nodes):
+        if (len(output) < len(q1_dc_list)):
             lock.release()
             return {"status": "TimeOut", "message": "Timeout during get call of ABD"}
         
@@ -499,7 +462,7 @@ class ABD(ProtocolInterface):
         #    return {"status": "Error", "message": "No timestap found. Check quorum again"}
 
         # After abort can't use the same barrier
-        sem = threading.Barrier(self.write_nodes + 1, timeout=self.timeout)
+        sem = threading.Barrier(len(q2_dc_list) + 1, timeout=self.timeout)
         result = []
         #new_server_list = self._get_closest_servers(server_list, self.write_nodes)
         start_time = time.time()
@@ -513,8 +476,7 @@ class ABD(ProtocolInterface):
                                                                             sem,
                                                                             copy.deepcopy(server_info),
                                                                             result,
-                                                                            lock,
-                                                                            self.dc_to_latency_map[data_center_id])))
+                                                                            lock)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 

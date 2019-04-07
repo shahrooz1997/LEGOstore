@@ -19,7 +19,6 @@ import logstash
 
 
 class Viveck_1(ProtocolInterface):
-
     def __init__(self, properties, local_datacenter_id, data_center, client_id,
                  latency_between_DCs, dc_cost):
         self.timeout_per_request = int(properties["timeout_per_request"])
@@ -30,18 +29,10 @@ class Viveck_1(ProtocolInterface):
         ## Q2 + Q4 >= N+k
         ## Q4 >= k
         ##########################
-        self.total_nodes  = int(properties["quorum"]["total_nodes"])
-        self.quorum_1  = int(properties["quorum"]["Q1"])
-        self.quorum_2 = int(properties["quorum"]["Q2"])
-        self.quorum_3 = int(properties["quorum"]["Q3"])
-        self.quorum_4 = int(properties["quorum"]["Q4"])
 
-        # Erasure coding parameters
-        self.k = int(properties["k"])
-        self.m = int(properties["m"])
         # https://github.com/openstack/pyeclib . Check out the supported types.
-        self.ec_type = properties["erasure_coding_type"]
-        self.ec_driver = ECDriver(k=self.k, m=self.m, ec_type=self.ec_type)
+        #TODO: us class for different groups where ecdriver is intilizied per group
+        self.ec_type = "liberasurecode_rs_vand"
 
         # Generic timeout for everything
         self.timeout = int(properties["timeout_per_request"])
@@ -82,7 +73,6 @@ class Viveck_1(ProtocolInterface):
                                                 reverse=False)]
         self.encoding_byte = "latin-1"
 
-        # Since we are running multiple clients on same machine. We want different latency files
         latency_log_file_name = "individual_times_" + str(self.id) + ".txt"
         socket_log_file_name = "socket_times_" + str(self.id) + ".txt"
         coding_log_file_name = "coding_times_" + str(self.id) + ".txt"
@@ -180,17 +170,19 @@ class Viveck_1(ProtocolInterface):
         return
 
 
-    def get_timestamp(self, key, server_list):
+    def get_timestamp(self, key, datacenter_list):
         # Step 1 : getting the timestamp
-        sem = threading.Barrier(self.quorum_1 + 1, timeout=self.timeout)
+        
+        print("getting timestamp")
+        print("datacenter_list = ", datacenter_list)
+        sem = threading.Barrier(len(datacenter), timeout=self.timeout)
         lock = threading.Lock()
         thread_list = []
 
         output = []
-        new_server_list = self._get_closest_servers(server_list, self.quorum_1)
-        print("timestamp server: " + str(new_server_list))
-        for data_center_id, servers in new_server_list.items():
-            for server_id in servers:
+        for data_center_id in datacenter_list:
+            #TODO: assume single server in every datacenter
+            for server_id in ["1"]:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
                 thread_list.append(threading.Thread(target=self._get_timestamp,
                                                     args=(key,
@@ -215,9 +207,13 @@ class Viveck_1(ProtocolInterface):
         if (len(output) < self.quorum_1):
             lock.release()
             raise Exception("Timeout during timestamps")
-        time = TimeStamp.get_max_timestamp(output)
+        timestamp = Timestamp.get_max_timestamp(output)
         lock.release()
-        return time
+        
+        
+        print("found timstamp:", timestamp)
+        
+        return timestamp
 
 
     def send_msg(self, sock, msg):
@@ -235,7 +231,6 @@ class Viveck_1(ProtocolInterface):
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
         self.socket_log.info(server["host"] + ":" + str(delta_time) + "\n")
-        # self.socket_log.flush()
         self.lock_socket_log.release()
 
         data_to_put = "put" + "+:--:+" + key + "+:--:+" + value + "+:--:+" + timestamp + "+:--:+" + self.current_class
@@ -260,27 +255,6 @@ class Viveck_1(ProtocolInterface):
             sem.wait()
         except threading.BrokenBarrierError:
             pass
-
-        return
-
-
-    def encode(self, value, codes):
-        # Updated for viveck
-        start_time = time.time()
-        if self.k == 1:
-            codes.extend([value]*self.m)
-            return codes
-
-        codes.extend(self.ec_driver.encode(value.encode(self.encoding_byte)))
-        for index in range(len(codes)):
-           #print(type(codes[index]))
-           codes[index] = codes[index].decode(self.encoding_byte)
-           print(sys.getsizeof(codes[index]))
-        end_time = time.time()
-        self.lock_coding_log.acquire()
-        delta_time = int((end_time - start_time)*1000)
-        self.coding_log.info("encode:" + str(delta_time) + "\n")
-        self.lock_coding_log.release()
 
         return
 
@@ -326,17 +300,31 @@ class Viveck_1(ProtocolInterface):
         return
 
 
-    def put(self, key, value, server_list=None, insert=False):
+    def put(self, key, value, placement, insert=False):
+
+        q1_dc_list = placement["Q1"]
+        q2_dc_list = placement["Q2"]
+        q3_dc_list = placement["Q3"]
+        q4_dc_list = placement["Q4"]
+        k = placement["k"]
+        m = placement["m"]
         # Step1 : Concurrently encode while getting the latest timestamp from the servers
         codes = []
         thread_list = []
-        erasure_coding_thread = threading.Thread(target=self.encode, args=(value, codes))
+        erasure_coding_thread = threading.Thread(target=self.encode, args=(value, codes, m, k))
         erasure_coding_thread.deamon = True
         erasure_coding_thread.start()
 
+
+        datacenters_list = list(set(q1_dc_list) | set(q2_dc_list) | set(q3_dc_list) | set(q4_dc_list))
+
+
+
         # If INSERT that means first time else Step1 i.e. get_timestamp from servers with the key
         if insert:
-            timestamp = TimeStamp.get_current_time(self.id)
+            
+            timestamp = Timestamp.create_new_timestamp(self.id)
+            '''
             if self.manual_servers and self.placement_policy.__name__ == "Manual":
                 server_list = self.manual_servers
             else:
@@ -344,12 +332,13 @@ class Viveck_1(ProtocolInterface):
                                                            self.data_center.get_datacenter_list(),
                                                            self.local_datacenter_id,
                                                            key)
+            '''
         else:
             try:
                 # Unlike in ABD, here it returns the current timestamp
                 start_time = time.time()
                 timestamp = self.get_timestamp(key, server_list)
-                timestamp = TimeStamp.get_next_timestamp([timestamp], self.id)
+                timestamp = Timestamp.increment_timestamp(timestamp, self.id)
                 end_time = time.time()
 
                 self.lock_latency_log.acquire()
@@ -364,22 +353,20 @@ class Viveck_1(ProtocolInterface):
         erasure_coding_thread.join()
 
         # Step2 : Send the message with codes
-        sem = threading.Barrier(self.quorum_2 + 1, timeout=self.timeout)
+        sem = threading.Barrier(len(q2_dc_list) + 1, timeout=self.timeout)
         lock = threading.Lock()
 
         output = []
 
         index = 0
-        # Sorting the servers as per the DC latencies and selecting nearest Q2.
-        # TODO: Retry feature with timeouts with any of those didn't respond.
-        # Although this might not be a bottleneck for now
-        new_server_list = self._get_closest_servers(server_list, self.quorum_2)
-        print("closest servers are :" + str(new_server_list))
+        
+
         # Still sending to all for the request but wait for only required quorum to respond.
         # If needed ping to only required quorum and then retry
         start_time = time.time()
-        for data_center_id, servers in new_server_list.items():
-            for server_id in servers:
+        for data_center_id in q2_dc_list:
+            #TODO: for now assume single server on every datacenter
+            for server_id in ["1"]:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
                 thread_list.append(threading.Thread(target=self._put,
                                                     args=(key,
@@ -403,7 +390,6 @@ class Viveck_1(ProtocolInterface):
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
         self.latency_log.info("put:Q2:" + str(delta_time) + "\n")
-        # self.latency_log.flush()
         self.lock_latency_log.release()
         # Removing barrier for all the waiting threads
         sem.abort()
@@ -417,13 +403,13 @@ class Viveck_1(ProtocolInterface):
 
         # Step3: Send the fin label to all servers
         output = []
-        sem_1 = threading.Barrier(self.quorum_3 + 1, timeout=self.timeout)
+        sem_1 = threading.Barrier(len(q3_dc_list) + 1, timeout=self.timeout)
         lock = threading.Lock()
 
-        new_server_list = self._get_closest_servers(server_list, self.quorum_3)
         start_time = time.time()
-        for data_center_id, servers in new_server_list.items():
-            for server_id in servers:
+        for data_center_id in q3_dc_list:
+            #TODO: assume single server in every datacenter
+            for server_id in ["1"]:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
                 thread_list.append(threading.Thread(target=self._put_fin, args=(key,
                                                                             timestamp,
@@ -455,7 +441,7 @@ class Viveck_1(ProtocolInterface):
             return {"status": "TimeOut", "message": "Timeout during put fin label call of Viceck_1"}
         lock.release()
 
-        return {"status": "OK", "value": value, "timestamp": timestamp, "server_list": server_list}
+        return {"status": "OK", "value": value, "timestamp": timestamp}
 
 
     def _get(self, key, timestamp, sem, server, output, lock, delay=0, value_required=False):
@@ -501,20 +487,46 @@ class Viveck_1(ProtocolInterface):
         return
 
 
-    def decode(self, chunk_list):
+    def decode(self, chunk_list, m, k):
+
+        assert(m > k)
+        ec_driver = ECDriver(k=k, m=m, ec_type=self.ec_type)
         start_time = time.time()
-        if self.k == 1:
+        if k == 1:
             return chunk_list[0]
 
         for i in range(len(chunk_list)):
             chunk_list[i] = chunk_list[i].encode(self.encoding_byte)
-        decoded_data = self.ec_driver.decode(chunk_list).decode(self.encoding_byte)
+        decoded_data = ec_driver.decode(chunk_list).decode(self.encoding_byte)
         end_time = time.time()
         self.lock_coding_log.acquire()
         delta_time = int((end_time - start_time)*1000)
         self.coding_log.info("decode:" + str(delta_time) + "\n")
         self.lock_coding_log.release()
         return decoded_data
+
+
+    def encode(self, value, codes, m, k):
+
+        assert(m > k)
+        ec_driver = ECDriver(k=k, m=m, ec_type=self.ec_type)
+        # Updated for viveck
+        start_time = time.time()
+        if k == 1:
+            codes.extend([value]*m)
+            return codes
+
+        codes.extend(ec_driver.encode(value.encode(self.encoding_byte)))
+        for index in range(len(codes)):
+           #print(type(codes[index]))
+           codes[index] = codes[index].decode(self.encoding_byte)
+           print(sys.getsizeof(codes[index]))
+        end_time = time.time()
+        self.lock_coding_log.acquire()
+        delta_time = int((end_time - start_time)*1000)
+        self.coding_log.info("encode:" + str(delta_time) + "\n")
+        self.lock_coding_log.release()
+        return
 
 
     def _get_from_remaining(self, key, timestamp, server_list, called_data_center):
@@ -553,12 +565,20 @@ class Viveck_1(ProtocolInterface):
         return output
 
 
-    def get(self, key, server_list):
+    def get(self, key, placement):
+
+        q1_dc_list = placement["Q1"]
+        q4_dc_list = placement["Q4"]
+        m = placement["m"]
+        k = placement["k"]
+        
+        print("CLI >> CAS get request, key = " , key)
+        
         # Step1: Get the timestamp for the key
         # Error can imply either server busy or key doesn't exist
         try:
             start_time = time.time()
-            timestamp = self.get_timestamp(key, server_list)
+            timestamp = self.get_timestamp(key, q1_dc_list)
             end_time = time.time()
 
             self.lock_latency_log.acquire()
@@ -572,19 +592,19 @@ class Viveck_1(ProtocolInterface):
 
         sem = threading.Barrier(self.quorum_4 + 1, timeout=self.timeout)
         lock = threading.Lock()
-        print("reached here: " + str(timestamp))
-        new_server_list = self._get_closest_servers(server_list, self.quorum_4)
-        minimum_cost_list = self._get_cost_effective_server_list(new_server_list)
+        print("CLI >> CAS --> q1 timestamp = ", timestamp)
+
         # Step2: Get the encoded value
         index = 0
         output = []
-        print("minimum list: " + str(minimum_cost_list))
         # This parameter is to mark the datacenter, servers which have already sent an request
+    
         called_data_center = set()
         # Sending the get request to the selected servers
         start_time = time.time()
-        for data_center_id, servers in minimum_cost_list:
-            for server_id in servers:
+        for data_center_id in q4_dc_list:
+            #TODO: assume single server in every datacenter
+            for server_id in ["1"]:
                 server_info = self.data_center.get_server_info(data_center_id, server_id)
                 thread_list.append(threading.Thread(target=self._get,
                                                     args=(key,
@@ -621,11 +641,11 @@ class Viveck_1(ProtocolInterface):
 #            output.extend(additional_codes)
 
         # We didn't get it from all other servers too. So basically we raise an error
-        if (len(output) < self.k):
+        if (len(output) < k):
             lock.release()
             return {"status": "TimeOut", "value": "None", "message": "Timeout/Concurrency error during get call"}
         try:
-            value = self.decode(output)
+            value = self.decode(output, k)
         except Exception as e:
             lock.release()
             return {"status": "TimeOut", "value": "None","message": e}

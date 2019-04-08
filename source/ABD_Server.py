@@ -1,4 +1,4 @@
-class ABDServer:
+class ABD_Server:
 
     @staticmethod
     def get(key, timestamp, cache, persistent, lock):

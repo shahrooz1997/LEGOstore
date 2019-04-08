@@ -7,7 +7,7 @@
 # Confirm this with Professor Bhuvan too.
 import threading
 
-class Viveck_1Server:
+class CAS_Server:
     
     #version ordererd
     timeorder_log = {}
@@ -21,11 +21,11 @@ class Viveck_1Server:
 
     @staticmethod
     def record_timestamp_order(key, timestamp, current_timestamps):
-        Viveck_1Server.timestamp_lock.acquire()
+        CAS_Server.timestamp_lock.acquire()
         if current_timestamps == None:
-            Viveck_1Server.timeorder_log.update({key:[0]})
-            Viveck_1Server.timestamps_history.update({key:[timestamp]})
-        _current_timestamps = Viveck_1Server.timestamps_history.get(key)
+            CAS_Server.timeorder_log.update({key:[0]})
+            CAS_Server.timestamps_history.update({key:[timestamp]})
+        _current_timestamps = CAS_Server.timestamps_history.get(key)
         order = 0
         for index, _timestamp in enumerate(_current_timestamps):
             if _timestamp == timestamp:
@@ -33,30 +33,30 @@ class Viveck_1Server:
                 break
             
         #find the order counts
-        counts = Viveck_1Server.timeorder_log.get(key)
+        counts = CAS_Server.timeorder_log.get(key)
         if (len(counts)-1) < order:
             for _ in range(order - (len(counts)-1)):
                 counts.append(0)
 
         counts[order] += 1
-        Viveck_1Server.timeorder_log.update({key:counts})
-        Viveck_1Server.timestamp_lock.release()
+        CAS_Server.timeorder_log.update({key:counts})
+        CAS_Server.timestamp_lock.release()
     @staticmethod
     def insert_timestamp_history(key, timestamp):
-        Viveck_1Server.timestamp_lock.acquire()
+        CAS_Server.timestamp_lock.acquire()
         # first time in server
-        if Viveck_1Server.timestamps_history.get(key) is None:
-            Viveck_1Server.timestamps_history.update({key:[timestamp]})
+        if CAS_Server.timestamps_history.get(key) is None:
+            CAS_Server.timestamps_history.update({key:[timestamp]})
             # Check if key exists in dictionary
-            if Viveck_1Server.timeorder_log.get(key) is None:
-                Viveck_1Server.timeorder_log.update({key:[0]}) 
+            if CAS_Server.timeorder_log.get(key) is None:
+                CAS_Server.timeorder_log.update({key:[0]}) 
         else:
-            _timestamps = Viveck_1Server.timestamps_history.get(key)
+            _timestamps = CAS_Server.timestamps_history.get(key)
             # Do not need to check if running expirement
             if timestamp not in _timestamps:
                 _timestamps = [timestamp] + _timestamps    
-                Viveck_1Server.timestamps_history.update({key:_timestamps})
-        Viveck_1Server.timestamp_lock.release()
+                CAS_Server.timestamps_history.update({key:_timestamps})
+        CAS_Server.timestamp_lock.release()
         return
 
 
@@ -77,7 +77,7 @@ class Viveck_1Server:
             lock.release_read()
             return {"status": "Failed", "timestamp": None}
         
-#        Viveck_1Server.insert_timestamp_history(key, data[1])
+#        CAS_Server.insert_timestamp_history(key, data[1])
         
         lock.release_read()
         return {"status": "OK", "timestamp": data[1]}
@@ -94,9 +94,9 @@ class Viveck_1Server:
         :return:
         '''
         lock.acquire_write()
-        Viveck_1Server.insert_data(key, value, timestamp, False, cache, persistent)
+        CAS_Server.insert_data(key, value, timestamp, False, cache, persistent)
         lock.release_write()
-        Viveck_1Server.insert_timestamp_history(key,timestamp)
+        CAS_Server.insert_timestamp_history(key,timestamp)
         return {"status": "OK"}
 
 
@@ -194,7 +194,7 @@ class Viveck_1Server:
             data = persistent.get(key+timestamp)
 
         if not data[0]:
-            Viveck_1Server.insert_data(key, None, timestamp, True, cache, persistent)
+            CAS_Server.insert_data(key, None, timestamp, True, cache, persistent)
             lock.release_write()
             return {"status": "OK"}
         else:
@@ -234,8 +234,8 @@ class Viveck_1Server:
         # Current customized lock is just for generic lock not key specific.
         # Ideally it should take key as input and do locking key wise
         
-        Viveck_1Server.record_timestamp_order(key,timestamp\
-                        , Viveck_1Server.timestamps_history.get(key))
+        CAS_Server.record_timestamp_order(key,timestamp\
+                        , CAS_Server.timestamps_history.get(key))
         
         lock.acquire_read()
         data = cache.get(key+timestamp)
@@ -245,16 +245,16 @@ class Viveck_1Server:
 
             if len(data) == 1:
                 lock.acquire_write()
-                Viveck_1Server.insert_data(key, None, timestamp, True, cache, persistent)
+                CAS_Server.insert_data(key, None, timestamp, True, cache, persistent)
                 lock.release_write()
                 return {"status": "OK", "value": "None"}
 
             lock.acquire_write()
-            Viveck_1Server.put_back_in_cache(key, timestamp, data, cache)
+            CAS_Server.put_back_in_cache(key, timestamp, data, cache)
             lock.release_write()
 
         lock.release_read()
+        
         if required_value:
             return {"status": "OK", "value": data[0]}
-
         return {"status": "OK", "value": "None"}

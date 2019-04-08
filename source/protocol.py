@@ -1,5 +1,5 @@
-from adb_protocol import ABD
-from viveck_1 import Viveck_1
+from ABD_Client import ABD_Client
+from CAS_Client import CAS_Client
 
 class Protocol(object):
     """ Defines how many servers to ping and how many to wait for"""
@@ -9,6 +9,6 @@ class Protocol(object):
     @staticmethod
     def get_class_protocol(class_name, properties, local_data_center, data_center, id):
         if class_name == "ABD":
-            return ABD(properties, local_data_center, data_center, id)
+            return ABD_Client(properties, local_data_center, data_center, id)
         if class_name == "CAS":
-            return Viveck_1(properties, local_data_center, data_center, id)
+            return CAS_Client(properties, local_data_center, data_center, id)

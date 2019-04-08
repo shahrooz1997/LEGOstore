@@ -18,7 +18,7 @@ from logging import StreamHandler
 import logstash
 
 
-class Viveck_1(ProtocolInterface):
+class CAS_Client(ProtocolInterface):
     def __init__(self, properties, local_datacenter_id, data_center, client_id):
         self.timeout_per_request = int(properties["timeout_per_request"])
         ##########################
@@ -414,7 +414,7 @@ class Viveck_1(ProtocolInterface):
             return {"status": "TimeOut", "message": "Timeout during put fin label call of Viceck_1"}
         lock.release()
 
-        return {"status": "OK", "value": value, "timestamp": timestamp}
+        return {"status": "OK", "timestamp": timestamp}
 
 
     def _get(self, key, timestamp, sem, server, output, lock, delay=0, value_required=False):

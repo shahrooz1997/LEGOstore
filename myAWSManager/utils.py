@@ -1,12 +1,13 @@
 import boto3
 import os
+import json
+import time
 
 def create_instance(region_name, image_id, instance_type='t2.micro'):
     client = boto3.resource('ec2', region_name=region_name)
     response = client.create_instances(ImageId=image_id,\
     MinCount=1,\
     MaxCount=1,\
-    
     InstanceType=instance_type)
     return response
 
@@ -88,34 +89,53 @@ def send_command(cmds, instance_ids, region_name):
         print(e)
     '''
     #XXX: try this, if not use top
+    print("send_command::instance_ids::", instance_ids)
     ssm_client = boto3.client('ssm', region_name=region_name)
     response = ssm_client.send_command(
                 InstanceIds=instance_ids,
                 DocumentName="AWS-RunShellScript",
-                Parameters={'commands': cmds}, )
+                Parameters={'commands': cmds} )
     
     command_id = response['Command']['CommandId']
     print(command_id)
-    for instanceid in instanceids:
+    time.sleep(10)
+
+    for instance_id in instance_ids:
         output = ssm_client.get_command_invocation(
                  CommandId=command_id,
-                 InstanceId=instanceid,
+                 InstanceId=instance_id,
                  )
-        print("output: ", output)
+        print(region_name, "output: ", output)
         #TODO: write into an S3 bucket
 
+def get_public_ips(instance_ids, region_name):
+    assert(type(instance_ids) == list)
+    client = boto3.resource('ec2', region_name=region_name)
+    running_instances = client.instances.filter(Filters=[{
+                                                'Name': 'instance-state-name',
+                                                'Values': ['running']}
+                                                ],
+                                                InstanceIds = instance_ids)
+    rtn = []
+    for instance in running_instances:
+        rtn.append((instance.id, instance.public_ip_address))
+
+    return rtn
 
 
 
 
 
-def print_options():
+
     
-    print(">> What do you want to do?")
-    print("\t1. send command to set")
-    print("\t3. launch new set") 
-    print("\t4. print aws regions info") 
-    print("\t2. print servers info for set")
-    pass
+
+
+
+
+
+
+
+
+
 
        

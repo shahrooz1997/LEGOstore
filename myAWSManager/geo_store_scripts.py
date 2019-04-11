@@ -1,5 +1,5 @@
 
-from util import *
+from utils import *
 
 
 ### testing ###
@@ -7,6 +7,15 @@ import json
 import os
 
 ###
+
+
+class instance_info(object):
+    def __init__(self, instance_id, public_ip):
+        self.instance_id = instance_id
+        self.public_ip = public_ip
+
+
+
 
 def setup_aws_credentials(filepath):
     credential_file = open(os.path.expanduser('~')+'/.aws/credentials', 'w')
@@ -47,7 +56,7 @@ def launch_set(regions,set_num, instance_type='t2.micro'):
                                             image_id,\
                                             location,
                                             instance_type=instance_type) 
-        set_info.update({region_name:resp[0].instance_id})
+        set_info.update({region_name:{'instance_info':instance_info(resp[0].instance_id, resp[0].public_ip_address).__dict__}})
 
     json.dump(set_info, set_info_file)
     set_info_file.close()
@@ -67,8 +76,17 @@ def start_set(set_info):
         instance_id = location[1]
         start_instance(instance_id, region_name)
 
-def get_public_ip(set_info):
-    pass
+def update_public_ips(set_info, set_num):
+    filename = "sets/set{}.json".format(set_num)
+    set_info_file = open(filename, 'w')
+    for location in set_info.items():
+        region_name = location[0]
+        instance_id = location[1]
+        set_info[location]['public_ip'] = get_public_ips([instance_id], region_name)[1]
+    json.dump(set_info, set_info_file)
+    print(set_info)
+
+
 
 
 def run_cmd_on_set(set_info):

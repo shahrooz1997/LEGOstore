@@ -1,0 +1,41 @@
+{
+    "Tokyo":{
+        "image_id":"ami-07ad4b1c3af1ea214",
+        "region_name":"ap-northeast-1"
+    },
+
+    "Seoul":{
+        "image_id":"ami-06e7b9c5e0c4dd014",
+        "region_name":"ap-northeast-2"
+    },
+
+    "Mumbai":{
+        "image_id":"ami-0d773a3b7bb2bb1c1",
+        "region_name":"ap-south-1"
+    },
+
+    "Frankfurt":{
+        "image_id":"ami-0bdf93799014acdc4",
+        "region_name":"eu-central-1"
+    },
+    "Ireland":{
+        "image_id":"ami-00035f41c82244dab",
+        "region_name":"eu-west-1"
+    },
+    "Virginia":{
+        "image_id":"ami-0ac019f4fcb7cb7e6",
+        "region_name":"us-east-1"
+    },
+    "Sao_Paulo":{
+        "image_id":"ami-03c6239555bb12112",
+        "region_name":"sa-east-1"
+    },
+    "California":{
+        "image_id":"ami-063aa838bd7631e0b",
+        "region_name":"us-west-1"
+    },
+    "Oregon":{
+        "image_id":"ami-0bbe6b35405ecebdb",
+        "region_name":"us-west-2"
+    }
+}

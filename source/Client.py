@@ -286,7 +286,7 @@ if __name__ == "__main__":
     arrival_process = "poisson"
     arrival_rate = properties["arrival_rate"]
     
-    workload = Workload(arrival_process, 1, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
+    workload = Workload(arrival_process, arrival_rate, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
     client = Client(properties, properties["local_datacenter"])
 
     end_time = time.time() + duration

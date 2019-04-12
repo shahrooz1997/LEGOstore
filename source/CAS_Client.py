@@ -479,7 +479,7 @@ class CAS_Client(ProtocolInterface):
         for index in range(len(codes)):
            #print(type(codes[index]))
            codes[index] = codes[index].decode(self.encoding_byte)
-           print(sys.getsizeof(codes[index]))
+           #print(sys.getsizeof(codes[index]))
         end_time = time.time()
         self.lock_coding_log.acquire()
         delta_time = int((end_time - start_time)*1000)

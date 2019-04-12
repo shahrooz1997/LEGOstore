@@ -58,7 +58,6 @@ class Client:
     def check_validity(self, output):
         # Checks if the status is OK or not
         # @ Returns true pr false based on the status
-        print("check_validity >> output == ", output)
         if output["status"] == "OK":
             return True
 
@@ -107,7 +106,6 @@ class Client:
         ######################
 
         placement = self.get_placement(key)
-        print('insert', key, ", placement:", placement)
         class_name= placement["protocol"]
 
 
@@ -214,14 +212,14 @@ class Client:
         return placement
 
 
-    def get_logger(log_path):
-        logger_ = logging.getLogger('log')
-        logger_.setLevel(logging.INFO)
-        handler = logging.FileHandler(log_path)
-        # XXX: TODO: Check if needed
-        handler.setFormatter(logging.Formatter('%(message)s'))
-        logger_.addHandler(handler)
-        return logger_
+def get_logger(log_path):
+    logger_ = logging.getLogger('log')
+    logger_.setLevel(logging.INFO)
+    handler = logging.FileHandler(log_path)
+    # XXX: TODO: Check if needed
+    handler.setFormatter(logging.Formatter('%(message)s'))
+    logger_.addHandler(handler)
+    return logger_
 
 def run_session(workload, properties, running_time, session_id=None):
 
@@ -286,7 +284,7 @@ if __name__ == "__main__":
     arrival_rate = properties["arrival_rate"]
     
     workload = Workload(arrival_process, 1, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
-    client = Client(properties, properties["local_datacetner"])
+    client = Client(properties, properties["local_datacenter"])
 
     end_time = time.time() + duration
     while time.time() < end_time:
@@ -296,17 +294,13 @@ if __name__ == "__main__":
             continue
         elif request_type == "put":
             output = client.put(key,value)
-            status = output["status"]
         else:
-            output = client.get(key)["status"]
-            status = output["status"]
+            output = client.get(key)
         request_time = time.time() - request_start_time
 
         line = request_type + ":" + str(request_time)
         request_time_log.info(line)
 
-        if status != "OK":
-            error_log.info(json.dumps(output))
 
 
 

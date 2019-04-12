@@ -616,7 +616,7 @@ class CAS_Client(ProtocolInterface):
 #        return logger_
 
 
-    def get_logger(log_path):
+    def get_logger(self,log_path):
         logger_ = logging.getLogger('log')
         logger_.setLevel(logging.INFO)
         handler = logging.FileHandler(log_path)

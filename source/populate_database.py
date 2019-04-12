@@ -38,7 +38,7 @@ if __name__ == "__main__":
     keys_to_write = 10000
     start_index = keys_to_write * (int(client_id) - 1)
     end_index = start_index + keys_to_write
-    number_of_thread = 20
+    number_of_thread = 1
     value_size = 1000
     thread_list = []
     for i in range(0, number_of_thread):

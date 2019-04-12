@@ -188,6 +188,33 @@ class ABD_Client(ProtocolInterface):
         return (result, max_time)
 
 
+    def is_all_timestamps_the_same(self, values, qourum_size):
+        count = 0
+        temp_time = None
+        for data in values:
+            if data[0] != "OK":
+                continue
+            if temp_time == None:
+                count += 1
+                temp_time = data[2]
+            elif temp_time != data[2]:
+                continue
+            else:
+                count += 1
+        assert(temp_time is not None)
+        if count < qourum_size:
+            return False
+        return True 
+    
+    def dcs_with_highest_timestamp(self, values, highest_timestamp):
+        rtn_dcs = []
+        for data in values:
+            if data[0] != "OK":
+                continue
+            elif data[2] == highest_timestamp:
+                rtn_dcs.append(data[3])
+        return rtn_dcs 
+                
     def _put(self, key, value, timestamp, sem, server, output, lock, delay=0):
      #   print("put time: " + str(delay))
      #   time.sleep(int(delay) * 0.001)
@@ -346,7 +373,7 @@ class ABD_Client(ProtocolInterface):
         return {"status": "OK", "timestamp": timestamp}
 
 
-    def _get(self, key, sem, server, output, lock, delay=0):
+    def _get(self, key, sem, server, output, lock, dc_id, delay=0):
       #  print("get time: " + str(delay))
       #  time.sleep(float(delay) * 0.001)
 
@@ -377,6 +404,7 @@ class ABD_Client(ProtocolInterface):
                                                                                          server["port"]))
         else:
             data = data.decode("latin-1").split('+:--:+')
+            data.append(dc_id)
             print("_get data ", data)
             lock.acquire()
             output.append(data)
@@ -427,7 +455,8 @@ class ABD_Client(ProtocolInterface):
                                                                             sem,
                                                                             copy.deepcopy(server_info),
                                                                             output,
-                                                                            lock)))
+                                                                            lock,
+                                                                            data_center_id)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
 
@@ -449,10 +478,15 @@ class ABD_Client(ProtocolInterface):
             return {"status": "TimeOut", "message": "Timeout during get call of ABD"}
         
         value, timestamp = self.get_final_value(output)
-        print("abd:getFinalValue", value, timestamp)
         lock.release()
-
-
+       
+        if self.is_all_timestamps_the_same(output, len(q1_dc_list)):
+            return {"status": "OK", "value":value}
+        
+        print(timestamp)
+        dcs_highest_timestamp = self.dcs_with_highest_timestamp(output, timestamp)
+        q2_dc_list = list( set(q2_dc_list) - set(dcs_highest_timestamp) )
+        print("after filtering:", q2_dc_list)
         #TODO: check if all timestamp recived is the same ==> then no need to do phase 2
 
 

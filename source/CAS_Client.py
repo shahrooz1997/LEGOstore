@@ -141,8 +141,6 @@ class CAS_Client(ProtocolInterface):
     def get_timestamp(self, key, datacenter_list):
         # Step 1 : getting the timestamp
         
-        print("getting timestamp")
-        print("datacenter_list = ", datacenter_list)
         sem = threading.Barrier(len(datacenter_list) + 1, timeout=self.timeout)
         lock = threading.Lock()
         thread_list = []
@@ -174,13 +172,8 @@ class CAS_Client(ProtocolInterface):
         if (len(output) < len(datacenter_list)):
             lock.release()
             raise Exception("Timeout during timestamps")
-        print("CAS::get_timestamp >> just before getting max_timestamp")
         timestamp = Timestamp.get_max_timestamp(output)
-        print("CAS::get_timestamp >> timestamp = ", timestamp)
         lock.release()
-        
-        
-        print("found timstamp:", timestamp)
         
         return timestamp
 
@@ -203,7 +196,6 @@ class CAS_Client(ProtocolInterface):
         self.lock_socket_log.release()
 
         data_to_put = "put" + "+:--:+" + key + "+:--:+" + value + "+:--:+" + timestamp + "+:--:+" + self.current_class
-        print("current size is : " + str(sys.getsizeof(data_to_put)))
         self.send_msg(sock, data_to_put.encode(self.encoding_byte))
         #sock.sendall(data.encode("utf-8"))
         sock.settimeout(self.timeout_per_request)
@@ -271,9 +263,6 @@ class CAS_Client(ProtocolInterface):
 
     def put(self, key, value, placement, insert=False):
 
-
-        print("CAS::put() >> key, value = " , key, value, sep =',')
-
         q1_dc_list = placement["Q1"]
         q2_dc_list = placement["Q2"]
         q3_dc_list = placement["Q3"]
@@ -281,7 +270,6 @@ class CAS_Client(ProtocolInterface):
         k = placement["k"]
         m = placement["m"]
 
-        print("CAS::put() >> m , k = " , m , ",", k)
         # Step1 : Concurrently encode while getting the latest timestamp from the servers
         codes = []
         thread_list = []
@@ -313,7 +301,6 @@ class CAS_Client(ProtocolInterface):
                 start_time = time.time()
                 timestamp = self.get_timestamp(key, q2_dc_list)
                 timestamp = Timestamp.increment_timestamp(timestamp, self.id)
-                print("CAS::put() >> new_timestamp = ", timestamp)
                 end_time = time.time()
 
                 self.lock_latency_log.acquire()
@@ -445,9 +432,7 @@ class CAS_Client(ProtocolInterface):
                                                                                          server["port"]))
         else:
             data = data.decode(self.encoding_byte)
-            print(":::::: data is:", data)
             data_list = data.split("+:--:+")
-            print("recieved data size is" + str(sys.getsizeof(data)))
 
             if data_list[1] != "None":
                 lock.acquire()
@@ -500,7 +485,6 @@ class CAS_Client(ProtocolInterface):
         delta_time = int((end_time - start_time)*1000)
         self.coding_log.info("encode:" + str(delta_time))
         self.lock_coding_log.release()
-        print("encoding is done")
         return
 
     #TODO: TEST WHEN DEPLOYED IF NEEDED
@@ -546,8 +530,6 @@ class CAS_Client(ProtocolInterface):
         m = placement["m"]
         k = placement["k"]
         
-        print("CLI >> CAS get request, key = " , key)
-        
         # Step1: Get the timestamp for the key
         # Error can imply either server busy or key doesn't exist
         try:
@@ -560,14 +542,12 @@ class CAS_Client(ProtocolInterface):
             self.latency_log.info("get:Q1:" + str(delta_time))
             self.lock_latency_log.release()
         except Exception as e:
-            print("CAS::get>> Error: ",e)
             return {"status": "TimeOut", "message": "Timeout during get timestamp call of Viveck"}
 
         thread_list = []
 
         sem = threading.Barrier(len(q4_dc_list) + 1, timeout=self.timeout)
         lock = threading.Lock()
-        print("CLI >> CAS --> q1 timestamp = ", timestamp)
 
         # Step2: Get the encoded value
         index = 0

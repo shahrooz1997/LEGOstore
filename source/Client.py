@@ -268,9 +268,12 @@ if __name__ == "__main__":
     
 
     #### logs ####
-    error_log = get_logger("error_log.log")
-    request_time_log = get_logger("requests_time.log")     
-    
+#    error_log = get_logger("error_log.log")
+#    request_time_log = get_logger("requests_time.log")     
+ 
+    request_time_log = open("requests_time.log", "w")
+
+
     properties = json.load(open("client_config.json"))
     
     # TODO: get values from client config file
@@ -299,7 +302,9 @@ if __name__ == "__main__":
         request_time = time.time() - request_start_time
 
         line = request_type + ":" + str(request_time)
-        request_time_log.info(line)
+        request_time_log.write(line + '\n')
+
+    request_time_log.close()
 
 
 

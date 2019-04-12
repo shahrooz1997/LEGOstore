@@ -14,8 +14,8 @@ import sys
 
 #ata for logging
 import logging
-from logging import StreamHandler
-import logstash
+#from logging import StreamHandler
+#import logstash
 
 
 class CAS_Client(ProtocolInterface):
@@ -44,9 +44,9 @@ class CAS_Client(ProtocolInterface):
         latency_log_file_name = "individual_times_" + str(self.id) + ".txt"
         socket_log_file_name = "socket_times_" + str(self.id) + ".txt"
         coding_log_file_name = "coding_times_" + str(self.id) + ".txt"
-        self.latency_log = self.get_logger("viveck_latency_log")
-        self.socket_log  = self.get_logger("viveck_socket_log")
-        self.coding_log = self.get_logger("viveck_coding_log")
+        self.latency_log = self.get_logger("cas_latency.log")
+        self.socket_log  = self.get_logger("cas_socket.log")
+        self.coding_log = self.get_logger("cas_coding.log")
         self.lock_latency_log = threading.Lock()
         self.lock_socket_log = threading.Lock()
         self.lock_coding_log = threading.Lock()
@@ -239,7 +239,7 @@ class CAS_Client(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.socket_log.info(server["host"] + ":" + str(delta_time) + "\n")
+        self.socket_log.info(server["host"] + ":" + str(delta_time))
         # self.socket_log.flush()
         self.lock_socket_log.release()
 
@@ -363,7 +363,7 @@ class CAS_Client(ProtocolInterface):
         end_time = time.time()
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.info("put:Q2:" + str(delta_time) + "\n")
+        self.latency_log.info("put:Q2:" + str(delta_time))
         self.lock_latency_log.release()
         # Removing barrier for all the waiting threads
         sem.abort()
@@ -402,7 +402,7 @@ class CAS_Client(ProtocolInterface):
         end_time =  time.time()
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.info("put:Q3:" + str(delta_time) + "\n")
+        self.latency_log.info("put:Q3:" + str(delta_time))
         # self.latency_log.flush()
         self.lock_latency_log.release()
         # Removing barrier for all the waiting threads
@@ -427,7 +427,7 @@ class CAS_Client(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.socket_log.info(server["host"] + ":" + str(delta_time) + "\n")
+        self.socket_log.info(server["host"] + ":" + str(delta_time))
         # self.socket_log.flush()
         self.lock_socket_log.release()
 
@@ -475,7 +475,7 @@ class CAS_Client(ProtocolInterface):
         end_time = time.time()
         self.lock_coding_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.coding_log.info("decode:" + str(delta_time) + "\n")
+        self.coding_log.info("decode:" + str(delta_time))
         self.lock_coding_log.release()
         return decoded_data
 
@@ -498,7 +498,7 @@ class CAS_Client(ProtocolInterface):
         end_time = time.time()
         self.lock_coding_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.coding_log.info("encode:" + str(delta_time) + "\n")
+        self.coding_log.info("encode:" + str(delta_time))
         self.lock_coding_log.release()
         print("encoding is done")
         return
@@ -557,7 +557,7 @@ class CAS_Client(ProtocolInterface):
 
             self.lock_latency_log.acquire()
             delta_time = int((end_time - start_time)*1000)
-            self.latency_log.info("get:Q1:" + str(delta_time) + "\n")
+            self.latency_log.info("get:Q1:" + str(delta_time))
             self.lock_latency_log.release()
         except Exception as e:
             print("CAS::get>> Error: ",e)
@@ -602,7 +602,7 @@ class CAS_Client(ProtocolInterface):
         end_time = time.time()
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.info("get:Q4:" + str(delta_time) + "\n")
+        self.latency_log.info("get:Q4:" + str(delta_time))
         self.lock_latency_log.release()
         sem.abort()
 
@@ -628,9 +628,19 @@ class CAS_Client(ProtocolInterface):
         lock.release()
         return {"status": "OK", "value": value, "timestamp": timestamp}
 
-    def get_logger(self, tag):
-        logger_ = logging.getLogger(tag)
+#    def get_logger(self, tag):
+#        logger_ = logging.getLogger(tag)
+#        logger_.setLevel(logging.INFO)
+#        logger_.addHandler(logstash.TCPLogstashHandler("localhost", 8080,  version=1))
+#        logger_.addHandler(StreamHandler())
+#        return logger_
+
+
+    def get_logger(log_path):
+        logger_ = logging.getLogger('log')
         logger_.setLevel(logging.INFO)
-        logger_.addHandler(logstash.TCPLogstashHandler("localhost", 8080,  version=1))
-        logger_.addHandler(StreamHandler())
+        handler = logging.FileHandler(log_path)
+        # XXX: TODO: Check if needed
+        handler.setFormatter(logging.Formatter('%(message)s'))
+        logger_.addHandler(handler)
         return logger_

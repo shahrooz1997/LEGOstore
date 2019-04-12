@@ -20,7 +20,7 @@ class Workload:
 
     def next(self):
         # Return (interarrival time, key, request_type)
-        random_ratio = random.randint(0, 100) / 100.0
+        random_ratio = random.randint(0, 100)/100.0
 #        popularity_distribution = random.randint(0, 100)
         if random_ratio < self.read_ratio:
             request_type = "get"

@@ -13,8 +13,8 @@ from placement_policy import PlacementFactory
 from protocol_interface import ProtocolInterface
 #ata for logging
 import logging
-from logging import StreamHandler
-import logstash
+#from logging import StreamHandler
+#import logstash
 
 # TODO: INCOPERATE THE CLASS FOR EACH CALL AS DATASERVER WILL BE NEEDING IT
 class ABD_Client(ProtocolInterface):
@@ -35,8 +35,8 @@ class ABD_Client(ProtocolInterface):
         # Output files initilization
         latency_log_file_name = "individual_times_" + str(self.id) + ".txt"
         socket_log_file_name = "socket_times_" + str(self.id) + ".txt"
-        self.latency_log = self.get_logger("abd_latency_log")
-        self.socket_log  = self.get_logger("abd_socket_log")
+        self.latency_log = self.get_logger("abd_latency.log")
+        self.socket_log  = self.get_logger("abd_socket.log")
         self.lock_latency_log = threading.Lock()
         self.lock_socket_log = threading.Lock()
 
@@ -100,7 +100,7 @@ class ABD_Client(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.socket_log.info(server["host"] + ":" + str(delta_time) + "\n")
+        self.socket_log.info(server["host"] + ":" + str(delta_time))
         self.lock_socket_log.release()
 
         data = {"method": "get_timestamp",
@@ -226,7 +226,7 @@ class ABD_Client(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.socket_log.info(server["host"] + ":"+str(delta_time) + "\n")
+        self.socket_log.info(server["host"] + ":"+str(delta_time))
         self.lock_socket_log.release()
 
 
@@ -298,20 +298,17 @@ class ABD_Client(ProtocolInterface):
         else:
             start_time = time.time()
             try:
-                print("put phase 1: get timestamp : q1_list ", q1_dc_list)
                 timestamp = self.get_timestamp(key, q1_dc_list)
             except Exception as e:
-                print("ABD::PUT >> ", e)
                 return {"status": "TimeOut", "message": "Timeout during get timestamp call of ABD"}
             end_time = time.time()
             self.lock_latency_log.acquire()
             delta_time = int((end_time - start_time)*1000)
-            self.latency_log.info("put:Q1:" + str(delta_time) + "\n")
+            self.latency_log.info("put:Q1:" + str(delta_time))
             self.lock_latency_log.release()
 
 
             timestamp = Timestamp.increment_timestamp(timestamp, self.id)
-            print("abd_put: timestamp-> ",timestamp)
         ##################################################################
         #TODO: Test this condition  
         if timestamp is None:
@@ -331,7 +328,6 @@ class ABD_Client(ProtocolInterface):
         #new_server_list = self._get_closest_servers(server_list, self.write_nodes)
         
 
-        print("put phase 2: put : q2_list ", q2_dc_list)
         start_time = time.time()
         for data_center_id in q2_dc_list:
             #assume single server in every datacenter
@@ -357,7 +353,7 @@ class ABD_Client(ProtocolInterface):
         end_time = time.time()
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.info("put:Q2:" + str(delta_time) + "\n")
+        self.latency_log.info("put:Q2:" + str(delta_time))
         self.lock_latency_log.release()
 
         # Removing barrier for all the waiting threads
@@ -384,7 +380,7 @@ class ABD_Client(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.socket_log.info(server["host"] + ":" + str(delta_time) + "\n")
+        self.socket_log.info(server["host"] + ":" + str(delta_time))
         self.lock_socket_log.release()
 
         data = {"method": "get",
@@ -405,7 +401,6 @@ class ABD_Client(ProtocolInterface):
         else:
             data = data.decode("latin-1").split('+:--:+')
             data.append(dc_id)
-            print("_get data ", data)
             lock.acquire()
             output.append(data)
             lock.release()
@@ -468,7 +463,7 @@ class ABD_Client(ProtocolInterface):
         end_time = time.time()
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.info("get:Q1:" + str(delta_time) + "\n")
+        self.latency_log.info("get:Q1:" + str(delta_time))
         self.lock_latency_log.release()
 
         sem.abort()
@@ -483,10 +478,8 @@ class ABD_Client(ProtocolInterface):
         if self.is_all_timestamps_the_same(output, len(q1_dc_list)):
             return {"status": "OK", "value":value}
         
-        print(timestamp)
         dcs_highest_timestamp = self.dcs_with_highest_timestamp(output, timestamp)
         q2_dc_list = list( set(q2_dc_list) - set(dcs_highest_timestamp) )
-        print("after filtering:", q2_dc_list)
         #TODO: check if all timestamp recived is the same ==> then no need to do phase 2
 
 
@@ -521,19 +514,25 @@ class ABD_Client(ProtocolInterface):
         end_time = time.time()
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.info("get:Q2:" + str(delta_time) + "\n")
+        self.latency_log.info("get:Q2:" + str(delta_time))
         self.lock_latency_log.release()
 
         sem.abort()
-        print(">>>>> value:", value)
         return {"status": "OK", "value": value}
 
 
+#    def get_logger(self, tag):
+#        logger_ = logging.getLogger(tag)
+#        logger_.setLevel(logging.INFO)
+#        logger_.addHandler(logstash.TCPLogstashHandler("host-ip", 8080,  version=1))
+#        logger_.addHandler(StreamHandler())
+#        return logger_
 
-
-    def get_logger(self, tag):
-        logger_ = logging.getLogger(tag)
+    def get_logger(log_path):
+        logger_ = logging.getLogger('log')
         logger_.setLevel(logging.INFO)
-        logger_.addHandler(logstash.TCPLogstashHandler("host-ip", 8080,  version=1))
-        logger_.addHandler(StreamHandler())
+        handler = logging.FileHandler(log_path)
+        # XXX: TODO: Check if needed
+        handler.setFormatter(logging.Formatter('%(message)s'))
+        logger_.addHandler(handler)
         return logger_

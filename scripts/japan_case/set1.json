@@ -1,0 +1,56 @@
+{
+    "ap-northeast-1": {
+        "instance_info": {
+            "instance_id": "i-0f0b00ee074ff940a",
+            "public_ip": "13.112.162.241"
+        }
+    },
+    "ap-northeast-2": {
+        "instance_info": {
+            "instance_id": "i-0f8715558679c8f19",
+            "public_ip": "15.164.99.124"
+        }
+    },
+    "ap-south-1": {
+        "instance_info": {
+            "instance_id": "i-08bed8f0b978441e4",
+            "public_ip": "13.232.196.39"
+        }
+    },
+    "eu-central-1": {
+        "instance_info": {
+            "instance_id": "i-00605e80a32538126",
+            "public_ip": "54.93.196.42"
+        }
+    },
+    "eu-west-1": {
+        "instance_info": {
+            "instance_id": "i-0a684d43b441d4cda",
+            "public_ip": "34.241.12.53"
+        }
+    },
+    "us-east-1": {
+        "instance_info": {
+            "instance_id": "i-0a57d5ad1bfaa9e61",
+            "public_ip": "54.173.80.106"
+        }
+    },
+    "sa-east-1": {
+        "instance_info": {
+            "instance_id": "i-0a16fc9f21424a6f9",
+            "public_ip": "18.231.190.136"
+        }
+    },
+    "us-west-1": {
+        "instance_info": {
+            "instance_id": "i-0ee02188cb1a0da76",
+            "public_ip": "13.56.250.12"
+        }
+    },
+    "us-west-2": {
+        "instance_info": {
+            "instance_id": "i-0cd81f1a0b8164f4c",
+            "public_ip": "34.209.114.91"
+        }
+    }
+}

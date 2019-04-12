@@ -266,73 +266,53 @@ def merge_files(files_to_combine, output_file_name):
 
 
 if __name__ == "__main__":
-	properties = json.load(open("client_config.json"))
-	#client = Client(properties, properties["local_datacenter"])
-
-	performance_model = None
-	if properties["classes"]["default_class"]:
-		performance_model = Performance_ABD(properties)
-
-
-	# Parse trace file
-	# Trace corrosponds to points [ 'time', 'arrival rate per second' ]
-	trace = []
-	trace_file = open("temp_trace.dat")
-	for line in trace_file.readlines():
-		p = line.strip('\n').split(' ')
-		trace.append([int(p[0]),int(p[1])])
-	trace_file.close()
 	
-	# TODO: get values from client config file
-	read_ratio = 0.9
-	write_ratio = 0.1
+
+    #### logs ####
+    error_log = get_logger("error_log.log")
+    request_time_log = get_logger("requests_time.log")     
+    
+    properties = json.load(open("client_config.json"))
+	
+    # TODO: get values from client config file
+	read_ratio = 0.968
+	write_ratio = 0.032
 	insert_ratio = 0.0
-	total_number_of_requests = int(sum(row[1] for row in trace))
-	current_trace_time = 0
-	initial_count = 90000
+	initial_count = 1000
 	value_size = 1000
+    duration = 3600
 	arrival_process = "poisson"
-
-	start_time = time.time()
-	process_list = []
-	# XXX: ASSUMPTION: IN WORST CASE IT TAKES 1 SECOND TO SERVE THE REQUEST
+    arrival_rate = properties["arrival_rate"]
+    
 	workload = Workload(arrival_process, 1, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
-	current_trace_time = 0
-	for point in trace:
-		next_trace_time = point[0]
-#		running_time = next_trace_time - current_trace_time
-		running_time = next_trace_time	# XXX: this should be the difference between two times
-										# BUT for now use as the running time period
-		arrival_rate = point[1]
-		number_of_requests = arrival_rate*(next_trace_time - current_trace_time)
-        # Client creates sessions that sends 1 request per second
-		# Process are used instead of threads to prevent from bottlenecks when writing to a single file
-		for i in range(arrival_rate):
-			client_uid = properties['local_datacenter'] + str(i)
-			process_list.append(Process(target=run_session, args=(workload,
-																  properties,
-																  running_time,
-																  client_uid)))
+	client = Client(properties, properties["local_datacetner"])
 
-		client_time = time.time() - start_time
-		print("Client Time: ", client_time)
-		message = "Press enter to Continue lambda = " + str(arrival_rate) + " value_size = " + str(value_size)
-		input(message)
+    end_time = time.time() + duration
+    while time.time() < end_time:
+		inter_arrival_time, request_type, key, value = workload.next()
+		request_start_time = time.time()
+		if request_type == "insert":
+			continue
+		elif request_type == "put":
+			output = client.put(key,value)
+            status = output["status"]
+		else:
+			output = client.get(key)["status"]
+            status = output["status"]
+        request_time = time.time() - request_start_time
 
-		start_time = time.time()
-		for process in process_list:
-			process.start()
+        line = request_type + ":" + str(request_time)
+        request_time_log.info(line)
 
-		for process in process_list:
-			process.join()
-		
-		process_list.clear()
-		current_trace_time = next_trace_time
-	    
-		performance_model.calculateLatencies(arrival_rate,value_size)
-		performance_model.aggregate_results(arrival_rate, value_size)
+        if status != "OK":
+            error_log.info(json.dumps(output))
 
+
+
+
+
+
+            
         
-        
-	client_time = time.time() - start_time
-	print("Client Time: ", client_time)
+                    
+

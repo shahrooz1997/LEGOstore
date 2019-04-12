@@ -9,11 +9,11 @@ import sys
 
 from reader_writer_lock import ReadWriteLock
 from cache import Cache
-from abd_server_protocol import ABDServer
+from ABD_Server import ABD_Server
 from garbage_collector import garbage_collector
 from persistent import Persistent
 #from viveck_1_server import Viveck_1Server
-from viveck_1_server_1 import Viveck_1Server
+from CAS_Server import CAS_Server
 
 
 
@@ -57,9 +57,9 @@ class DataServer:
         '''
 
         if current_class == "ABD":
-            return ABDServer.get(key, timestamp, self.cache, self.persistent, self.lock)
+            return ABD_Server.get(key, timestamp, self.cache, self.persistent, self.lock)
         elif current_class == "Viveck_1":
-            output = Viveck_1Server.get(key, timestamp, self.cache, self.persistent, self.lock, value_required)
+            output = CAS_Server.get(key, timestamp, self.cache, self.persistent, self.lock, value_required)
             print("server side size is " + str(sys.getsizeof(output["value"])))
             
             if output["value"] == None:
@@ -81,9 +81,9 @@ class DataServer:
         raises NotImplementedError if the class is not found
         '''
         if current_class == "ABD":
-            return ABDServer.get_timestamp(key, self.cache, self.persistent, self.lock)
+            return ABD_Server.get_timestamp(key, self.cache, self.persistent, self.lock)
         elif current_class == "Viveck_1":
-            return Viveck_1Server.get_timestamp(key, self.cache, self.persistent, self.lock)
+            return CAS_Server.get_timestamp(key, self.cache, self.persistent, self.lock)
 
         raise NotImplementedError
 
@@ -126,9 +126,9 @@ class DataServer:
             self.lock.release_write()
 
         if current_class == "ABD":
-            return ABDServer.put(key, value, timestamp, self.cache, self.persistent, self.lock)
+            return ABD_Server.put(key, value, timestamp, self.cache, self.persistent, self.lock)
         elif current_class == "Viveck_1":
-            return Viveck_1Server.put(key, value, timestamp, self.cache, self.persistent, self.lock)
+            return CAS_Server.put(key, value, timestamp, self.cache, self.persistent, self.lock)
 
         raise NotImplementedError
 
@@ -146,7 +146,7 @@ class DataServer:
         '''
 
         if current_class == "Viveck_1":
-            return Viveck_1Server.put_fin(key, timestamp, self.cache, self.persistent, self.lock)
+            return CAS_Server.put_fin(key, timestamp, self.cache, self.persistent, self.lock)
 
         raise NotImplementedError
 

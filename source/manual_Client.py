@@ -23,7 +23,15 @@ if __name__ == "__main__":
     client = Client(properties, properties["local_datacenter"])
     while 1:
         data = input()
-        method, key, value = data.split(",")
+        try:
+            data = data.split(',')
+            method, key = data[0], data[1]
+            if len(data) == 3:
+                value = data[2]
+        except:
+            print("incorrect format")
+            continue
+        
         a = time.time()
         if method == "insert":
             print(client.insert(key, value))

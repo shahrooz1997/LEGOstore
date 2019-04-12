@@ -17,7 +17,7 @@ from logging import StreamHandler
 import logstash
 
 # TODO: INCOPERATE THE CLASS FOR EACH CALL AS DATASERVER WILL BE NEEDING IT
-class ABD(ProtocolInterface):
+class ABD_Client(ProtocolInterface):
 
     def __init__(self, properties, local_datacenter_id, data_center, client_id):
 
@@ -343,7 +343,7 @@ class ABD(ProtocolInterface):
 
         lock.release()
 
-        return {"status": "OK", "value": value, "timestamp": timestamp}
+        return {"status": "OK", "timestamp": timestamp}
 
 
     def _get(self, key, sem, server, output, lock, delay=0):

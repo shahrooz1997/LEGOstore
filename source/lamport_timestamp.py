@@ -18,7 +18,6 @@ class Timestamp:
 
     @staticmethod
     def get_max_timestamp(timestamp_list):
-        print(" >> get_max_timestamp >> timestamp_list = ", timestamp_list)
         max_timestamp = None
         max_time = None
         for timestamp in timestamp_list:

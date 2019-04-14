@@ -35,8 +35,8 @@ class ABD_Client(ProtocolInterface):
         # Output files initilization
         latency_log_file_name = "individual_times_" + str(self.id) + ".txt"
         socket_log_file_name = "socket_times_" + str(self.id) + ".txt"
-        self.latency_log = self.get_logger("abd_latency.log")
-        self.socket_log  = self.get_logger("abd_socket.log")
+        self.latency_log = open("abd_latency.log", "w")
+        self.socket_log  = open("abd_socket.log", "w")
         self.lock_latency_log = threading.Lock()
         self.lock_socket_log = threading.Lock()
 
@@ -100,7 +100,7 @@ class ABD_Client(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.socket_log.info(server["host"] + ":" + str(delta_time))
+        self.socket_log.write(server["host"] + ":" + str(delta_time) + "\n")
         self.lock_socket_log.release()
 
         data = {"method": "get_timestamp",
@@ -226,7 +226,7 @@ class ABD_Client(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.socket_log.info(server["host"] + ":"+str(delta_time))
+        self.socket_log.write(server["host"] + ":"+str(delta_time) + "\n")
         self.lock_socket_log.release()
 
 
@@ -304,7 +304,7 @@ class ABD_Client(ProtocolInterface):
             end_time = time.time()
             self.lock_latency_log.acquire()
             delta_time = int((end_time - start_time)*1000)
-            self.latency_log.info("put:Q1:" + str(delta_time))
+            self.latency_log.write("put:Q1:" + str(delta_time) + "\n")
             self.lock_latency_log.release()
 
 
@@ -353,7 +353,7 @@ class ABD_Client(ProtocolInterface):
         end_time = time.time()
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.info("put:Q2:" + str(delta_time))
+        self.latency_log.write("put:Q2:" + str(delta_time) + "\n")
         self.lock_latency_log.release()
 
         # Removing barrier for all the waiting threads
@@ -380,7 +380,7 @@ class ABD_Client(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.socket_log.info(server["host"] + ":" + str(delta_time))
+        self.socket_log.write(server["host"] + ":" + str(delta_time) + "\n")
         self.lock_socket_log.release()
 
         data = {"method": "get",
@@ -463,7 +463,7 @@ class ABD_Client(ProtocolInterface):
         end_time = time.time()
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.info("get:Q1:" + str(delta_time))
+        self.latency_log.write("get:Q1:" + str(delta_time) + "\n")
         self.lock_latency_log.release()
 
         sem.abort()
@@ -514,7 +514,7 @@ class ABD_Client(ProtocolInterface):
         end_time = time.time()
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.info("get:Q2:" + str(delta_time))
+        self.latency_log.write("get:Q2:" + str(delta_time)+ "\n")
         self.lock_latency_log.release()
 
         sem.abort()
@@ -528,7 +528,7 @@ class ABD_Client(ProtocolInterface):
 #        logger_.addHandler(StreamHandler())
 #        return logger_
 
-    def get_logger(log_path):
+    def get_logger(self,log_path):
         logger_ = logging.getLogger('log')
         logger_.setLevel(logging.INFO)
         handler = logging.FileHandler(log_path)

@@ -1,6 +1,6 @@
 
 from utils import *
-
+from pathlib import Path
 
 ### testing ###
 import json
@@ -44,9 +44,13 @@ def create_keypairs(regions):
     
 
 
-def launch_set(regions,set_num, instance_type='t2.micro'):
+def launch_set(regions,set_num, instance_type='t2.micro', DryRun = True):
     os.system("mkdir -p sets")
     filename = "sets/set{}.json".format(set_num)
+    my_file = Path(filename)
+    if my_file.is_file():
+        print( filename, "file already exists!!")
+        return
     set_info_file = open(filename, 'w')
     set_info = {}   
     for location in regions.keys():
@@ -55,10 +59,11 @@ def launch_set(regions,set_num, instance_type='t2.micro'):
         resp = create_instance_with_keypair(region_name,\
                                             image_id,\
                                             location,
-                                            instance_type=instance_type) 
+                                            instance_type=instance_type,
+                                            DryRun=DryRun) 
         set_info.update({region_name:{'instance_info':instance_info(resp[0].instance_id, resp[0].public_ip_address).__dict__}})
 
-    json.dump(set_info, set_info_file)
+    json.dump(set_info, set_info_file, indent=4)
     set_info_file.close()
 
     return set_info
@@ -67,24 +72,26 @@ def launch_set(regions,set_num, instance_type='t2.micro'):
 def stop_set(set_info):
     for location in set_info.items():
         region_name = location[0]
-        instance_id = location[1]
+        instance_id = location[1]['instance_info']['instance_id']
         stop_instance(instance_id, region_name)
    
 def start_set(set_info):
     for location in set_info.items():
         region_name = location[0]
-        instance_id = location[1]
+        instance_id = location[1]['instance_info']['instance_id']
         start_instance(instance_id, region_name)
 
 def update_public_ips(set_info, set_num):
     filename = "sets/set{}.json".format(set_num)
-    set_info_file = open(filename, 'w')
     for location in set_info.items():
+        #print(location)
         region_name = location[0]
-        instance_id = location[1]
-        set_info[location]['public_ip'] = get_public_ips([instance_id], region_name)[1]
-    json.dump(set_info, set_info_file)
-    print(set_info)
+        instance_id = location[1]['instance_info']['instance_id']
+        set_info[region_name]['instance_info']['public_ip'] = get_public_ips([instance_id], region_name)[0][1]
+    set_info_file = open(filename, 'w')
+    json.dump(set_info, set_info_file, indent=4)
+    set_info_file.close()
+    
 
 
 
@@ -100,11 +107,18 @@ def terminate_set(set_info):
 if __name__ == '__main__':
     #setup_aws_credentials('credentials.csv')
     regions = json.load(open("aws_regions.json"))
-    set_info = json.load(open("sets/set1.json"))
+    set_info_1 = json.load(open("sets/set1.json"))
+    set_info_2 = json.load(open("sets/set2.json"))
+    
+    #print(json.dumps(set_info, indent=4))
+    #start_set(set_info)
+    #update_public_ips(set_info, 2)
     #create_keypairs(regions)
-    #launch_set(regions,1, instance_type='t2.xlarge')
-    #stop_set(set_info)
-    start_set(set_info)
+    #launch_set(regions,2, instance_type='c5.xlarge', DryRun=False)
+    #set_info = json.load(open("sets/set2.json"))
+
+    stop_set(set_info_1)
+    stop_set(set_info_2)
     
 
 

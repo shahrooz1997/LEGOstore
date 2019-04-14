@@ -23,7 +23,7 @@ class Client:
 
 
         self.local_datacenter = properties["local_datacenter"]
-        self.groups = properties["groups"]["groups"]
+        self.groups = properties["groups"]
         self.datacenter_list = properties["datacenters"]
 
         # Same LRU data structure can be used for the same but for now using dictionary
@@ -212,6 +212,7 @@ class Client:
         return placement
 
 
+
 def get_logger(log_path):
     logger_ = logging.getLogger('log')
     logger_.setLevel(logging.INFO)
@@ -292,14 +293,13 @@ if __name__ == "__main__":
     end_time = time.time() + duration
     while time.time() < end_time:
         inter_arrival_time, request_type, key, value = workload.next()
-        request_start_time = time.time()
+        
         if request_type == "insert":
             continue
         elif request_type == "put":
-            output = client.put(key,value)
+            output, request_time = client.put(key,value)
         else:
-            output = client.get(key)
-        request_time = time.time() - request_start_time
+            output, request_time = client.get(key)
 
         line = request_type + ":" + str(request_time)
         request_time_log.write(line + '\n')

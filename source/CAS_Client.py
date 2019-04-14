@@ -95,7 +95,7 @@ class CAS_Client(ProtocolInterface):
         return expected_server_list
 
 
-    def _get_timestamp(self, key, sem, server, output, lock, current_class, delay=0):
+    def _get_timestamp(self, key, sem, server, output, socket_time,  lock, current_class, delay=0):
         #time.sleep(delay * 0.001)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -105,6 +105,7 @@ class CAS_Client(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
+        socket_time = delta_time
         self.socket_log.write(server["host"] + ":" + str(delta_time) + "\n")
         self.socket_log.flush()
         self.lock_socket_log.release()
@@ -128,6 +129,7 @@ class CAS_Client(ProtocolInterface):
             data = json.loads(data.decode(self.encoding_byte))
             lock.acquire()
             output.append(data["timestamp"])
+            socket_times.append(socket_time)
             lock.release()
 
         try:
@@ -146,6 +148,7 @@ class CAS_Client(ProtocolInterface):
         thread_list = []
 
         output = []
+        socket_times = []
         for data_center_id in datacenter_list:
             #TODO: assume single server in every datacenter
             for server_id in ["1"]:
@@ -155,6 +158,7 @@ class CAS_Client(ProtocolInterface):
                                                           sem,
                                                           copy.deepcopy(server_info),
                                                           output,
+                                                          socket_times,
                                                           lock,
                                                           self.current_class)))
                 thread_list[-1].deamon = True
@@ -175,7 +179,7 @@ class CAS_Client(ProtocolInterface):
         timestamp = Timestamp.get_max_timestamp(output)
         lock.release()
         
-        return timestamp
+        return timestamp, socket_times
 
 
     def send_msg(self, sock, msg):
@@ -184,7 +188,7 @@ class CAS_Client(ProtocolInterface):
         sock.sendall(msg)
 
 
-    def _put(self, key, value, timestamp, sem, server, output, lock, delay=0):
+    def _put(self, key, value, timestamp, sem, server, output, socket_times,  lock, delay=0):
         #time.sleep(delay * 0.001)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         start_time = time.time()
@@ -192,6 +196,7 @@ class CAS_Client(ProtocolInterface):
         end_time = time.time()
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
+        socket_time = delta_time
         self.socket_log.write(server["host"] + ":" + str(delta_time) + "\n")
         self.lock_socket_log.release()
 
@@ -210,6 +215,7 @@ class CAS_Client(ProtocolInterface):
             data = json.loads(data.decode(self.encoding_byte))
             lock.acquire()
             output.append(data)
+            socket_times.append(socket_time)
             lock.release()
 
         try:
@@ -220,7 +226,7 @@ class CAS_Client(ProtocolInterface):
         return
 
 
-    def _put_fin(self, key, timestamp, sem, server, output, lock, delay=0):
+    def _put_fin(self, key, timestamp, sem, server, output, socket_times,  lock, delay=0):
         # TODO : Generic function to send all get put request rather than different for all
         #time.sleep(delay * 0.001)
 
@@ -231,6 +237,7 @@ class CAS_Client(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
+        socket_time = delta_time
         self.socket_log.write(server["host"] + ":" + str(delta_time) + "\n")
         # self.socket_log.flush()
         self.lock_socket_log.release()
@@ -251,6 +258,7 @@ class CAS_Client(ProtocolInterface):
             data = json.loads(data.decode(self.encoding_byte))
             lock.acquire()
             output.append(data)
+            socket_times.append(socket_time)
             lock.release()
 
         try:
@@ -299,13 +307,15 @@ class CAS_Client(ProtocolInterface):
             try:
                 # Unlike in ABD, here it returns the current timestamp
                 start_time = time.time()
-                timestamp = self.get_timestamp(key, q2_dc_list)
+                timestamp, socket_times = self.get_timestamp(key, q2_dc_list)
                 timestamp = Timestamp.increment_timestamp(timestamp, self.id)
                 end_time = time.time()
 
                 self.lock_latency_log.acquire()
+                max_socket_time = max(socket_times)
                 delta_time = int((end_time - start_time)*1000)
-                self.latency_log.write("put:Q1:" + str(delta_time) + "\n")
+                q1_time = delta_time - max_socket_time
+                self.latency_log.write("put:Q1:" + str(q1_time) + "\n")
                 self.lock_latency_log.release()
             except Exception as e:
                 return {"status": "TimeOut", "message": "Timeout during get timestamp call of Viveck_1"}
@@ -319,6 +329,7 @@ class CAS_Client(ProtocolInterface):
         lock = threading.Lock()
 
         output = []
+        socket_times = []
 
         index = 0
         
@@ -337,6 +348,7 @@ class CAS_Client(ProtocolInterface):
                                                           sem,
                                                           copy.deepcopy(server_info),
                                                           output,
+                                                          socket_times,
                                                           lock)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
@@ -349,8 +361,10 @@ class CAS_Client(ProtocolInterface):
             pass
         end_time = time.time()
         self.lock_latency_log.acquire()
+        max_socket_time = max(socket_times)
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.write("put:Q2:" + str(delta_time) + "\n")
+        q2_time = delta_time - max_socket_time
+        self.latency_log.write("put:Q2:" + str(q2_time) + "\n")
         self.lock_latency_log.release()
         # Removing barrier for all the waiting threads
         sem.abort()
@@ -364,6 +378,7 @@ class CAS_Client(ProtocolInterface):
 
         # Step3: Send the fin label to all servers
         output = []
+        socket_times = []
         sem_1 = threading.Barrier(len(q3_dc_list) + 1, timeout=self.timeout)
         lock = threading.Lock()
 
@@ -377,6 +392,7 @@ class CAS_Client(ProtocolInterface):
                                                                             sem_1,
                                                                             copy.deepcopy(server_info),
                                                                             output,
+                                                                            socket_times,
                                                                             lock)))
 
                 thread_list[-1].deamon = True
@@ -388,8 +404,10 @@ class CAS_Client(ProtocolInterface):
             pass
         end_time =  time.time()
         self.lock_latency_log.acquire()
+        max_socket_time = max(socket_times)
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.write("put:Q3:" + str(delta_time) + "\n")
+        q3_time = delta_time - max_socket_time
+        self.latency_log.write("put:Q3:" + str(q3_time) + "\n")
         # self.latency_log.flush()
         self.lock_latency_log.release()
         # Removing barrier for all the waiting threads
@@ -401,10 +419,12 @@ class CAS_Client(ProtocolInterface):
             return {"status": "TimeOut", "message": "Timeout during put fin label call of Viceck_1"}
         lock.release()
 
-        return {"status": "OK", "timestamp": timestamp}
+        request_time = q1_time + q2_time + q3_time
+
+        return {"status": "OK", "timestamp": timestamp}, request_time
 
 
-    def _get(self, key, timestamp, sem, server, output, lock, delay=0, value_required=False):
+    def _get(self, key, timestamp, sem, server, output, socket_times, lock, delay=0, value_required=False):
         #time.sleep(delay * 0.001)
         #print("get_delay: " + str(delay*0.001))
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -414,6 +434,7 @@ class CAS_Client(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
+        socket_time = delta_time
         self.socket_log.write(server["host"] + ":" + str(delta_time) + "\n")
         # self.socket_log.flush()
         self.lock_socket_log.release()
@@ -437,6 +458,7 @@ class CAS_Client(ProtocolInterface):
             if data_list[1] != "None":
                 lock.acquire()
                 output.append(data_list[1])
+                socket_times.append(socket_time)
                 lock.release()
             try:
                 sem.wait()
@@ -534,12 +556,14 @@ class CAS_Client(ProtocolInterface):
         # Error can imply either server busy or key doesn't exist
         try:
             start_time = time.time()
-            timestamp = self.get_timestamp(key, q1_dc_list)
+            timestamp, socket_times = self.get_timestamp(key, q1_dc_list)
             end_time = time.time()
 
             self.lock_latency_log.acquire()
+            max_socket_time = max(socket_times)
             delta_time = int((end_time - start_time)*1000)
-            self.latency_log.write("get:Q1:" + str(delta_time) + "\n")
+            q1_time = delta_time - max_socket_time
+            self.latency_log.write("get:Q1:" + str(q1_time) + "\n")
             self.lock_latency_log.release()
         except Exception as e:
             return {"status": "TimeOut", "message": "Timeout during get timestamp call of Viveck"}
@@ -552,6 +576,7 @@ class CAS_Client(ProtocolInterface):
         # Step2: Get the encoded value
         index = 0
         output = []
+        socket_times = []
         # This parameter is to mark the datacenter, servers which have already sent an request
     
         called_data_center = set()
@@ -567,6 +592,7 @@ class CAS_Client(ProtocolInterface):
                                                           sem,
                                                           copy.deepcopy(server_info),
                                                           output,
+                                                          socket_times,
                                                           lock,
                                                           0,
                                                           True)))
@@ -581,8 +607,10 @@ class CAS_Client(ProtocolInterface):
             pass
         end_time = time.time()
         self.lock_latency_log.acquire()
+        max_socket_time = max(socket_times)
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.write("get:Q4:" + str(delta_time) + "\n")
+        q4_time = delta_time - max_socket_time
+        self.latency_log.write("get:Q4:" + str(q4_time) + "\n")
         self.lock_latency_log.release()
         sem.abort()
 
@@ -606,7 +634,8 @@ class CAS_Client(ProtocolInterface):
             return {"status": "TimeOut", "value": "None","message": e}
 
         lock.release()
-        return {"status": "OK", "value": value, "timestamp": timestamp}
+        request_time = q1_time + q4_time
+        return {"status": "OK", "value": value, "timestamp": timestamp}, request_time
 
 #    def get_logger(self, tag):
 #        logger_ = logging.getLogger(tag)

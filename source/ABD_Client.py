@@ -40,6 +40,8 @@ class ABD_Client(ProtocolInterface):
         self.lock_latency_log = threading.Lock()
         self.lock_socket_log = threading.Lock()
 
+
+
         # TODO: For now only implementing ping required numbers and wait for all to respond
         # TODO: Please note that there is infracstructure for different policies too. Please look quorum_policy.
         # self.ping_policy = Quorum(properties["ping_policy"]).get_ping_policy()
@@ -89,7 +91,7 @@ class ABD_Client(ProtocolInterface):
         return expected_server_list
 
 
-    def _get_timestamp(self, key, sem, server, output, lock, delay=0):
+    def _get_timestamp(self, key, sem, server, output, socket_times,  lock, delay=0):
       #  print("timestamp time: " + str(delay))
       #  time.sleep(float(delay) * 0.001)
 
@@ -100,6 +102,7 @@ class ABD_Client(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
+        socket_time = delta_time
         self.socket_log.write(server["host"] + ":" + str(delta_time) + "\n")
         self.lock_socket_log.release()
 
@@ -119,6 +122,7 @@ class ABD_Client(ProtocolInterface):
             data = json.loads(data.decode(self.encoding_byte))
             lock.acquire()
             output.append(data["timestamp"])
+            socket_times.append(socket_time)
             lock.release()
 
         try:
@@ -140,7 +144,8 @@ class ABD_Client(ProtocolInterface):
         sem = threading.Barrier(len(datacenter_list) + 1, timeout=self.timeout)
         lock = threading.Lock()
         thread_list = []
-
+        
+        socket_times = []
 
         output = []
         for data_center_id in datacenter_list:
@@ -151,6 +156,7 @@ class ABD_Client(ProtocolInterface):
                                                                                       sem,
                                                                                       copy.deepcopy(server_info),
                                                                                       output,
+                                                                                      socket_times,
                                                                                       lock)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
@@ -170,7 +176,7 @@ class ABD_Client(ProtocolInterface):
 
         timestamp = Timestamp.get_max_timestamp(output)
         lock.release()
-        return timestamp
+        return timestamp, socket_times
 
 
     def get_final_value(self, values):
@@ -214,8 +220,9 @@ class ABD_Client(ProtocolInterface):
             elif data[2] == highest_timestamp:
                 rtn_dcs.append(data[3])
         return rtn_dcs 
-                
-    def _put(self, key, value, timestamp, sem, server, output, lock, delay=0):
+    
+        
+    def _put(self, key, value, timestamp, sem, server, output,  socket_times,  lock, delay=0):
      #   print("put time: " + str(delay))
      #   time.sleep(int(delay) * 0.001)
 
@@ -226,6 +233,7 @@ class ABD_Client(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
+        socket_time = delta_time
         self.socket_log.write(server["host"] + ":"+str(delta_time) + "\n")
         self.lock_socket_log.release()
 
@@ -280,6 +288,7 @@ class ABD_Client(ProtocolInterface):
 
         dataceneters_list      = list(set(q1_dc_list) | set(q2_dc_list))
         # if INSERT, assume first write value ==> don't neeed to get timestamp from servers
+        
         if insert:
             # timstamp format 0-client_id
             timestamp = Timestamp.create_new_timestamp(self.id)
@@ -298,16 +307,16 @@ class ABD_Client(ProtocolInterface):
         else:
             start_time = time.time()
             try:
-                timestamp = self.get_timestamp(key, q1_dc_list)
+                timestamp, socket_times = self.get_timestamp(key, q1_dc_list)
             except Exception as e:
                 return {"status": "TimeOut", "message": "Timeout during get timestamp call of ABD"}
             end_time = time.time()
             self.lock_latency_log.acquire()
+            max_socket_time = max(socket_times)
             delta_time = int((end_time - start_time)*1000)
-            self.latency_log.write("put:Q1:" + str(delta_time) + "\n")
+            q1_time = delta_time - max_socket_time
+            self.latency_log.write("put:Q1:" + str(q1_time) + "\n")
             self.lock_latency_log.release()
-
-
             timestamp = Timestamp.increment_timestamp(timestamp, self.id)
         ##################################################################
         #TODO: Test this condition  
@@ -323,7 +332,7 @@ class ABD_Client(ProtocolInterface):
         lock = threading.Lock()
 
         output = []
-        
+        socket_times = []
         #XXX: this needs to be changed
         #new_server_list = self._get_closest_servers(server_list, self.write_nodes)
         
@@ -341,6 +350,7 @@ class ABD_Client(ProtocolInterface):
                                                                             sem,
                                                                             copy.deepcopy(server_info),
                                                                             output,
+                                                                            socket_times,
                                                                             lock)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
@@ -352,8 +362,10 @@ class ABD_Client(ProtocolInterface):
 
         end_time = time.time()
         self.lock_latency_log.acquire()
+        max_socket_time = max(socket_times)
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.write("put:Q2:" + str(delta_time) + "\n")
+        q2_time = delta_time - max_socket_time
+        self.latency_log.write("put:Q2:" + str(q2_time) + "\n")
         self.lock_latency_log.release()
 
         # Removing barrier for all the waiting threads
@@ -366,10 +378,11 @@ class ABD_Client(ProtocolInterface):
 
         lock.release()
 
-        return {"status": "OK", "timestamp": timestamp}
+        request_time = q1_time + q2_time
+        return {"status": "OK", "timestamp": timestamp}, request_time
 
 
-    def _get(self, key, sem, server, output, lock, dc_id, delay=0):
+    def _get(self, key, sem, server, output, socket_times, lock, dc_id, delay=0):
       #  print("get time: " + str(delay))
       #  time.sleep(float(delay) * 0.001)
 
@@ -380,6 +393,7 @@ class ABD_Client(ProtocolInterface):
 
         self.lock_socket_log.acquire()
         delta_time = int((end_time - start_time)*1000)
+        socket_time = delta_time
         self.socket_log.write(server["host"] + ":" + str(delta_time) + "\n")
         self.lock_socket_log.release()
 
@@ -403,6 +417,7 @@ class ABD_Client(ProtocolInterface):
             data.append(dc_id)
             lock.acquire()
             output.append(data)
+            socket_times.append(socket_time)
             lock.release()
 
         try:
@@ -426,19 +441,17 @@ class ABD_Client(ProtocolInterface):
         ######################
         q1_dc_list = placement["Q1"]
         q2_dc_list = placement["Q2"]
-
+        
         thread_list = []
 
         sem = threading.Barrier(len(q1_dc_list) + 1, timeout=self.timeout)
         lock = threading.Lock()
-
-
         
 
         #
         # Step1: get the timestamp with recent value
         output = []
-        
+        socket_times = []
         
         # new_server_list = self._get_closest_servers(server_list, self.read_nodes)
         start_time = time.time()
@@ -450,6 +463,7 @@ class ABD_Client(ProtocolInterface):
                                                                             sem,
                                                                             copy.deepcopy(server_info),
                                                                             output,
+                                                                            socket_times, 
                                                                             lock,
                                                                             data_center_id)))
                 thread_list[-1].deamon = True
@@ -460,11 +474,6 @@ class ABD_Client(ProtocolInterface):
         except threading.BrokenBarrierError:
             pass
 
-        end_time = time.time()
-        self.lock_latency_log.acquire()
-        delta_time = int((end_time - start_time)*1000)
-        self.latency_log.write("get:Q1:" + str(delta_time) + "\n")
-        self.lock_latency_log.release()
 
         sem.abort()
         lock.acquire()
@@ -472,11 +481,22 @@ class ABD_Client(ProtocolInterface):
             lock.release()
             return {"status": "TimeOut", "message": "Timeout during get call of ABD"}
         
+        end_time = time.time()
+        self.lock_latency_log.acquire()
+           
+        max_socket_time = max(socket_times)
+        
+        delta_time = int((end_time - start_time)*1000)
+        #####
+        q1_time = delta_time - max_socket_time
+        #####
+        self.latency_log.write("get:Q1:" + str(q1) + "\n")
+        self.lock_latency_log.release()
         value, timestamp = self.get_final_value(output)
         lock.release()
        
         if self.is_all_timestamps_the_same(output, len(q1_dc_list)):
-            return {"status": "OK", "value":value}
+            return {"status": "OK", "value":value}, q1_time
         
         dcs_highest_timestamp = self.dcs_with_highest_timestamp(output, timestamp)
         q2_dc_list = list( set(q2_dc_list) - set(dcs_highest_timestamp) )
@@ -491,6 +511,7 @@ class ABD_Client(ProtocolInterface):
         # After abort can't use the same barrier
         sem = threading.Barrier(len(q2_dc_list) + 1, timeout=self.timeout)
         result = []
+        socket_times = []
         #new_server_list = self._get_closest_servers(server_list, self.write_nodes)
         start_time = time.time()
         for data_center_id in q2_dc_list:
@@ -503,6 +524,7 @@ class ABD_Client(ProtocolInterface):
                                                                             sem,
                                                                             copy.deepcopy(server_info),
                                                                             result,
+                                                                            socket_times,
                                                                             lock)))
                 thread_list[-1].deamon = True
                 thread_list[-1].start()
@@ -514,11 +536,15 @@ class ABD_Client(ProtocolInterface):
         end_time = time.time()
         self.lock_latency_log.acquire()
         delta_time = int((end_time - start_time)*1000)
-        self.latency_log.write("get:Q2:" + str(delta_time)+ "\n")
+        max_socket_time = max(socket_times)
+        q2_time = delta_time - max_socket_time
+        self.latency_log.write("get:Q2:" + str(q2_time)+ "\n")
         self.lock_latency_log.release()
 
         sem.abort()
-        return {"status": "OK", "value": value}
+        request_time = q1_time + q2_time
+
+        return {"status": "OK", "value": value}, request_time 
 
 
 #    def get_logger(self, tag):

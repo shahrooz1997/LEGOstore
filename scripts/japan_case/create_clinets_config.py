@@ -21,8 +21,7 @@ if __name__ == '__main__':
 	#XXX: assume one group
 	#TODO: don't hardcode
 	keys = list(range(1000))
-	groups = {"groups":{
-					"g1" : {
+	groups = {"g1" : {
 						"keys": keys,
 						"placement": {
 							"protocol" : "CAS",
@@ -33,7 +32,6 @@ if __name__ == '__main__':
 							"Q3" : ["9", "5", "6"],
 							"Q4" : ["9", "5", "6"]}
 						}
-					}
 			}
 	
 	_arrival_rate = 200

@@ -12,13 +12,10 @@ class ABD_Server:
         value = cache.get(key)
 
         if value:
-            print("abd.get >> datafound in cache, value = ", value)
             lock.release_read()
             return "OK" + "+:--:+" + str(value[0]) + "+:--:+" + str(value[1])
 
-        print("abd.get >> value not found in cache")
         value = persistent.get(key)
-        print("abd.get >> value from persistent, value = ", value)
         if value[0]:
             lock.release_read()
             return "OK" + "+:--:+" + str(value[0]) + "+:--:+" + str(value[1])
@@ -33,7 +30,6 @@ class ABD_Server:
         data = cache.get(key)
         revoked_values = []
         if data:
-            print("data found: ", data)
             current_value, current_timestamp = data
             if timestamp > current_timestamp:
                 revoked_values.extend(cache.put(key, (value, timestamp)))

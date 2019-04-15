@@ -60,11 +60,9 @@ class DataServer:
             return ABD_Server.get(key, timestamp, self.cache, self.persistent, self.lock)
         elif current_class == "Viveck_1":
             output = CAS_Server.get(key, timestamp, self.cache, self.persistent, self.lock, value_required)
-            print("server side size is " + str(sys.getsizeof(output["value"])))
             
             if output["value"] == None:
                 output["value"] = "None"
-                print(key + ":something fishy : " + str(output["value"]))
 
             return output["status"] + "+:--:+" + output["value"]
 
@@ -185,8 +183,6 @@ def server_connection(connection, dataserver):
     #data = connection.recv(6400)
     data = recv_msg(connection)
 
-    print("data= " , data)
-
     
     if not data:
         connection.sendall(json.dumps({"status": "failure", "message": "No data Found"}).encode("latin-1"))
@@ -209,7 +205,6 @@ def server_connection(connection, dataserver):
             if len(data_list) > 4 and data_list[4] == "True":
                 required_value = True
             output = dataserver.get(data_list[1], data_list[2], data_list[3], required_value)
-            print("data_server output: ", output)
             connection.sendall(output.encode(ENC_SCHM))
         elif method == "get_timestamp":
             output = dataserver.get_timestamp(data_list[1], data_list[2])

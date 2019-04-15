@@ -296,16 +296,17 @@ if __name__ == "__main__":
     end_time = time.time() + duration
     while request_count < total_number_of_requests:
         inter_arrival_time, request_type, key, value = workload.next()
-        start_request_time = time.time()*1000.0
+        start_request_time = time.time()
         if request_type == "insert":
             continue
         elif request_type == "put":
             output, request_time = client.put(key,value)
         else:
             output, request_time = client.get(key)
-        end_request_time = time.time()*1000.0
-        if end_request_time < start_request_time + inter_arrival_time:
-            time.sleep(start_request_time - end_request_time*1000.0)
+        end_request_time = time.time()
+        if end_request_time < start_request_time + (inter_arrival_time/1000.0):
+            time.sleep(start_request_time + (inter_arrival_time / 1000.0)  - end_request_time)
+        print(request_type, request_time)
         line = request_type + ":" + str(request_time)
         request_time_log.write(line + '\n')
 

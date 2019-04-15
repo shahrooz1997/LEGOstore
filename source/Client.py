@@ -53,7 +53,8 @@ class Client:
                                                                                         self.datacenter_info,
                                                                                         self.id,
                                                                                         )})
-
+        self.request_time_file = open("latencies_{}.log".format(self.id), "w")
+        
 
     def check_validity(self, output):
         # Checks if the status is OK or not
@@ -124,7 +125,7 @@ class Client:
             return {"status": "FAILURE",
                     "message": "Unable to insert message after {0} attempts".format(
                         self.retry_attempts)}
-
+        
         return {"status": "OK"}, request_time
 
     def put(self, key, value):
@@ -151,6 +152,8 @@ class Client:
         while total_attempts:
             output, request_time = self.class_name_to_object[class_name].put(key, value, placement)
             if self.check_validity(output):
+                print("put",request_time)
+                self.request_time_file.write("put:{}\n".format(request_time))
                 return {"status" : "OK"}, request_time
 
             total_attempts -= 1
@@ -189,6 +192,8 @@ class Client:
             output, request_time = self.class_name_to_object[class_name].get(key, placement)
 
             if self.check_validity(output):
+                print("get", request_time)
+                self.request_time_file.write("get:{}\n".format(request_time))
                 return {"status": "OK", "value": output["value"]}, request_time
 
             total_attempts -= 1
@@ -226,8 +231,8 @@ def run_session(workload, properties, running_time, session_id=None):
 
     if not session_id:
         session_id = uuid.uuid4().int
-    filename = "output_" + str(session_id) + ".txt"
-    output_file = open(filename, "a+")
+    filename = "request_time_" + str(session_id) + ".log"
+    output_file = open(filename, "w")
     client = Client(properties, session_id)
     request_count = 0
     _end_time = time.time() + running_time
@@ -266,14 +271,6 @@ def merge_files(files_to_combine, output_file_name):
 
 
 if __name__ == "__main__":
-    
-
-    #### logs ####
-#    error_log = get_logger("error_log.log")
-#    request_time_log = get_logger("requests_time.log")     
- 
-    request_time_log = open("requests_time.log", "w")
-
 
     properties = json.load(open("client_config.json"))
     
@@ -283,34 +280,37 @@ if __name__ == "__main__":
     insert_ratio = 0.0
     initial_count = 1000
     value_size = 1000
-    duration = 600
+    duration = 10
     arrival_process = "poisson"
     arrival_rate = properties["arrival_rate"]
     
-    workload = Workload(arrival_process, arrival_rate, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
     client = Client(properties, properties["local_datacenter"])
 
-    
-    total_number_of_requests = arrival_rate * duration
-    request_count = 0
-    end_time = time.time() + duration
-    while request_count < total_number_of_requests:
-        inter_arrival_time, request_type, key, value = workload.next()
-        start_request_time = time.time()
-        if request_type == "insert":
-            continue
-        elif request_type == "put":
-            output, request_time = client.put(key,value)
-        else:
-            output, request_time = client.get(key)
-        end_request_time = time.time()
-        if end_request_time < start_request_time + (inter_arrival_time/1000.0):
-            time.sleep(start_request_time + (inter_arrival_time / 1000.0)  - end_request_time)
-        print(request_type, request_time)
-        line = request_type + ":" + str(request_time)
-        request_time_log.write(line + '\n')
 
-    request_time_log.close()
+
+    process_list = []
+    # each client is doing one request per second
+    workload = Workload(arrival_process, 1, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
+    for i in range(arrival_rate):
+        client_uid = properties['local_datacenter'] + str(i)
+        process_list.append(Process(target=run_session, args=(workload,
+                                                              properties,
+                                                              duration,
+                                                              client_uid)))
+
+    for process in process_list:
+        process.start()
+
+    for process in process_list:
+        process.join()
+
+
+
+    files_to_combine = "latencies_*.log"
+    output_file_name = "latencies.log"
+    merge_files(files_to_combine, output_file_name)
+
+    os.system("rm latencies_*.log")
 
 
 

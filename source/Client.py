@@ -113,7 +113,7 @@ class Client:
 
         # Step1 : Putting key, value as per provided class protocol
         while total_attempts:
-            output = self.class_name_to_object[class_name].put(key, value, placement, True)
+            output, request_time = self.class_name_to_object[class_name].put(key, value, placement, True)
 
             if self.check_validity(output):
                 break
@@ -125,7 +125,7 @@ class Client:
                     "message": "Unable to insert message after {0} attempts".format(
                         self.retry_attempts)}
 
-        return {"status": "OK"}
+        return {"status": "OK"}, request_time
 
     def put(self, key, value):
         ######################
@@ -149,9 +149,9 @@ class Client:
         # Step2: Call the relevant protocol for the same.
         total_attempts = self.retry_attempts
         while total_attempts:
-            output = self.class_name_to_object[class_name].put(key, value, placement)
+            output, request_time = self.class_name_to_object[class_name].put(key, value, placement)
             if self.check_validity(output):
-                return {"status" : "OK"}
+                return {"status" : "OK"}, request_time
 
             total_attempts -= 1
 
@@ -186,10 +186,10 @@ class Client:
 
         # Step2: call the relevant protocol for the same
         while total_attempts:
-            output = self.class_name_to_object[class_name].get(key, placement)
+            output, request_time = self.class_name_to_object[class_name].get(key, placement)
 
             if self.check_validity(output):
-                return {"status": "OK", "value": output["value"]}
+                return {"status": "OK", "value": output["value"]}, request_time
 
             total_attempts -= 1
 

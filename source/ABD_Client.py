@@ -259,6 +259,7 @@ class ABD_Client(ProtocolInterface):
             data = json.loads(data.decode(self.encoding_byte))
             lock.acquire()
             output.append(data)
+            socket_times.append(socket_time)
             lock.release()
 
         try:
@@ -377,8 +378,10 @@ class ABD_Client(ProtocolInterface):
             return {"status": "TimeOut", "message": "Timeout during put call of ABD"}
 
         lock.release()
-
-        request_time = q1_time + q2_time
+        if insert:
+            request_time = q2_time
+        else:
+            request_time = q1_time + q2_time
         return {"status": "OK", "timestamp": timestamp}, request_time
 
 
@@ -490,7 +493,7 @@ class ABD_Client(ProtocolInterface):
         #####
         q1_time = delta_time - max_socket_time
         #####
-        self.latency_log.write("get:Q1:" + str(q1) + "\n")
+        self.latency_log.write("get:Q1:" + str(q1_time) + "\n")
         self.lock_latency_log.release()
         value, timestamp = self.get_final_value(output)
         lock.release()

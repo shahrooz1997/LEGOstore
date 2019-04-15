@@ -95,7 +95,7 @@ class CAS_Client(ProtocolInterface):
         return expected_server_list
 
 
-    def _get_timestamp(self, key, sem, server, output, socket_time,  lock, current_class, delay=0):
+    def _get_timestamp(self, key, sem, server, output, socket_times,  lock, current_class, delay=0):
         #time.sleep(delay * 0.001)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -418,8 +418,11 @@ class CAS_Client(ProtocolInterface):
             lock.release()
             return {"status": "TimeOut", "message": "Timeout during put fin label call of Viceck_1"}
         lock.release()
-
-        request_time = q1_time + q2_time + q3_time
+        
+        if insert:
+            request_time = q2_time + q3_time
+        else:
+            request_time = q1_time + q2_time + q3_time
 
         return {"status": "OK", "timestamp": timestamp}, request_time
 

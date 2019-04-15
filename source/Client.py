@@ -283,24 +283,29 @@ if __name__ == "__main__":
     insert_ratio = 0.0
     initial_count = 1000
     value_size = 1000
-    duration = 3600
+    duration = 600
     arrival_process = "poisson"
     arrival_rate = properties["arrival_rate"]
     
     workload = Workload(arrival_process, arrival_rate, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
     client = Client(properties, properties["local_datacenter"])
 
+    
+    total_number_of_requests = arrival_rate * duration
+    request_count = 0
     end_time = time.time() + duration
-    while time.time() < end_time:
+    while request_count < total_number_of_requests:
         inter_arrival_time, request_type, key, value = workload.next()
-        
+        start_request_time = time.time()*1000.0
         if request_type == "insert":
             continue
         elif request_type == "put":
             output, request_time = client.put(key,value)
         else:
             output, request_time = client.get(key)
-
+        end_request_time = time.time()*1000.0
+        if end_request_time < start_request_time + inter_arrival_time:
+            time.sleep(start_request_time - end_request_time*1000.0)
         line = request_type + ":" + str(request_time)
         request_time_log.write(line + '\n')
 

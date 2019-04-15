@@ -280,7 +280,7 @@ if __name__ == "__main__":
     insert_ratio = 0.0
     initial_count = 1000
     value_size = 1000
-    duration = 10
+    duration = 1800
     arrival_process = "poisson"
     arrival_rate = properties["arrival_rate"]
     

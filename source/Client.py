@@ -190,7 +190,6 @@ class Client:
         # Step2: call the relevant protocol for the same
         while total_attempts:
             output, request_time = self.class_name_to_object[class_name].get(key, placement)
-
             if self.check_validity(output):
                 print("get", request_time)
                 self.request_time_file.write("get:{}\n".format(request_time))
@@ -281,31 +280,43 @@ def merge_files(files_to_combine, output_file_name):
 if __name__ == "__main__":
 
     properties = json.load(open("client_config.json"))
+    try:
+        groups = list(properties["groups"].keys())
+        print(groups)
+    except:
+        groups = []
+        print("could not find groups")
+        sys.exit(0)
+
     
     # TODO: get values from client config file
-    insert_ratio = 0.0
-    initial_count = 4
-    value_size = 1000
     arrival_process = "poisson"
-    arrival_rate = properties["arrival_rate"]
-    duration = properties["duration"]
-    client = Client(properties, properties["local_datacenter"])
 
     start_time = time.time()
-    number_of_requests = arrival_rate * duration
     process_list = []
-
-
     error_log_lock = threading.Lock()
-
     filename = "error.log"
     error_file = open(filename, "w")
+    
+    duration = properties["duration"]
 
     # each client is doing one request per second
-    workload = Workload(arrival_process, 1, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
-    for i in range(arrival_rate):
-        client_uid = properties['local_datacenter'] + str(i)
-        process_list.append(Process(target=run_session, args=(workload,
+    for j,group in enumerate(groups):
+        keys = properties["groups"][group]['keys']
+        arrival_rate = properties["groups"][group]["arrival_rate"]
+        value_size = properties["groups"][group]["object_size"]
+        read_ratio = properties["groups"][group]["read_ratio"]
+        write_ratio= properties["groups"][group]["write_ratio"]
+        insert_ratio = 0
+        # This does not matter if keys are provided
+        initial_count = len(keys)
+        
+        number_of_requests = arrival_rate * duration
+        workload = Workload(arrival_process, 1, read_ratio, write_ratio, insert_ratio, initial_count, value_size, keys=keys)
+        
+        for i in range(arrival_rate):
+            client_uid = properties['local_datacenter'] + str(i) + str(j)
+            process_list.append(Process(target=run_session, args=(workload,
                                                               properties,
                                                               duration,
                                                               int(number_of_requests/arrival_rate),

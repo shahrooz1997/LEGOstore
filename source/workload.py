@@ -22,9 +22,9 @@ class Workload:
         # Return (interarrival time, key, request_type)
         random_ratio = random.randint(0, 100)/100.0
 #        popularity_distribution = random.randint(0, 100)
-        if random_ratio < self.read_ratio:
+        if random_ratio <= self.read_ratio:
             request_type = "get"
-        elif random_ratio < self.read_ratio + self.write_ratio:
+        elif random_ratio <= self.read_ratio + self.write_ratio:
             request_type = "put"
         else:
             request_type = "insert"

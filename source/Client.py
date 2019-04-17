@@ -227,37 +227,45 @@ def get_logger(log_path):
     logger_.addHandler(handler)
     return logger_
 
-def run_session(workload, properties, running_time, session_id=None):
-
+def run_session(workload, properties, running_time, number_of_requests, error_log_lock, error_file,  session_id=None):
     if not session_id:
         session_id = uuid.uuid4().int
-    filename = "request_time_" + str(session_id) + ".log"
+    filename = "output_" + str(session_id) + ".log"
     output_file = open(filename, "w")
+
+
     client = Client(properties, session_id)
-    request_count = 0
     _end_time = time.time() + running_time
-    while time.time() < _end_time:
+    #while time.time() < _end_time:
+    for _ in range(number_of_requests):
         inter_arrival_time, request_type, key, value = workload.next()
         start_time = time.time()
         if request_type == "insert":
+            print('>>>>>>>>>')
             continue
         elif request_type == "put":
-            output = key + json.dumps(client.put(key, value))
+            output, _ = client.put(key, value)
         else:
-            output = key + json.dumps(client.get(key))
+            output, _ = client.get(key)
+
+        if output["status"] != "OK":
+            error_log_lock.acquire()
+            error_file.write(str(time.time()) + ":" + key  + ":" + output + "\n")
+            error_file.flush()
+            error_log_lock.release()
+
 
         # Since each process has its own file no need to even flush it.
         # flushing the file is for monitoring the status
-        output_file.write(request_type + ":" + str(output) + "\n")
-        output_file.flush()
+        output_file.write(request_type + ":" + key + ":" + str(output["status"]) + "\n")
         request_time = time.time() - start_time
         if request_time < inter_arrival_time * 0.001:
             #interarrival time is in ms
             time.sleep(inter_arrival_time * 0.001 - request_time)
 
-        request_count += 1
 
     output_file.close()
+    error_file.close()
 
 def merge_files(files_to_combine, output_file_name):
     # Merge quorum latency files
@@ -275,20 +283,24 @@ if __name__ == "__main__":
     properties = json.load(open("client_config.json"))
     
     # TODO: get values from client config file
-    read_ratio = 0.968
-    write_ratio = 0.032
     insert_ratio = 0.0
-    initial_count = 1000
+    initial_count = 4
     value_size = 1000
-    duration = 1800
     arrival_process = "poisson"
     arrival_rate = properties["arrival_rate"]
-    
+    duration = properties["duration"]
     client = Client(properties, properties["local_datacenter"])
 
-
-
+    start_time = time.time()
+    number_of_requests = arrival_rate * duration
     process_list = []
+
+
+    error_log_lock = threading.Lock()
+
+    filename = "error.log"
+    error_file = open(filename, "w")
+
     # each client is doing one request per second
     workload = Workload(arrival_process, 1, read_ratio, write_ratio, insert_ratio, initial_count, value_size)
     for i in range(arrival_rate):
@@ -296,6 +308,9 @@ if __name__ == "__main__":
         process_list.append(Process(target=run_session, args=(workload,
                                                               properties,
                                                               duration,
+                                                              int(number_of_requests/arrival_rate),
+                                                              error_log_lock,
+                                                              error_file,
                                                               client_uid)))
 
     for process in process_list:
@@ -304,13 +319,18 @@ if __name__ == "__main__":
     for process in process_list:
         process.join()
 
-
+    print(time.time() - start_time)
 
     files_to_combine = "latencies_*.log"
     output_file_name = "latencies.log"
     merge_files(files_to_combine, output_file_name)
+    
+    files_to_combine = "output_*.log"
+    output_file_name = "output.log"
+    merge_files(files_to_combine, output_file_name)
 
-    os.system("rm latencies_*.log")
+
+    os.system("rm latencies_*.log output_*.log")
 
 
 

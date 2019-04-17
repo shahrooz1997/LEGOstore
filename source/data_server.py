@@ -235,6 +235,11 @@ if __name__ == "__main__":
     socket_port = [10000]
     db_list = ["db.temp"]
 
+    #local testing only 
+    #socket_port = [10000,10001,10002,10003,10004,10005,10006,10007,10008]
+    #db_list = ["db1.temp","db2.temp","db3.temp","db4.temp","db5.temp","db6.temp","db7.temp","db8.temp","db9.temp"]
+
+
     socket_list = []
     data_server_list = []
     for index, port in enumerate(socket_port):

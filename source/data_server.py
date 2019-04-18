@@ -14,11 +14,31 @@ from garbage_collector import garbage_collector
 from persistent import Persistent
 #from viveck_1_server import Viveck_1Server
 from CAS_Server import CAS_Server
+import signal
 
+
+DATA_TRACKER_LOCK = ReadWriteLock()
+TOTAL_DATA_TX = 0
+TOTAL_DATA_RX = 0 
+
+
+
+
+
+def signal_handler(sig,frame):
+    DATA_TRACKER_LOCK.acquire_read()
+    print("\n\nTX(bytes):",TOTAL_DATA_TX,"\t-\tRX(bytes):",TOTAL_DATA_RX, "\n\n")
+    DATA_TRACKER_LOCK.release_read()
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
 
 
 ENC_SCHM = "latin-1"
 DELIMITER = "+:--:+"
+
+
 
 
 
@@ -179,11 +199,16 @@ def recvall(sock, n):
 #    return b''.join(fragments)
 
 def server_connection(connection, dataserver):
+    global DATA_TRACKER_LOCK
+    global TOTAL_DATA_TX 
+    global TOTAL_DATA_RX  
     #data = recvall(connection)
     #data = connection.recv(6400)
     data = recv_msg(connection)
-
-    
+    DATA_TRACKER_LOCK.acquire_write()
+    TOTAL_DATA_RX += sys.getsizeof(data)
+    DATA_TRACKER_LOCK.release_write()
+        
     if not data:
         connection.sendall(json.dumps({"status": "failure", "message": "No data Found"}).encode("latin-1"))
     try:
@@ -195,23 +220,35 @@ def server_connection(connection, dataserver):
         return
 
     method = data_list[0]
+    print(method, sys.getsizeof(data))
     try:
         if method == "put":
             output = dataserver.put(data_list[1], data_list[2], data_list[3], data_list[4])
             connection.sendall(json.dumps(output).encode(ENC_SCHM))
-
+            DATA_TRACKER_LOCK.acquire_write()
+            TOTAL_DATA_TX += sys.getsizeof(json.dumps(output).encode(ENC_SCHM))
+            DATA_TRACKER_LOCK.release_write()
         elif method == "get":
             required_value = False
             if len(data_list) > 4 and data_list[4] == "True":
                 required_value = True
             output = dataserver.get(data_list[1], data_list[2], data_list[3], required_value)
             connection.sendall(output.encode(ENC_SCHM))
+            DATA_TRACKER_LOCK.acquire_write()
+            TOTAL_DATA_TX += sys.getsizeof(output.encode(ENC_SCHM))
+            DATA_TRACKER_LOCK.release_write()
         elif method == "get_timestamp":
             output = dataserver.get_timestamp(data_list[1], data_list[2])
             connection.sendall(json.dumps(output).encode(ENC_SCHM))
+            DATA_TRACKER_LOCK.acquire_write()
+            TOTAL_DATA_TX += sys.getsizeof(json.dumps(output).encode(ENC_SCHM))
+            DATA_TRACKER_LOCK.release_write()
         elif method == "put_fin":
             output = dataserver.put_fin(data_list[1],data_list[2],data_list[3])
             connection.sendall(json.dumps(output).encode(ENC_SCHM))
+            DATA_TRACKER_LOCK.acquire_write()
+            TOTAL_DATA_TX += sys.getsizeof(json.dumps(output).encode(ENC_SCHM))
+            DATA_TRACKER_LOCK.release_write()
         elif method:
             connection.sendall("MethodNotFound: Unknown method is called".encode("latin-1"))
     except socket.error:

@@ -220,7 +220,7 @@ def server_connection(connection, dataserver):
         return
 
     method = data_list[0]
-    print(method, sys.getsizeof(data))
+    #print(method, sys.getsizeof(data))
     try:
         if method == "put":
             output = dataserver.put(data_list[1], data_list[2], data_list[3], data_list[4])

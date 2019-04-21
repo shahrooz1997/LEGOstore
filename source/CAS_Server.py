@@ -103,7 +103,7 @@ class CAS_Server:
     @staticmethod
     def insert_data(key, value, timestamp, label, cache, persistent):
         # Verify once more if anyone else has insterted the key value in between
-        if cache.get(key+timestamp):
+        if cache.get(key + ":" + timestamp):
             return
 
         current_storage = cache
@@ -118,7 +118,7 @@ class CAS_Server:
             else:
                 fin_timestamp = None
 
-            new_values = [(key, [timestamp, fin_timestamp]), (key+timestamp, [value, label, None])]
+            new_values = [(key, [timestamp, fin_timestamp]), (key + ":" + timestamp, [value, label, None])]
 
             cache_thread = threading.Thread(target=cache.put_in_batch, args=(new_values,))
             persistent_thread = threading.Thread(target=persistent.put_in_batch, args=(new_values,))
@@ -139,7 +139,7 @@ class CAS_Server:
             if label:
                 current_fin = timestamp
             new_values = [(key, [timestamp, current_fin]),
-                          (key+timestamp, [value, label, current_timestamp])]
+                          (key + ":" +timestamp, [value, label, current_timestamp])]
 
             cache_thread = threading.Thread(target=cache.put_in_batch, args=(new_values,))
             persistent_thread = threading.Thread(target=persistent.put_in_batch, args=(new_values,))
@@ -153,17 +153,17 @@ class CAS_Server:
             return
 
         while current_timestamp:
-            data = current_storage.get(key+current_timestamp)
+            data = current_storage.get(key+ ":" +current_timestamp)
 
             if not data:
                 current_storage = persistent
-                data = current_storage.get(key+current_timestamp)
+                data = current_storage.get(key + ":"  +current_timestamp)
 
             curr_value, curr_label, next_timestamp = data
 
             if next_timestamp == None or next_timestamp < timestamp:
-                new_values = [(key+current_timestamp, [curr_value, curr_label, timestamp]),
-                              (key+timestamp, [value, label, next_timestamp])]
+                new_values = [(key + ":" + current_timestamp, [curr_value, curr_label, timestamp]),
+                              (key + ":" +timestamp, [value, label, next_timestamp])]
 
                 # Changing the fin timestamp to timestamp
                 if label and (not current_fin or current_fin < timestamp):
@@ -189,9 +189,9 @@ class CAS_Server:
     def put_fin(key, timestamp, cache, persistent, lock):
         # Using optimistic approach i.e. we assume that it will be in cache else we have to
         lock.acquire_write()
-        data = cache.get(key+timestamp)
+        data = cache.get(key+":"+timestamp)
         if not data:
-            data = persistent.get(key+timestamp)
+            data = persistent.get(key+":"+timestamp)
 
         if not data[0]:
             CAS_Server.insert_data(key, None, timestamp, True, cache, persistent)
@@ -204,7 +204,7 @@ class CAS_Server:
 
             current_timestamp, current_fin_timestamp = current_values
 
-            data_values = [(key+timestamp, [data[0], True, data[2]])]
+            data_values = [(key+":"+timestamp, [data[0], True, data[2]])]
 
             if not current_fin_timestamp or current_fin_timestamp <= timestamp:
                 data_values.append((key, [current_timestamp, timestamp]))
@@ -224,7 +224,7 @@ class CAS_Server:
 
     @staticmethod
     def put_back_in_cache(key, timestamp, data, cache):
-        cache.put(key+timestamp, data)
+        cache.put(key+":"+timestamp, data)
         return
 
 
@@ -238,9 +238,9 @@ class CAS_Server:
                         , CAS_Server.timestamps_history.get(key))
         
         lock.acquire_read()
-        data = cache.get(key+timestamp)
+        data = cache.get(key+":"+timestamp)
         if not data:
-            data = persistent.get(key+timestamp)
+            data = persistent.get(key+"+"+timestamp)
             lock.release_read()
 
             if len(data) == 1:

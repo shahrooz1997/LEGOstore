@@ -43,7 +43,14 @@ class DataServer:
         self.enable_garbage_collector = enable_garbage_collector
 
         self.encoding_scheme = "latin-1"
+        
+        self.GC = True
 
+        if self.GC:
+            threading.Thread(target=self.garbage_collector_thread,
+                             args = (self.cache.cache,
+                                     self.lock,
+                                     )).start()
 
 
     def get(self, key, timestamp, current_class, value_required):
@@ -148,6 +155,30 @@ class DataServer:
 
         raise NotImplementedError
 
+
+    def garbage_collector_thread(self, cache, lock, period=600):
+        while True:
+            time.sleep(6)
+            lock.acquire_write()
+            print("garbage_collecting...")
+            list_of_keys = [i for i in cache.keys() if ':' not in i]
+            latest_versions = []
+            for key in list_of_keys:
+                latest_fin = cache.get(key)[1]
+                if latest_fin is not None:
+                    latest_versions.append(key + ":" + latest_fin)
+            for key in cache.keys():
+                if '-' in key and key not in latest_versions:
+                    del cache[key]
+            print("end garbage_collecting...")
+            lock.release_write()
+            
+            #time.sleep(period)
+            #print("garbage collecting...")
+            
+
+
+
 def recv_msg(sock):
     # Read message length and unpack it into an integer
     raw_msglen = recvall(sock, 4)
@@ -236,8 +267,8 @@ if __name__ == "__main__":
     db_list = ["db.temp"]
 
     #local testing only 
-    #socket_port = [10000,10001,10002,10003,10004,10005,10006,10007,10008]
-    #db_list = ["db1.temp","db2.temp","db3.temp","db4.temp","db5.temp","db6.temp","db7.temp","db8.temp","db9.temp"]
+    socket_port = [10000,10001,10002,10003,10004,10005,10006,10007,10008]
+    db_list = ["db1.temp","db2.temp","db3.temp","db4.temp","db5.temp","db6.temp","db7.temp","db8.temp","db9.temp"]
 
 
     socket_list = []

@@ -50,23 +50,23 @@ class EchoFactory(protocol.ClientFactory):
 class TwistedClientApp():
     def __init__(self):
         self.connection = None
-     	self.user_os = None
-    	self.user = None
-    	self.labelmsg = ""
-    	self.chat_online_details = ""
-    	self.haha = []
-    	self.y=0
-    	self.notify_events = []
-    	self.available_users = []
+        self.user_os = None
+        self.user = None
+        self.labelmsg = ""
+        self.chat_online_details = ""
+        self.haha = []
+        self.y=0
+        self.notify_events = []
+        self.available_users = []
         self.setup_gui()
 
     def setup_gui(self):
         global user
-    	user = getpass.getuser()
-    	global user_os
-    	user_os = platform.system()
-    	self.dir_loc = "/home/ubuntu/"
-        self.ctexthost = "localhost"
+        user = getpass.getuser()
+        global user_os
+        user_os = platform.system()
+        self.dir_loc = "/home/ubuntu/"
+        self.ctexthost = "18.220.45.147"
         self.ctextport = 9090
 
     def building_utilities(self, *args):
@@ -81,38 +81,38 @@ class TwistedClientApp():
         reactor.run()
 
     def on_connection(self, connection):
-    	self.print_message("Connected Succesfully!")
-    	self.connection = connection
+        self.print_message("Connected Succesfully!")
+        self.connection = connection
         #self.repo_creation()
     def send_message(self,connection):
         msg = "HI"
-    	if msg and self.connection:
+        if msg and self.connection:
             msg = "2$#" + user + "@" + user_os + ": " + msg
             self.connection.write(str(msg))
 
     def print_message(self, msg):
-        print msg
+        print (msg)
 
     def CloseClient(self, *args):
         self.conn.disconnect()
         path = os.path.dirname(os.getcwd())
         os.chdir(path)
-        print os.getcwd()
+        print (os.getcwd())
 
     def stimulate_on_repo_changes(self):
         while True:
-        	#self.logging.basicConfig(level=logging.INFO,format='%(asctime)s - %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
-        	self.path = sys.argv[1] if len(sys.argv) > 1 else os.getcwd()
-        	self.event_handler = ChangeHandler(self)
-        	self.observer = Observer()
-        	self.observer.schedule(self.event_handler, self.path, recursive=True)
-        	self.observer.start()
-        	try:
-        		while True:
-        			time.sleep(1)
-        	except KeyboardInterrupt:
-        		self.observer.stop()
-        		self.observer.join()
+            #self.logging.basicConfig(level=logging.INFO,format='%(asctime)s - %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
+            self.path = sys.argv[1] if len(sys.argv) > 1 else os.getcwd()
+            self.event_handler = ChangeHandler(self)
+            self.observer = Observer()
+            self.observer.schedule(self.event_handler, self.path, recursive=True)
+            self.observer.start()
+            try:
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                self.observer.stop()
+                self.observer.join()
 
     def start_thread(self):
         t = Thread(target=self.do_job)
@@ -121,22 +121,22 @@ class TwistedClientApp():
     def notify(self,textevent):
         textevent1 = "4$#" + user + "@" + user_os + ": " + str(textevent)
         #textevent = "4$#" + textevent
-        self.connection.write(str(textevent1))
+        self.connection.write(str(textevent1).encode('utf-8'))
     def random_generator(self, size=6, chars=string.ascii_uppercase + string.digits):
         return ''.join(random.choice(chars) for x in range(size))
     def do_job(self):
         sleep(2)
-        print "doing job..."
+        print ("doing job...")
         file_names = ["key{}".format(i) for i in range(100)]
 
-        for i in range(1000):
-            print "=========================Job number {}================\n".format(i+1)
-            file_name = file_names[randint(0,100)]
+        for i in range(3):
+            print ("=========================Job number {}================\n".format(i+1))
+            file_name = file_names[randint(0,99)]
             op = randint(0,1)
             if op:
                 self.notify(file_name+":read:")
             else:
-                content = self.random_generator(1024)
+                content = self.random_generator(6)
                 self.notify(file_name+":write:"+content)
                 #read operation
 
@@ -145,5 +145,5 @@ class TwistedClientApp():
 
 
 if __name__ == '__main__':
-	t =  TwistedClientApp()
-	t.connect_start()
+    t =  TwistedClientApp()
+    t.connect_start()

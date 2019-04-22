@@ -32,7 +32,7 @@ class EchoProtocol(protocol.Protocol):
         properties = json.load(open("client_config.json"))
         local_id = properties["local_datacenter"]
         cli = Client(properties, local_id)
-        print("\n ATATTA :{}\n".format(int(proc)), proc.isdigit())
+        #print("\n ATATTA :{}\n".format((proc)), proc.isdigit())
         if (proc.isdigit() and int((proc))==2):
             response = self.factory.app.handle_message(data)
             if response:
@@ -40,11 +40,10 @@ class EchoProtocol(protocol.Protocol):
         elif (proc.isdigit() and int(str(proc))==4):
             #handle read and write first
             msg = str(data).split("$#")[1]
-            print("\n MSGATAT:", msg)
             file_name = msg.split(":")[1]
             op = msg.split(":")[2]
             content = ""
-            print("\n ATATA {}\n".format(op))
+            #print("\n ATATA {}\n".format(op))
             if op == "write":
                 print ("Got write request for file {}".format(file_name))
                 content = msg.split(":")[2]
@@ -104,12 +103,12 @@ class EchoFactory(protocol.Factory):
     def sendTo(self,obj,data):
         i = j = 0
         pos = 0
-        print (data)
+        #print (data)
         data = data.replace(" ","")
         d1 = data.split("8$#")[1]
-        print (d1)
+        #print (d1)
         d2 = d1.split("##")[0]
-        print (d2)
+        #print (d2)
         forward_msg_to = []
         d3 = d1.split("##")[1]
         for scan_ip in self.clients:

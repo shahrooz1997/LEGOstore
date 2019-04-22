@@ -127,13 +127,11 @@ class TwistedClientApp():
     def do_job(self):
         sleep(2)
         print "doing job..."
-        file_names = ["file{}.job".format(i) for i in range(10)]
-        for file_name in file_names:
-            content = self.random_generator(1024)
-            self.notify(file_name+":write:"+content)
-        for i in range(10):
+        file_names = ["key{}".format(i) for i in range(100)]
+
+        for i in range(1000):
             print "=========================Job number {}================\n".format(i+1)
-            file_name = file_names[randint(0,9)]
+            file_name = file_names[randint(0,100)]
             op = randint(0,1)
             if op:
                 self.notify(file_name+":read:")

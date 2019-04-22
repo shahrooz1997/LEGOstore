@@ -1,8 +1,16 @@
 from twisted.internet import reactor
 from twisted.internet import protocol
-
+from Client import *
+import json
 clients = []
-
+PyShareLogFile = open("PyShareLogFile.log","w")
+import signal
+import sys
+def signal_handler(sig, frame):
+        print('You pressed Ctrl+C!')
+        PyShareLogFile.close()
+        sys.exit(0)
+signal.signal(signal.SIGINT, signal_handler)
 class EchoProtocol(protocol.Protocol):
     def connectionMade( self ):
         self.factory.numProtocols = self.factory.numProtocols+1
@@ -21,6 +29,9 @@ class EchoProtocol(protocol.Protocol):
 
     def dataReceived(self, data):
         proc = data.split("$#")[0]
+        properties = json.load(open("client_config.json"))
+        local_id = properties["local_datacenter"]
+        cli = Client(properties, local_id)
         if (int(proc)==2):
             response = self.factory.app.handle_message(data)
             if response:
@@ -35,11 +46,20 @@ class EchoProtocol(protocol.Protocol):
                 print "Got write request for file {}".format(file_name)
                 content = msg.split(":")[2]
                 #Do PUT to prototype
+                _ , get_req_time = cli.get(file_name)
+
                 #DO GET to protoype
+                _ , put_req_time = cli.put(file_name, content)
+                PyShareLofgFile.write("write:" + str(get_req_time)+ ":" + str(put_req_time) + '\n')
+                
+                
             elif op == "read":
                 print "Got read request for file {}".format(file_name)
-                #DO read to prototype and put it in the $content
+                #DO read to prototype and put it in the $contenti
+                content, re_time = cli.get(file_name)
+                PyShareLofgFile.write("read:" + str(re_time)+ '\n')
                 data = data + content
+                
 
             response = self.factory.sendAll(self.factory.app.handle_message(data))
         elif (int(proc)==5):
@@ -58,6 +78,12 @@ class EchoFactory(protocol.Factory):
     def __init__(self, app):
         self.app = app
         #self.obj = obj
+        self.logfile = open("pysharelogfile.log", "w")
+
+    def getLogFile(self):
+        return self.logfile
+    def closeLogFile(self):
+        self.logfile.close()
     def addClient(self, obj,newclient):
         self.clients.append( newclient )
         self.clientss.append(obj)

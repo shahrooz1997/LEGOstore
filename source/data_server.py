@@ -20,6 +20,13 @@ import psutil
 ENC_SCHM = "latin-1"
 DELIMITER = "+:--:+"
 
+try:
+    if sys.argv[1] == 'GC':
+        GC = True
+    print("GC enabled")
+except Exception as e:
+    GC = False
+    print("no GC")
 
 import signal
 
@@ -29,6 +36,8 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
+
+
 
 
 
@@ -62,7 +71,7 @@ class DataServer:
 
         self.encoding_scheme = "latin-1"
         
-        self.GC = True
+        self.GC = GC
 
         if self.GC:
             threading.Thread(target=self.garbage_collector_thread,

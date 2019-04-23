@@ -41,7 +41,7 @@ signal.signal(signal.SIGINT, signal_handler)
 
 
 
-def thread_cpu_mem_info(period=600):
+def thread_cpu_mem_info(period=60):
     while True:
         time.sleep(period)
         mem_util = psutil.virtual_memory()._asdict()["percent"]
@@ -185,7 +185,7 @@ class DataServer:
 
     def garbage_collector_thread(self, cache, lock, period=600):
         while True:
-            time.sleep(6)
+            time.sleep(period)
             lock.acquire_write()
             print("garbage_collecting...")
             list_of_keys = [i for i in cache.keys() if ':' not in i]

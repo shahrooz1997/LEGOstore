@@ -32,7 +32,7 @@ signal.signal(signal.SIGINT, signal_handler)
 
 
 
-def thread_cpu_mem_info(period=60):
+def thread_cpu_mem_info(period=600):
     while True:
         time.sleep(period)
         mem_util = psutil.virtual_memory()._asdict()["percent"]

@@ -21,6 +21,17 @@ ENC_SCHM = "latin-1"
 DELIMITER = "+:--:+"
 
 
+import signal
+
+def signal_handler(sig, frame):
+    print('You pressed Ctrl+C!')
+    json.dump(CAS_Server.timeorder_log, open("timeorder.json","w"), indent=4)
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+
+
+
 def thread_cpu_mem_info(period=60):
     while True:
         time.sleep(period)

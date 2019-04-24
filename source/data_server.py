@@ -196,6 +196,7 @@ class DataServer:
                     latest_versions.append(key + ":" + latest_fin)
             for key in cache.keys():
                 if '-' in key and key not in latest_versions:
+                    print("deleting all version")
                     del cache[key]
             print("end garbage_collecting...")
             lock.release_write()

@@ -8,7 +8,11 @@
 import threading
 
 class CAS_Server:
-    
+
+    # file to log server times
+    latency_breakdown = open("CAS_breakdown_server.log", "w")
+
+
     #version ordererd
     timeorder_log = {}
     
@@ -63,10 +67,13 @@ class CAS_Server:
     @staticmethod
     def get_timestamp(key, cache, persistent, lock):
         lock.acquire_read()
+        _b_time = time.time()
         data = cache.get(key)
-
+        CAS_Server.latency_breakdown.write("get-timestamp-cache:{}\n".format(time.time() - _b_time))
         if not data:
+            _b_time = time.time()
             data = persistent.get(key)
+            CAS_Server.latency_breakdown.write("get-timestamp-persistant:{}\n".format(time.time() - _b_time))
 
         #Redundant code. Get rid of this if here.
         if not data:
@@ -103,13 +110,17 @@ class CAS_Server:
     @staticmethod
     def insert_data(key, value, timestamp, label, cache, persistent):
         # Verify once more if anyone else has insterted the key value in between
+        _b_time = time.time()
         if cache.get(key+timestamp):
             return
 
         current_storage = cache
         data = cache.get(key)
+        CAS_Server.latency_breakdown.write("put-cache:{}\n".format(time.time() - _b_time))
         if not data:
+            _b_time = time.time()
             data = persistent.get(key)
+            CAS_Server.latency_breakdown.write("put-persistant:{}\n".format(time.time() - _b_time))
             current_storage = persistent
     
         if not data[0]:

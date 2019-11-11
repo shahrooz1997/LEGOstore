@@ -19,6 +19,8 @@ import logging
 
 
 class CAS_Client(ProtocolInterface):
+    # file to log client latency breakdown
+    latency_breakdown = open("CAS_latency_breakdown_client.log" , "a")
     def __init__(self, properties, local_datacenter_id, data_center, client_id):
         self.timeout_per_request = int(properties["timeout_per_request"])
         ##########################
@@ -277,7 +279,8 @@ class CAS_Client(ProtocolInterface):
         q4_dc_list = placement["Q4"]
         k = placement["k"]
         m = placement["m"]
-
+        
+        
         # Step1 : Concurrently encode while getting the latest timestamp from the servers
         codes = []
         thread_list = []
@@ -307,6 +310,7 @@ class CAS_Client(ProtocolInterface):
             try:
                 # Unlike in ABD, here it returns the current timestamp
                 start_time = time.time()
+                _b_time = time.time()
                 timestamp, socket_times = self.get_timestamp(key, q2_dc_list)
                 timestamp = Timestamp.increment_timestamp(timestamp, self.id)
                 end_time = time.time()
@@ -315,6 +319,7 @@ class CAS_Client(ProtocolInterface):
                 max_socket_time = max(socket_times)
                 delta_time = int((end_time - start_time)*1000)
                 q1_time = delta_time - max_socket_time
+                CAS_Client.latency_breakdown.write("put-phase1:{}\n".format(time.time() - _b_time))
                 self.latency_log.write("put:Q1:" + str(q1_time) + "\n")
                 self.lock_latency_log.release()
             except Exception as e:
@@ -323,6 +328,10 @@ class CAS_Client(ProtocolInterface):
 
         # Wait for erasure coding to finish
         erasure_coding_thread.join()
+
+
+
+        _b_time = time.time()
 
         # Step2 : Send the message with codes
         sem = threading.Barrier(len(q2_dc_list) + 1, timeout=self.timeout)
@@ -365,6 +374,7 @@ class CAS_Client(ProtocolInterface):
         delta_time = int((end_time - start_time)*1000)
         q2_time = delta_time - max_socket_time
         self.latency_log.write("put:Q2:" + str(q2_time) + "\n")
+        CAS_Client.latency_breakdown.write("put-phase2:{}\n".format(time.time() - _b_time))
         self.lock_latency_log.release()
         # Removing barrier for all the waiting threads
         sem.abort()
@@ -375,6 +385,9 @@ class CAS_Client(ProtocolInterface):
             return {"status": "TimeOut", "message": "Timeout during put code call of Viceck_1"}
 
         lock.release()
+
+
+        _b_time = time.time()
 
         # Step3: Send the fin label to all servers
         output = []
@@ -423,6 +436,8 @@ class CAS_Client(ProtocolInterface):
             request_time = q2_time + q3_time
         else:
             request_time = q1_time + q2_time + q3_time
+        
+        CAS_Client.latency_breakdown.write("put-phase3:{}\n".format(time.time() - _b_time))
 
         return {"status": "OK", "timestamp": timestamp}, request_time
 
@@ -472,7 +487,7 @@ class CAS_Client(ProtocolInterface):
 
 
     def decode(self, chunk_list, m, k):
-
+        _b_time = time.time()
         assert(m > k)
         ec_driver = ECDriver(k=k, m=m, ec_type=self.ec_type)
         start_time = time.time()
@@ -487,17 +502,20 @@ class CAS_Client(ProtocolInterface):
         delta_time = int((end_time - start_time)*1000)
         self.coding_log.write("decode:" + str(delta_time) + "\n")
         self.lock_coding_log.release()
+
+        CAS_Client.latency_breakdown.write("decode:{}\n".format(time.time() - _b_time))
         return decoded_data
 
 
     def encode(self, value, codes, m, k):
-
+        _b_time = time.time()
         assert(m > k)
         ec_driver = ECDriver(k=k, m=m, ec_type=self.ec_type)
         # Updated for viveck
         start_time = time.time()
         if k == 1:
             codes.extend([value]*m)
+            CAS_Client.latency_breakdown.write("encode:{}\n".format(time.time() - _b_time))
             return codes
 
         codes.extend(ec_driver.encode(value.encode(self.encoding_byte)))
@@ -510,6 +528,7 @@ class CAS_Client(ProtocolInterface):
         delta_time = int((end_time - start_time)*1000)
         self.coding_log.write("encode:" + str(delta_time) + "\n")
         self.lock_coding_log.release()
+        CAS_Client.latency_breakdown.write("encode:{}\n".format(time.time() - _b_time))
         return
 
     #TODO: TEST WHEN DEPLOYED IF NEEDED
@@ -549,7 +568,7 @@ class CAS_Client(ProtocolInterface):
 
 
     def get(self, key, placement):
-
+        _b_time = time.time()
         q1_dc_list = placement["Q1"]
         q4_dc_list = placement["Q4"]
         m = placement["m"]
@@ -567,6 +586,7 @@ class CAS_Client(ProtocolInterface):
             delta_time = int((end_time - start_time)*1000)
             q1_time = delta_time - max_socket_time
             self.latency_log.write("get:Q1:" + str(q1_time) + "\n")
+            CAS_Client.latency_breakdown.write("get-phase1:{}\n".format(time.time() - _b_time))
             self.lock_latency_log.release()
         except Exception as e:
             return {"status": "TimeOut", "message": "Timeout during get timestamp call of Viveck"}
@@ -575,6 +595,9 @@ class CAS_Client(ProtocolInterface):
 
         sem = threading.Barrier(len(q4_dc_list) + 1, timeout=self.timeout)
         lock = threading.Lock()
+
+
+        _b_time = time.time()
 
         # Step2: Get the encoded value
         index = 0
@@ -614,6 +637,7 @@ class CAS_Client(ProtocolInterface):
         delta_time = int((end_time - start_time)*1000)
         q4_time = delta_time - max_socket_time
         self.latency_log.write("get:Q4:" + str(q4_time) + "\n")
+        CAS_Client.latency_breakdown.write("get-phase2:{}\n".format(time.time() - _b_time))
         self.lock_latency_log.release()
         sem.abort()
 

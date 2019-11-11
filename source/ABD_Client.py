@@ -18,6 +18,9 @@ import logging
 
 # TODO: INCOPERATE THE CLASS FOR EACH CALL AS DATASERVER WILL BE NEEDING IT
 class ABD_Client(ProtocolInterface):
+   
+    # file to log client latency breakdown
+    latency_breakdown = open("ABD_latency_breakdown_client.log" , "a")
 
     def __init__(self, properties, local_datacenter_id, data_center, client_id):
 
@@ -94,7 +97,6 @@ class ABD_Client(ProtocolInterface):
     def _get_timestamp(self, key, sem, server, output, socket_times,  lock, delay=0):
       #  print("timestamp time: " + str(delay))
       #  time.sleep(float(delay) * 0.001)
-
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         start_time = time.time()
         sock.connect((server["host"], int(server["port"])))
@@ -282,6 +284,7 @@ class ABD_Client(ProtocolInterface):
         # @ Raises Exception in case of timeout or socket error
         ######################
 
+        _b_time = time.time()
         thread_list = []
 
         q1_dc_list = placement["Q1"]
@@ -327,7 +330,8 @@ class ABD_Client(ProtocolInterface):
         ##################################################################
         
 
-
+        ABD_Client.latency_breakdown.write("put-phase1:{}\n".format(time.time() - _b_time))
+        _b_time = time.time()
         # Step2 : Send the message to put
         sem = threading.Barrier(len(q2_dc_list) + 1, timeout=self.timeout)
         lock = threading.Lock()
@@ -382,6 +386,7 @@ class ABD_Client(ProtocolInterface):
             request_time = q2_time
         else:
             request_time = q1_time + q2_time
+        ABD_Client.latency_breakdown.write("put-phase2:{}\n".format(time.time() - _b_time))
         return {"status": "OK", "timestamp": timestamp}, request_time
 
 
@@ -432,6 +437,7 @@ class ABD_Client(ProtocolInterface):
 
 
     def get(self, key, placement):
+        _b_time = time.time()
         ######################
         # API call for ABD Get:
         # @ Returns the dict with {
@@ -493,19 +499,20 @@ class ABD_Client(ProtocolInterface):
         #####
         q1_time = delta_time - max_socket_time
         #####
+        ABD_Client.latency_breakdown.write("get-phase1:{}\n".format(time.time() - _b_time))
         self.latency_log.write("get:Q1:" + str(q1_time) + "\n")
         self.lock_latency_log.release()
         value, timestamp = self.get_final_value(output)
         lock.release()
        
-        if self.is_all_timestamps_the_same(output, len(q1_dc_list)):
-            return {"status": "OK", "value":value}, q1_time
+        #if self.is_all_timestamps_the_same(output, len(q1_dc_list)):
+        #    return {"status": "OK", "value":value}, q1_time
         
         dcs_highest_timestamp = self.dcs_with_highest_timestamp(output, timestamp)
         q2_dc_list = list( set(q2_dc_list) - set(dcs_highest_timestamp) )
         #TODO: check if all timestamp recived is the same ==> then no need to do phase 2
 
-
+        _b_time = time.time()
 
         #XXX: need to change this condition
         #if timestamp == "0":
@@ -542,6 +549,7 @@ class ABD_Client(ProtocolInterface):
         max_socket_time = max(socket_times)
         q2_time = delta_time - max_socket_time
         self.latency_log.write("get:Q2:" + str(q2_time)+ "\n")
+        ABD_Client.latency_breakdown.write("get-phase2:{}\n".format(time.time() - _b_time))
         self.lock_latency_log.release()
 
         sem.abort()

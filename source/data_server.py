@@ -14,11 +14,30 @@ from garbage_collector import garbage_collector
 from persistent import Persistent
 #from viveck_1_server import Viveck_1Server
 from CAS_Server import CAS_Server
-
+import signal
 import psutil
+
+
+
+
 
 ENC_SCHM = "latin-1"
 DELIMITER = "+:--:+"
+
+
+def signal_handler(sif, frame):
+    print('closing files....')
+    CAS_Server.latency_breakdown.close()
+    ABD_Server.latency_breakdown.close()
+    print('files closes! bye...')
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+
+
+
+
+
 
 
 def thread_cpu_mem_info(period=60):
@@ -239,12 +258,12 @@ def test(data_server):
 if __name__ == "__main__":
 
     # For purpose of testing the whole code
-    socket_port = [10000]
-    db_list = ["db.temp"]
+    #socket_port = [10000]
+    #db_list = ["db.temp"]
 
     #local testing only 
-    #socket_port = [10000,10001,10002,10003,10004,10005,10006,10007,10008]
-    #db_list = ["db1.temp","db2.temp","db3.temp","db4.temp","db5.temp","db6.temp","db7.temp","db8.temp","db9.temp"]
+    socket_port = [10000,10001,10002,10003,10004,10005,10006,10007,10008]
+    db_list = ["db1.temp","db2.temp","db3.temp","db4.temp","db5.temp","db6.temp","db7.temp","db8.temp","db9.temp"]
     os.system("rm util.log")
     threading.Thread(target= thread_cpu_mem_info, args=()).start()
     

@@ -6,7 +6,7 @@ git checkout v4.5.1
 echo "Compiling RocksDB... This will take a while."
 make shared_lib -j 2
 sudo make install-shared INSTALL_PATH=/usr
-sudo apt install python3-pip
+sudo apt install python3-pip -y
 pip3 install pyrocksdb
 cd
 git clone https://github.com/amitdev/lru-dict.git
@@ -23,3 +23,4 @@ sudo sh -c "echo '/usr/local/lib' >> /etc/ld.so.conf"
 sudo ldconfig
 sudo pip3 install numpy
 sudo pip3 install python3-logstash
+sudo pip3 install psutil

@@ -10,7 +10,7 @@ import threading
 class CAS_Server:
 
     # file to log server times
-    latency_breakdown = open("CAS_breakdown_server.log", "w")
+    latency_breakdown = open("CAS_latency_breakdown_server.log", "w")
 
 
     #version ordererd

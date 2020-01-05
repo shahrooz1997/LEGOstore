@@ -5,20 +5,20 @@
  */
 
 /* 
- * File:   ABD.cpp
- * Author: 
+ * File:   CASClient.cpp
+ * Author: shahrooz
  * 
- * Created on January 4, 2020, 9:45 PM
+ * Created on January 4, 2020, 11:35 PM
  */
 
-#include "ABD.h"
+#include "CASClient.h"
 
-ABD::ABD() {
+CASClient::CASClient() {
 }
 
-ABD::ABD(const ABD& orig) {
+CASClient::CASClient(const CASClient& orig) {
 }
 
-ABD::~ABD() {
+CASClient::~CASClient() {
 }
 

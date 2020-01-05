@@ -5,23 +5,23 @@
  */
 
 /* 
- * File:   CAS.h
+ * File:   ABDClient.h
  * Author: shahrooz
  *
- * Created on January 4, 2020, 9:46 PM
+ * Created on January 4, 2020, 11:34 PM
  */
 
-#ifndef CAS_H
-#define CAS_H
+#ifndef ABDCLIENT_H
+#define ABDCLIENT_H
 
-class CAS {
+class ABDClient {
 public:
-    CAS();
-    CAS(const CAS& orig);
-    virtual ~CAS();
+    ABDClient();
+    ABDClient(const ABDClient& orig);
+    virtual ~ABDClient();
 private:
 
 };
 
-#endif /* CAS_H */
+#endif /* ABDCLIENT_H */
 

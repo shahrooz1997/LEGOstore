@@ -5,20 +5,20 @@
  */
 
 /* 
- * File:   CAS.cpp
+ * File:   CASServer.cpp
  * Author: shahrooz
  * 
- * Created on January 4, 2020, 9:46 PM
+ * Created on January 4, 2020, 11:35 PM
  */
 
-#include "CAS.h"
+#include "CASServer.h"
 
-CAS::CAS() {
+CASServer::CASServer() {
 }
 
-CAS::CAS(const CAS& orig) {
+CASServer::CASServer(const CASServer& orig) {
 }
 
-CAS::~CAS() {
+CASServer::~CASServer() {
 }
 

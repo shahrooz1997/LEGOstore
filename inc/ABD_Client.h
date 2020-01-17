@@ -5,23 +5,23 @@
  */
 
 /* 
- * File:   ABDServer.h
+ * File:   ABDClient.h
  * Author: shahrooz
  *
- * Created on January 4, 2020, 11:35 PM
+ * Created on January 4, 2020, 11:34 PM
  */
 
-#ifndef ABDSERVER_H
-#define ABDSERVER_H
+#ifndef ABD_Client_H
+#define ABD_Client_H
 
-class ABDServer {
+class ABD_Client {
 public:
-    ABDServer();
-    ABDServer(const ABDServer& orig);
-    virtual ~ABDServer();
+    ABD_Client();
+    ABD_Client(const ABD_Client& orig);
+    virtual ~ABD_Client();
 private:
 
 };
 
-#endif /* ABDSERVER_H */
+#endif /* ABDCLIENT_H */
 

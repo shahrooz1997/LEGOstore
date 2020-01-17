@@ -5,20 +5,20 @@
  */
 
 /* 
- * File:   CASClient.cpp
+ * File:   CAS_Client.cpp
  * Author: shahrooz
  * 
  * Created on January 4, 2020, 11:35 PM
  */
 
-#include "CASClient.h"
+#include "CAS_Client.h"
 
-CASClient::CASClient() {
+CAS_Client::CAS_Client() {
 }
 
-CASClient::CASClient(const CASClient& orig) {
+CAS_Client::CAS_Client(const CAS_Client& orig) {
 }
 
-CASClient::~CASClient() {
+CAS_Client::~CAS_Client() {
 }
 

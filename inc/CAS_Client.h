@@ -5,23 +5,23 @@
  */
 
 /* 
- * File:   CASClient.h
+ * File:   CAS_Client.h
  * Author: shahrooz
  *
  * Created on January 4, 2020, 11:35 PM
  */
 
-#ifndef CASCLIENT_H
-#define CASCLIENT_H
+#ifndef CAS_Client_H
+#define CAS_Client_H
 
-class CASClient {
+class CAS_Client {
 public:
-    CASClient();
-    CASClient(const CASClient& orig);
-    virtual ~CASClient();
+    CAS_Client();
+    CAS_Client(const CAS_Client& orig);
+    virtual ~CAS_Client();
 private:
 
 };
 
-#endif /* CASCLIENT_H */
+#endif /* CAS_Client_H */
 

@@ -5,20 +5,20 @@
  */
 
 /* 
- * File:   CASServer.cpp
+ * File:   ABD_Server.cpp
  * Author: shahrooz
  * 
  * Created on January 4, 2020, 11:35 PM
  */
 
-#include "CASServer.h"
+#include "ABD_Server.h"
 
-CASServer::CASServer() {
+ABD_Server::ABD_Server() {
 }
 
-CASServer::CASServer(const CASServer& orig) {
+ABD_Server::ABD_Server(const ABD_Server& orig) {
 }
 
-CASServer::~CASServer() {
+ABD_Server::~ABD_Server() {
 }
 

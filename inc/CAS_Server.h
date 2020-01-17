@@ -5,20 +5,23 @@
  */
 
 /* 
- * File:   ABDServer.cpp
+ * File:   CAS_Server.h
  * Author: shahrooz
- * 
+ *
  * Created on January 4, 2020, 11:35 PM
  */
 
-#include "ABDServer.h"
+#ifndef CAS_Server_H
+#define CAS_Server_H
 
-ABDServer::ABDServer() {
-}
+class CAS_Server {
+public:
+    CAS_Server();
+    CAS_Server(const CAS_Server& orig);
+    virtual ~CAS_Server();
+private:
 
-ABDServer::ABDServer(const ABDServer& orig) {
-}
+};
 
-ABDServer::~ABDServer() {
-}
+#endif /* CAS_Server_H */
 

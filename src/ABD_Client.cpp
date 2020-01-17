@@ -5,20 +5,20 @@
  */
 
 /* 
- * File:   ABDClient.cpp
+ * File:   ABD_Client.cpp
  * Author: shahrooz
  * 
  * Created on January 4, 2020, 11:34 PM
  */
 
-#include "ABDClient.h"
+#include "ABD_Client.h"
 
-ABDClient::ABDClient() {
+ABD_Client::ABD_Client() {
 }
 
-ABDClient::ABDClient(const ABDClient& orig) {
+ABD_Client::ABD_Client(const ABD_Client& orig) {
 }
 
-ABDClient::~ABDClient() {
+ABD_Client::~ABD_Client() {
 }
 

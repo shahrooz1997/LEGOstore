@@ -5,23 +5,20 @@
  */
 
 /* 
- * File:   CASServer.h
+ * File:   CAS_Server.cpp
  * Author: shahrooz
- *
+ * 
  * Created on January 4, 2020, 11:35 PM
  */
 
-#ifndef CASSERVER_H
-#define CASSERVER_H
+#include "CAS_Server.h"
 
-class CASServer {
-public:
-    CASServer();
-    CASServer(const CASServer& orig);
-    virtual ~CASServer();
-private:
+CAS_Server::CAS_Server() {
+}
 
-};
+CAS_Server::CAS_Server(const CAS_Server& orig) {
+}
 
-#endif /* CASSERVER_H */
+CAS_Server::~CAS_Server() {
+}
 

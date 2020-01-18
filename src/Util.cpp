@@ -19,14 +19,6 @@ bool DEBUG_CAS_Server = false;
 bool DEBUG_ABD_Server = false;
 
 
-// ToDo: ask Nader if we should have some default values
-// Default values is defined due to the default config file.
-uint32_t local_datacenter_id = 1;
-uint32_t retry_attempts = 1;
-uint32_t metadata_server_timeout = 120;
-uint32_t timeout_per_request = 120;
-uint32_t duration = 20;
-
 JSON_Reader::JSON_Reader() {
 }
 

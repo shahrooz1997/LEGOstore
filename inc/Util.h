@@ -44,7 +44,7 @@ struct Server{
     uint32_t                id;
     uint32_t                ip;
     uint16_t                port;
-    
+    DC*                     datacenter;
 };
 
 struct Placement{ // For ABD, you can use just the first portion of this struct.
@@ -66,13 +66,15 @@ struct Group{
     Placement*              placement_p;
 };
 
-// ToDo: must talk to Nader to see if local_datacenter_id is needed!
-// ToDo: ask Nader if these attributes must be shared among clients!
-extern uint32_t local_datacenter_id;
-extern uint32_t retry_attempts;
-extern uint32_t metadata_server_timeout;
-extern uint32_t timeout_per_request;
-extern uint32_t duration;
+struct Properties{
+    uint32_t                local_datacenter_id;
+    std::vector <DC*>       datacenters;
+    std::vector <Group*>    groups;
+    uint32_t                retry_attempts;
+    uint32_t                metadata_server_timeout;
+    uint32_t                timeout_per_request;
+    uint32_t                duration;
+};
 
 class JSON_Reader {
 public:

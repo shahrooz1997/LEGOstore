@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -std=c++11 -Iinc
-LDFLAGS = -lm
+LDFLAGS = -lm -lpthread
 
 src = $(wildcard src/*.cpp)
 obj= $(patsubst src/%.cpp, obj/%.o, $(src)) #obj_t = $(src:src=obj)

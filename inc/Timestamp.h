@@ -21,11 +21,12 @@
 
 class Timestamp {
 public:
-    Timestamp(uint32_t client_id);
+    Timestamp(uint32_t client_id, uint32_t time = 0);
     std::string get_string();
-    Timestamp& max_timestamp(std::vector<Timestamp*>& v);
     Timestamp increase_timestamp(const Timestamp& timestamp, const uint32_t client_id);
     virtual ~Timestamp();
+    
+    static Timestamp& max_timestamp(std::vector<Timestamp*>& v);
 
 private:
 	uint32_t time;

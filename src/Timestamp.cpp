@@ -13,9 +13,9 @@
 
 #include "Timestamp.h"
 
-Timestamp::Timestamp(uint32_t client_id){
+Timestamp::Timestamp(uint32_t client_id, uint32_t time){
 	this->client_id = client_id;
-	time = 0;
+	this->time = time;
 }
 
 std::string Timestamp::get_string(){

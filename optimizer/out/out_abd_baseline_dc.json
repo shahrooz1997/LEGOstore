@@ -1,0 +1,29 @@
+{
+  "output": [
+    {
+      "id": 0,
+      "protocol": "abd",
+      "m": 5,
+      "selected_dcs": [
+        0,
+        2,
+        4,
+        5,
+        8
+      ],
+      "get_cost": 0.16364620800000002,
+      "put_cost": 0.00424743552,
+      "storage_cost": 1.971232876712328e-06,
+      "vm_cost": 0.9160000000000003,
+      "total_cost": 1.083895614752877,
+      "get_latency": 528.18,
+      "put_latency": 528.18
+    }
+  ],
+  "overall_cost": 1.083895614752877,
+  "get_cost": 0.16364620800000002,
+  "put_cost": 0.00424743552,
+  "storage_cost": 1.971232876712328e-06,
+  "vm_cost": 0.9160000000000003,
+  "time_period_hrs": 1.0
+}

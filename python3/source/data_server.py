@@ -237,14 +237,17 @@ def test(data_server):
 
 
 if __name__ == "__main__":
-
+    
+    LOCAL = True
+    
     # For purpose of testing the whole code
     socket_port = [10000]
     db_list = ["db.temp"]
 
     #local testing only 
-    #socket_port = [10000,10001,10002,10003,10004,10005,10006,10007,10008]
-    #db_list = ["db1.temp","db2.temp","db3.temp","db4.temp","db5.temp","db6.temp","db7.temp","db8.temp","db9.temp"]
+    if LOCAL:
+        socket_port = [10000,10001,10002,10003,10004,10005,10006,10007,10008]
+        db_list = ["db1.temp","db2.temp","db3.temp","db4.temp","db5.temp","db6.temp","db7.temp","db8.temp","db9.temp"]
     os.system("rm util.log")
     threading.Thread(target= thread_cpu_mem_info, args=()).start()
     

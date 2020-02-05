@@ -34,6 +34,12 @@ class single_group:
       self.time_to_decode       = time_to_decode
 
 if __name__ == "__main__":
+
+    if len(sys.argv) != 2:
+        print("USAGE: python3 generate_input.py <path>")
+        exit(1)
+    
+    filename = sys.argv[1]
    
     availability_target  = 2 
     client_dist          = [0.9, 0.025, 0.025, 0.0, 0.0, 0.0, 0.0, 0.025, 0.025]    

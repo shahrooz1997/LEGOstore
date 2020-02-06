@@ -12,13 +12,22 @@ from cache import Cache
 from ABD_Server import ABD_Server
 from garbage_collector import garbage_collector
 from persistent import Persistent
-#from viveck_1_server import Viveck_1Server
 from CAS_Server import CAS_Server
-
+import signal
 import psutil
+import constants
+from utils import *
 
-ENC_SCHM = "latin-1"
-DELIMITER = "+:--:+"
+
+
+
+def signal_handler(sig, frame):
+    print("closing server...")
+    print('Saving timeorder log...')
+    json.dump(CAS_Server.timeorder_log, open("timeorder.json","w"), indent=4)
+    print('goodbye!')
+    sys.exit(0)
+
 
 
 def thread_cpu_mem_info(period=60):
@@ -37,9 +46,6 @@ class DataServer:
         else:
             self.sock = sock
 
-        # TODO: Remove this once the testing is done
-        #self.sock.bind(('0.0.0.0', 10000))
-
         # Max can handles 2048 connections at one time, can increase it if required
         self.sock.listen(20048)
         # Change cache size here if you want. Ideally there should be a config for it
@@ -49,7 +55,7 @@ class DataServer:
         self.lock = ReadWriteLock()
         self.enable_garbage_collector = enable_garbage_collector
 
-        self.encoding_scheme = "latin-1"
+        self.encoding_scheme = ENC_SCHM
 
 
 
@@ -167,7 +173,6 @@ def recv_msg(sock):
 
 
 def recvall(sock, n):
-#    fragments = []
     data = b''
     while len(data) < n:
         packet = sock.recv(n - len(data))
@@ -175,29 +180,16 @@ def recvall(sock, n):
             return None
         data += packet
     return data
-#    while True:
-#        chunck = sock.recv(6400)
-#        print("reched chinch is :" + str(chunck))
-#        if not chunck:
-#            break
-#        fragments.append(chunck)
-#
-#    print("reached the final point================================>")
-#    return b''.join(fragments)
 
 def server_connection(connection, dataserver):
-    #data = recvall(connection)
-    #data = connection.recv(6400)
     data = recv_msg(connection)
-
-    
     if not data:
-        connection.sendall(json.dumps({"status": "failure", "message": "No data Found"}).encode("latin-1"))
+        connection.sendall(json.dumps({"status": "failure", "message": "No data Found"}).encode(ENC_SCHM))
     try:
-        data = data.decode("latin-1")
+        data = data.decode(ENC_SCHM)
         data_list = data.split("+:--:+")
     except Exception as e:
-        connection.sendall(json.dumps({"status": "failure", "message": "sevre1: unable to parse data:" + str(e)}).encode("latin-1"))
+        connection.sendall(json.dumps({"status": "failure", "message": "server1: unable to parse data:" + str(e)}).encode(ENC_SCHM))
         connection.close()
         return
 
@@ -220,7 +212,7 @@ def server_connection(connection, dataserver):
             output = dataserver.put_fin(data_list[1],data_list[2],data_list[3])
             connection.sendall(json.dumps(output).encode(ENC_SCHM))
         elif method:
-            connection.sendall("MethodNotFound: Unknown method is called".encode("latin-1"))
+            connection.sendall("MethodNotFound: Unknown method is called".encode(ENC_SCHM))
     except socket.error:
         pass
 
@@ -238,6 +230,7 @@ def test(data_server):
 
 if __name__ == "__main__":
     
+    signal.signal(signal.SIGINT, signal_handler)
     LOCAL = True
     
     # For purpose of testing the whole code

@@ -21,7 +21,6 @@ class Client:
         ''' Setting up basic properties of the server
         '''
 
-
         self.local_datacenter = properties["local_datacenter"]
         self.groups = properties["groups"]
         self.datacenter_list = properties["datacenters"]

@@ -10,7 +10,7 @@ sudo apt install python3-pip
 pip3 install pyrocksdb
 cd
 git clone https://github.com/amitdev/lru-dict.git
-cp EC_bacheli/source/lru.c lru-dict/.
+cp ~/legostore/python3/source/lru.c lru-dict/.
 cd lru-dict
 sudo python3 setup.py install
 cd

@@ -18,6 +18,11 @@ Timestamp::Timestamp(uint32_t client_id, uint32_t time){
 	this->time = time;
 }
 
+Timestamp::Timestamp(const Timestamp &t){
+    this->time = t.time;
+    this->client_id = t.client_id;
+}
+
 std::string Timestamp::get_string(){
 	return std::to_string(time) + '-' + std::to_string(client_id);
 }

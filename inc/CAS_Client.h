@@ -46,6 +46,10 @@ public:
     
     Timestamp get_timestamp(uint32_t key);
     
+    uint32_t put(uint32_t key, std::string value, Placement &p, bool insert = false);
+    
+    void encode(); // you need to add its inputs
+    
 private:
     uint32_t id;
     uint32_t data_center;

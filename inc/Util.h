@@ -17,6 +17,12 @@
 #include <vector>
 #include <string>
 #include <ctime>
+#include <cassert>
+
+
+// Define error values
+#define S_OK 0
+
 
 extern bool DEBUG_CAS_Client;
 extern bool DEBUG_ABD_Client;

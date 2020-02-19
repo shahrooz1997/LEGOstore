@@ -36,6 +36,7 @@
 #include <mutex>
 #include <condition_variable>
 #include "Timestamp.h"
+#include <erasurecode.h>
 
 class CAS_Client {
 public:
@@ -44,11 +45,9 @@ public:
     CAS_Client(const CAS_Client& orig) = delete;
     virtual ~CAS_Client();
     
-    Timestamp get_timestamp(uint32_t key);
+    Timestamp* get_timestamp(uint32_t key);
     
     uint32_t put(uint32_t key, std::string value, Placement &p, bool insert = false);
-    
-    void encode(); // you need to add its inputs
     
 private:
     uint32_t id;
@@ -71,6 +70,8 @@ private:
 //                    std::string current_class, std::vector<Timestamp*> *tss);
 //    
 //    static int send_msg(int sock, const std::string &data);
+    
+//    int encode(const std::string &data, std::vector <std::string*> &chunks, struct ec_args * const args);
 
 };
 

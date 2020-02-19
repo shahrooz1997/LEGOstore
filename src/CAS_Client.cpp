@@ -15,6 +15,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <regex>
 
 //ToDo: what is data_center???? Do we need this thing?
 CAS_Client::CAS_Client(Properties &prop, uint32_t local_datacenter_id,
@@ -105,14 +106,14 @@ void _get_timestamp(uint32_t key, std::mutex *mutex,
     return;
 }
 
-Timestamp CAS_Client::get_timestamp(uint32_t key){
+Timestamp* CAS_Client::get_timestamp(uint32_t key){
     
     uint32_t counter = 0;
     std::mutex mtx;
     std::condition_variable cv;
     std::vector<std::thread*> threads;
     std::vector<Timestamp*> tss;
-    Timestamp *ret = nulptr;
+    Timestamp *ret = nullptr;
     
     for(std::vector<DC*>::iterator it = this->prop.datacenters.begin();
             it != this->prop.datacenters.end(); it++){
@@ -128,14 +129,14 @@ Timestamp CAS_Client::get_timestamp(uint32_t key){
     lock.unlock();
     
     ret = new Timestamp(Timestamp::max_timestamp(tss));
-    for(std::vector<Timestamp*>::iterator it = tss.begin(); it != tss.end(); tss++){
+    for(std::vector<Timestamp*>::iterator it = tss.begin(); it != tss.end(); it++){
         delete *it;
     }
     
     return ret;
 }
 
-void _put(uint32_t key, std::string value, std::mutex *mutex,
+void _put(uint32_t key, std::string *value, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter,
                     Server *server, Timestamp* timestamp,
                     std::string current_class){
@@ -165,7 +166,7 @@ void _put(uint32_t key, std::string value, std::mutex *mutex,
         "{\n"\
             "\t\"method\": put\n"\
             "\t\"key\": \""+ std::to_string(key) + "\"\n"\
-            "\t\"value\": \""+ value + "\"\n"\
+            "\t\"value\": \""+ (*value) + "\"\n"\
             "\t\"timestamp\": \""+ timestamp->get_string() + "\"\n"\
             "\t\"class\": \"" + current_class + "\"\n"\
         "}";
@@ -238,12 +239,67 @@ void _put_fin(uint32_t key, std::mutex *mutex,
     
 }
 
-uint32_t CAS_Client::put(uint32_t key, std::string value, Placement &p, bool insert = false){
+void encode(const std::string * const data, std::vector <std::string*> *chunks,
+                        struct ec_args * const args){
     
-    // ToDo: Do the encoding with another thread
-    pthread_t encoder;
-    encoder = pthread_create();
-    Timestamp *timestamp = nulptr;
+    int rc = 0;
+    int desc = -1;
+    int orig_data_size = 1024 * 1024;
+    char *orig_data = NULL;
+    char **encoded_data = NULL, **encoded_parity = NULL;
+    uint64_t encoded_fragment_len = 0;
+
+    desc = liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, args);
+
+    if (-EBACKENDNOTAVAIL == desc) {
+        fprintf(stderr, "Backend library not available!\n");
+        return;
+    } else if ((args->k + args->m) > EC_MAX_FRAGMENTS) {
+        assert(-EINVALIDPARAMS == desc);
+        return;
+    } else
+        assert(desc > 0);
+
+//    orig_data = create_buffer(orig_data_size, 'x');
+    orig_data = (char*) data->c_str();
+    assert(orig_data != NULL);
+    rc = liberasurecode_encode(desc, orig_data, data->size(),
+            &encoded_data, &encoded_parity, &encoded_fragment_len);
+    assert(0 == rc); // ToDo: Add a lot of crash handler...
+    
+    for (int i = 0; i < args->k + args->m; i++)
+    {
+        int cmp_size = -1;
+        char *data_ptr = NULL;
+        char *frag = NULL;
+
+        frag = (i < args->k) ? encoded_data[i] : encoded_parity[i - args->k];
+        assert(frag != NULL);
+        
+        chunks->push_back(new std::string(frag, encoded_fragment_len));
+        
+    }
+    
+    rc = liberasurecode_encode_cleanup(desc, encoded_data, encoded_parity);
+    assert(rc == 0);
+
+    assert(0 == liberasurecode_instance_destroy(desc));
+    
+    return;
+}
+
+uint32_t CAS_Client::put(uint32_t key, std::string value, Placement &p, bool insert){
+    
+    std::vector <std::string*> chunks;
+    struct ec_args null_args;
+    null_args.k = p.k;
+    null_args.m = p.m - p.k;
+    null_args.w = 16; // ToDo: what must it be?
+    null_args.ct = CHKSUM_NONE;
+    
+    std::thread encoder(encode, &value, &chunks, &null_args);
+    
+    Timestamp *timestamp = nullptr;
     
     
     if(insert){ // This is a new key
@@ -254,7 +310,7 @@ uint32_t CAS_Client::put(uint32_t key, std::string value, Placement &p, bool ins
     }
     
     // ToDo: join the encoder thread
-    
+    encoder.join();
     
     uint32_t counter = 0;
     std::mutex mtx;
@@ -265,7 +321,7 @@ uint32_t CAS_Client::put(uint32_t key, std::string value, Placement &p, bool ins
     int i = 0;
     for(std::vector<DC*>::iterator it = p.Q2.begin();
             it != p.Q2.end(); it++){
-        std::thread th(_put, key, chunk[i], &mtx, &cv, &counter,
+        std::thread th(_put, key, (chunks[i]), &mtx, &cv, &counter,
                 (*it)->servers[0], timestamp, this->current_class);
         threads.push_back(&th);
         i++;
@@ -283,25 +339,22 @@ uint32_t CAS_Client::put(uint32_t key, std::string value, Placement &p, bool ins
     threads.clear(); // ToDo: Do we need this?
     for(std::vector<DC*>::iterator it = p.Q3.begin();
             it != p.Q3.end(); it++){
-        std::thread th(_put, key, &mtx, &cv, &counter,
+        std::thread th(_put_fin, key, &mtx, &cv, &counter,
                 (*it)->servers[0], timestamp, this->current_class);
         threads.push_back(&th);
         i++;
     }
     
-    std::unique_lock<std::mutex> lock(mtx);
-    while(counter < p.Q3.size()){
-        cv.wait(lock);
+    for(int i = 0; i < chunks.size(); i++){
+        delete chunks[i];
     }
-    lock.unlock();
+    
+    std::unique_lock<std::mutex> lock2(mtx);
+    while(counter < p.Q3.size()){
+        cv.wait(lock2);
+    }
+    lock2.unlock();
     
     return S_OK;
 }
 
-void* CAS_Client::encode(void*){
-    std::vector<std::string> *ret = new std::vector<std::string>;
-    
-    // implement the encoding and put each chunk in the ret vector
-    
-    return (void*)ret;
-}

@@ -21,7 +21,8 @@
 
 
 // Define error values
-#define S_OK 0
+#define S_OK                    0
+#define GENERAL_ERASURE_ERROR   -101
 
 
 extern bool DEBUG_CAS_Client;

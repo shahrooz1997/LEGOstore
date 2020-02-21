@@ -17,7 +17,7 @@ LEGOStore: $(obj)
 
 # Create object files
 $(obj): obj/%.o: src/%.cpp
-	$(CXX) -c $(CXXFLAGS) $< -o $@
+	$(CXX) -Linc/ -c $(CXXFLAGS) $< -o $@
 
 # For testing purposes
 ABD: obj src/ABD.cpp

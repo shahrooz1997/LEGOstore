@@ -21,10 +21,14 @@
 CAS_Client::CAS_Client(Properties &prop, uint32_t local_datacenter_id,
         uint32_t data_center, uint32_t client_id) {
     
-    timeout_per_request = 0; //ToDo: must be set by properties         self.timeout_per_request = int(properties["timeout_per_request"])
-
+    timeout_per_request = 0;
+    //TODO: must be set by properties
+    //self.timeout_per_request = int(properties["timeout_per_request"])
+    //TODO: set by properties
     ec_type = "liberasurecode_rs_vand";
-    uint32_t timeout = 0; //ToDo: must be set by properties         self.timeout_per_request = int(properties["timeout_per_request"])
+    uint32_t timeout = 0;
+    //TODO: must be set by properties
+    //self.timeout_per_request = int(properties["timeout_per_request"])
     this->data_center = data_center;
     this->id = client_id;
     this->local_datacenter_id = local_datacenter_id;
@@ -86,11 +90,11 @@ void _get_timestamp(uint32_t key, std::mutex *mutex,
     
     send_msg(sock, data);
     
-//    sock.settimeout(self.timeout_per_request)
+    // sock.settimeout(self.timeout_per_request)
 
     uint8_t buf[640000];
     read(sock, buf, 640000);
-//    sock.close();
+    // sock.close();
     
     // make client_id and time regarding the received message
     uint32_t client_id_ts;
@@ -173,11 +177,11 @@ void _put(uint32_t key, std::string *value, std::mutex *mutex,
     
     send_msg(sock, data);
     
-//    sock.settimeout(self.timeout_per_request)
+    // sock.settimeout(self.timeout_per_request)
 
     uint8_t buf[640000];
     read(sock, buf, 640000);
-//    sock.close();
+    // sock.close();
     
     
     std::unique_lock<std::mutex> lock(*mutex);
@@ -224,11 +228,11 @@ void _put_fin(uint32_t key, std::mutex *mutex,
     
     send_msg(sock, data);
     
-//    sock.settimeout(self.timeout_per_request)
+    // sock.settimeout(self.timeout_per_request)
 
     uint8_t buf[640000];
     read(sock, buf, 640000);
-//    sock.close();
+    // sock.close();
     
     
     std::unique_lock<std::mutex> lock(*mutex);
@@ -260,7 +264,7 @@ void encode(const std::string * const data, std::vector <std::string*> *chunks,
     } else
         assert(desc > 0);
 
-//    orig_data = create_buffer(orig_data_size, 'x');
+    // orig_data = create_buffer(orig_data_size, 'x');
     orig_data = (char*) data->c_str();
     assert(orig_data != NULL);
     rc = liberasurecode_encode(desc, orig_data, data->size(),
@@ -294,7 +298,8 @@ uint32_t CAS_Client::put(uint32_t key, std::string value, Placement &p, bool ins
     struct ec_args null_args;
     null_args.k = p.k;
     null_args.m = p.m - p.k;
-    null_args.w = 16; // ToDo: what must it be?
+    //TODO: set window to what?
+    null_args.w = 16; 
     null_args.ct = CHKSUM_NONE;
     
     std::thread encoder(encode, &value, &chunks, &null_args);
@@ -309,7 +314,7 @@ uint32_t CAS_Client::put(uint32_t key, std::string value, Placement &p, bool ins
         timestamp = this->get_timestamp(key);
     }
     
-    // ToDo: join the encoder thread
+    // TODO: join the encoder thread
     encoder.join();
     
     uint32_t counter = 0;

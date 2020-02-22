@@ -141,12 +141,15 @@ void _put(uint32_t key, std::string *value, std::mutex *mutex,
                     Server *server, Timestamp* timestamp,
                     std::string current_class){
     
+    DPRINTF(DEBUG_CAS_Client, "started.\n");
+    
     int sock = 0; 
     struct sockaddr_in serv_addr;
     if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){ 
         printf("\n Socket creation error \n"); 
         return; 
     }
+    
     serv_addr.sin_family = AF_INET; 
     serv_addr.sin_port = htons(server->port);
     in_addr ip_in_addr;
@@ -157,10 +160,13 @@ void _put(uint32_t key, std::string *value, std::mutex *mutex,
         return; 
     } 
    
-    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){ 
-        printf("\nConnection Failed \n"); 
-        return; 
-    }
+    
+    //ToDo: take care of connect by putting a timeout over it
+//    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){ 
+//        printf("\nConnection Failed \n"); 
+//        return; 
+//    }
+
     
     std::string data =
         "{\n"\
@@ -171,19 +177,22 @@ void _put(uint32_t key, std::string *value, std::mutex *mutex,
             "\t\"class\": \"" + current_class + "\"\n"\
         "}";
     
-    send_msg(sock, data);
     
-//    sock.settimeout(self.timeout_per_request)
+    // ToDo: test these functions
+//    send_msg(sock, data);
+    
+//    sock.settimeout(this->timeout_per_request);
 
-    uint8_t buf[640000];
-    read(sock, buf, 640000);
+//    uint8_t buf[640000];
+//    read(sock, buf, 640000);
 //    sock.close();
-    
     
     std::unique_lock<std::mutex> lock(*mutex);
     (*counter)++;
     cv->notify_one();
-
+    
+    DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
+    
     return;
     
 }
@@ -192,6 +201,8 @@ void _put_fin(uint32_t key, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter,
                     Server *server, Timestamp* timestamp,
                     std::string current_class){
+    
+    DPRINTF(DEBUG_CAS_Client, "started.\n");
     
     int sock = 0; 
     struct sockaddr_in serv_addr;
@@ -209,10 +220,12 @@ void _put_fin(uint32_t key, std::mutex *mutex,
         return; 
     } 
    
-    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){ 
-        printf("\nConnection Failed \n"); 
-        return; 
-    }
+    
+    //ToDo:
+//    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){ 
+//        printf("\nConnection Failed \n"); 
+//        return; 
+//    }
     
     std::string data =
         "{\n"\
@@ -222,21 +235,24 @@ void _put_fin(uint32_t key, std::mutex *mutex,
             "\t\"class\": \"" + current_class + "\"\n"\
         "}";
     
-    send_msg(sock, data);
+
+    //ToDo:
+//    send_msg(sock, data);
     
 //    sock.settimeout(self.timeout_per_request)
 
-    uint8_t buf[640000];
-    read(sock, buf, 640000);
+//    uint8_t buf[640000];
+//    read(sock, buf, 640000);
 //    sock.close();
     
     
     std::unique_lock<std::mutex> lock(*mutex);
     (*counter)++;
     cv->notify_one();
-
-    return;
     
+    DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
+    
+    return;
 }
 
 void encode(const std::string * const data, std::vector <std::string*> *chunks,
@@ -312,18 +328,25 @@ uint32_t CAS_Client::put(uint32_t key, std::string value, Placement &p, bool ins
     // ToDo: join the encoder thread
     encoder.join();
     
+    printf("encoder done\n");
+    
     uint32_t counter = 0;
     std::mutex mtx;
     std::condition_variable cv;
-    std::vector<std::thread*> threads;
+//    std::vector<std::thread*> threads;
+    
+    printf("size: %d\n", p.Q2.size());
     
     // prewrite
     int i = 0;
+    
     for(std::vector<DC*>::iterator it = p.Q2.begin();
             it != p.Q2.end(); it++){
-        std::thread th(_put, key, (chunks[i]), &mtx, &cv, &counter,
+        std::thread th(_put, key, chunks[i], &mtx, &cv, &counter,
                 (*it)->servers[0], timestamp, this->current_class);
-        threads.push_back(&th);
+        th.detach();
+//        printf("one created\n");
+//        threads.push_back(&th);
         i++;
     }
     
@@ -333,16 +356,15 @@ uint32_t CAS_Client::put(uint32_t key, std::string value, Placement &p, bool ins
     }
     lock.unlock();
     
-    
     // fin tag
     counter = 0;
-    threads.clear(); // ToDo: Do we need this?
+//    threads.clear(); // ToDo: Do we need this?
     for(std::vector<DC*>::iterator it = p.Q3.begin();
             it != p.Q3.end(); it++){
         std::thread th(_put_fin, key, &mtx, &cv, &counter,
                 (*it)->servers[0], timestamp, this->current_class);
-        threads.push_back(&th);
-        i++;
+        th.detach();
+//        threads.push_back(&th);
     }
     
     for(int i = 0; i < chunks.size(); i++){

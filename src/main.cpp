@@ -206,7 +206,11 @@ int main(int argc, char** argv) {
     p.timeout_per_request = 120;
     p.metadata_server_timeout = 120;
     
+    
+    
     CAS_Client c1(p, p.local_datacenter_id, 0, 1);
+    
+    printf("aaaaaa\n");
     
     Placement placement;
     placement.protocol = "CAS";
@@ -226,6 +230,8 @@ int main(int argc, char** argv) {
     placement.Q4.push_back(dcs[2]);
     placement.Q4.push_back(dcs[3]);
     placement.Q4.push_back(dcs[4]);
+    
+    printf("bbbbbb\n");
     
     
     c1.put(0, "VALUE0", placement, true);

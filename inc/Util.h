@@ -24,6 +24,8 @@
 #define S_OK                    0
 #define GENERAL_ERASURE_ERROR   -101
 
+#define DEVELOPMENT
+
 
 extern bool DEBUG_CAS_Client;
 extern bool DEBUG_ABD_Client;
@@ -36,7 +38,7 @@ extern bool DEBUG_ABD_Server;
 
 #define DPRINTF(flag, fmt, ...) \
 	if(flag) \
-        fprintf(stdout, "Time %10li : [%s][%s]%d: " fmt, time(nullptr), __FILE__, __func__, __LINE__, ##__VA_ARGS__);
+        fprintf(stdout, "Time %10li - Thread: %lu : [%s][%s]%d: " fmt, time(nullptr), pthread_self(), __FILE__, __func__, __LINE__, ##__VA_ARGS__);
 
 struct Server;
 

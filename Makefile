@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++11 -Iinc
+CXXFLAGS = -std=c++11 -Iinc -g
 LDFLAGS = -lm -lpthread -lerasurecode -ldl
 
 src = $(wildcard src/*.cpp)

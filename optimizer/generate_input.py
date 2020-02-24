@@ -51,7 +51,7 @@ if __name__ == "__main__":
     ABS_PATH = FILES_PATH + FILE_DESCRIP
     delta = 50
     start = 200
-    end   = 10000
+    end   = 1000
     input_groups = vary_arrival_rate(_init_group,delta, start, end)
     json.dump({"input_groups": input_groups}, open(ABS_PATH,"w"), indent=4)
     # reset property
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     FILE_DESCRIP = 'skewed_double_HW_object_size.json'
     print(FILE_DESCRIP + "...START")
     ABS_PATH = FILES_PATH + FILE_DESCRIP
-    delta = 100 
+    delta = 1000
     start = 1
     end   = 100000
     input_groups = vary_object_size(_init_group,delta, start, end)
@@ -78,8 +78,8 @@ if __name__ == "__main__":
     FILE_DESCRIP = 'skewed_double_HW_object_count.json'
     print(FILE_DESCRIP + "...START")
     ABS_PATH = FILES_PATH + FILE_DESCRIP
-    delta = 500 
-    start = 500
+    delta = 10000 
+    start = 1
     end   = 1000000
     input_groups = vary_object_count(_init_group,delta, start, end)
     json.dump({"input_groups": input_groups}, open(ABS_PATH,"w"), indent=4)

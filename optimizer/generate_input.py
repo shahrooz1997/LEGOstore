@@ -16,7 +16,7 @@ if __name__ == "__main__":
     
     # initial settings for a group
     availability_target  = 2 
-    client_dist          = [0.45, 0.025, 0.025, 0.0, 0.0, 0.0, 0.45, 0.025, 0.025]
+    client_dist          = [1/9 for _ in range(9)]
     object_size          = 0.000001
     metadata_size        = 0.000000001
     num_objects          = 1000000
@@ -28,6 +28,8 @@ if __name__ == "__main__":
     duration             = 3600
     time_to_decode       = 0.00028
 
+
+    PRE_FILENAME = 'uniform_HW'
 
     _init_group = single_group(
                   availability_target,
@@ -45,8 +47,9 @@ if __name__ == "__main__":
 
 
 
+
     ############
-    FILE_DESCRIP = 'skewed_double_HW_arrival_rate.json'
+    FILE_DESCRIP = PRE_FILENAME + '_arrival_rate.json'
     print(FILE_DESCRIP + "...START")
     ABS_PATH = FILES_PATH + FILE_DESCRIP
     delta = 50
@@ -62,7 +65,7 @@ if __name__ == "__main__":
     # object size here is in bytes
     # conversion to GB is done in method
     ############
-    FILE_DESCRIP = 'skewed_double_HW_object_size.json'
+    FILE_DESCRIP = PRE_FILENAME + '_object_size.json'
     print(FILE_DESCRIP + "...START")
     ABS_PATH = FILES_PATH + FILE_DESCRIP
     delta = 1000
@@ -75,7 +78,7 @@ if __name__ == "__main__":
     ############
     print(FILE_DESCRIP + "...DONE")
     ############
-    FILE_DESCRIP = 'skewed_double_HW_object_count.json'
+    FILE_DESCRIP = PRE_FILENAME + '_object_count.json'
     print(FILE_DESCRIP + "...START")
     ABS_PATH = FILES_PATH + FILE_DESCRIP
     delta = 10000 

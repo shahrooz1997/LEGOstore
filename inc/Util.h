@@ -94,5 +94,8 @@ private:
 
 };
 
+
+std::string convert_ip_to_string(uint32_t ip);
+
 #endif /* UTIL_H */
 

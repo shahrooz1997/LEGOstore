@@ -11,6 +11,8 @@
  * Created on January 18, 2020, 5:18 PM
  */
 
+#include <netinet/in.h>
+
 #include "Util.h"
 
 
@@ -33,3 +35,14 @@ JSON_Reader::JSON_Reader() {
 JSON_Reader::~JSON_Reader() {
 }
 
+std::string convert_ip_to_string(uint32_t ip){
+    ip = htonl(ip);
+    unsigned char *p = (unsigned char*)(&ip);
+    std::string ret;
+    for(int i = 0; i < 4; i++){
+        ret += std::to_string(*(p++));
+        if(i != 3)
+            ret += '.';
+    }
+    return ret;
+}

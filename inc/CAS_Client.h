@@ -45,9 +45,10 @@ public:
     CAS_Client(const CAS_Client& orig) = delete;
     virtual ~CAS_Client();
     
-    Timestamp* get_timestamp(uint32_t key);
+    Timestamp* get_timestamp(std::string *key);
     
-    uint32_t put(uint32_t key, std::string value, Placement &p, bool insert = false);
+    uint32_t put(std::string key, std::string value, Placement &p, bool insert = false);
+    uint32_t get(std::string key, std::string &value, Placement &p);
     
 private:
     uint32_t id;

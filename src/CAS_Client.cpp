@@ -25,10 +25,14 @@
 CAS_Client::CAS_Client(Properties &prop, uint32_t local_datacenter_id,
         uint32_t data_center, uint32_t client_id) {
     
-    timeout_per_request = 0; //ToDo: must be set by properties         self.timeout_per_request = int(properties["timeout_per_request"])
-
+    timeout_per_request = 0;
+    //TODO: must be set by properties
+    //self.timeout_per_request = int(properties["timeout_per_request"])
+    //TODO: set by properties
     ec_type = "liberasurecode_rs_vand";
-    uint32_t timeout = 0; //ToDo: must be set by properties         self.timeout_per_request = int(properties["timeout_per_request"])
+    uint32_t timeout = 0;
+    //TODO: must be set by properties
+    //self.timeout_per_request = int(properties["timeout_per_request"])
     this->data_center = data_center;
     this->id = client_id;
     this->local_datacenter_id = local_datacenter_id;
@@ -97,7 +101,7 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
     
     send_msg(sock, data);
     
-//    sock.settimeout(self.timeout_per_request)
+    // sock.settimeout(self.timeout_per_request)
 
     uint8_t buf[640000];
     int buf_size = read(sock, buf, 640000);
@@ -107,6 +111,7 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
 //    }
 //    printf("\n\n");
 //    sock.close();
+
     
     std::string tmp((const char*)buf, buf_size);
     
@@ -237,12 +242,12 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
     // ToDo: test these functions
     send_msg(sock, data);
     
-//    sock.settimeout(this->timeout_per_request);
+    // sock.settimeout(self.timeout_per_request)
 
     // ToDo: read the status of server
     uint8_t buf[640000];
     read(sock, buf, 640000);
-//    sock.close();
+    // sock.close();
     
     std::unique_lock<std::mutex> lock(*mutex);
     (*counter)++;
@@ -302,12 +307,12 @@ void _put_fin(std::string *key, std::mutex *mutex,
     //ToDo:
     send_msg(sock, data);
     
-//    sock.settimeout(self.timeout_per_request)
+    // sock.settimeout(self.timeout_per_request)
 
     // ToDo: read the status returned by the server
     uint8_t buf[640000];
     read(sock, buf, 640000);
-//    sock.close();
+    // sock.close();
     
     
     std::unique_lock<std::mutex> lock(*mutex);
@@ -544,7 +549,8 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
     struct ec_args null_args;
     null_args.k = p.k;
     null_args.m = p.m - p.k;
-    null_args.w = 16; // ToDo: what must it be?
+    //TODO: set window to what?
+    null_args.w = 16; 
     null_args.ct = CHKSUM_NONE;
     
     std::thread encoder(encode, &value, &chunks, &null_args);
@@ -558,6 +564,7 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
     else{
         timestamp = this->get_timestamp(&key);
     }
+    
     // Join the encoder thread
     encoder.join();
     

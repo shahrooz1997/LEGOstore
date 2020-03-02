@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -std=c++11 -Iinc -g `pkg-config --cflags protobuf`
-LDFLAGS = -lm -lrocksdb -Llib -lpthread -ldl `pkg-config --libs protobuf`
+LDFLAGS = -lm -lerasurecode -lrocksdb -Llib -lpthread -ldl `pkg-config --libs protobuf`
 
 
 src = $(wildcard src/*.cpp)

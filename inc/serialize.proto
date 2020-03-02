@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package packet;
+
+message msg{
+	repeated string value = 1;	
+}
+
+

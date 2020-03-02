@@ -93,38 +93,47 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
 //            "\tclass: \"" + current_class + "\"\n"\
 //        "}";
     
-    std::string data = "get_timestamp";
-    data += "+:--:+";
-    data += *key;
-    data += "+:--:+";
-    data += current_class;
+//    std::string data = "get_timestamp";
+//    data += "+:--:+";
+//    data += *key;
+//    data += "+:--:+";
+//    data += current_class;
     
-    send_msg(sock, data);
+    valueVec data;
+    data.push_back("get_timestamp");
+    data.push_back(*key);
+    data.push_back(current_class);
+    DataTransfer().sendMsg(sock, data);
+    
+//    send_msg(sock, data);
     
     // sock.settimeout(self.timeout_per_request)
 
-    uint8_t buf[640000];
-    int buf_size = read(sock, buf, 640000);
+//    uint8_t buf[640000];
+//    int buf_size = read(sock, buf, 640000);
 //    printf("shahrooz:\n");
 //    for(int i = 0; i < buf_size; i++){
 //        printf("%c", buf[i]);
 //    }
 //    printf("\n\n");
 //    sock.close();
+    
+    data.clear();
+    DataTransfer().recvMsg(sock, data); // data must have the timestamp.
 
     
-    std::string tmp((const char*)buf, buf_size);
+//    std::string tmp((const char*)buf, buf_size);
+//    
+//    std::size_t pos = tmp.find("timestamp");
+//    pos = tmp.find(":", pos);
+//    std::size_t start_index = tmp.find("\"", pos);
+//    if(start_index == std::string::npos){
+//        return;
+//    }
+//    start_index++;
+//    std::size_t end_index = tmp.find("\"", start_index);
     
-    std::size_t pos = tmp.find("timestamp");
-    pos = tmp.find(":", pos);
-    std::size_t start_index = tmp.find("\"", pos);
-    if(start_index == std::string::npos){
-        return;
-    }
-    start_index++;
-    std::size_t end_index = tmp.find("\"", start_index);
-    
-    std::string timestamp_str = tmp.substr(start_index, end_index - start_index);
+    std::string timestamp_str = data[0]; // tmp.substr(start_index, end_index - start_index);
     
     std::size_t dash_pos = timestamp_str.find("-");
     
@@ -229,25 +238,37 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
 //            "\t\"class\": \"" + current_class + "\"\n"\
 //        "}";
     
-    std::string data = "put+:--:+";
-    data += *key;
-    data += "+:--:+";
-    data += *value;
-    data += "+:--:+";
-    data += timestamp->get_string();
-    data += "+:--:+";
-    data += "Viveck_1";
+//    std::string data = "put+:--:+";
+//    data += *key;
+//    data += "+:--:+";
+//    data += *value;
+//    data += "+:--:+";
+//    data += timestamp->get_string();
+//    data += "+:--:+";
+//    data += "Viveck_1";
+    
+    valueVec data;
+    data.push_back("put");
+    data.push_back(*key);
+    data.push_back(*value);
+    data.push_back(timestamp->get_string());
+    data.push_back(current_class);
+    DataTransfer().sendMsg(sock, data);
     
     
     // ToDo: test these functions
-    send_msg(sock, data);
+//    send_msg(sock, data);
     
     // sock.settimeout(self.timeout_per_request)
 
     // ToDo: read the status of server
-    uint8_t buf[640000];
-    read(sock, buf, 640000);
+//    uint8_t buf[640000];
+//    read(sock, buf, 640000);
     // sock.close();
+    
+    data.clear();
+    DataTransfer().recvMsg(sock, data);
+    // Todo: read the data vector
     
     std::unique_lock<std::mutex> lock(*mutex);
     (*counter)++;
@@ -297,22 +318,33 @@ void _put_fin(std::string *key, std::mutex *mutex,
 //            "\t\"class\": \"" + current_class + "\"\n"\
 //        "}";
     
-    std::string data = "put_fin+:--:+";
-    data += *key;
-    data += "+:--:+";
-    data += timestamp->get_string();
-    data += "+:--:+";
-    data += current_class;
+//    std::string data = "put_fin+:--:+";
+//    data += *key;
+//    data += "+:--:+";
+//    data += timestamp->get_string();
+//    data += "+:--:+";
+//    data += current_class;
 
     //ToDo:
-    send_msg(sock, data);
+//    send_msg(sock, data);
+    
+    
+    valueVec data;
+    data.push_back("put_fin");
+    data.push_back(*key);
+    data.push_back(timestamp->get_string());
+    data.push_back(current_class);
+    DataTransfer().sendMsg(sock, data);
     
     // sock.settimeout(self.timeout_per_request)
 
     // ToDo: read the status returned by the server
-    uint8_t buf[640000];
-    read(sock, buf, 640000);
+//    uint8_t buf[640000];
+//    read(sock, buf, 640000);
     // sock.close();
+    
+    data.clear();
+    DataTransfer().recvMsg(sock, data);
     
     
     std::unique_lock<std::mutex> lock(*mutex);
@@ -658,23 +690,23 @@ void _get(std::string *key, std::vector<std::string*> *chunks, std::mutex *mutex
 //            "\t\"value_required: \"" + "True" + "\"\n"\
 //        "}";
     
-    std::string data = "get+:--:+";
-    data += *key;
-    data += "+:--:+";
-    data += timestamp->get_string();
-    data += "+:--:+";
-    data += "Viveck_1";
-    data += "+:--:+";
-    data += "True";
+//    std::string data = "get+:--:+";
+//    data += *key;
+//    data += "+:--:+";
+//    data += timestamp->get_string();
+//    data += "+:--:+";
+//    data += "Viveck_1";
+//    data += "+:--:+";
+//    data += "True";
     
     
     // ToDo: test these functions
-    send_msg(sock, data);
+//    send_msg(sock, data);
     
 //    sock.settimeout(this->timeout_per_request);
 
-    uint8_t buf[640000];
-    int buf_size = read(sock, buf, 640000);
+//    uint8_t buf[640000];
+//    int buf_size = read(sock, buf, 640000);
 //    printf("shahrooz:\n");
 //    for(int i = 0; i < buf_size; i++){
 //        printf("%c", buf[i]);
@@ -685,11 +717,30 @@ void _get(std::string *key, std::vector<std::string*> *chunks, std::mutex *mutex
 //    return;
     
     
+    valueVec data;
+    data.push_back("get");
+    data.push_back(*key);
+    data.push_back(timestamp->get_string());
+    data.push_back(current_class);
+    data.push_back("True");
+    DataTransfer().sendMsg(sock, data);
     
-    std::string tmp((const char*)buf, buf_size);
+    // sock.settimeout(self.timeout_per_request)
+
+    // ToDo: read the status returned by the server
+//    uint8_t buf[640000];
+//    read(sock, buf, 640000);
+    // sock.close();
     
-    std::size_t pos = tmp.find("+:--:+");
-    pos = tmp.find("+", pos + 2) + 1;
+    data.clear();
+    DataTransfer().recvMsg(sock, data);
+    std::string data_portion = data[1];
+    
+    
+//    std::string tmp((const char*)buf, buf_size);
+//    
+//    std::size_t pos = tmp.find("+:--:+");
+//    pos = tmp.find("+", pos + 2) + 1;
 //    std::size_t start_index = tmp.find("\"", pos);
 //    if(start_index == std::string::npos){
 //        return;
@@ -697,7 +748,7 @@ void _get(std::string *key, std::vector<std::string*> *chunks, std::mutex *mutex
 //    start_index++;
 //    std::size_t end_index = tmp.find("\"", start_index);
     
-    std::string data_portion = tmp.substr(pos);
+//    std::string data_portion = tmp.substr(pos);
     
 //    std::size_t dash_pos = timestamp_str.find("-");
     

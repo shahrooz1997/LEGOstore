@@ -37,6 +37,7 @@
 #include <condition_variable>
 #include "Timestamp.h"
 #include <erasurecode.h>
+#include "Data_Transfer.h"
 
 class CAS_Client {
 public:

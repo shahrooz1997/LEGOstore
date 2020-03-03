@@ -47,6 +47,7 @@ strVec CAS_Server::get_timestamp(string &key, Cache &cache, Persistent &persiste
 strVec CAS_Server::put(string &key, string &value, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
 	std::lock_guard<std::mutex> lock(lock_t);
+	std::cout<<"put function timestamp " << timestamp <<std::endl;
 	insert_data(key, value, timestamp, false, cache, persistent);
 	return {"OK"};
 }
@@ -58,6 +59,27 @@ strVec CAS_Server::put_fin(string &key, string &timestamp, Cache &cache, Persist
 	return {"OK"};
 }
 
+//TODO:: check, I removed the last param "required_value"
+strVec CAS_Server::get(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
+
+	std::unique_lock<std::mutex> lock(lock_t);
+
+	bool fnd = cache.exists(key);
+	if(!fnd){
+		fnd = persistent.exists(key);
+		if(!fnd){
+			insert_data(key, std::string(), timestamp, true, cache, persistent);
+			return {"OK", "None"};
+		}
+		strVec data = persistent.get(key);
+		// Put back in cache
+		cache.put(key, data);
+		cache.put(key, {timestamp});
+		return {"OK", data[0]};
+	}		
+	
+	return {"OK", (*cache.get(key))[0]};
+}
 
 //Add client ID
 void CAS_Server::insert_data(string &key,const string &val, string &timestamp, bool label, Cache &cache, Persistent &persistent){
@@ -81,6 +103,7 @@ void CAS_Server::insert_data(string &key,const string &val, string &timestamp, b
 		return;
 	}
 
+	std::cout<<"timestamp " << timestamp << " not found , so writing it!!" << std::endl;
 	int _label = label? 1:0;
 	std::vector<string> value{val, std::to_string(_label)};
 
@@ -119,4 +142,3 @@ void CAS_Server::insert_data(string &key,const string &val, string &timestamp, b
 
 }
 
- 

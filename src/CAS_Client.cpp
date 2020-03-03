@@ -36,7 +36,7 @@ CAS_Client::CAS_Client(Properties &prop, uint32_t local_datacenter_id,
     this->data_center = data_center;
     this->id = client_id;
     this->local_datacenter_id = local_datacenter_id;
-    current_class = "Viveck_1"; //"CAS";
+    current_class = "CAS";
     encoding_byte = "latin-1";
     this->prop = prop;
 }
@@ -253,11 +253,11 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
     data.push_back(*value);
     data.push_back(timestamp->get_string());
     data.push_back(current_class);
-    DataTransfer().sendMsg(sock, data);
+    //DataTransfer().sendMsg(sock, data);
     
     
     // ToDo: test these functions
-//    send_msg(sock, data);
+	 send_msg(sock, "testing!!!");
     
     // sock.settimeout(self.timeout_per_request)
 
@@ -269,12 +269,18 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
     data.clear();
     DataTransfer().recvMsg(sock, data);
     // Todo: read the data vector
-    
+    printf("server output in _put\n");
+    for(int i = 0; i < data.size(); i++){
+        printf("%s\n", data[i].c_str());
+    }
+    printf("\n\n");
+
+ 
     std::unique_lock<std::mutex> lock(*mutex);
     (*counter)++;
     cv->notify_one();
     
-    DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
+    DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %uh\n", server->port);
     
     return;
     
@@ -609,6 +615,7 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
     
     for(std::vector<DC*>::iterator it = p.Q2.begin();
             it != p.Q2.end(); it++){
+	printf("The port is: %uh", (*it)->servers[0]->port);
         std::thread th(_put, &key, chunks[i], &mtx, &cv, &counter,
                 (*it)->servers[0], timestamp, this->current_class);
         th.detach();
@@ -722,7 +729,7 @@ void _get(std::string *key, std::vector<std::string*> *chunks, std::mutex *mutex
     data.push_back(*key);
     data.push_back(timestamp->get_string());
     data.push_back(current_class);
-    data.push_back("True");
+    //data.push_back("True");
     DataTransfer().sendMsg(sock, data);
     
     // sock.settimeout(self.timeout_per_request)

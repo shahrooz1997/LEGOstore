@@ -6,13 +6,11 @@
 #include <sys/socket.h>
 #include <netdb.h>	// for addrinfo struct def
 #include <unistd.h>  // for open/close pair
-#include "Serialize.h"
 #include "Data_Transfer.h"
 #include <functional>
 
 #define BACKLOG 10
 
-std::mutex lock;
 
 class DataServer{
 
@@ -58,10 +56,18 @@ public:
 		}
 	}
 
+	valueVec get(std::string &key, std::string &timestamp, std::string &curr_class){
+		
+		if(curr_class == "CAS"){
+			return CAS.get(key, timestamp, cache, persistent, lock);
+		}else if(curr_class == "ABD"){
+
+		}
+	}
 private:
 
 	int sockfd;
-	//std::mutex lock;
+	std::mutex lock;
 	Cache cache;
 	Persistent persistent;
 	CAS_Server CAS;
@@ -144,7 +150,7 @@ void server_connection(int connection, DataServer &dataserver){
 	if(method == "put"){
 		result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[2], data[3], data[4]));
 	}else if(method == "get"){
-
+		result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3]));
 	}else if(method == "get_timestamp"){
 		result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2]));
 	}else if(method == "put_fin"){
@@ -159,12 +165,14 @@ void server_connection(int connection, DataServer &dataserver){
 	close(connection);
 }
 
-void test(DataServer &ds){
+void test(DataServer &ds, int portid){
 	
 	while(1){
+		std::cout<<"Alive port "<<portid<< std::endl;	
 		int new_sock = accept(ds.getSocketDesc(), NULL, 0);
-		std::thread cThread([&ds, new_sock]{ server_connection(new_sock, ds);});
-		cThread.detach();	
+	//	std::thread cThread([&ds, new_sock]{ server_connection(new_sock, ds);});
+	//	cThread.detach();
+		std::cout<<"Received Request!!1  PORT:" <<portid<<std::endl;
 	}	
 
 }
@@ -176,11 +184,15 @@ int main(){
 
 	for(int i=0; i< socket_port.size(); i++){
 		DataServer temp(db_list[i], socket_setup(socket_port[i]));
-		std::thread newServer([&temp](){test(temp);});
+		std::thread newServer([&temp](int port){test(temp, port);}, i);
+		std::cout<<"STarting new server at port " << socket_port[i] <<" and socket id " << temp.getSocketDesc() << std::endl;
 		//std::thread newServer([&i,&socket_port,&db_list](){test(DataServer(db_list[i], socket_setup(socket_port[i])));});
 		newServer.detach();
 	}
-
+	
+	std::mutex lock;
+	std::lock_guard<std::mutex> lck(lock);
+	std::unique_lock<std::mutex> lckd(lock);
 	return 0;
 }
  

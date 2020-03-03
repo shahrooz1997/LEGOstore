@@ -174,7 +174,7 @@ class msg :
   enum : int {
     kValueFieldNumber = 1,
   };
-  // repeated string value = 1;
+  // repeated bytes value = 1;
   int value_size() const;
   private:
   int _internal_value_size() const;
@@ -185,12 +185,12 @@ class msg :
   void set_value(int index, const std::string& value);
   void set_value(int index, std::string&& value);
   void set_value(int index, const char* value);
-  void set_value(int index, const char* value, size_t size);
+  void set_value(int index, const void* value, size_t size);
   std::string* add_value();
   void add_value(const std::string& value);
   void add_value(std::string&& value);
   void add_value(const char* value);
-  void add_value(const char* value, size_t size);
+  void add_value(const void* value, size_t size);
   const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>& value() const;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>* mutable_value();
   private:
@@ -218,7 +218,7 @@ class msg :
 #endif  // __GNUC__
 // msg
 
-// repeated string value = 1;
+// repeated bytes value = 1;
 inline int msg::_internal_value_size() const {
   return value_.size();
 }
@@ -256,7 +256,7 @@ inline void msg::set_value(int index, const char* value) {
   value_.Mutable(index)->assign(value);
   // @@protoc_insertion_point(field_set_char:packet.msg.value)
 }
-inline void msg::set_value(int index, const char* value, size_t size) {
+inline void msg::set_value(int index, const void* value, size_t size) {
   value_.Mutable(index)->assign(
     reinterpret_cast<const char*>(value), size);
   // @@protoc_insertion_point(field_set_pointer:packet.msg.value)
@@ -277,7 +277,7 @@ inline void msg::add_value(const char* value) {
   value_.Add()->assign(value);
   // @@protoc_insertion_point(field_add_char:packet.msg.value)
 }
-inline void msg::add_value(const char* value, size_t size) {
+inline void msg::add_value(const void* value, size_t size) {
   value_.Add()->assign(reinterpret_cast<const char*>(value), size);
   // @@protoc_insertion_point(field_add_pointer:packet.msg.value)
 }

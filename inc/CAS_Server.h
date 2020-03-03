@@ -37,6 +37,7 @@ public:
 	strVec put_fin(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t);
 
 
+	strVec get(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t);
 	void insert_data(string &key,const string &val, string &timestamp, bool label, Cache &cache, Persistent &persistent);
 
 private:

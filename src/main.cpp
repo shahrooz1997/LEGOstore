@@ -226,8 +226,9 @@ int main(int argc, char** argv) {
     for(int i = 0; i < 5; i++){
         Server *s = new Server;
         s->id = 1;
-        s->ip = 0x12db46bf;
-        s->port = 10000 + i;
+        //s->ip = 0x12db46bf;
+	s->ip = 2130706433;	
+        s->port = 10001 + i;
 //        s->datacenter = ;
         servers.push_back(s);
     }

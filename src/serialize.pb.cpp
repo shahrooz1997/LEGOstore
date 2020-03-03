@@ -56,7 +56,7 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
 
 const char descriptor_table_protodef_serialize_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n\017serialize.proto\022\006packet\"\024\n\003msg\022\r\n\005valu"
-  "e\030\001 \003(\tb\006proto3"
+  "e\030\001 \003(\014b\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_serialize_2eproto_deps[1] = {
 };
@@ -135,7 +135,7 @@ const char* msg::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::intern
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
     CHK_(ptr);
     switch (tag >> 3) {
-      // repeated string value = 1;
+      // repeated bytes value = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr -= 1;
@@ -143,7 +143,6 @@ const char* msg::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::intern
             ptr += 1;
             auto str = _internal_add_value();
             ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-            CHK_(::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "packet.msg.value"));
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<10>(ptr));
@@ -175,14 +174,10 @@ failure:
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // repeated string value = 1;
+  // repeated bytes value = 1;
   for (int i = 0, n = this->_internal_value_size(); i < n; i++) {
     const auto& s = this->_internal_value(i);
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
-      s.data(), static_cast<int>(s.length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
-      "packet.msg.value");
-    target = stream->WriteString(1, s, target);
+    target = stream->WriteBytes(1, s, target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -201,11 +196,11 @@ size_t msg::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // repeated string value = 1;
+  // repeated bytes value = 1;
   total_size += 1 *
       ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(value_.size());
   for (int i = 0, n = value_.size(); i < n; i++) {
-    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
       value_.Get(i));
   }
 

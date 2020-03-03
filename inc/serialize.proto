@@ -3,7 +3,7 @@ syntax = "proto3";
 package packet;
 
 message msg{
-	repeated string value = 1;	
+	repeated bytes value = 1;	
 }
 
 

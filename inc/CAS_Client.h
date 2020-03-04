@@ -41,40 +41,19 @@
 
 class CAS_Client {
 public:
-    CAS_Client(Properties &prop, uint32_t local_datacenter_id,
-            uint32_t data_center, uint32_t client_id);
+    CAS_Client(Properties &prop, uint32_t client_id);
     CAS_Client(const CAS_Client& orig) = delete;
     virtual ~CAS_Client();
-    
-    Timestamp* get_timestamp(std::string *key);
     
     uint32_t put(std::string key, std::string value, Placement &p, bool insert = false);
     uint32_t get(std::string key, std::string &value, Placement &p);
     
 private:
     uint32_t id;
-    uint32_t data_center;
-    uint32_t local_datacenter_id;
-    Properties prop; //ToDo: Properties
+    Properties prop;
+    std::string current_class; // "CAS"
     
-    uint32_t timeout_per_request;
-    
-    std::string ec_type;
-    int32_t timeout;
-    std::string current_class; // "Viveck_1"
-    std::string encoding_byte; // "latin-1"
-    
-    
-    
-    
-//    static void _get_timestamp(uint32_t key, std::mutex *mutex,
-//                    std::condition_variable *cv, uint32_t *counter, Server *server,
-//                    std::string current_class, std::vector<Timestamp*> *tss);
-//    
-//    static int send_msg(int sock, const std::string &data);
-    
-//    int encode(const std::string &data, std::vector <std::string*> &chunks, struct ec_args * const args);
-
+    Timestamp* get_timestamp(std::string *key, Placement &p);
 };
 
 #endif /* CAS_Client_H */

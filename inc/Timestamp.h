@@ -24,7 +24,7 @@ public:
     Timestamp(uint32_t client_id, uint32_t time = 0);
     Timestamp(const Timestamp &t); // Copy constructor
     std::string get_string();
-    Timestamp increase_timestamp(const Timestamp& timestamp, const uint32_t client_id);
+    Timestamp increase_timestamp(const uint32_t client_id);
     virtual ~Timestamp();
     
     static Timestamp& max_timestamp(std::vector<Timestamp*>& v);

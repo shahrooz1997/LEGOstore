@@ -44,22 +44,22 @@ CAS_Client::CAS_Client(Properties &prop, uint32_t local_datacenter_id,
 CAS_Client::~CAS_Client() {
 }
 
-int send_msg(int sock, const std::string &data){
-    
-    std::string data_copy = data;
-    
-    // add four byte length in network order in the beginning of the message
-    uint32_t size = data_copy.size();
-    size = htonl(size);
-    uint8_t size_c[4];
-    size_c[0] = ((uint8_t*)(&size))[0];
-    size_c[1] = ((uint8_t*)(&size))[1];
-    size_c[2] = ((uint8_t*)(&size))[2];
-    size_c[3] = ((uint8_t*)(&size))[3];
-    data_copy.insert(0, (char*)size_c, 4);
-    
-    return send(sock , data_copy.c_str() , data_copy.size() , 0);
-}
+//int send_msg(int sock, const std::string &data){
+//    
+//    std::string data_copy = data;
+//    
+//    // add four byte length in network order in the beginning of the message
+//    uint32_t size = data_copy.size();
+//    size = htonl(size);
+//    uint8_t size_c[4];
+//    size_c[0] = ((uint8_t*)(&size))[0];
+//    size_c[1] = ((uint8_t*)(&size))[1];
+//    size_c[2] = ((uint8_t*)(&size))[2];
+//    size_c[3] = ((uint8_t*)(&size))[3];
+//    data_copy.insert(0, (char*)size_c, 4);
+//    
+//    return send(sock , data_copy.c_str() , data_copy.size() , 0);
+//}
 
 // ToDo: you may need to implement the socket in non-blocking mode!
 void _get_timestamp(std::string *key, std::mutex *mutex,
@@ -588,13 +588,16 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
     std::thread encoder(encode, &value, &chunks, &null_args);
     
     Timestamp *timestamp = nullptr;
+    Timestamp *tmp = nullptr;
     
     
     if(insert){ // This is a new key
         timestamp = new Timestamp(this->id);
     }
     else{
-        timestamp = this->get_timestamp(&key);
+        tmp = this->get_timestamp(&key);
+        timestamp = new Timestamp(tmp->increase_timestamp(this->id));
+        delete tmp;
     }
     
     // Join the encoder thread

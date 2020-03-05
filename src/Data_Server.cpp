@@ -23,8 +23,13 @@ public:
 
 	}
 
-	DataServer(const DataServer&) = delete;
-	DataServer& operator = (const DataServer&) = delete;
+/*	DataServer(const DataServer &ds) {
+		sockfd = ds.sockfd;
+		cache(ds.cache);
+		persistent(ds.persistent);
+		CAS = ds.CAS;
+	}*/
+//	DataServer& operator = (const DataServer&) = delete;
 	
 	int getSocketDesc(){
 		return sockfd;
@@ -165,27 +170,33 @@ void server_connection(int connection, DataServer &dataserver){
 	close(connection);
 }
 
-void test(DataServer &ds, int portid){
+void test(DataServer *ds, int portid){
 	
 	while(1){
 		std::cout<<"Alive port "<<portid<< std::endl;	
-		int new_sock = accept(ds.getSocketDesc(), NULL, 0);
-	//	std::thread cThread([&ds, new_sock]{ server_connection(new_sock, ds);});
-	//	cThread.detach();
+		int new_sock = accept(ds->getSocketDesc(), NULL, 0);
+		std::thread cThread([&ds, new_sock](){ server_connection(new_sock, *ds);});
+		cThread.detach();
 		std::cout<<"Received Request!!1  PORT:" <<portid<<std::endl;
 	}	
 
 }
 
 int main(){
+	
 
 	std::vector<std::string> socket_port{"10000", "10001", "10002", "10003","10004","10005","10006","10007","10008"};
 	std::vector<std::string> db_list{"db1.temp", "db2.temp", "db3.temp", "db4.temp", "db5.temp", "db6.temp", "db7.temp", "db8.temp", "db9.temp"};
 
+	DataServer *dsobj[9];
+	for(int i=0; i<9 ;i++){
+		dsobj[i] = new DataServer(db_list[i], socket_setup(socket_port[i]));
+	}
 	for(int i=0; i< socket_port.size(); i++){
-		DataServer temp(db_list[i], socket_setup(socket_port[i]));
-		std::thread newServer([&temp](int port){test(temp, port);}, i);
-		std::cout<<"STarting new server at port " << socket_port[i] <<" and socket id " << temp.getSocketDesc() << std::endl;
+		//sobj[i])(db_list[i], socket_setup(socket_port[i]));
+		//std::thread newServer([temp](int port){test(temp, port);}, i);
+		std::thread newServer(test, dsobj[i], i);
+		//std::cout<<"STarting new server at port " << socket_port[i] <<" and socket id " << temp.getSocketDesc() << std::endl;
 		//std::thread newServer([&i,&socket_port,&db_list](){test(DataServer(db_list[i], socket_setup(socket_port[i])));});
 		newServer.detach();
 	}

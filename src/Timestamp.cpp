@@ -23,6 +23,12 @@ Timestamp::Timestamp(const Timestamp &t){
     this->client_id = t.client_id;
 }
 
+Timestamp::Timestamp(std::string &str){
+	std::size_t dash_pos = str.find("-");
+	this->client_id = stoi(str.substr(0, dash_pos));
+	this->time = stoi(str.substr(dash_pos + 1));
+}
+
 std::string Timestamp::get_string(){
 	return std::to_string(time) + '-' + std::to_string(client_id);
 }
@@ -47,6 +53,14 @@ Timestamp Timestamp::increase_timestamp(const Timestamp& timestamp, const uint32
 	return ret;
 }
 
+
 Timestamp::~Timestamp(){
 
+}
+
+bool operator > (Timestamp &lhs, Timestamp &rhs){
+	if(lhs.time > rhs.time || (lhs.time == rhs.time && lhs.client_id < rhs.client_id ) ){
+		return true;
+	}
+	return false;
 }

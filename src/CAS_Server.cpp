@@ -12,6 +12,7 @@
  */
 
 #include "CAS_Server.h"
+#include "Timestamp.h"
 
 using std::string;
 
@@ -27,21 +28,29 @@ strVec CAS_Server::get_timestamp(string &key, Cache &cache, Persistent &persiste
 
 	//TODO:: check the different read and write lock
 	std::lock_guard<std::mutex> lock(lock_t);
+	printf("get_timestamp started and the key is %s\n", key.c_str()); 
 	const std::vector<std::string> *ptr = cache.get(key);
-	string data; // = (*cache.get(key))[0];
-
+	strVec data; // = (*cache.get(key))[0];
+		
 	if(ptr == nullptr){
-		data = persistent.get(key)[0];
+		data = persistent.get(key);
+		printf("cache data checked and data is null\n"); 	
+		if(data.empty()){
+			return {"Failed", "2022202-0"};
+
+		}else{
+			printf("Found data in persisten. sending back! data is"\
+				"key:%s   timestamp:%s\n", key.c_str(), data[0].c_str() );	
+			return {"OK", data[0]};
+		}
 	}else{
-		data = (*ptr)[0];
+		printf("cache data checked and data is found\n"); 
+		data = (*ptr);
+		printf("cache data checked and data is %s\n",data[0].c_str() ); 
+		return {"OK", data[0]};
 	}	
 	
-	if(data.empty()){
-		return {"Failed", "None"};
-				
-	}else{
-		return {"OK", data};
-	}	
+	
 }
 
 strVec CAS_Server::put(string &key, string &value, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
@@ -55,30 +64,62 @@ strVec CAS_Server::put(string &key, string &value, string &timestamp, Cache &cac
 strVec CAS_Server::put_fin(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
 	std::lock_guard<std::mutex> lock(lock_t);
-	insert_data(key, string(), timestamp, true, cache, persistent);
+	printf("Calling put_fin fucntion timestamp:%s\n", timestamp.c_str());
+	insert_data(key, "None", timestamp, true, cache, persistent);
 	return {"OK"};
 }
-
+//TOD0:: when fin tag with empty value inserted, how is that handled at server for future requests, as in won't the server respond with emoty values when requested again.
 //TODO:: check, I removed the last param "required_value"
 strVec CAS_Server::get(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
 	std::unique_lock<std::mutex> lock(lock_t);
-
-	bool fnd = cache.exists(key);
+	std::cout << "GET function called !! " << std::endl;		
+	//TODO:: If found, the set fin flag 
+	bool fnd = cache.exists(key+timestamp);
 	if(!fnd){
-		fnd = persistent.exists(key);
+		fnd = persistent.exists(key+timestamp);
 		if(!fnd){
-			insert_data(key, std::string(), timestamp, true, cache, persistent);
-			return {"OK", "None"};
+			insert_data(key, "None", timestamp, true, cache, persistent);
+			return {"OK", "2300020-0"};
 		}
-		strVec data = persistent.get(key);
+		//TODO:: Should I check the label here before returing data?? If it's FIN or not
+		strVec data = persistent.get(key+timestamp);
 		// Put back in cache
-		cache.put(key, data);
-		cache.put(key, {timestamp});
+		cache.put(key+timestamp, data);
+		//cache.put(key, {timestamp});
 		return {"OK", data[0]};
 	}		
 	
 	return {"OK", (*cache.get(key))[0]};
+}
+// Returns true if success, i.e., timestamp added as the fin timestamp for the key
+bool complete_fin(std::string &key, std::string &timestamp, Cache &cache, Persistent &persistent){
+	
+	strVec data;
+	bool fnd = cache.exists(key);
+	if(!fnd){
+		fnd = persistent.exists(key);
+		if(!fnd){
+			cache.put(key, {timestamp});
+			persistent.put(key, {timestamp});
+			return true;
+		}	
+		data = persistent.get(key);
+	}else{
+		data = *cache.get(key);
+	}
+	std::cout<<"COmplete fin called with key "<<key << " curr_timestsamp : " << timestamp << " and saved timestsamp is " << data[0] <<std::endl;
+	// Check if the WRITE can finish
+	Timestamp curr_time(timestamp);
+	Timestamp saved_time(data[0]);
+	
+	if( curr_time > saved_time){
+		cache.put(key, {timestamp});
+		persistent.put(key, {timestamp});
+		return true;
+	}	
+	
+	return false;
 }
 
 //Add client ID
@@ -95,50 +136,48 @@ void CAS_Server::insert_data(string &key,const string &val, string &timestamp, b
 	//TODO:: should i add it to cache on write, from persistent
 	//If not found, that means either tuple not present
 	// OR tuple is in pre stage
-	bool fnd = cache.exists(key);
-	if(!fnd){
-		fnd = persistent.exists(key);	
-	}
-	if(fnd){
-		return;
-	}
-
-	std::cout<<"timestamp " << timestamp << " not found , so writing it!!" << std::endl;
+	// chekcing to set FIN flag
+	bool fnd = cache.exists(key+timestamp);
 	int _label = label? 1:0;
-	std::vector<string> value{val, std::to_string(_label)};
-
-	// Try to find the tuple
-	fnd = cache.exists(key+timestamp);
 	if(!fnd){
-		fnd = persistent.exists(key+timestamp);
-		
+		fnd = persistent.exists(key+timestamp);	
+	
 		// If Tag not seen before, add the tuple 
 		if(!fnd){
-			//TODO:: optimize and create threads here
+			std::vector<string> value{val, std::to_string(_label)};
+
+			std::cout<<"timestamp " << timestamp << 
+				" not found , so writing it!!" << std::endl;
+			///TODO:: optimize and create threads here
 			// For thread, add label check here and then return
+			printf("Adding entries to both cache and persitent\n");
 			// Also add fin tag to both
 			cache.put(key+timestamp, value);
 			persistent.put(key+timestamp, value);
 			if(label){
-				cache.put(key, {timestamp});
-				persistent.put(key, {timestamp});
+				complete_fin(key, timestamp, cache, persistent);
+				//cache.put(key, {timestamp});
+				//persistent.put(key, {timestamp});
 			}
 			return;
 		}	
-	//TODO::should I add to cache
-	// Modify_flag in cache can't be used, cos may not even be in cache
+		printf("TAG found in persistent\n ");
+		//TODO::should I add to cache
+		// Modify_flag in cache can't be used, cos may not even be in cache
 	}	
-	
-	//TODO:: If found, then modify values
+	//TODO:: Before fin, check the key if you can infact finish the write and check python code for same.
 	if(label){
 		// TODO:: check if not found, does LAbel update make sense??	
-		cache.put(key, {timestamp});
-		persistent.put(key, {timestamp});
+		printf("ADDING the FIN tag to key %s timestamp:%s\n", key.c_str(), timestamp.c_str());
+		//cache.put(key, {timestamp});
+		//persistent.put(key, {timestamp});
+		//std::cout<<"put_fin value read back is" <<  persistent.get(key)[0] << std::endl;
 		// Use modify function, cos don't want to overwrite value with NULL
 		// Take care of case where data not in Cache	
 		cache.modify_flag(key+timestamp,_label);
 		persistent.modify_flag(key+timestamp, _label);
+		complete_fin(key, timestamp, cache, persistent);
 	}
-
+	
 }
 

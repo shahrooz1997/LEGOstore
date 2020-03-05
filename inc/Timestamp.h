@@ -23,16 +23,19 @@ class Timestamp {
 public:
     Timestamp(uint32_t client_id, uint32_t time = 0);
     Timestamp(const Timestamp &t); // Copy constructor
+    Timestamp(std::string &str);
     std::string get_string();
     Timestamp increase_timestamp(const Timestamp& timestamp, const uint32_t client_id);
     virtual ~Timestamp();
     
     static Timestamp& max_timestamp(std::vector<Timestamp*>& v);
+    friend bool operator > (Timestamp &lhs, Timestamp &rhs);
 
 private:
 	uint32_t time;
 	uint32_t client_id;
 };
+
 
 #endif /* Timestamp_H */
 

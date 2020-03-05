@@ -14,6 +14,7 @@
 #include <list>
 #include <cstddef>
 #include <stdexcept>
+#include <iostream>
 
 namespace LRU{
 
@@ -35,6 +36,7 @@ public:
 			_cache_items_map.erase(it);
 		}
 		_cache_items_map[key] = _cache_items_list.begin();
+		std::cout<<"Successfully put the key into cache key :" <<key<<std::endl;
 		
 	}
 	

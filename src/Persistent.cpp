@@ -16,14 +16,17 @@ const std::vector<std::string> Persistent::get(const std::string &key){
 	std::string value;
 	rocksdb::Status s = db->Get(rocksdb::ReadOptions(), key, &value);
 	if(s.IsNotFound()){
+		std::cout<<"persisttent get VALUE NOT FOUND! key is" << key<<std::endl;
 		return std::vector<std::string>();
 	}else{
+		std::cout<<"persisttent get VALUE FOUND! key is" << key<<"Value is"<< value <<std::endl;
 		return decode(value);
 	}
 }
 
 void Persistent::put(const std::string &key, std::vector<std::string> value){
-	
+
+//	std::cout<<"INsertig value into PERSISTENT :"<< value[1] <<" : " <<value[0] <<std::endl;	
 	rocksdb::Status s = db->Put(rocksdb::WriteOptions(), key, encode(value) );
 	if(!s.ok()){
 		std::cerr << s.ToString() << std::endl;
@@ -63,6 +66,7 @@ void Persistent::modify_flag(const std::string &key, int label){
 std::string& Persistent::encode(std::vector<std::string> &value){
 	
 	value[0].insert(0,value[1]);
+	std::cout<<"ENCODE:  Value actaully inserted is " << value[0] <<std::endl;
 	return value[0];
 }
 

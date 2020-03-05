@@ -38,6 +38,9 @@ $(obj): obj/%.o: src/%.cpp
 ABD: obj src/ABD.cpp
 	$(CXX) -c $(CXXFLAGS) src/ABD.cpp -o obj/ABD.o
 
-.PHONY: clean
+.PHONY: clean cleandb
 clean:
 	rm -rf obj CASClient CASServer LEGOStore
+
+cleandb:
+	rm -rf *.temp

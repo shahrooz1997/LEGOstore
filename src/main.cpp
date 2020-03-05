@@ -277,10 +277,10 @@ int main(int argc, char** argv) {
     placement.Q4.push_back(dcs[4]);
         
     
-    c1.put("0", "VALUE0", placement, true);
+    c1.put("1", "VALUE0", placement, true);
     
     std::string ret_val;
-    c1.get("0", ret_val, placement);
+    c1.get("1", ret_val, placement);
     
     return 0;
 }

@@ -133,7 +133,8 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
 //    start_index++;
 //    std::size_t end_index = tmp.find("\"", start_index);
     
-    std::string timestamp_str = data[0]; // tmp.substr(start_index, end_index - start_index);
+	printf("get timestamp, data received is %s\n", data[1].c_str());
+    std::string timestamp_str = data[1]; // tmp.substr(start_index, end_index - start_index);
     
     std::size_t dash_pos = timestamp_str.find("-");
     
@@ -253,11 +254,11 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
     data.push_back(*value);
     data.push_back(timestamp->get_string());
     data.push_back(current_class);
-    //DataTransfer().sendMsg(sock, data);
+    DataTransfer().sendMsg(sock, data);
     
     
     // ToDo: test these functions
-	 send_msg(sock, "testing!!!");
+//	 send_msg(sock, "testing!!!");
     
     // sock.settimeout(self.timeout_per_request)
 

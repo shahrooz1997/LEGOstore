@@ -22,9 +22,9 @@ public:
 
 	static int recvMsg(int sock, valueVec &in_data);
 
-	static inline void encode(const valueVec &data, std::string *out_str);
+	static void encode(const valueVec &data, std::string *out_str);
 
-	static inline void decode(std::string &data, valueVec &out_data);
+	static void decode(std::string &data, valueVec &out_data);
 };
 
 

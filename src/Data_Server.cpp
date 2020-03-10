@@ -139,7 +139,7 @@ int socket_setup(const std::string &port, const std::string *IP = nullptr){
 	return socketfd;
 }
 
-void server_connection(int connection, DataServer &dataserver){
+void server_connection(int connection, DataServer &dataserver, int portid){
 
 	valueVec data;
 	int result = DataTransfer::recvMsg(connection, data);
@@ -150,11 +150,13 @@ void server_connection(int connection, DataServer &dataserver){
 		//TODO:: Should I close connectoin here?
 		return;
 	}
-
+	std::cout << "New METHOD CALLED "<< data[0] << " The value is " << data[2]
+			<<"server port is" << portid << std::endl;
 	std::string &method = data[0];
 	if(method == "put"){
 		result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[2], data[3], data[4]));
 	}else if(method == "get"){
+		//std::cout << "GET fucntion called for server id "<< portid << std::endl;
 		result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3]));
 	}else if(method == "get_timestamp"){
 		result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2]));
@@ -175,7 +177,7 @@ void test(DataServer *ds, int portid){
 	while(1){
 		std::cout<<"Alive port "<<portid<< std::endl;	
 		int new_sock = accept(ds->getSocketDesc(), NULL, 0);
-		std::thread cThread([&ds, new_sock](){ server_connection(new_sock, *ds);});
+		std::thread cThread([&ds, new_sock, portid](){ server_connection(new_sock, *ds, portid);});
 		cThread.detach();
 		std::cout<<"Received Request!!1  PORT:" <<portid<<std::endl;
 	}	

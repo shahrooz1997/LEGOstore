@@ -254,7 +254,12 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
     data.push_back(*value);
     data.push_back(timestamp->get_string());
     data.push_back(current_class);
-    DataTransfer().sendMsg(sock, data);
+    
+    std::cout<< "AAAAA: Sending Value  _PUT"<<(*value).size() << "value is "<< (*value) <<std::endl;
+    if((*value).empty()){
+	printf("WARNING!!! SENDING EMPTY STRING \n");
+    }
+DataTransfer().sendMsg(sock, data);
     
     
     // ToDo: test these functions
@@ -397,8 +402,8 @@ void encode(const std::string * const data, std::vector <std::string*> *chunks,
 
         frag = (i < args->k) ? encoded_data[i] : encoded_parity[i - args->k];
         assert(frag != NULL);
-        
         chunks->push_back(new std::string(frag, encoded_fragment_len));
+        //std::cout<<"ENcoded bits chunk "<<i << " : " << *(chunks[i]) <<std::endl;   
         
     }
     
@@ -794,7 +799,7 @@ uint32_t CAS_Client::get(std::string key, std::string &value, Placement &p){
     
     Timestamp *timestamp = nullptr;
     timestamp = this->get_timestamp(&key);
-    
+    printf("GET REQUEST AT CLIENT, tiestamp received %s\n", timestamp->get_string().c_str()); 
 //    printf("%s\n", timestamp->get_string().c_str());
 
     // phase 2

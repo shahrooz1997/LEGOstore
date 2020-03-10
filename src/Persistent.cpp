@@ -1,4 +1,5 @@
 #include "Persistent.h"
+#include "Data_Transfer.h"
 
 Persistent::Persistent(const std::string &directory){
 
@@ -15,19 +16,34 @@ Persistent::Persistent(const std::string &directory){
 const std::vector<std::string> Persistent::get(const std::string &key){
 	std::string value;
 	rocksdb::Status s = db->Get(rocksdb::ReadOptions(), key, &value);
+
 	if(s.IsNotFound()){
 		std::cout<<"persisttent get VALUE NOT FOUND! key is" << key<<std::endl;
 		return std::vector<std::string>();
 	}else{
 		std::cout<<"persisttent get VALUE FOUND! key is" << key<<"Value is"<< value <<std::endl;
-		return decode(value);
+		std::vector<std::string> raw_data;
+		DataTransfer::decode(value, raw_data);
+		std::cout<<"PERSISTENT GET~!!! -- size after decoding : " << raw_data[0].size() <<std::endl;
+		return raw_data;
 	}
 }
 
 void Persistent::put(const std::string &key, std::vector<std::string> value){
 
-//	std::cout<<"INsertig value into PERSISTENT :"<< value[1] <<" : " <<value[0] <<std::endl;	
-	rocksdb::Status s = db->Put(rocksdb::WriteOptions(), key, encode(value) );
+	std::string out_str;
+	DataTransfer::encode(value, &out_str);
+
+	std::cout<<"PERSISTENT PUT~!!! -- size before endonig : " << value[0].size() <<std::endl;
+	std::vector<std::string> test_dec;
+	DataTransfer::decode(out_str, test_dec);
+	
+	if(!(value[0] == test_dec[0])){
+		std::cout<<"ENCODE DECODE TEST FAILED!!!!!"<<"  out str : "
+			<< value[0] << "test_dec : " << test_dec[0] << std::endl;
+	}
+
+	rocksdb::Status s = db->Put(rocksdb::WriteOptions(), key, out_str);
 	if(!s.ok()){
 		std::cerr << s.ToString() << std::endl;
 		assert(s.ok());
@@ -60,13 +76,15 @@ void Persistent::modify_flag(const std::string &key, int label){
 	}		
 
 }
-
+/*
 // First Byte in the byte stream is actually the "Fin" tag
 // So the value field starts from the second byte
 std::string& Persistent::encode(std::vector<std::string> &value){
 	
-	value[0].insert(0,value[1]);
-	std::cout<<"ENCODE:  Value actaully inserted is " << value[0] <<std::endl;
+	if(value.size() > 1){
+		value[0].insert(0,value[1]);
+		std::cout<<"ENCODE:  Value actaully inserted is " << value[0] <<std::endl;
+	}
 	return value[0];
 }
 
@@ -77,4 +95,4 @@ std::vector<std::string> Persistent::decode(const std::string &value){
 	_value.push_back(std::string(value,0,1) );
 
 	return _value;
-}
+}*/

@@ -36,7 +36,7 @@ strVec CAS_Server::get_timestamp(string &key, Cache &cache, Persistent &persiste
 		data = persistent.get(key);
 		printf("cache data checked and data is null\n"); 	
 		if(data.empty()){
-			return {"Failed", "2022202-0"};
+			return {"Failed", "20202-0"};
 
 		}else{
 			printf("Found data in persisten. sending back! data is"\
@@ -89,8 +89,8 @@ strVec CAS_Server::get(string &key, string &timestamp, Cache &cache, Persistent 
 		//cache.put(key, {timestamp});
 		return {"OK", data[0]};
 	}		
-	
-	return {"OK", (*cache.get(key))[0]};
+	std::cout<<" GET value found in Cache , value is " << (*cache.get(key+timestamp))[0] << std::endl;
+	return {"OK", (*cache.get(key+timestamp))[0]};
 }
 // Returns true if success, i.e., timestamp added as the fin timestamp for the key
 bool complete_fin(std::string &key, std::string &timestamp, Cache &cache, Persistent &persistent){
@@ -108,7 +108,6 @@ bool complete_fin(std::string &key, std::string &timestamp, Cache &cache, Persis
 	}else{
 		data = *cache.get(key);
 	}
-	std::cout<<"COmplete fin called with key "<<key << " curr_timestsamp : " << timestamp << " and saved timestsamp is " << data[0] <<std::endl;
 	// Check if the WRITE can finish
 	Timestamp curr_time(timestamp);
 	Timestamp saved_time(data[0]);
@@ -116,6 +115,7 @@ bool complete_fin(std::string &key, std::string &timestamp, Cache &cache, Persis
 	if( curr_time > saved_time){
 		cache.put(key, {timestamp});
 		persistent.put(key, {timestamp});
+		std::cout<<"COmplete fin called with key "<<key << " curr_timestsamp : " << timestamp << " and saved timestsamp is " << data[0] <<std::endl;
 		return true;
 	}	
 	
@@ -130,7 +130,9 @@ void CAS_Server::insert_data(string &key,const string &val, string &timestamp, b
 	//(cache.exists(key+timestamp)){
 	//	return;
 	//}
-	
+	if(val.empty()){
+		std::cout<<"WAAAARNING!!!!! Empty value passed to put!!!!!!" <<std::endl;
+	}	
 	//TODO:: ALready in FIN, so no way that we need to store naything , cos no way values 
 	// can come now in a msg right???
 	//TODO:: should i add it to cache on write, from persistent

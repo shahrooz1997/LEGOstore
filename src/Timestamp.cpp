@@ -53,9 +53,9 @@ Timestamp& Timestamp::max_timestamp(std::vector<Timestamp*>& v){
 	return *(*it_max);
 }
 
-Timestamp Timestamp::increase_timestamp(const Timestamp& timestamp, const uint32_t client_id){
+Timestamp Timestamp::increase_timestamp(const uint32_t client_id){
 	Timestamp ret(client_id);
-	ret.time = timestamp.time + 1;
+	ret.time = this->time + 1;
 	return ret;
 }
 

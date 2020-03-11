@@ -71,7 +71,7 @@ struct Group{
     uint32_t                object_size;
     double                  read_ratio;
     double                  write_ratio;
-    std::vector<uint32_t>   keys;
+    std::vector<std::string>keys;
     Placement*              placement_p;
 };
 

@@ -1,0 +1,191 @@
+{
+  "output": [
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 6.899052160000001,
+      "put_cost": 0.3884556800000001,
+      "storage_cost": 3.6328767123287675,
+      "vm_cost": 4.940799999999999,
+      "total_cost": 15.861184552328767,
+      "get_latency": 505.9,
+      "put_latency": 758.8499999999999
+    },
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        1,
+        3,
+        5,
+        6,
+        7,
+        8
+      ],
+      "get_cost": 6.506500000000001,
+      "put_cost": 12.138620000000001,
+      "storage_cost": 2.010958904109589,
+      "vm_cost": 2.6688,
+      "total_cost": 23.324878904109593,
+      "get_latency": 504,
+      "put_latency": 756
+    },
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 0.4561356800000001,
+      "put_cost": 23.501568640000002,
+      "storage_cost": 1.8164383561643838,
+      "vm_cost": 2.4703999999999997,
+      "total_cost": 28.244542676164386,
+      "get_latency": 505.9,
+      "put_latency": 758.8499999999999
+    },
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "get_cost": 9.9803704,
+      "put_cost": 1.1670631679999997,
+      "storage_cost": 4.4383561643835625,
+      "vm_cost": 2.6112,
+      "total_cost": 18.196989732383564,
+      "get_latency": 528.18,
+      "put_latency": 792.27
+    },
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "get_cost": 5.15515,
+      "put_cost": 18.235361999999995,
+      "storage_cost": 4.4383561643835625,
+      "vm_cost": 2.6112,
+      "total_cost": 30.440068164383558,
+      "get_latency": 528.18,
+      "put_latency": 792.27
+    },
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 0.5758707201287043,
+      "put_cost": 35.31105782490686,
+      "storage_cost": 2.7246575342465755,
+      "vm_cost": 3.7055999999999996,
+      "total_cost": 42.31718607928214,
+      "get_latency": 505.9,
+      "put_latency": 758.8499999999999
+    },
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 10.176101936000002,
+      "put_cost": 1.6180801920000003,
+      "storage_cost": 1.8164383561643838,
+      "vm_cost": 2.4703999999999997,
+      "total_cost": 16.081020484164384,
+      "get_latency": 505.9,
+      "put_latency": 758.8499999999999
+    },
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 5.256251000000001,
+      "put_cost": 25.282503000000005,
+      "storage_cost": 1.8164383561643838,
+      "vm_cost": 2.4703999999999997,
+      "total_cost": 34.825592356164385,
+      "get_latency": 505.9,
+      "put_latency": 758.8499999999999
+    },
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 0.3363997275999361,
+      "put_cost": 48.9468768610742,
+      "storage_cost": 2.7246575342465755,
+      "vm_cost": 3.7055999999999996,
+      "total_cost": 55.71353412292071,
+      "get_latency": 505.9,
+      "put_latency": 758.8499999999999
+    },
+    {
+      "total_cost": Infinity,
+      "protocol": "cas",
+      "m": "INVALID"
+    }
+  ],
+  "overall_cost": 265.00499707190147,
+  "time_period_hrs": 24
+}

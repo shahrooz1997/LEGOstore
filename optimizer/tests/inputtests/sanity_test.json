@@ -1,0 +1,110 @@
+﻿{
+  "datacenters": [
+    {
+      "id": 0,
+      "latencies": [
+        0,
+        1,
+        1,
+        1,
+        1
+      ],
+      "network_cost": 1,
+      "provider": "AWS",
+      "details": {
+        "size": "t2.xlarge",
+        "price": 1,
+        "storage_cost": 1
+      }
+    },
+    {
+      "id": 1,
+      "latencies": [
+        1,
+        0,
+        1,
+        1,
+        1
+      ],
+      "network_cost": 1,
+      "provider": "AWS",
+      "details": {
+        "size": "t2.xlarge",
+        "price": 1,
+        "storage_cost": 1
+      }
+    },
+    {
+      "id": 2,
+      "latencies": [
+        1,
+        1,
+        0,
+        1,
+        1
+      ],
+      "network_cost": 1,
+      "provider": "AWS",
+      "details": {
+        "size": "t2.xlarge",
+        "price": 1,
+        "storage_cost": 1
+      }
+    },
+    {
+      "id": 3,
+      "latencies": [
+        1,
+        1,
+        1,
+        0,
+        1
+      ],
+      "network_cost": 1,
+      "provider": "AWS",
+      "details": {
+        "size": "t2.xlarge",
+        "price": 1,
+        "storage_cost": 1
+      }
+    },
+    {
+      "id": 4,
+      "latencies": [
+        1,
+        1,
+        1,
+        1,
+        0
+      ],
+      "network_cost": 1,
+      "provider": "AWS",
+      "details": {
+        "size": "t2.xlarge",
+        "price": 1,
+        "storage_cost": 1
+      }
+    }
+  ],
+  "input_groups": [
+    {
+      "availability_target": 1,
+      "client_dist": [
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2
+      ],
+      "object_size": 100,
+      "metadata_size": 0,
+      "num_objects": 100,
+      "arrival_rate": 1,
+      "read_ratio": 0.5,
+      "write_ratio": 0.5,
+      "SLO_read": 1000000,
+      "SLO_write": 1000000,
+      "time_to_decode": 1
+    }
+  ]
+}

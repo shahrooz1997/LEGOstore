@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -std=c++11 -Iinc -g `pkg-config --cflags protobuf`
-LDFLAGS = -lm -lerasurecode -lrocksdb -Llib -ldl -lpthread `pkg-config --libs protobuf`
+LDFLAGS = -lm -lerasurecode -Llib -lrocksdb -ldl -lpthread `pkg-config --libs protobuf`
 
 
 src = $(wildcard src/*.cpp)
@@ -14,7 +14,7 @@ obj2 = $(filter-out obj/main.o,  $(obj))
 obj1 = $(filter-out obj/Data_Server.o, $(obj))
 
 .PHONY: all
-all: obj LEGOStore
+all: obj server client
 
 LEGOStore: $(obj) 
 	$(CXX) -o $@ $^ $(LDFLAGS)
@@ -38,9 +38,12 @@ $(obj): obj/%.o: src/%.cpp
 ABD: obj src/ABD.cpp
 	$(CXX) -c $(CXXFLAGS) src/ABD.cpp -o obj/ABD.o
 
-.PHONY: clean cleandb
+.PHONY: clean cleandb cleanall
+cleanall: clean cleandb
+
 clean:
 	rm -rf obj CASClient CASServer LEGOStore
 
 cleandb:
-	rm -rf *.temp
+	rm -rf db*.temp
+

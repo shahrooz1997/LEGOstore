@@ -12,7 +12,6 @@
  */
 
 #include "CAS_Client.h"
-#include "ABD_Client.h"
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>

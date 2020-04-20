@@ -141,12 +141,14 @@ int socket_setup(const std::string &port, const std::string *IP = nullptr){
 
 void server_connection(int connection, DataServer &dataserver, int portid){
 
-	valueVec data;
-	int result = DataTransfer::recvMsg(connection, data);
+	std::string recvd;
+	int result = DataTransfer::recvMsg(connection,recvd);
+    	valueVec data = DataTransfer::deserialize(recvd);
+
 
 	if(result != 1){
 		valueVec msg{"failure","No data Found"};
-		DataTransfer::sendMsg(connection, msg);
+		DataTransfer::sendMsg(connection, DataTransfer::serialize(msg));
 		//TODO:: Should I close connectoin here?
 		return;
 	}
@@ -154,20 +156,20 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 			<<"server port is" << portid << std::endl;
 	std::string &method = data[0];
 	if(method == "put"){
-		result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[2], data[3], data[4]));
+		result = DataTransfer::sendMsg(connection, DataTransfer::serialize(dataserver.put(data[1], data[2], data[3], data[4])));
 	}else if(method == "get"){
 		//std::cout << "GET fucntion called for server id "<< portid << std::endl;
-		result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3]));
+		result = DataTransfer::sendMsg(connection, DataTransfer::serialize(dataserver.get(data[1], data[2], data[3])));
 	}else if(method == "get_timestamp"){
-		result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2]));
+		result = DataTransfer::sendMsg(connection, DataTransfer::serialize(dataserver.get_timestamp(data[1], data[2])));
 	}else if(method == "put_fin"){
-		result = DataTransfer::sendMsg(connection, dataserver.put_fin(data[1], data[2], data[3]));
+		result = DataTransfer::sendMsg(connection, DataTransfer::serialize(dataserver.put_fin(data[1], data[2], data[3])));
 	}else {
-		DataTransfer::sendMsg(connection, {"MethodNotFound", "Unknown method is called"});
+		DataTransfer::sendMsg(connection,  DataTransfer::serialize({"MethodNotFound", "Unknown method is called"}));
 	}
 
 	if(result != 1){
-		DataTransfer::sendMsg(connection, {"Failure","Server Response failed"});
+		DataTransfer::sendMsg(connection,  DataTransfer::serialize({"Failure","Server Response failed"}));
 	}
 	close(connection);
 }
@@ -202,7 +204,8 @@ int main(){
 		//std::thread newServer([&i,&socket_port,&db_list](){test(DataServer(db_list[i], socket_setup(socket_port[i])));});
 		newServer.detach();
 	}
-	
+
+	//TODO:: Change this, this is a temp FIX	
 	std::mutex lock;
 	std::lock_guard<std::mutex> lck(lock);
 	std::unique_lock<std::mutex> lckd(lock);

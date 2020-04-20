@@ -59,11 +59,12 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
     data.push_back("get_timestamp");
     data.push_back(*key);
     data.push_back(current_class);
-    DataTransfer().sendMsg(sock, data);
+    DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
 
     data.clear();
-    DataTransfer().recvMsg(sock, data); // data must have the timestamp.
-
+    std::string recvd;
+    DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
+    data =  DataTransfer::deserialize(recvd);
     
 //    std::string tmp((const char*)buf, buf_size);
 //    
@@ -167,11 +168,13 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
     if((*value).empty()){
 	printf("WARNING!!! SENDING EMPTY STRING \n");
     }
-    DataTransfer().sendMsg(sock, data);
+    DataTransfer::sendMsg(sock,DataTransfer::serialize(data));
     
     data.clear();
-    DataTransfer().recvMsg(sock, data);
-    
+    std::string recvd;
+    DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
+    data =  DataTransfer::deserialize(recvd);
+
     std::unique_lock<std::mutex> lock(*mutex);
     (*counter)++;
     cv->notify_one();
@@ -214,11 +217,13 @@ void _put_fin(std::string *key, std::mutex *mutex,
     data.push_back(*key);
     data.push_back(timestamp->get_string());
     data.push_back(current_class);
-    DataTransfer().sendMsg(sock, data);
+    DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
     
     data.clear();
-    DataTransfer().recvMsg(sock, data);
-    
+    std::string recvd;
+    DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
+    data = DataTransfer::deserialize(recvd);
+
     std::unique_lock<std::mutex> lock(*mutex);
     (*counter)++;
     cv->notify_one();
@@ -496,10 +501,13 @@ void _get(std::string *key, std::vector<std::string*> *chunks, std::mutex *mutex
     data.push_back(timestamp->get_string());
     data.push_back(current_class);
     //data.push_back("True");
-    DataTransfer().sendMsg(sock, data);
+    DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
     
     data.clear();
-    DataTransfer().recvMsg(sock, data);
+    std::string recvd;
+    DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
+    data =  DataTransfer::deserialize(recvd);
+
     std::string data_portion = data[1];
     
     std::unique_lock<std::mutex> lock(*mutex);

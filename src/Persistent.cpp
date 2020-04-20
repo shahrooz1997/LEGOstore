@@ -22,8 +22,7 @@ const std::vector<std::string> Persistent::get(const std::string &key){
 		return std::vector<std::string>();
 	}else{
 		std::cout<<"persisttent get VALUE FOUND! key is" << key<<"Value is"<< value <<std::endl;
-		std::vector<std::string> raw_data;
-		DataTransfer::decode(value, raw_data);
+		std::vector<std::string> raw_data = DataTransfer::deserialize(value);
 		std::cout<<"PERSISTENT GET~!!! -- size after decoding : " << raw_data[0].size() <<std::endl;
 		return raw_data;
 	}
@@ -31,12 +30,10 @@ const std::vector<std::string> Persistent::get(const std::string &key){
 
 void Persistent::put(const std::string &key, std::vector<std::string> value){
 
-	std::string out_str;
-	DataTransfer::encode(value, &out_str);
+	std::string out_str = DataTransfer::serialize(value);
 
 	std::cout<<"PERSISTENT PUT~!!! -- size before endonig : " << value[0].size() <<std::endl;
-	std::vector<std::string> test_dec;
-	DataTransfer::decode(out_str, test_dec);
+	std::vector<std::string> test_dec =  DataTransfer::deserialize(out_str);
 	
 	if(!(value[0] == test_dec[0])){
 		std::cout<<"ENCODE DECODE TEST FAILED!!!!!"<<"  out str : "

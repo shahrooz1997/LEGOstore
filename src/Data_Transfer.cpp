@@ -19,25 +19,23 @@ int DataTransfer::sendAll(int &sock, const void *data, int data_size){
 	return 1;	
 }
 
-void DataTransfer::encode(const valueVec &data, std::string *out_str){
+std::string DataTransfer::serialize(const valueVec &data){
 		
 	packet::msg enc;
 	for( auto it : data){	
 		enc.add_value(it);
 	}
-
-	enc.SerializeToString(out_str);
+	std::string out_str;
+	enc.SerializeToString(&out_str);
+	return out_str;
 }
 
 
 //Called after socket connection established
-//Serializes the msg and sends it across the socket
+//sends it across the socket
 // Return 1 on SUCCESS
-int DataTransfer::sendMsg(int &sock, const valueVec &data){
+int DataTransfer::sendMsg(int &sock, const std::string &out_str){
 	
-	std::string out_str;
-	encode(data, &out_str);
-
 	int32_t _size = htonl(out_str.size());
 	
 	int result = sendAll(sock, &_size, sizeof(_size));
@@ -71,9 +69,11 @@ int DataTransfer::recvAll(int &sock, void *buf, int data_size){
 	return 1;
 }
 
-void DataTransfer::decode(std::string &data, valueVec &out_data){
+valueVec DataTransfer::deserialize(std::string &data){
 
 	packet::msg dec;
+	valueVec out_data;
+
 	dec.ParseFromString(data);
 	
 	int val_size  = dec.value_size();
@@ -81,16 +81,17 @@ void DataTransfer::decode(std::string &data, valueVec &out_data){
 	for(int i=0; i<val_size; i++){
 		out_data.push_back(dec.value(i));
 	}
+
+	return out_data;
 }
 
 //Pass an empty Vector to it
 // Decodes the msg and populates the vector
 //Returns 1 on SUCCESS
-int DataTransfer::recvMsg(int sock, valueVec &in_data){
+int DataTransfer::recvMsg(int sock, std::string &data){
 	
 	int32_t _size;
 	int result;
-	std::string data;
 
 	result = recvAll(sock, &_size, sizeof(_size));
 	if(result == 1){
@@ -106,7 +107,6 @@ int DataTransfer::recvMsg(int sock, valueVec &in_data){
 		}
 	}
 	
-	decode(data, in_data);
 	return 1;
 }
 

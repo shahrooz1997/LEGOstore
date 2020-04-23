@@ -20,6 +20,9 @@
 using namespace std;
 
 int main(int argc, char** argv) {
+    
+    size_t frag_header_size =  sizeof(fragment_header_t);
+    printf("AAAAAAAAA %d\n", frag_header_size);
 
 //    struct ec_args null_args;
 //    null_args.k = 8;

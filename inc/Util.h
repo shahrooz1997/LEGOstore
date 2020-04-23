@@ -31,6 +31,7 @@ extern bool DEBUG_CAS_Client;
 extern bool DEBUG_ABD_Client;
 extern bool DEBUG_CAS_Server;
 extern bool DEBUG_ABD_Server;
+extern bool DEBUG_RECONFIG_CONTROL;
 
 // ToDo: Traces must be implemented as well.
 // extern bool TRACE_CAS;

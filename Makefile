@@ -29,6 +29,12 @@ CASServer: $(obj2)
 obj: 
 	mkdir obj
 
+proto: serialize.proto
+	mv inc/serialize.pb.cc src/serialize.pb.cpp
+
+serialize.proto:
+	protoc -I=inc --cpp_out=inc inc/serialize.proto
+	
 
 # Create object files
 $(obj): obj/%.o: src/%.cpp

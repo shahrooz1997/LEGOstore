@@ -9,6 +9,7 @@
 #include <string>
 #include <arpa/inet.h>
 #include "serialize.pb.h"
+#include "Util.h"
 
 typedef std::vector<std::string> valueVec;
 
@@ -24,7 +25,11 @@ public:
 
 	static std::string serialize(const valueVec &data);
 
+	static std::string serializePrp(const Properties &properties_p);
+
 	static valueVec deserialize(std::string &data);
+
+	static Properties deserializePrp(std::string &data);
 };
 
 

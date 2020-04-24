@@ -2,27 +2,27 @@
 
 
 int DataTransfer::sendAll(int &sock, const void *data, int data_size){
-	
+
 	const char *iter = static_cast<const char*>(data);
 	int bytes_sent = 0;
-	
+
 	while(data_size > 0){
 		if( (bytes_sent = send(sock, iter, data_size, 0)) == -1){
 			perror("sendAll -> send");
 			return -1;
 		}
-		
+
 		data_size -= bytes_sent;
-		iter += bytes_sent;		
+		iter += bytes_sent;
 	}
 
-	return 1;	
+	return 1;
 }
 
 std::string DataTransfer::serialize(const valueVec &data){
-		
+
 	packet::msg enc;
-	for( auto it : data){	
+	for( auto it : data){
 		enc.add_value(it);
 	}
 	std::string out_str;
@@ -35,22 +35,22 @@ std::string DataTransfer::serialize(const valueVec &data){
 //sends it across the socket
 // Return 1 on SUCCESS
 int DataTransfer::sendMsg(int &sock, const std::string &out_str){
-	
+
 	int32_t _size = htonl(out_str.size());
-	
+
 	int result = sendAll(sock, &_size, sizeof(_size));
 	if(result == 1){
 		result = sendAll(sock, out_str.c_str(), out_str.size());
 	}
-	
+
 	return result;
 }
 
 int DataTransfer::recvAll(int &sock, void *buf, int data_size){
-	
+
 	char *iter = static_cast<char *>(buf);
-	int bytes_read = 0, result; 
-	
+	int bytes_read = 0, result;
+
 
 	if(data_size > 0){
 		if( (bytes_read = recv(sock, iter, data_size, 0)) < 1){
@@ -59,7 +59,7 @@ int DataTransfer::recvAll(int &sock, void *buf, int data_size){
 			}else if(bytes_read == 0){
 				fprintf(stderr, "Recvall Failed : Connection disconnected\n ");
 			}
-			return bytes_read;			
+			return bytes_read;
 		}
 
 		iter += bytes_read;
@@ -75,7 +75,7 @@ valueVec DataTransfer::deserialize(std::string &data){
 	valueVec out_data;
 
 	dec.ParseFromString(data);
-	
+
 	int val_size  = dec.value_size();
 
 	for(int i=0; i<val_size; i++){
@@ -89,13 +89,13 @@ valueVec DataTransfer::deserialize(std::string &data){
 // Decodes the msg and populates the vector
 //Returns 1 on SUCCESS
 int DataTransfer::recvMsg(int sock, std::string &data){
-	
+
 	int32_t _size;
 	int result;
 
 	result = recvAll(sock, &_size, sizeof(_size));
 	if(result == 1){
-		
+
 		_size = ntohl(_size);
 		if(_size > 0){
 			data.resize(_size);
@@ -106,7 +106,169 @@ int DataTransfer::recvMsg(int sock, std::string &data){
 			}
 		}
 	}
-	
+
 	return 1;
 }
 
+std::string DataTransfer::serializePrp(const Properties &properties_p){
+
+	packet::properties prp;
+	prp.set_local_datacenter_id(properties_p.local_datacenter_id);
+	prp.set_retry_attempts(properties_p.retry_attempts);
+	prp.set_metadata_server_timeout(properties_p.metadata_server_timeout);
+	prp.set_timeout_per_request(properties_p.timeout_per_request);
+
+	for(auto dc: properties_p.datacenters){
+		packet::Datacenter *DC = prp.add_datacenters();
+		DC->set_id(dc->id);
+		DC->set_metadata_server_ip(dc->metadata_server_ip);
+		DC->set_metadata_server_port(dc->metadata_server_port);
+
+		for(auto server: dc->servers){
+			packet::Server *sv = DC->add_servers();
+			sv->set_id(server->id);
+			sv->set_ip(server->ip);
+			sv->set_port(server->port);
+		}
+	}
+
+	for(auto grp: properties_p.groups){
+		packet::Group *group = prp.add_groups();
+		group->set_timestamp(grp->timestamp);
+
+		for(auto id: grp->grp_id){
+			group->add_grp_id(id);
+		}
+
+		for(auto gconfig: grp->grp_config){
+			packet::GroupConfig *grp_cfg = group->add_grp_config();
+			grp_cfg->set_object_size(gconfig->object_size);
+			grp_cfg->set_num_objects(gconfig->num_objects);
+			grp_cfg->set_arrival_rate(gconfig->arrival_rate);
+			grp_cfg->set_read_ratio(gconfig->read_ratio);
+
+			for(int i=0; i<gconfig->keys.size(); i++){
+				grp_cfg->add_keys(gconfig->keys[i]);
+			}
+
+			Placement *pp = gconfig->placement_p;
+			packet::Placement *placement_p = grp_cfg->mutable_placement_p();
+			placement_p->set_protocol(pp->protocol);
+			placement_p->set_m(pp->m);
+			placement_p->set_k(pp->k);
+
+			for(auto q : pp->Q1){
+				placement_p->add_q1(q->id);
+			}
+
+			for(auto q : pp->Q2){
+				placement_p->add_q2(q->id);
+			}
+
+			for(auto q : pp->Q3){
+				placement_p->add_q3(q->id);
+			}
+
+			for(auto q : pp->Q4){
+				placement_p->add_q4(q->id);
+			}
+
+		}
+
+	}
+
+	std::string str_out;
+	if(!prp.SerializeToString(&str_out)){
+		throw std::logic_error("Failed to serialize the message ! ");
+	}
+
+	return str_out;
+}
+
+Properties DataTransfer::deserializePrp(std::string &data){
+
+	Properties prp;
+	packet::properties gprp;		// Nomenclature: add 'g' in front of gRPC variables
+	if(!gprp.ParseFromString(data)){
+		throw std::logic_error("Failed to Parse the input received ! ");
+	}
+
+	prp.local_datacenter_id = gprp.local_datacenter_id();
+	prp.retry_attempts = gprp.retry_attempts();
+	prp.metadata_server_timeout = gprp.metadata_server_timeout();
+	prp.timeout_per_request = gprp.timeout_per_request();
+
+	// Datacenter need to be inserted in order
+	for(int i=0 ; i < gprp.datacenters_size(); i++){
+		DC *dc = new DC;
+		const packet::Datacenter &datacenter = gprp.datacenters(i);
+		dc->id = datacenter.id();
+		dc->metadata_server_ip = datacenter.metadata_server_ip();
+		dc->metadata_server_port = datacenter.metadata_server_port();
+
+		for(int j=0; j < datacenter.servers_size(); j++){
+			Server *sv = new Server;
+			const packet::Server &server = datacenter.servers(j);
+			sv->id = server.id();
+			sv->ip = server.ip();
+			sv->port = server.port();
+			sv->datacenter = dc;
+			dc->servers.push_back(sv);
+		}
+
+		prp.datacenters.push_back(dc);
+	}
+
+
+	for(int i=0; i < gprp.groups_size(); i++){
+		Group *grp = new Group;
+		const packet::Group &ggrp = gprp.groups(i);
+
+		grp->timestamp = ggrp.timestamp();
+
+		for(int j=0; j<ggrp.grp_id_size(); j++){
+			grp->grp_id.push_back(ggrp.grp_id(j));
+		}
+
+		for(int j=0; j < ggrp.grp_config_size(); j++){
+			GroupConfig *gcfg = new GroupConfig;
+			const packet::GroupConfig &ggcfg = ggrp.grp_config(j);
+
+			gcfg->object_size = ggcfg.object_size();
+			gcfg->num_objects = ggcfg.num_objects();
+			gcfg->arrival_rate = ggcfg.arrival_rate();
+			gcfg->read_ratio = ggcfg.read_ratio();
+
+			for(int m=0; m < ggcfg.keys_size(); m++){
+				gcfg->keys.push_back(ggcfg.keys(m));
+			}
+
+			Placement *plc = new Placement;
+			const packet::Placement &gplc = ggcfg.placement_p();
+
+			plc->protocol = gplc.protocol();
+			plc->m = gplc.m();
+			plc->k = gplc.k();
+
+			for(int m=0; m < gplc.q1_size(); m++){
+				plc->Q1.push_back(prp.datacenters[gplc.q1(m)]);
+			}
+			for(int m=0; m < gplc.q2_size(); m++){
+				plc->Q2.push_back(prp.datacenters[gplc.q2(m)]);
+			}
+			for(int m=0; m < gplc.q3_size(); m++){
+				plc->Q3.push_back(prp.datacenters[gplc.q3(m)]);
+			}
+			for(int m=0; m < gplc.q4_size(); m++){
+				plc->Q4.push_back(prp.datacenters[gplc.q4(m)]);
+			}
+			gcfg->placement_p = plc;
+
+			grp->grp_config.push_back(gcfg);
+		}
+
+		prp.groups.push_back(grp);
+	}
+
+	return prp;
+}

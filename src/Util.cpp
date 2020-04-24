@@ -4,10 +4,10 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   Util.cpp
  * Author: shahrooz
- * 
+ *
  * Created on January 18, 2020, 5:18 PM
  */
 

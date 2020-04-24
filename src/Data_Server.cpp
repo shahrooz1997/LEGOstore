@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <netdb.h>	// for addrinfo struct def
 #include <unistd.h>  // for open/close pair
-#include "Data_Transfer.h"
+#include "Controller.h"
 #include <functional>
 
 #define BACKLOG 10
@@ -30,7 +30,7 @@ public:
 		CAS = ds.CAS;
 	}*/
 //	DataServer& operator = (const DataServer&) = delete;
-	
+
 	int getSocketDesc(){
 		return sockfd;
 	}
@@ -62,7 +62,7 @@ public:
 	}
 
 	valueVec get(std::string &key, std::string &timestamp, std::string &curr_class){
-		
+
 		if(curr_class == "CAS"){
 			return CAS.get(key, timestamp, cache, persistent, lock);
 		}else if(curr_class == "ABD"){
@@ -175,19 +175,19 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 }
 
 void test(DataServer *ds, int portid){
-	
+
 	while(1){
-		std::cout<<"Alive port "<<portid<< std::endl;	
+		std::cout<<"Alive port "<<portid<< std::endl;
 		int new_sock = accept(ds->getSocketDesc(), NULL, 0);
 		std::thread cThread([&ds, new_sock, portid](){ server_connection(new_sock, *ds, portid);});
 		cThread.detach();
 		std::cout<<"Received Request!!1  PORT:" <<portid<<std::endl;
-	}	
+	}
 
 }
-
+#if 0
 int main(){
-	
+
 
 	std::vector<std::string> socket_port{"10000", "10001", "10002", "10003","10004","10005","10006","10007","10008"};
 	std::vector<std::string> db_list{"db1.temp", "db2.temp", "db3.temp", "db4.temp", "db5.temp", "db6.temp", "db7.temp", "db8.temp", "db9.temp"};
@@ -205,10 +205,18 @@ int main(){
 		newServer.detach();
 	}
 
-	//TODO:: Change this, this is a temp FIX	
+	//TODO:: Change this, this is a temp FIX
 	std::mutex lock;
 	std::lock_guard<std::mutex> lck(lock);
 	std::unique_lock<std::mutex> lckd(lock);
 	return 0;
 }
- 
+
+#endif
+
+int main(){
+
+	Controller master(1, 120, 120, "./config/setup_config.json");
+	master.init_setup("./config/input_workload.json");
+	return 0;
+}

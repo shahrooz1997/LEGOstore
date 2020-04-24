@@ -4,10 +4,10 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   CAS_Client.cpp
  * Author: shahrooz
- * 
+ *
  * Created on January 4, 2020, 11:35 PM
  */
 
@@ -33,28 +33,29 @@ CAS_Client::~CAS_Client() {
 
 void _get_timestamp(std::string *key, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter, Server *server,
-                    std::string current_class, std::vector<Timestamp*> *tss){  
+                    std::string current_class, std::vector<Timestamp*> *tss){
     DPRINTF(DEBUG_CAS_Client, "started.\n");
-    int sock = 0; 
+    int sock = 0;
     struct sockaddr_in serv_addr;
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){ 
-        printf("\n Socket creation error \n"); 
-        return; 
+    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+        printf("\n Socket creation error \n");
+        return;
     }
-    serv_addr.sin_family = AF_INET; 
+    serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(server->port);
-    std::string ip_str = convert_ip_to_string(server->ip);
-    
-    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){ 
-        printf("\nInvalid address/ Address not supported \n"); 
-        return; 
-    } 
-   
-    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){ 
-        printf("\nConnection Failed \n"); 
-        return; 
+    std::string ip_str = server->ip;
+    //std::string ip_str = convert_ip_to_string(server->ip);
+
+    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
+        printf("\nInvalid address/ Address not supported \n");
+        return;
     }
-    
+
+    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
+        printf("\nConnection Failed \n");
+        return;
+    }
+
     valueVec data;
     data.push_back("get_timestamp");
     data.push_back(*key);
@@ -65,9 +66,9 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
     std::string recvd;
     DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
     data =  DataTransfer::deserialize(recvd);
-    
+
 //    std::string tmp((const char*)buf, buf_size);
-//    
+//
 //    std::size_t pos = tmp.find("timestamp");
 //    pos = tmp.find(":", pos);
 //    std::size_t start_index = tmp.find("\"", pos);
@@ -76,18 +77,18 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
 //    }
 //    start_index++;
 //    std::size_t end_index = tmp.find("\"", start_index);
-    
+
 	printf("get timestamp, data received is %s\n", data[1].c_str());
     std::string timestamp_str = data[1]; // tmp.substr(start_index, end_index - start_index);
-    
+
     std::size_t dash_pos = timestamp_str.find("-");
-    
+
     // make client_id and time regarding the received message
     uint32_t client_id_ts = stoi(timestamp_str.substr(0, dash_pos));
     uint32_t time_ts = stoi(timestamp_str.substr(dash_pos + 1));
-    
+
     Timestamp* t = new Timestamp(client_id_ts, time_ts);
-    
+
     std::unique_lock<std::mutex> lock(*mutex);
     tss->push_back(t);
     (*counter)++;
@@ -97,7 +98,7 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
 }
 
 Timestamp* CAS_Client::get_timestamp(std::string *key, Placement &p){
-    
+
     DPRINTF(DEBUG_CAS_Client, "started.\n");
 
     uint32_t counter = 0;
@@ -105,25 +106,25 @@ Timestamp* CAS_Client::get_timestamp(std::string *key, Placement &p){
     std::condition_variable cv;
     std::vector<Timestamp*> tss;
     Timestamp *ret = nullptr;
-    
+
     for(std::vector<DC*>::iterator it = p.Q1.begin();
             it != p.Q1.end(); it++){
         std::thread th(_get_timestamp, key, &mtx, &cv, &counter,
                 (*it)->servers[0], this->current_class, &tss);
         th.detach();
     }
-    
+
     std::unique_lock<std::mutex> lock(mtx);
     while(counter < p.Q1.size()){
         cv.wait(lock);
     }
     lock.unlock();
-    
+
     ret = new Timestamp(Timestamp::max_timestamp(tss));
     for(std::vector<Timestamp*>::iterator it = tss.begin(); it != tss.end(); it++){
         delete *it;
     }
-    
+
     DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
 
     return ret;
@@ -133,43 +134,44 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter,
                     Server *server, Timestamp* timestamp,
                     std::string current_class){
-    
+
     DPRINTF(DEBUG_CAS_Client, "started.\n");
-    
-    int sock = 0; 
+
+    int sock = 0;
     struct sockaddr_in serv_addr;
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){ 
-        printf("\n Socket creation error \n"); 
-        return; 
+    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+        printf("\n Socket creation error \n");
+        return;
     }
-    
-    serv_addr.sin_family = AF_INET; 
+
+    serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(server->port);
-    std::string ip_str = convert_ip_to_string(server->ip);
-    
-    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){ 
-        printf("\nInvalid address/ Address not supported \n"); 
-        return; 
-    } 
-   
-    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){ 
-        printf("\nConnection Failed \n"); 
-        return; 
+    std::string ip_str = server->ip;
+    //std::string ip_str = convert_ip_to_string(server->ip);
+
+    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
+        printf("\nInvalid address/ Address not supported \n");
+        return;
     }
-    
+
+    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
+        printf("\nConnection Failed \n");
+        return;
+    }
+
     valueVec data;
     data.push_back("put");
     data.push_back(*key);
     data.push_back(*value);
     data.push_back(timestamp->get_string());
     data.push_back(current_class);
-    
+
     std::cout<< "AAAAA: Sending Value  _PUT"<<(*value).size() << "value is "<< (*value) <<std::endl;
     if((*value).empty()){
 	printf("WARNING!!! SENDING EMPTY STRING \n");
     }
     DataTransfer::sendMsg(sock,DataTransfer::serialize(data));
-    
+
     data.clear();
     std::string recvd;
     DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
@@ -178,9 +180,9 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
     std::unique_lock<std::mutex> lock(*mutex);
     (*counter)++;
     cv->notify_one();
-    
+
     DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %uh\n", server->port);
-    
+
     return;
 }
 
@@ -188,37 +190,38 @@ void _put_fin(std::string *key, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter,
                     Server *server, Timestamp* timestamp,
                     std::string current_class){
-    
-    DPRINTF(DEBUG_CAS_Client, "started.\n");
-    
-    int sock = 0; 
-    struct sockaddr_in serv_addr;
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){ 
-        printf("\n Socket creation error \n"); 
-        return; 
-    }
-    serv_addr.sin_family = AF_INET; 
-    serv_addr.sin_port = htons(server->port);
-    std::string ip_str = convert_ip_to_string(server->ip);
 
-    
-    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){ 
-        printf("\nInvalid address/ Address not supported \n"); 
-        return; 
-    } 
-   
-    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){ 
-        printf("\nConnection Failed \n"); 
-        return; 
+    DPRINTF(DEBUG_CAS_Client, "started.\n");
+
+    int sock = 0;
+    struct sockaddr_in serv_addr;
+    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+        printf("\n Socket creation error \n");
+        return;
     }
-    
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(server->port);
+    std::string ip_str = server->ip;
+    //std::string ip_str = convert_ip_to_string(server->ip);
+
+
+    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
+        printf("\nInvalid address/ Address not supported \n");
+        return;
+    }
+
+    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
+        printf("\nConnection Failed \n");
+        return;
+    }
+
     valueVec data;
     data.push_back("put_fin");
     data.push_back(*key);
     data.push_back(timestamp->get_string());
     data.push_back(current_class);
     DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
-    
+
     data.clear();
     std::string recvd;
     DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
@@ -227,15 +230,15 @@ void _put_fin(std::string *key, std::mutex *mutex,
     std::unique_lock<std::mutex> lock(*mutex);
     (*counter)++;
     cv->notify_one();
-    
+
     DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
-    
+
     return;
 }
 
 void encode(const std::string * const data, std::vector <std::string*> *chunks,
                         struct ec_args * const args){
-    
+
     int rc = 0;
     int desc = -1;
     char *orig_data = NULL;
@@ -258,7 +261,7 @@ void encode(const std::string * const data, std::vector <std::string*> *chunks,
     rc = liberasurecode_encode(desc, orig_data, data->size(),
             &encoded_data, &encoded_parity, &encoded_fragment_len);
     assert(0 == rc); // ToDo: Add a lot of crash handler...
-    
+
     for (int i = 0; i < args->k + args->m; i++)
     {
         int cmp_size = -1;
@@ -268,15 +271,15 @@ void encode(const std::string * const data, std::vector <std::string*> *chunks,
         frag = (i < args->k) ? encoded_data[i] : encoded_parity[i - args->k];
         assert(frag != NULL);
         chunks->push_back(new std::string(frag, encoded_fragment_len));
-        //std::cout<<"ENcoded bits chunk "<<i << " : " << *(chunks[i]) <<std::endl;   
-        
+        //std::cout<<"ENcoded bits chunk "<<i << " : " << *(chunks[i]) <<std::endl;
+
     }
-    
+
     rc = liberasurecode_encode_cleanup(desc, encoded_data, encoded_parity);
     assert(rc == 0);
 
     assert(0 == liberasurecode_instance_destroy(desc));
-    
+
     return;
 }
 
@@ -322,7 +325,7 @@ out:
 
 void decode(std::string *data, std::vector <std::string*> *chunks,
                         struct ec_args * const args){
-    
+
     int i = 0;
     int rc = 0;
     int desc = -1;
@@ -332,15 +335,15 @@ void decode(std::string *data, std::vector <std::string*> *chunks,
     char *decoded_data = NULL;
     char **avail_frags = NULL;
     int num_avail_frags = 0;
-    
+
     for(int i = 0; i < args->k; i++){
         encoded_data[i] = new char[chunks->at(0)->size()];
     }
-    
+
     for(int i = 0; i < args->m; i++){
         encoded_parity[i] = nullptr;
     }
-    
+
     desc = liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, args);
 
     if (-EBACKENDNOTAVAIL == desc) {
@@ -351,7 +354,7 @@ void decode(std::string *data, std::vector <std::string*> *chunks,
         return;
     } else
         assert(desc > 0);
-    
+
     for(i = 0; i < args->k + args->m; i++){
         if(i < args->k){
             for(int j = 0; j < chunks->at(0)->size(); j++){
@@ -359,16 +362,16 @@ void decode(std::string *data, std::vector <std::string*> *chunks,
             }
         }
     }
-    
+
     int *skip = new int[args->k + args->m];
     for(int i = 0; i < args->k + args->m; i++){
         skip[i] = 1;
     }
-    
+
     for(int i = 0; i < args->k; i++){
         skip[i] = 0;
     }
-    
+
     num_avail_frags = create_frags_array(&avail_frags, encoded_data,
                                          encoded_parity, args, skip);
     assert(num_avail_frags > 0);
@@ -376,42 +379,42 @@ void decode(std::string *data, std::vector <std::string*> *chunks,
                                chunks->at(0)->size(), 1,
                                &decoded_data, &decoded_data_len);
     assert(0 == rc);
-    
+
     data->clear();
     for(int i = 0; i < decoded_data_len; i++){
         data->push_back(decoded_data[i]);
     }
-    
+
     rc = liberasurecode_decode_cleanup(desc, decoded_data);
     assert(rc == 0);
 
     assert(0 == liberasurecode_instance_destroy(desc));
     free(orig_data);
     free(avail_frags);
-    
+
     for(int i = 0; i < args->k; i++){
         delete encoded_data[i];
     }
-    
+
     delete encoded_data;
     delete encoded_parity;
 }
 
 uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool insert){
-    
+
     std::vector <std::string*> chunks;
     struct ec_args null_args;
     null_args.k = p.k;
     null_args.m = p.m - p.k;
     //TODO: set window to what?
-    null_args.w = 16; 
+    null_args.w = 16;
     null_args.ct = CHKSUM_NONE;
-    
+
     std::thread encoder(encode, &value, &chunks, &null_args);
-    
+
     Timestamp *timestamp = nullptr;
     Timestamp *tmp = nullptr;
-    
+
     if(insert){ // This is a new key
         timestamp = new Timestamp(this->id);
     }
@@ -420,17 +423,17 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
         timestamp = new Timestamp(tmp->increase_timestamp(this->id));
         delete tmp;
     }
-    
+
     // Join the encoder thread
     encoder.join();
-    
+
     uint32_t counter = 0;
     std::mutex mtx;
     std::condition_variable cv;
-    
+
     // prewrite
     int i = 0;
-    
+
     for(std::vector<DC*>::iterator it = p.Q2.begin();
             it != p.Q2.end(); it++){
 	printf("The port is: %uh", (*it)->servers[0]->port);
@@ -439,13 +442,13 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
         th.detach();
         i++;
     }
-    
+
     std::unique_lock<std::mutex> lock(mtx);
     while(counter < p.Q2.size()){
         cv.wait(lock);
     }
     lock.unlock();
-    
+
     // fin tag
     counter = 0;
     for(std::vector<DC*>::iterator it = p.Q3.begin();
@@ -454,17 +457,17 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
                 (*it)->servers[0], timestamp, this->current_class);
         th.detach();
     }
-    
+
     for(int i = 0; i < chunks.size(); i++){
         delete chunks[i];
     }
-    
+
     std::unique_lock<std::mutex> lock2(mtx);
     while(counter < p.Q3.size()){
         cv.wait(lock2);
     }
     lock2.unlock();
-    
+
     return S_OK;
 }
 
@@ -473,28 +476,29 @@ void _get(std::string *key, std::vector<std::string*> *chunks, std::mutex *mutex
                     Server *server, Timestamp* timestamp,
                     std::string current_class){
     DPRINTF(DEBUG_CAS_Client, "started.\n");
-    
+
     int sock = 0;
     struct sockaddr_in serv_addr;
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){ 
-        printf("\n Socket creation error \n"); 
-        return; 
+    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+        printf("\n Socket creation error \n");
+        return;
     }
-    
-    serv_addr.sin_family = AF_INET; 
+
+    serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(server->port);
-    std::string ip_str = convert_ip_to_string(server->ip);
-    
-    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){ 
-        printf("\nInvalid address/ Address not supported \n"); 
-        return; 
+    std::string ip_str = server->ip;
+    //std::string ip_str = convert_ip_to_string(server->ip);
+
+    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
+        printf("\nInvalid address/ Address not supported \n");
+        return;
     }
-    
-    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){ 
-        printf("\nConnection Failed \n"); 
-        return; 
+
+    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
+        printf("\nConnection Failed \n");
+        return;
     }
-    
+
     valueVec data;
     data.push_back("get");
     data.push_back(*key);
@@ -502,39 +506,39 @@ void _get(std::string *key, std::vector<std::string*> *chunks, std::mutex *mutex
     data.push_back(current_class);
     //data.push_back("True");
     DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
-    
+
     data.clear();
     std::string recvd;
     DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
     data =  DataTransfer::deserialize(recvd);
 
     std::string data_portion = data[1];
-    
+
     std::unique_lock<std::mutex> lock(*mutex);
     chunks->push_back(new std::string(data_portion));
     (*counter)++;
     cv->notify_one();
-    
+
     DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
-    
+
     return;
 }
 
 uint32_t CAS_Client::get(std::string key, std::string &value, Placement &p){
-    
+
     value.clear();
-    
+
     Timestamp *timestamp = nullptr;
     timestamp = this->get_timestamp(&key, p);
 
     // phase 2
     std::vector <std::string*> chunks;
-    
+
     uint32_t counter = 0;
     std::mutex mtx;
     std::condition_variable cv;
     int i = 0;
-    
+
     for(std::vector<DC*>::iterator it = p.Q4.begin();
             it != p.Q4.end(); it++){
         std::thread th(_get, &key, &chunks, &mtx, &cv, &counter,
@@ -542,27 +546,27 @@ uint32_t CAS_Client::get(std::string key, std::string &value, Placement &p){
         th.detach();
         i++;
     }
-    
+
     std::unique_lock<std::mutex> lock(mtx);
     while(counter < p.Q4.size()){
         cv.wait(lock);
     }
     lock.unlock();
-    
+
     if(chunks.size() < p.k){
         DPRINTF(DEBUG_CAS_Client, "chunks.size() < p.m\n");
     }
-    
+
     // Decode
     struct ec_args null_args;
     null_args.k = p.k;
     null_args.m = p.m - p.k;
     null_args.w = 16; // ToDo: what must it be?
     null_args.ct = CHKSUM_NONE;
-    
+
     decode(&value, &chunks, &null_args);
-    
+
     DPRINTF(DEBUG_CAS_Client, "Received value is: %s\n", value.c_str());
-    
+
     return S_OK;
 }

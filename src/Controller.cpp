@@ -134,7 +134,7 @@ int Controller::generate_client_config(const std::vector<WorkloadConfig*> &input
 			 std::cout<< "Cost Benefit analysis failed for timestamp : "<< it->timestamp << std::endl;
 			 return 1;
 		}
-		//TODO:: Modified for test, change it back to placement.size()
+		
 		std::cout<<__func__ << "Adding , size " << it->grp.size() <<std::endl;
 		for(int i=0; i < placement.size(); i++){
 			GroupConfig *gcfg = new GroupConfig;
@@ -142,6 +142,7 @@ int Controller::generate_client_config(const std::vector<WorkloadConfig*> &input
 			gcfg->num_objects = it->grp[i]->num_objects;
 			gcfg->arrival_rate = it->grp[i]->arrival_rate;
 			gcfg->read_ratio = it->grp[i]->read_ratio;
+			gcfg->duration = it->grp[i]->duration;
 			gcfg->keys = std::move(it->grp[i]->keys);
 			gcfg->placement_p = placement[i];
 			(grp->grp_config).push_back(gcfg);

@@ -201,6 +201,7 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_serialize_2eproto::offsets[] P
   PROTOBUF_FIELD_OFFSET(::packet::GroupConfig, num_objects_),
   PROTOBUF_FIELD_OFFSET(::packet::GroupConfig, arrival_rate_),
   PROTOBUF_FIELD_OFFSET(::packet::GroupConfig, read_ratio_),
+  PROTOBUF_FIELD_OFFSET(::packet::GroupConfig, duration_),
   PROTOBUF_FIELD_OFFSET(::packet::GroupConfig, keys_),
   PROTOBUF_FIELD_OFFSET(::packet::GroupConfig, placement_p_),
   ~0u,  // no _has_bits_
@@ -229,8 +230,8 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 14, -1, sizeof(::packet::Datacenter)},
   { 23, -1, sizeof(::packet::Placement)},
   { 35, -1, sizeof(::packet::GroupConfig)},
-  { 46, -1, sizeof(::packet::Group)},
-  { 54, -1, sizeof(::packet::properties)},
+  { 47, -1, sizeof(::packet::Group)},
+  { 55, -1, sizeof(::packet::properties)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -251,19 +252,19 @@ const char descriptor_table_protodef_serialize_2eproto[] PROTOBUF_SECTION_VARIAB
   "a_server_port\030\003 \001(\r\022\037\n\007servers\030\004 \003(\0132\016.p"
   "acket.Server\"c\n\tPlacement\022\020\n\010protocol\030\001 "
   "\001(\t\022\n\n\002q1\030\002 \003(\r\022\n\n\002q2\030\003 \003(\r\022\t\n\001m\030\004 \001(\r\022\t"
-  "\n\001k\030\005 \001(\r\022\n\n\002q3\030\006 \003(\r\022\n\n\002q4\030\007 \003(\r\"\227\001\n\013Gr"
+  "\n\001k\030\005 \001(\r\022\n\n\002q3\030\006 \003(\r\022\n\n\002q4\030\007 \003(\r\"\251\001\n\013Gr"
   "oupConfig\022\023\n\013object_size\030\001 \001(\r\022\023\n\013num_ob"
   "jects\030\002 \001(\004\022\024\n\014arrival_rate\030\003 \001(\001\022\022\n\nrea"
-  "d_ratio\030\004 \001(\001\022\014\n\004keys\030\005 \003(\014\022&\n\013placement"
-  "_p\030\006 \001(\0132\021.packet.Placement\"S\n\005Group\022\021\n\t"
-  "timestamp\030\001 \001(\004\022\016\n\006grp_id\030\002 \003(\r\022\'\n\ngrp_c"
-  "onfig\030\003 \003(\0132\023.packet.GroupConfig\"\307\001\n\npro"
-  "perties\022\033\n\023local_datacenter_id\030\001 \001(\r\022\026\n\016"
-  "retry_attempts\030\002 \001(\r\022\037\n\027metadata_server_"
-  "timeout\030\003 \001(\r\022\033\n\023timeout_per_request\030\004 \001"
-  "(\r\022\'\n\013datacenters\030\005 \003(\0132\022.packet.Datacen"
-  "ter\022\035\n\006groups\030\006 \003(\0132\r.packet.Groupb\006prot"
-  "o3"
+  "d_ratio\030\004 \001(\001\022\020\n\010duration\030\005 \001(\001\022\014\n\004keys\030"
+  "\006 \003(\014\022&\n\013placement_p\030\007 \001(\0132\021.packet.Plac"
+  "ement\"S\n\005Group\022\021\n\ttimestamp\030\001 \001(\004\022\016\n\006grp"
+  "_id\030\002 \003(\r\022\'\n\ngrp_config\030\003 \003(\0132\023.packet.G"
+  "roupConfig\"\307\001\n\nproperties\022\033\n\023local_datac"
+  "enter_id\030\001 \001(\r\022\026\n\016retry_attempts\030\002 \001(\r\022\037"
+  "\n\027metadata_server_timeout\030\003 \001(\r\022\033\n\023timeo"
+  "ut_per_request\030\004 \001(\r\022\'\n\013datacenters\030\005 \003("
+  "\0132\022.packet.Datacenter\022\035\n\006groups\030\006 \003(\0132\r."
+  "packet.Groupb\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_serialize_2eproto_deps[1] = {
 };
@@ -279,7 +280,7 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_ser
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_serialize_2eproto_once;
 static bool descriptor_table_serialize_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_serialize_2eproto = {
-  &descriptor_table_serialize_2eproto_initialized, descriptor_table_protodef_serialize_2eproto, "serialize.proto", 762,
+  &descriptor_table_serialize_2eproto_initialized, descriptor_table_protodef_serialize_2eproto, "serialize.proto", 780,
   &descriptor_table_serialize_2eproto_once, descriptor_table_serialize_2eproto_sccs, descriptor_table_serialize_2eproto_deps, 7, 0,
   schemas, file_default_instances, TableStruct_serialize_2eproto::offsets,
   file_level_metadata_serialize_2eproto, 7, file_level_enum_descriptors_serialize_2eproto, file_level_service_descriptors_serialize_2eproto,
@@ -1544,9 +1545,16 @@ const char* GroupConfig::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID
           ptr += sizeof(double);
         } else goto handle_unusual;
         continue;
-      // repeated bytes keys = 5;
+      // double duration = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 41)) {
+          duration_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
+          ptr += sizeof(double);
+        } else goto handle_unusual;
+        continue;
+      // repeated bytes keys = 6;
+      case 6:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 50)) {
           ptr -= 1;
           do {
             ptr += 1;
@@ -1554,12 +1562,12 @@ const char* GroupConfig::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID
             ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
-          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<42>(ptr));
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<50>(ptr));
         } else goto handle_unusual;
         continue;
-      // .packet.Placement placement_p = 6;
-      case 6:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 50)) {
+      // .packet.Placement placement_p = 7;
+      case 7:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 58)) {
           ptr = ctx->ParseMessage(_internal_mutable_placement_p(), ptr);
           CHK_(ptr);
         } else goto handle_unusual;
@@ -1614,18 +1622,24 @@ failure:
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteDoubleToArray(4, this->_internal_read_ratio(), target);
   }
 
-  // repeated bytes keys = 5;
-  for (int i = 0, n = this->_internal_keys_size(); i < n; i++) {
-    const auto& s = this->_internal_keys(i);
-    target = stream->WriteBytes(5, s, target);
+  // double duration = 5;
+  if (!(this->duration() <= 0 && this->duration() >= 0)) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteDoubleToArray(5, this->_internal_duration(), target);
   }
 
-  // .packet.Placement placement_p = 6;
+  // repeated bytes keys = 6;
+  for (int i = 0, n = this->_internal_keys_size(); i < n; i++) {
+    const auto& s = this->_internal_keys(i);
+    target = stream->WriteBytes(6, s, target);
+  }
+
+  // .packet.Placement placement_p = 7;
   if (this->has_placement_p()) {
     target = stream->EnsureSpace(target);
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
       InternalWriteMessage(
-        6, _Internal::placement_p(this), target, stream);
+        7, _Internal::placement_p(this), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -1644,7 +1658,7 @@ size_t GroupConfig::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // repeated bytes keys = 5;
+  // repeated bytes keys = 6;
   total_size += 1 *
       ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(keys_.size());
   for (int i = 0, n = keys_.size(); i < n; i++) {
@@ -1652,7 +1666,7 @@ size_t GroupConfig::ByteSizeLong() const {
       keys_.Get(i));
   }
 
-  // .packet.Placement placement_p = 6;
+  // .packet.Placement placement_p = 7;
   if (this->has_placement_p()) {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
@@ -1673,6 +1687,11 @@ size_t GroupConfig::ByteSizeLong() const {
 
   // double read_ratio = 4;
   if (!(this->read_ratio() <= 0 && this->read_ratio() >= 0)) {
+    total_size += 1 + 8;
+  }
+
+  // double duration = 5;
+  if (!(this->duration() <= 0 && this->duration() >= 0)) {
     total_size += 1 + 8;
   }
 
@@ -1727,6 +1746,9 @@ void GroupConfig::MergeFrom(const GroupConfig& from) {
   if (!(from.read_ratio() <= 0 && from.read_ratio() >= 0)) {
     _internal_set_read_ratio(from._internal_read_ratio());
   }
+  if (!(from.duration() <= 0 && from.duration() >= 0)) {
+    _internal_set_duration(from._internal_duration());
+  }
   if (from.object_size() != 0) {
     _internal_set_object_size(from._internal_object_size());
   }
@@ -1758,6 +1780,7 @@ void GroupConfig::InternalSwap(GroupConfig* other) {
   swap(num_objects_, other->num_objects_);
   swap(arrival_rate_, other->arrival_rate_);
   swap(read_ratio_, other->read_ratio_);
+  swap(duration_, other->duration_);
   swap(object_size_, other->object_size_);
 }
 

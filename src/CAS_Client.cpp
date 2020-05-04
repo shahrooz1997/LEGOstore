@@ -93,7 +93,7 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
     tss->push_back(t);
     (*counter)++;
     cv->notify_one();
-
+    close(sock);
     return;
 }
 
@@ -182,7 +182,7 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
     cv->notify_one();
 
     DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %uh\n", server->port);
-
+    close(sock);
     return;
 }
 
@@ -232,7 +232,7 @@ void _put_fin(std::string *key, std::mutex *mutex,
     cv->notify_one();
 
     DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
-
+    close(sock);
     return;
 }
 
@@ -520,7 +520,7 @@ void _get(std::string *key, std::vector<std::string*> *chunks, std::mutex *mutex
     cv->notify_one();
 
     DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
-
+    close(sock);
     return;
 }
 

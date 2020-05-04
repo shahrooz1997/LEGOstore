@@ -146,6 +146,7 @@ std::string DataTransfer::serializePrp(const Properties &properties_p){
 			grp_cfg->set_num_objects(gconfig->num_objects);
 			grp_cfg->set_arrival_rate(gconfig->arrival_rate);
 			grp_cfg->set_read_ratio(gconfig->read_ratio);
+			grp_cfg->set_duration(gconfig->duration);
 
 			for(int i=0; i<gconfig->keys.size(); i++){
 				grp_cfg->add_keys(gconfig->keys[i]);
@@ -238,6 +239,7 @@ Properties DataTransfer::deserializePrp(std::string &data){
 			gcfg->num_objects = ggcfg.num_objects();
 			gcfg->arrival_rate = ggcfg.arrival_rate();
 			gcfg->read_ratio = ggcfg.read_ratio();
+			gcfg->duration = ggcfg.duration();
 
 			for(int m=0; m < ggcfg.keys_size(); m++){
 				gcfg->keys.push_back(ggcfg.keys(m));

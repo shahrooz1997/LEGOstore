@@ -3,7 +3,7 @@ syntax = "proto3";
 package packet;
 
 message msg{
-	repeated bytes value = 1;	
+	repeated bytes value = 1;
 }
 
 message Server{
@@ -16,7 +16,7 @@ message Datacenter{
 	uint32 id = 1;
 	string metadata_server_ip = 2;
 	uint32 metadata_server_port = 3;
-	repeated Server servers = 4;	
+	repeated Server servers = 4;
 }
 
 message Placement{
@@ -34,8 +34,9 @@ message GroupConfig{
 	uint64 num_objects = 2;
 	double arrival_rate = 3;
 	double read_ratio = 4;
-	repeated bytes keys = 5;
-	Placement placement_p = 6;
+	double duration = 5;
+	repeated bytes keys = 6;
+	Placement placement_p = 7;
 
 }
 
@@ -51,8 +52,5 @@ message properties{
 	uint32 metadata_server_timeout = 3;
 	uint32 timeout_per_request = 4;
 	repeated Datacenter datacenters = 5;
-	repeated Group groups = 6;		
+	repeated Group groups = 6;
 }
-
-
-

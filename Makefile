@@ -11,7 +11,7 @@ obj = $(patsubst src/%.cpp, obj/%.o, $(src)) #obj_t = $(src:src=obj)
 #src1 = main.o
 #src2 = Data_Server.o
 obj2 = $(filter-out obj/main.o,  $(obj))
-obj1 = $(filter-out obj/Data_Server.o, $(obj))
+obj1 = $(filter-out obj/Server.o, $(obj))
 
 .PHONY: all
 all: obj LEGOStore
@@ -19,12 +19,12 @@ all: obj LEGOStore
 LEGOStore: $(obj) 
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-client : obj CASClient
-CASClient: $(obj1) 
+client : obj Client
+Client: $(obj1) 
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-server: obj CASServer
-CASServer: $(obj2) 
+server: obj Server
+Server: $(obj2) 
 	$(CXX) -o $@ $^ $(LDFLAGS)
 obj: 
 	mkdir obj
@@ -46,7 +46,7 @@ ABD: obj src/ABD.cpp
 
 .PHONY: clean cleandb
 clean:
-	rm -rf obj CASClient CASServer LEGOStore
+	rm -rf obj Client Server LEGOStore
 
 cleandb:
 	rm -rf *.temp

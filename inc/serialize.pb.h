@@ -930,14 +930,15 @@ class GroupConfig :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kKeysFieldNumber = 5,
-    kPlacementPFieldNumber = 6,
+    kKeysFieldNumber = 6,
+    kPlacementPFieldNumber = 7,
     kNumObjectsFieldNumber = 2,
     kArrivalRateFieldNumber = 3,
     kReadRatioFieldNumber = 4,
+    kDurationFieldNumber = 5,
     kObjectSizeFieldNumber = 1,
   };
-  // repeated bytes keys = 5;
+  // repeated bytes keys = 6;
   int keys_size() const;
   private:
   int _internal_keys_size() const;
@@ -961,7 +962,7 @@ class GroupConfig :
   std::string* _internal_add_keys();
   public:
 
-  // .packet.Placement placement_p = 6;
+  // .packet.Placement placement_p = 7;
   bool has_placement_p() const;
   private:
   bool _internal_has_placement_p() const;
@@ -1003,6 +1004,15 @@ class GroupConfig :
   void _internal_set_read_ratio(double value);
   public:
 
+  // double duration = 5;
+  void clear_duration();
+  double duration() const;
+  void set_duration(double value);
+  private:
+  double _internal_duration() const;
+  void _internal_set_duration(double value);
+  public:
+
   // uint32 object_size = 1;
   void clear_object_size();
   ::PROTOBUF_NAMESPACE_ID::uint32 object_size() const;
@@ -1022,6 +1032,7 @@ class GroupConfig :
   ::PROTOBUF_NAMESPACE_ID::uint64 num_objects_;
   double arrival_rate_;
   double read_ratio_;
+  double duration_;
   ::PROTOBUF_NAMESPACE_ID::uint32 object_size_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_serialize_2eproto;
@@ -2108,7 +2119,27 @@ inline void GroupConfig::set_read_ratio(double value) {
   // @@protoc_insertion_point(field_set:packet.GroupConfig.read_ratio)
 }
 
-// repeated bytes keys = 5;
+// double duration = 5;
+inline void GroupConfig::clear_duration() {
+  duration_ = 0;
+}
+inline double GroupConfig::_internal_duration() const {
+  return duration_;
+}
+inline double GroupConfig::duration() const {
+  // @@protoc_insertion_point(field_get:packet.GroupConfig.duration)
+  return _internal_duration();
+}
+inline void GroupConfig::_internal_set_duration(double value) {
+  
+  duration_ = value;
+}
+inline void GroupConfig::set_duration(double value) {
+  _internal_set_duration(value);
+  // @@protoc_insertion_point(field_set:packet.GroupConfig.duration)
+}
+
+// repeated bytes keys = 6;
 inline int GroupConfig::_internal_keys_size() const {
   return keys_.size();
 }
@@ -2182,7 +2213,7 @@ GroupConfig::mutable_keys() {
   return &keys_;
 }
 
-// .packet.Placement placement_p = 6;
+// .packet.Placement placement_p = 7;
 inline bool GroupConfig::_internal_has_placement_p() const {
   return this != internal_default_instance() && placement_p_ != nullptr;
 }

@@ -83,7 +83,7 @@ struct GroupWorkload{
     double                  write_ratio;
     double                  slo_read;
     double                  slo_write;
-    double                  duration;		// To be calculated by controller
+    double                  duration;
     double                  time_to_decode;
     std::vector<std::string>keys;		// No need to send to optimizer
 };
@@ -99,6 +99,7 @@ struct GroupConfig{
     uint64_t                num_objects;
     double                  arrival_rate;
     double                  read_ratio;
+    double 		    duration;
     std::vector<std::string>keys;
     Placement*              placement_p;
 };

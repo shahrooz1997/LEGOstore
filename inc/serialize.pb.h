@@ -1027,13 +1027,13 @@ class GroupConfig :
   void _internal_set_read_ratio(double value);
   public:
 
-  // double duration = 5;
+  // uint64 duration = 5;
   void clear_duration();
-  double duration() const;
-  void set_duration(double value);
+  ::PROTOBUF_NAMESPACE_ID::uint64 duration() const;
+  void set_duration(::PROTOBUF_NAMESPACE_ID::uint64 value);
   private:
-  double _internal_duration() const;
-  void _internal_set_duration(double value);
+  ::PROTOBUF_NAMESPACE_ID::uint64 _internal_duration() const;
+  void _internal_set_duration(::PROTOBUF_NAMESPACE_ID::uint64 value);
   public:
 
   // uint32 object_size = 1;
@@ -1057,7 +1057,7 @@ class GroupConfig :
   ::PROTOBUF_NAMESPACE_ID::uint64 num_objects_;
   double arrival_rate_;
   double read_ratio_;
-  double duration_;
+  ::PROTOBUF_NAMESPACE_ID::uint64 duration_;
   ::PROTOBUF_NAMESPACE_ID::uint32 object_size_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_serialize_2eproto;
@@ -1343,14 +1343,15 @@ class properties :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kDatacentersFieldNumber = 5,
-    kGroupsFieldNumber = 6,
+    kDatacentersFieldNumber = 6,
+    kGroupsFieldNumber = 7,
     kLocalDatacenterIdFieldNumber = 1,
     kRetryAttemptsFieldNumber = 2,
     kMetadataServerTimeoutFieldNumber = 3,
     kTimeoutPerRequestFieldNumber = 4,
+    kStartTimeFieldNumber = 5,
   };
-  // repeated .packet.Datacenter datacenters = 5;
+  // repeated .packet.Datacenter datacenters = 6;
   int datacenters_size() const;
   private:
   int _internal_datacenters_size() const;
@@ -1368,7 +1369,7 @@ class properties :
   const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::packet::Datacenter >&
       datacenters() const;
 
-  // repeated .packet.Group groups = 6;
+  // repeated .packet.Group groups = 7;
   int groups_size() const;
   private:
   int _internal_groups_size() const;
@@ -1422,6 +1423,15 @@ class properties :
   void _internal_set_timeout_per_request(::PROTOBUF_NAMESPACE_ID::uint32 value);
   public:
 
+  // uint64 start_time = 5;
+  void clear_start_time();
+  ::PROTOBUF_NAMESPACE_ID::uint64 start_time() const;
+  void set_start_time(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::uint64 _internal_start_time() const;
+  void _internal_set_start_time(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  public:
+
   // @@protoc_insertion_point(class_scope:packet.properties)
  private:
   class _Internal;
@@ -1433,6 +1443,7 @@ class properties :
   ::PROTOBUF_NAMESPACE_ID::uint32 retry_attempts_;
   ::PROTOBUF_NAMESPACE_ID::uint32 metadata_server_timeout_;
   ::PROTOBUF_NAMESPACE_ID::uint32 timeout_per_request_;
+  ::PROTOBUF_NAMESPACE_ID::uint64 start_time_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_serialize_2eproto;
 };
@@ -2144,22 +2155,22 @@ inline void GroupConfig::set_read_ratio(double value) {
   // @@protoc_insertion_point(field_set:packet.GroupConfig.read_ratio)
 }
 
-// double duration = 5;
+// uint64 duration = 5;
 inline void GroupConfig::clear_duration() {
-  duration_ = 0;
+  duration_ = PROTOBUF_ULONGLONG(0);
 }
-inline double GroupConfig::_internal_duration() const {
+inline ::PROTOBUF_NAMESPACE_ID::uint64 GroupConfig::_internal_duration() const {
   return duration_;
 }
-inline double GroupConfig::duration() const {
+inline ::PROTOBUF_NAMESPACE_ID::uint64 GroupConfig::duration() const {
   // @@protoc_insertion_point(field_get:packet.GroupConfig.duration)
   return _internal_duration();
 }
-inline void GroupConfig::_internal_set_duration(double value) {
+inline void GroupConfig::_internal_set_duration(::PROTOBUF_NAMESPACE_ID::uint64 value) {
   
   duration_ = value;
 }
-inline void GroupConfig::set_duration(double value) {
+inline void GroupConfig::set_duration(::PROTOBUF_NAMESPACE_ID::uint64 value) {
   _internal_set_duration(value);
   // @@protoc_insertion_point(field_set:packet.GroupConfig.duration)
 }
@@ -2539,7 +2550,27 @@ inline void properties::set_timeout_per_request(::PROTOBUF_NAMESPACE_ID::uint32 
   // @@protoc_insertion_point(field_set:packet.properties.timeout_per_request)
 }
 
-// repeated .packet.Datacenter datacenters = 5;
+// uint64 start_time = 5;
+inline void properties::clear_start_time() {
+  start_time_ = PROTOBUF_ULONGLONG(0);
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 properties::_internal_start_time() const {
+  return start_time_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 properties::start_time() const {
+  // @@protoc_insertion_point(field_get:packet.properties.start_time)
+  return _internal_start_time();
+}
+inline void properties::_internal_set_start_time(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  
+  start_time_ = value;
+}
+inline void properties::set_start_time(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  _internal_set_start_time(value);
+  // @@protoc_insertion_point(field_set:packet.properties.start_time)
+}
+
+// repeated .packet.Datacenter datacenters = 6;
 inline int properties::_internal_datacenters_size() const {
   return datacenters_.size();
 }
@@ -2578,7 +2609,7 @@ properties::datacenters() const {
   return datacenters_;
 }
 
-// repeated .packet.Group groups = 6;
+// repeated .packet.Group groups = 7;
 inline int properties::_internal_groups_size() const {
   return groups_.size();
 }

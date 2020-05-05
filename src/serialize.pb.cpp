@@ -222,6 +222,7 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_serialize_2eproto::offsets[] P
   PROTOBUF_FIELD_OFFSET(::packet::properties, retry_attempts_),
   PROTOBUF_FIELD_OFFSET(::packet::properties, metadata_server_timeout_),
   PROTOBUF_FIELD_OFFSET(::packet::properties, timeout_per_request_),
+  PROTOBUF_FIELD_OFFSET(::packet::properties, start_time_),
   PROTOBUF_FIELD_OFFSET(::packet::properties, datacenters_),
   PROTOBUF_FIELD_OFFSET(::packet::properties, groups_),
 };
@@ -256,17 +257,17 @@ const char descriptor_table_protodef_serialize_2eproto[] PROTOBUF_SECTION_VARIAB
   "\n\001k\030\005 \001(\r\022\n\n\002q3\030\006 \003(\r\022\n\n\002q4\030\007 \003(\r\"\276\001\n\013Gr"
   "oupConfig\022\023\n\013object_size\030\001 \001(\r\022\023\n\013num_ob"
   "jects\030\002 \001(\004\022\024\n\014arrival_rate\030\003 \001(\001\022\022\n\nrea"
-  "d_ratio\030\004 \001(\001\022\020\n\010duration\030\005 \001(\001\022\014\n\004keys\030"
+  "d_ratio\030\004 \001(\001\022\020\n\010duration\030\005 \001(\004\022\014\n\004keys\030"
   "\006 \003(\014\022\023\n\013client_dist\030\007 \003(\001\022&\n\013placement_"
   "p\030\010 \001(\0132\021.packet.Placement\"S\n\005Group\022\021\n\tt"
   "imestamp\030\001 \001(\004\022\016\n\006grp_id\030\002 \003(\r\022\'\n\ngrp_co"
-  "nfig\030\003 \003(\0132\023.packet.GroupConfig\"\307\001\n\nprop"
+  "nfig\030\003 \003(\0132\023.packet.GroupConfig\"\333\001\n\nprop"
   "erties\022\033\n\023local_datacenter_id\030\001 \001(\r\022\026\n\016r"
   "etry_attempts\030\002 \001(\r\022\037\n\027metadata_server_t"
   "imeout\030\003 \001(\r\022\033\n\023timeout_per_request\030\004 \001("
-  "\r\022\'\n\013datacenters\030\005 \003(\0132\022.packet.Datacent"
-  "er\022\035\n\006groups\030\006 \003(\0132\r.packet.Groupb\006proto"
-  "3"
+  "\r\022\022\n\nstart_time\030\005 \001(\004\022\'\n\013datacenters\030\006 \003"
+  "(\0132\022.packet.Datacenter\022\035\n\006groups\030\007 \003(\0132\r"
+  ".packet.Groupb\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_serialize_2eproto_deps[1] = {
 };
@@ -282,7 +283,7 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_ser
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_serialize_2eproto_once;
 static bool descriptor_table_serialize_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_serialize_2eproto = {
-  &descriptor_table_serialize_2eproto_initialized, descriptor_table_protodef_serialize_2eproto, "serialize.proto", 801,
+  &descriptor_table_serialize_2eproto_initialized, descriptor_table_protodef_serialize_2eproto, "serialize.proto", 821,
   &descriptor_table_serialize_2eproto_once, descriptor_table_serialize_2eproto_sccs, descriptor_table_serialize_2eproto_deps, 7, 0,
   schemas, file_default_instances, TableStruct_serialize_2eproto::offsets,
   file_level_metadata_serialize_2eproto, 7, file_level_enum_descriptors_serialize_2eproto, file_level_service_descriptors_serialize_2eproto,
@@ -1549,11 +1550,11 @@ const char* GroupConfig::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID
           ptr += sizeof(double);
         } else goto handle_unusual;
         continue;
-      // double duration = 5;
+      // uint64 duration = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 41)) {
-          duration_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
-          ptr += sizeof(double);
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
+          duration_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // repeated bytes keys = 6;
@@ -1636,10 +1637,10 @@ failure:
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteDoubleToArray(4, this->_internal_read_ratio(), target);
   }
 
-  // double duration = 5;
-  if (!(this->duration() <= 0 && this->duration() >= 0)) {
+  // uint64 duration = 5;
+  if (this->duration() != 0) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteDoubleToArray(5, this->_internal_duration(), target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(5, this->_internal_duration(), target);
   }
 
   // repeated bytes keys = 6;
@@ -1724,9 +1725,11 @@ size_t GroupConfig::ByteSizeLong() const {
     total_size += 1 + 8;
   }
 
-  // double duration = 5;
-  if (!(this->duration() <= 0 && this->duration() >= 0)) {
-    total_size += 1 + 8;
+  // uint64 duration = 5;
+  if (this->duration() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+        this->_internal_duration());
   }
 
   // uint32 object_size = 1;
@@ -1781,7 +1784,7 @@ void GroupConfig::MergeFrom(const GroupConfig& from) {
   if (!(from.read_ratio() <= 0 && from.read_ratio() >= 0)) {
     _internal_set_read_ratio(from._internal_read_ratio());
   }
-  if (!(from.duration() <= 0 && from.duration() >= 0)) {
+  if (from.duration() != 0) {
     _internal_set_duration(from._internal_duration());
   }
   if (from.object_size() != 0) {
@@ -2101,16 +2104,16 @@ properties::properties(const properties& from)
       groups_(from.groups_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::memcpy(&local_datacenter_id_, &from.local_datacenter_id_,
-    static_cast<size_t>(reinterpret_cast<char*>(&timeout_per_request_) -
-    reinterpret_cast<char*>(&local_datacenter_id_)) + sizeof(timeout_per_request_));
+    static_cast<size_t>(reinterpret_cast<char*>(&start_time_) -
+    reinterpret_cast<char*>(&local_datacenter_id_)) + sizeof(start_time_));
   // @@protoc_insertion_point(copy_constructor:packet.properties)
 }
 
 void properties::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_properties_serialize_2eproto.base);
   ::memset(&local_datacenter_id_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&timeout_per_request_) -
-      reinterpret_cast<char*>(&local_datacenter_id_)) + sizeof(timeout_per_request_));
+      reinterpret_cast<char*>(&start_time_) -
+      reinterpret_cast<char*>(&local_datacenter_id_)) + sizeof(start_time_));
 }
 
 properties::~properties() {
@@ -2139,8 +2142,8 @@ void properties::Clear() {
   datacenters_.Clear();
   groups_.Clear();
   ::memset(&local_datacenter_id_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&timeout_per_request_) -
-      reinterpret_cast<char*>(&local_datacenter_id_)) + sizeof(timeout_per_request_));
+      reinterpret_cast<char*>(&start_time_) -
+      reinterpret_cast<char*>(&local_datacenter_id_)) + sizeof(start_time_));
   _internal_metadata_.Clear();
 }
 
@@ -2179,28 +2182,35 @@ const char* properties::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID:
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
-      // repeated .packet.Datacenter datacenters = 5;
+      // uint64 start_time = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
+          start_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // repeated .packet.Datacenter datacenters = 6;
+      case 6:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 50)) {
           ptr -= 1;
           do {
             ptr += 1;
             ptr = ctx->ParseMessage(_internal_add_datacenters(), ptr);
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
-          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<42>(ptr));
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<50>(ptr));
         } else goto handle_unusual;
         continue;
-      // repeated .packet.Group groups = 6;
-      case 6:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 50)) {
+      // repeated .packet.Group groups = 7;
+      case 7:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 58)) {
           ptr -= 1;
           do {
             ptr += 1;
             ptr = ctx->ParseMessage(_internal_add_groups(), ptr);
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
-          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<50>(ptr));
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<58>(ptr));
         } else goto handle_unusual;
         continue;
       default: {
@@ -2253,20 +2263,26 @@ failure:
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(4, this->_internal_timeout_per_request(), target);
   }
 
-  // repeated .packet.Datacenter datacenters = 5;
+  // uint64 start_time = 5;
+  if (this->start_time() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(5, this->_internal_start_time(), target);
+  }
+
+  // repeated .packet.Datacenter datacenters = 6;
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->_internal_datacenters_size()); i < n; i++) {
     target = stream->EnsureSpace(target);
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(5, this->_internal_datacenters(i), target, stream);
+      InternalWriteMessage(6, this->_internal_datacenters(i), target, stream);
   }
 
-  // repeated .packet.Group groups = 6;
+  // repeated .packet.Group groups = 7;
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->_internal_groups_size()); i < n; i++) {
     target = stream->EnsureSpace(target);
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(6, this->_internal_groups(i), target, stream);
+      InternalWriteMessage(7, this->_internal_groups(i), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -2285,14 +2301,14 @@ size_t properties::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // repeated .packet.Datacenter datacenters = 5;
+  // repeated .packet.Datacenter datacenters = 6;
   total_size += 1UL * this->_internal_datacenters_size();
   for (const auto& msg : this->datacenters_) {
     total_size +=
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
-  // repeated .packet.Group groups = 6;
+  // repeated .packet.Group groups = 7;
   total_size += 1UL * this->_internal_groups_size();
   for (const auto& msg : this->groups_) {
     total_size +=
@@ -2325,6 +2341,13 @@ size_t properties::ByteSizeLong() const {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
         this->_internal_timeout_per_request());
+  }
+
+  // uint64 start_time = 5;
+  if (this->start_time() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+        this->_internal_start_time());
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -2372,6 +2395,9 @@ void properties::MergeFrom(const properties& from) {
   if (from.timeout_per_request() != 0) {
     _internal_set_timeout_per_request(from._internal_timeout_per_request());
   }
+  if (from.start_time() != 0) {
+    _internal_set_start_time(from._internal_start_time());
+  }
 }
 
 void properties::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
@@ -2401,6 +2427,7 @@ void properties::InternalSwap(properties* other) {
   swap(retry_attempts_, other->retry_attempts_);
   swap(metadata_server_timeout_, other->metadata_server_timeout_);
   swap(timeout_per_request_, other->timeout_per_request_);
+  swap(start_time_, other->start_time_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata properties::GetMetadata() const {

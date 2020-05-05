@@ -1,5 +1,6 @@
 #include "Controller.h"
 #include <typeinfo>
+#include <ratio>
 
 int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Placement*> &placement){
 	Placement *test = new Placement;
@@ -165,7 +166,8 @@ int Controller::read_deployment_info(std::string &filePath, std::vector<std::pai
 	std::string ip, port;
 	while(getline(cfg, ip, ':')){
 		getline(cfg, port);
-		info.push_back(std::make_pair(ip, stous(port)));
+		//info.push_back(std::make_pair(ip, stous(port)));
+		info.emplace_back(ip, stous(port));
 	}
 	return 0;
 }
@@ -185,7 +187,23 @@ int Controller::init_setup(std::string configFile, std::string filePath){
 	}
 
 	std::string out_str;
+	int start_offset = 10; 			// In secs
 	try{
+		using namespace std::chrono;
+		auto timePoint = time_point_cast<milliseconds>(system_clock::now() + seconds(start_offset));
+		uint64_t startTime = timePoint.time_since_epoch().count();
+		//std::cout << "Type of the timepoint is " << typeid(timeDur).name() << std::endl;
+		//std::cout << "time of start is " << timeDur << "  and current time is " << time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count() << std::endl;
+
+		// if(tp != timePoint){
+		// 	std::cout << "FAILLED!! " <<std::endl;
+		// }else{
+		// 	std::cout << "SUCCESS!! " <<std::endl;
+		// }
+
+		// std::cout << "time of start is " << tp.time_since_epoch().count() << std::endl;
+
+
 		std::vector<std::pair<std::string, uint16_t> > addr_info;
 		if( read_deployment_info(filePath, addr_info) == 1){
 			return 1;
@@ -196,6 +214,7 @@ int Controller::init_setup(std::string configFile, std::string filePath){
 
 			//Using datacenter_id as client id for now, can change later
 			prp.local_datacenter_id = i;
+			prp.start_time = startTime;
 			out_str = DataTransfer::serializePrp(prp);
 			int connection = 0;
 			if(socket_cnt(connection, addr_info[i].second, addr_info[i].first) == 1){

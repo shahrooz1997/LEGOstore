@@ -93,7 +93,7 @@ struct GroupWorkload{
     double                  write_ratio;
     double                  slo_read;
     double                  slo_write;
-    double                  duration;
+    uint64_t                duration;
     double                  time_to_decode;
     std::vector<std::string>keys;		// No need to send to optimizer
 };
@@ -109,7 +109,7 @@ struct GroupConfig{
     uint64_t                num_objects;
     double                  arrival_rate;		// Combined arrival rate
     double                  read_ratio;
-    double					duration;
+    uint64_t				duration;
     std::vector<std::string>keys;
 	std::vector<double>		client_dist;
     Placement*              placement_p;
@@ -125,6 +125,7 @@ struct Properties{
     uint32_t                retry_attempts;
     uint32_t                metadata_server_timeout;
     uint32_t                timeout_per_request;
+	uint64_t				start_time;
     std::vector <DC*>       datacenters;
     std::vector <Group*>    groups;
 };

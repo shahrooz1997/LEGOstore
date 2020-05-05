@@ -117,6 +117,7 @@ std::string DataTransfer::serializePrp(const Properties &properties_p){
 	prp.set_retry_attempts(properties_p.retry_attempts);
 	prp.set_metadata_server_timeout(properties_p.metadata_server_timeout);
 	prp.set_timeout_per_request(properties_p.timeout_per_request);
+	prp.set_start_time(properties_p.start_time);
 
 	for(auto dc: properties_p.datacenters){
 		packet::Datacenter *DC = prp.add_datacenters();
@@ -202,7 +203,8 @@ Properties DataTransfer::deserializePrp(std::string &data){
 	prp.retry_attempts = gprp.retry_attempts();
 	prp.metadata_server_timeout = gprp.metadata_server_timeout();
 	prp.timeout_per_request = gprp.timeout_per_request();
-
+	prp.start_time = gprp.start_time();
+	
 	// Datacenter need to be inserted in order
 	for(int i=0 ; i < gprp.datacenters_size(); i++){
 		DC *dc = new DC;
@@ -251,8 +253,8 @@ Properties DataTransfer::deserializePrp(std::string &data){
 
 			for(int m=0; m < ggcfg.client_dist_size(); m++){
 				gcfg->client_dist.push_back(ggcfg.client_dist(m));
-			}		
-	
+			}
+
 			Placement *plc = new Placement;
 			const packet::Placement &gplc = ggcfg.placement_p();
 

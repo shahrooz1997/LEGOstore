@@ -62,7 +62,7 @@ int Controller::read_setup_info(std::string &configFile){
 
 		prp.datacenters.push_back(dc);
 	}
-
+	cfg.close();
 	return 0;
 }
 
@@ -117,7 +117,7 @@ int Controller::read_input_workload(std::string &configFile, std::vector<Workloa
 		}
 		input.push_back(wkl);
 	}
-
+	cfg.close();
 	return 0;
 }
 
@@ -134,7 +134,7 @@ int Controller::generate_client_config(const std::vector<WorkloadConfig*> &input
 			 std::cout<< "Cost Benefit analysis failed for timestamp : "<< it->timestamp << std::endl;
 			 return 1;
 		}
-		
+
 		std::cout<<__func__ << "Adding , size " << it->grp.size() <<std::endl;
 		for(int i=0; i < placement.size(); i++){
 			GroupConfig *gcfg = new GroupConfig;
@@ -144,6 +144,7 @@ int Controller::generate_client_config(const std::vector<WorkloadConfig*> &input
 			gcfg->read_ratio = it->grp[i]->read_ratio;
 			gcfg->duration = it->grp[i]->duration;
 			gcfg->keys = std::move(it->grp[i]->keys);
+			gcfg->client_dist = std::move(it->grp[i]->client_dist);
 			gcfg->placement_p = placement[i];
 			(grp->grp_config).push_back(gcfg);
 		}
@@ -154,8 +155,23 @@ int Controller::generate_client_config(const std::vector<WorkloadConfig*> &input
 	return 0;
 }
 
+int Controller::read_deployment_info(std::string &filePath, std::vector<std::pair<std::string, uint16_t> > &info){
+	std::ifstream cfg(filePath);
+	if(!cfg.is_open()){
+		std::cout<< __func__ << " : Couldn't open the file : " << strerror(errno) << std::endl;
+		return 1;
+	}
+
+	std::string ip, port;
+	while(getline(cfg, ip, ':')){
+		getline(cfg, port);
+		info.push_back(std::make_pair(ip, stous(port)));
+	}
+	return 0;
+}
+
 // Return 0 on success
-int Controller::init_setup(std::string configFile){
+int Controller::init_setup(std::string configFile, std::string filePath){
 
 	std::vector<WorkloadConfig*> inp;
 	if( read_input_workload(configFile, inp) == 1){
@@ -170,23 +186,37 @@ int Controller::init_setup(std::string configFile){
 
 	std::string out_str;
 	try{
-		out_str = DataTransfer::serializePrp(prp);
+		std::vector<std::pair<std::string, uint16_t> > addr_info;
+		if( read_deployment_info(filePath, addr_info) == 1){
+			return 1;
+		}
+
+		// Send the config to each client in the deployment file
+		for(int i = 0; i < addr_info.size(); i++){
+
+			//Using datacenter_id as client id for now, can change later
+			prp.local_datacenter_id = i;
+			out_str = DataTransfer::serializePrp(prp);
+			int connection = 0;
+			if(socket_cnt(connection, addr_info[i].second, addr_info[i].first) == 1){
+				std::cout << "Connection to Client failed!" << std::endl;
+				return 1;
+			}
+		//	std::cout<< __func__ << " : ip for client" << i << " : " << addr_info[i].second <<"  " <<  addr_info[i].first <<std::endl;
+			if(DataTransfer::sendMsg(connection, out_str) != 1){
+				std::cout << "Data Transfer to client " << i << " failed!" << std::endl;
+				return 1;
+			}
+
+		}
 	}
+		// catch(std::out_of_range &e){
+		// 	std::cout<< "Exception caught! : " << e.what() << " : "<< __func__ <<std::endl;
+		// 	return 1;
+		// }
 	catch(std::logic_error &e){
 		std::cout<< "Exception caught! " << e.what() << std::endl;
 		return 1;
-	}
-
-
-	try{
-		Properties cc = DataTransfer::deserializePrp(out_str);
-		std::cout<< "group " << cc.groups[0]->grp_id[1] << " arrival rate " << cc.groups[0]->grp_config[1]->arrival_rate
-					<< "read ratio  " << cc.groups[0]->grp_config[1]->read_ratio << "keys" << cc.groups[0]->grp_config[1]->keys[0] << std::endl;
-		std::cout<< "group " << cc.groups[1]->grp_id[1] << " arrival rate " << cc.groups[1]->grp_config[1]->arrival_rate
-								<< "read ratio  " << cc.groups[1]->grp_config[1]->read_ratio <<  cc.groups[1]->grp_config[1]->keys[0] << std::endl;
-	}
-	catch(std::logic_error &e){
-		std::cout<< "Exception caught! " << e.what() << std::endl;
 	}
 
 	return 0;

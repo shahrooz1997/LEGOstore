@@ -1,3 +1,6 @@
+#ifndef DATA_SERVER_H
+#define DATA_SERVER_H
+
 #include "Cache.h"
 #include "Persistent.h"
 #include "CAS_Server.h"
@@ -27,3 +30,5 @@ private:
 	Persistent persistent;
 	CAS_Server CAS;
 };
+
+#endif

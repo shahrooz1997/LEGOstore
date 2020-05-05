@@ -19,7 +19,7 @@
 
 using namespace std;
 
-int main(int argc, char** argv) {
+int main2(int argc, char** argv) {
 
 //    struct ec_args null_args;
 //    null_args.k = 8;

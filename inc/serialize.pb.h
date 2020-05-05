@@ -931,7 +931,8 @@ class GroupConfig :
 
   enum : int {
     kKeysFieldNumber = 6,
-    kPlacementPFieldNumber = 7,
+    kClientDistFieldNumber = 7,
+    kPlacementPFieldNumber = 8,
     kNumObjectsFieldNumber = 2,
     kArrivalRateFieldNumber = 3,
     kReadRatioFieldNumber = 4,
@@ -962,7 +963,29 @@ class GroupConfig :
   std::string* _internal_add_keys();
   public:
 
-  // .packet.Placement placement_p = 7;
+  // repeated double client_dist = 7;
+  int client_dist_size() const;
+  private:
+  int _internal_client_dist_size() const;
+  public:
+  void clear_client_dist();
+  private:
+  double _internal_client_dist(int index) const;
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedField< double >&
+      _internal_client_dist() const;
+  void _internal_add_client_dist(double value);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedField< double >*
+      _internal_mutable_client_dist();
+  public:
+  double client_dist(int index) const;
+  void set_client_dist(int index, double value);
+  void add_client_dist(double value);
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedField< double >&
+      client_dist() const;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedField< double >*
+      mutable_client_dist();
+
+  // .packet.Placement placement_p = 8;
   bool has_placement_p() const;
   private:
   bool _internal_has_placement_p() const;
@@ -1028,6 +1051,8 @@ class GroupConfig :
 
   ::PROTOBUF_NAMESPACE_ID::internal::InternalMetadataWithArena _internal_metadata_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string> keys_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedField< double > client_dist_;
+  mutable std::atomic<int> _client_dist_cached_byte_size_;
   ::packet::Placement* placement_p_;
   ::PROTOBUF_NAMESPACE_ID::uint64 num_objects_;
   double arrival_rate_;
@@ -2213,7 +2238,54 @@ GroupConfig::mutable_keys() {
   return &keys_;
 }
 
-// .packet.Placement placement_p = 7;
+// repeated double client_dist = 7;
+inline int GroupConfig::_internal_client_dist_size() const {
+  return client_dist_.size();
+}
+inline int GroupConfig::client_dist_size() const {
+  return _internal_client_dist_size();
+}
+inline void GroupConfig::clear_client_dist() {
+  client_dist_.Clear();
+}
+inline double GroupConfig::_internal_client_dist(int index) const {
+  return client_dist_.Get(index);
+}
+inline double GroupConfig::client_dist(int index) const {
+  // @@protoc_insertion_point(field_get:packet.GroupConfig.client_dist)
+  return _internal_client_dist(index);
+}
+inline void GroupConfig::set_client_dist(int index, double value) {
+  client_dist_.Set(index, value);
+  // @@protoc_insertion_point(field_set:packet.GroupConfig.client_dist)
+}
+inline void GroupConfig::_internal_add_client_dist(double value) {
+  client_dist_.Add(value);
+}
+inline void GroupConfig::add_client_dist(double value) {
+  _internal_add_client_dist(value);
+  // @@protoc_insertion_point(field_add:packet.GroupConfig.client_dist)
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedField< double >&
+GroupConfig::_internal_client_dist() const {
+  return client_dist_;
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedField< double >&
+GroupConfig::client_dist() const {
+  // @@protoc_insertion_point(field_list:packet.GroupConfig.client_dist)
+  return _internal_client_dist();
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedField< double >*
+GroupConfig::_internal_mutable_client_dist() {
+  return &client_dist_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedField< double >*
+GroupConfig::mutable_client_dist() {
+  // @@protoc_insertion_point(field_mutable_list:packet.GroupConfig.client_dist)
+  return _internal_mutable_client_dist();
+}
+
+// .packet.Placement placement_p = 8;
 inline bool GroupConfig::_internal_has_placement_p() const {
   return this != internal_default_instance() && placement_p_ != nullptr;
 }

@@ -19,11 +19,21 @@
 #include <ctime>
 #include <cassert>
 #include <stdexcept>
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>	// for addrinfo struct def
+#include <unistd.h>
+#include <functional>
 
 
 // Define error values
 #define S_OK                    0
 #define GENERAL_ERASURE_ERROR   -101
+
+// Backlog for socket listen
+#define BACKLOG 10
+#define CLIENT_PORT 10001
 
 #define DEVELOPMENT
 
@@ -97,10 +107,11 @@ struct WorkloadConfig{
 struct GroupConfig{
     uint32_t                object_size;
     uint64_t                num_objects;
-    double                  arrival_rate;
+    double                  arrival_rate;		// Combined arrival rate
     double                  read_ratio;
-    double 		    duration;
+    double					duration;
     std::vector<std::string>keys;
+	std::vector<double>		client_dist;
     Placement*              placement_p;
 };
 
@@ -136,5 +147,16 @@ inline unsigned int stoui(const std::string& s)
     if (result != lresult) throw std::out_of_range(s);
     return result;
 }
+//string to unsigned short
+inline uint16_t stous(const std::string& s)
+{
+    unsigned long lresult = stoul(s);
+    uint16_t result = lresult;
+    if (result != lresult) throw std::out_of_range(s);
+    return result;
+}
+
+int socket_setup(const std::string &port, const std::string *IP = nullptr);
+int socket_cnt(int &sock, uint16_t port, const std::string &IP = "0.0.0.0");
 
 #endif /* UTIL_H */

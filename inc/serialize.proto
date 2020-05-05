@@ -36,7 +36,8 @@ message GroupConfig{
 	double read_ratio = 4;
 	double duration = 5;
 	repeated bytes keys = 6;
-	Placement placement_p = 7;
+	repeated double client_dist = 7;
+	Placement placement_p = 8;
 
 }
 

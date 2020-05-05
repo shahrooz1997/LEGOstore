@@ -10,7 +10,7 @@ obj = $(patsubst src/%.cpp, obj/%.o, $(src)) #obj_t = $(src:src=obj)
 #bj = $(addsuffix .o, $(basename $(filter .cpp .cc, $(src))))
 #src1 = main.o
 #src2 = Data_Server.o
-obj2 = $(filter-out obj/main.o,  $(obj))
+obj2 = $(filter-out obj/Client.o,  $(obj))
 obj1 = $(filter-out obj/Server.o, $(obj))
 
 .PHONY: all

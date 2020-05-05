@@ -152,6 +152,10 @@ std::string DataTransfer::serializePrp(const Properties &properties_p){
 				grp_cfg->add_keys(gconfig->keys[i]);
 			}
 
+			for(int i=0; i<gconfig->client_dist.size(); i++){
+				grp_cfg->add_client_dist(gconfig->client_dist[i]);
+			}
+
 			Placement *pp = gconfig->placement_p;
 			packet::Placement *placement_p = grp_cfg->mutable_placement_p();
 			placement_p->set_protocol(pp->protocol);
@@ -245,6 +249,10 @@ Properties DataTransfer::deserializePrp(std::string &data){
 				gcfg->keys.push_back(ggcfg.keys(m));
 			}
 
+			for(int m=0; m < ggcfg.client_dist_size(); m++){
+				gcfg->client_dist.push_back(ggcfg.client_dist(m));
+			}		
+	
 			Placement *plc = new Placement;
 			const packet::Placement &gplc = ggcfg.placement_p();
 

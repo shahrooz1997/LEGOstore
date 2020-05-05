@@ -16,7 +16,8 @@ public:
 	int read_setup_info(std::string &configFile);
 	int read_input_workload(std::string &configFile, std::vector<WorkloadConfig*> &input);
 	int generate_client_config(const std::vector<WorkloadConfig*> &input);
-	int init_setup(std::string configFile);
+	int init_setup(std::string configFile, std::string filePath);
+	int read_deployment_info(std::string &filePath, std::vector<std::pair<std::string, uint16_t> > &info);
 //TODO:: remove the comment here
 //private:
 	Properties prp;

@@ -1,156 +1,20 @@
 
 #include <thread>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>	// for addrinfo struct def
-#include <unistd.h>  // for open/close pair
 #include "Data_Server.h"
 #include "Controller.h"
-#include <functional>
-
-#define BACKLOG 10
-
-
-// class DataServer{
-//
-// public:
-// 	//TODO:: confirm the backlog value, set to 2048 in py
-// 	// TODO:: removed the null value of socket, directly intializing class variable
-//
-// 	DataServer(std::string directory, int sock)
-// 		: cache(500000000), persistent(directory), sockfd(sock){
-//
-// 	}
-//
-// /*	DataServer(const DataServer &ds) {
-// 		sockfd = ds.sockfd;
-// 		cache(ds.cache);
-// 		persistent(ds.persistent);
-// 		CAS = ds.CAS;
-// 	}*/
-// //	DataServer& operator = (const DataServer&) = delete;
-//
-// 	int getSocketDesc(){
-// 		return sockfd;
-// 	}
-//
-// 	valueVec get_timestamp(std::string &key, std::string &curr_class){
-//
-// 		if(curr_class == "CAS"){
-// 			return CAS.get_timestamp(key,cache, persistent, lock);
-// 		}else if(curr_class == "ABD"){
-//
-// 		}
-// 	}
-//
-// 	valueVec put(std::string &key, std::string &value, std::string &timestamp, std::string &curr_class){
-// 		if(curr_class == "CAS"){
-// 			return CAS.put(key,value, timestamp, cache, persistent, lock);
-// 		}else if(curr_class == "ABD"){
-//
-// 		}
-// 	}
-//
-// 	valueVec put_fin(std::string &key, std::string &timestamp, std::string &curr_class){
-//
-// 		if(curr_class == "CAS"){
-// 			return CAS.put_fin(key, timestamp, cache, persistent, lock);
-// 		}else if(curr_class == "ABD"){
-//
-// 		}
-// 	}
-//
-// 	valueVec get(std::string &key, std::string &timestamp, std::string &curr_class){
-//
-// 		if(curr_class == "CAS"){
-// 			return CAS.get(key, timestamp, cache, persistent, lock);
-// 		}else if(curr_class == "ABD"){
-//
-// 		}
-// 	}
-// private:
-//
-// 	int sockfd;
-// 	std::mutex lock;
-// 	Cache cache;
-// 	Persistent persistent;
-// 	CAS_Server CAS;
-// };
-
-
-// Returns the socket FD after creation, binding and listening
-// nullptr in IP implies the use of local IP
-int socket_setup(const std::string &port, const std::string *IP = nullptr){
-
-	struct addrinfo hint, *res, *ptr;
-	int status = 0, enable = 1;
-	int socketfd;
-	memset(&hint, 0, sizeof(hint));
-	hint.ai_family = AF_INET;
-	hint.ai_socktype = SOCK_STREAM;
-
-	if(IP == nullptr){
-		hint.ai_flags = AI_PASSIVE;
-		status = getaddrinfo(NULL, port.c_str(), &hint, &res);
-	}else{
-		status = getaddrinfo((*IP).c_str(), port.c_str(), &hint, &res);
-	}
-
-	if(status != 0){
-		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
-		assert(0);
-	}
-
-	// Loop through all the options, unless one succeeds
-	for( ptr = res; res != NULL ; ptr = ptr->ai_next){
-
-		if((socketfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol)) == -1){
-			perror("server -> socket");
-			continue;
-		}
-
-		if( setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1){
-			perror("server -> set socket options");
-			continue;
-		}
-
-		if( bind(socketfd, ptr->ai_addr, ptr->ai_addrlen) == -1){
-			close(socketfd);
-			perror("server -> bind");
-			continue;
-		}
-
-		break;
-	}
-
-	freeaddrinfo(res);
-
-	if(ptr == NULL){
-		fprintf(stderr, "Socket failed to bind\n");
-		assert(0);
-	}
-
-	if( listen(socketfd, BACKLOG) == -1){
-		perror("server -> listen");
-		assert(0);
-	}
-
-	return socketfd;
-}
 
 void server_connection(int connection, DataServer &dataserver, int portid){
 
 	std::string recvd;
 	int result = DataTransfer::recvMsg(connection,recvd);
-    	valueVec data = DataTransfer::deserialize(recvd);
-
-
 	if(result != 1){
 		valueVec msg{"failure","No data Found"};
 		DataTransfer::sendMsg(connection, DataTransfer::serialize(msg));
-		//TODO:: Should I close connectoin here?
+		close(connection);	
 		return;
 	}
+
+    	valueVec data = DataTransfer::deserialize(recvd);
 	std::cout << "New METHOD CALLED "<< data[0] << " The value is " << data[2]
 			<<"server port is" << portid << std::endl;
 	std::string &method = data[0];
@@ -185,7 +49,7 @@ void test(DataServer *ds, int portid){
 
 }
 
-
+#if 0
 int main(){
 
 
@@ -212,12 +76,11 @@ int main(){
 	return 0;
 }
 
-#if 0
+#endif
 
 int main(){
 
 	Controller master(1, 120, 120, "./config/setup_config.json");
-	master.init_setup("./config/input_workload.json");
+	master.init_setup("./config/input_workload.json" , "config/deployment.txt");
 	return 0;
 }
-#endif

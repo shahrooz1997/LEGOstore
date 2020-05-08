@@ -11,9 +11,16 @@
 //TODO:: Remove this, jyst for experiment purposes
 Properties test;
 
+//Format of THread ID given to each CAS_Client:
+// bits 32-24 => Client ID || max : 256
+// bits 12-23 => Key Id  || max : 4096
+// bits 0-11 => thread num per keyID || max : 4096
 uint32_t clientId;
+
+
 std::atomic<bool> running(false);
 std::atomic<int> numt(0);
+
 
 
 using namespace std::chrono;
@@ -30,12 +37,14 @@ static inline int next_event(std::string &dist_process){
 	return 0;
 }
 
-int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &keys, Placement *pp, time_point<system_clock, millis> tp, std::string &dist_process){
+int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &keys, Placement *pp, time_point<system_clock, millis> tp,
+							std::string &dist_process, int grp_idx, int req_idx){
 	int cnt = 0; 		// Count the number of requests
-	srand(tp.time_since_epoch().count());
 	int reqType = 0;    // 1 for GET, 2 for PUT
 	int key_idx = -1;
-	CAS_Client clt(test, clientId);
+	uint32_t threadId = ((clientId << 24) | (grp_idx << 12) | (req_idx));
+	CAS_Client clt(test, threadId);
+	srand(threadId);
 
 	std::string read_value;
 	while(running.load()){
@@ -47,7 +56,7 @@ int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &
 
 		//Choose a random key
 		key_idx = rand()%(keys.size());
-
+		std::cout << "Operation chosen by Client  "<<threadId<<" for key " << keys[key_idx] << "  is " << reqType << std::endl;
 		// Initiate the operation
 		if(reqType == 1){
 			clt.get(keys[key_idx],read_value, *pp);
@@ -92,7 +101,7 @@ int key_req_gen(Properties &prop, int grp_idx, std::string dist_process){
 
 		for(long i=0; i<numReqs; i++){
 			threads.emplace_back(run_session, grpCfg->object_size, grpCfg->read_ratio, std::ref(grpCfg->keys), \
-							grpCfg->placement_p, timePoint, std::ref(dist_process));
+							grpCfg->placement_p, timePoint, std::ref(dist_process), grp_idx, i);
 		}
 
 		std::cout<<"sleeeeeep...." << std::endl;

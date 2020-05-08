@@ -36,7 +36,7 @@ strVec CAS_Server::get_timestamp(string &key, Cache &cache, Persistent &persiste
 		data = persistent.get(key);
 		DPRINTF(DEBUG_CAS_Server,"cache data checked and data is null\n");
 		if(data.empty()){
-			return {"Failed", "20202-0"};
+			return {"Failed", "None"};
 
 		}else{
 			DPRINTF(DEBUG_CAS_Server,"Found data in persisten. sending back! data is"\
@@ -65,34 +65,10 @@ strVec CAS_Server::put_fin(string &key, string &timestamp, Cache &cache, Persist
 
 	std::lock_guard<std::mutex> lock(lock_t);
 	DPRINTF(DEBUG_CAS_Server,"Calling put_fin fucntion timestamp:%s\n", timestamp.c_str());
-	insert_data(key, "None", timestamp, true, cache, persistent);
+	insert_data(key, std::string(), timestamp, true, cache, persistent);
 	return {"OK"};
 }
-//TOD0:: when fin tag with empty value inserted, how is that handled at server for future requests, as in won't the server respond with emoty values when requested again.
-//TODO:: check, I removed the last param "required_value"
-strVec CAS_Server::get(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
-	std::unique_lock<std::mutex> lock(lock_t);
-	DPRINTF(DEBUG_CAS_Server,"GET function called !! \n");
-	//TODO:: If found, the set fin flag
-	bool fnd = cache.exists(key+timestamp);
-	if(!fnd){
-		fnd = persistent.exists(key+timestamp);
-		if(!fnd){
-			insert_data(key, "None", timestamp, true, cache, persistent);
-			return {"OK", "2300020-0"};
-		}
-		//TODO:: Should I check the label here before returing data?? If it's FIN or not
-		strVec data = persistent.get(key+timestamp);
-		// Put back in cache
-		cache.put(key+timestamp, data);
-		//cache.put(key, {timestamp});
-		return {"OK", data[0]};
-	}
-
-	DPRINTF(DEBUG_CAS_Server," GET value found in Cache \n");
-	return {"OK", (*cache.get(key+timestamp))[0]};
-}
 // Returns true if success, i.e., timestamp added as the fin timestamp for the key
 bool complete_fin(std::string &key, std::string &timestamp, Cache &cache, Persistent &persistent){
 
@@ -124,6 +100,39 @@ bool complete_fin(std::string &key, std::string &timestamp, Cache &cache, Persis
 	return false;
 }
 
+//TOD0:: when fin tag with empty value inserted, how is that handled at server for future requests, as in won't the server respond with emoty values when requested again.
+//TODO:: check, I removed the last param "required_value"
+strVec CAS_Server::get(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
+
+	std::unique_lock<std::mutex> lock(lock_t);
+	DPRINTF(DEBUG_CAS_Server,"GET function called !! \n");
+
+	bool fnd = cache.exists(key+timestamp);
+	if(!fnd){
+		fnd = persistent.exists(key+timestamp);
+		if(!fnd){
+			//insert_data(key, "None", timestamp, true, cache, persistent);
+			complete_fin(key, timestamp, cache, persistent);
+			//TODO::is the return value correct?
+			// Returning failed, to tell that no value is being returned
+			return {"Failed", "None"};
+		}
+
+		strVec data = persistent.get(key+timestamp);
+		// Put back in cache
+		cache.put(key+timestamp, data);
+		// Update the FIN label as well as label flag
+		insert_data(key,std::string(), timestamp, true, cache, persistent);
+		//complete_fin(key, timestamp, cache, persistent);
+		return {"OK", data[0]};
+	}
+
+	insert_data(key, std::string(), timestamp, true, cache, persistent);
+	DPRINTF(DEBUG_CAS_Server," GET value found in Cache \n");
+	return {"OK", (*cache.get(key+timestamp))[0]};
+}
+
+
 //Add client ID
 void CAS_Server::insert_data(string &key,const string &val, string &timestamp, bool label, Cache &cache, Persistent &persistent){
 
@@ -132,9 +141,8 @@ void CAS_Server::insert_data(string &key,const string &val, string &timestamp, b
 	//(cache.exists(key+timestamp)){
 	//	return;
 	//}
-	if(val.empty()){
-		DPRINTF(DEBUG_CAS_Server,"WAAAARNING!!!!! Empty value passed to put!!!!!!\n");
-	}
+	int _label = label? 1:0;
+
 	//TODO:: ALready in FIN, so no way that we need to store naything , cos no way values
 	// can come now in a msg right???
 	//TODO:: should i add it to cache on write, from persistent
@@ -142,21 +150,23 @@ void CAS_Server::insert_data(string &key,const string &val, string &timestamp, b
 	// OR tuple is in pre stage
 	// chekcing to set FIN flag
 	bool fnd = cache.exists(key+timestamp);
-	int _label = label? 1:0;
+
 	if(!fnd){
 		fnd = persistent.exists(key+timestamp);
 
 		// If Tag not seen before, add the tuple
 		if(!fnd){
-			std::vector<string> value{val, std::to_string(_label)};
+			if(!val.empty()){
+				std::vector<string> value{val, std::to_string(_label)};
 
-			DPRINTF(DEBUG_CAS_Server,"timestamp : %s  not found ,so writing it!!\n", timestamp.c_str());
-			///TODO:: optimize and create threads here
-			// For thread, add label check here and then return
-			DPRINTF(DEBUG_CAS_Server,"Adding entries to both cache and persitent\n");
-			// Also add fin tag to both
-			cache.put(key+timestamp, value);
-			persistent.put(key+timestamp, value);
+				DPRINTF(DEBUG_CAS_Server,"timestamp : %s  not found ,so writing it!!\n", timestamp.c_str());
+				///TODO:: optimize and create threads here
+				// For thread, add label check here and then return
+				DPRINTF(DEBUG_CAS_Server,"Adding entries to both cache and persitent\n");
+				// Also add fin tag to both
+				cache.put(key+timestamp, value);
+				persistent.put(key+timestamp, value);
+			}
 			if(label){
 				complete_fin(key, timestamp, cache, persistent);
 				//cache.put(key, {timestamp});
@@ -165,9 +175,9 @@ void CAS_Server::insert_data(string &key,const string &val, string &timestamp, b
 			return;
 		}
 		DPRINTF(DEBUG_CAS_Server,"TAG found in persistent\n ");
-		//TODO::should I add to cache
-		// Modify_flag in cache can't be used, cos may not even be in cache
+		//TODO:: Need to insert in cache where. otherwise modify being done in next steps maybe invalid
 	}
+
 	//TODO:: Before fin, check the key if you can infact finish the write and check python code for same.
 	if(label){
 		// TODO:: check if not found, does LAbel update make sense??

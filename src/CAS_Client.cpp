@@ -78,20 +78,29 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
 //    start_index++;
 //    std::size_t end_index = tmp.find("\"", start_index);
 
-	printf("get timestamp, data received is %s\n", data[1].c_str());
-    std::string timestamp_str = data[1]; // tmp.substr(start_index, end_index - start_index);
+    if(data[0] == "OK"){
+    	printf("get timestamp, data received is %s\n", data[1].c_str());
+        std::string timestamp_str = data[1];
 
-    std::size_t dash_pos = timestamp_str.find("-");
+        std::size_t dash_pos = timestamp_str.find("-");
+        if(dash_pos >= timestamp_str.size()){
+            std::cerr << "SUbstr violated !!!!!!!" << timestamp_str <<std::endl;
+        }
 
-    // make client_id and time regarding the received message
-    uint32_t client_id_ts = stoi(timestamp_str.substr(0, dash_pos));
-    uint32_t time_ts = stoi(timestamp_str.substr(dash_pos + 1));
+        // make client_id and time regarding the received message
+        uint32_t client_id_ts = stoi(timestamp_str.substr(0, dash_pos));
+        uint32_t time_ts = stoi(timestamp_str.substr(dash_pos + 1));
 
-    Timestamp* t = new Timestamp(client_id_ts, time_ts);
+        Timestamp* t = new Timestamp(client_id_ts, time_ts);
 
-    std::unique_lock<std::mutex> lock(*mutex);
-    tss->push_back(t);
-    (*counter)++;
+        std::unique_lock<std::mutex> lock(*mutex);
+        tss->push_back(t);
+        (*counter)++;
+    }else{
+        std::unique_lock<std::mutex> lock(*mutex);
+        (*counter)++;
+    }
+
     cv->notify_one();
     close(sock);
     return;
@@ -227,6 +236,7 @@ void _put_fin(std::string *key, std::mutex *mutex,
     DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
     data = DataTransfer::deserialize(recvd);
 
+    //TODO:: amybe check for OK response here??
     std::unique_lock<std::mutex> lock(*mutex);
     (*counter)++;
     cv->notify_one();
@@ -436,7 +446,7 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
 
     for(std::vector<DC*>::iterator it = p.Q2.begin();
             it != p.Q2.end(); it++){
-	printf("The port is: %uh", (*it)->servers[0]->port);
+	//printf("The port is: %uh", (*it)->servers[0]->port);
         std::thread th(_put, &key, chunks[i], &mtx, &cv, &counter,
                 (*it)->servers[0], timestamp, this->current_class);
         th.detach();
@@ -511,14 +521,14 @@ void _get(std::string *key, std::vector<std::string*> *chunks, std::mutex *mutex
     std::string recvd;
     DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
     data =  DataTransfer::deserialize(recvd);
+    if(data[0] == "OK"){
+        std::string data_portion = data[1];
 
-    std::string data_portion = data[1];
-
-    std::unique_lock<std::mutex> lock(*mutex);
-    chunks->push_back(new std::string(data_portion));
-    (*counter)++;
-    cv->notify_one();
-
+        std::unique_lock<std::mutex> lock(*mutex);
+        chunks->push_back(new std::string(data_portion));
+        (*counter)++;
+        cv->notify_one();
+    }
     DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
     close(sock);
     return;

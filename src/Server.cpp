@@ -1,7 +1,7 @@
 
 #include <thread>
 #include "Data_Server.h"
-#include "Controller.h"
+#include "Data_Transfer.h"
 
 void server_connection(int connection, DataServer &dataserver, int portid){
 
@@ -10,7 +10,7 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 	if(result != 1){
 		valueVec msg{"failure","No data Found"};
 		DataTransfer::sendMsg(connection, DataTransfer::serialize(msg));
-		close(connection);	
+		close(connection);
 		return;
 	}
 
@@ -49,7 +49,6 @@ void test(DataServer *ds, int portid){
 
 }
 
-#if 0
 int main(){
 
 
@@ -73,14 +72,5 @@ int main(){
 	std::mutex lock;
 	std::lock_guard<std::mutex> lck(lock);
 	std::unique_lock<std::mutex> lckd(lock);
-	return 0;
-}
-
-#endif
-
-int main(){
-
-	Controller master(1, 120, 120, "./config/setup_config.json");
-	master.init_setup("./config/input_workload.json" , "config/deployment.txt");
 	return 0;
 }

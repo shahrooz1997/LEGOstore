@@ -35,7 +35,7 @@
 #define BACKLOG 10
 #define CLIENT_PORT 10001
 
-#define DEVELOPMENT
+//#define DEVELOPMENT
 
 
 extern bool DEBUG_CAS_Client;

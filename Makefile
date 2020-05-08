@@ -10,8 +10,9 @@ obj = $(patsubst src/%.cpp, obj/%.o, $(src)) #obj_t = $(src:src=obj)
 #bj = $(addsuffix .o, $(basename $(filter .cpp .cc, $(src))))
 #src1 = main.o
 #src2 = Data_Server.o
-obj2 = $(filter-out obj/Client.o,  $(obj))
-obj1 = $(filter-out obj/Server.o, $(obj))
+obj2 = $(filter-out obj/Client.o obj/Controller.o,  $(obj))
+obj1 = $(filter-out obj/Server.o obj/Controller.o, $(obj))
+obj3 = $(filter-out obj/Client.o obj/Server.o, $(obj))
 
 .PHONY: all
 all: obj LEGOStore
@@ -26,6 +27,11 @@ Client: $(obj1)
 server: obj Server
 Server: $(obj2) 
 	$(CXX) -o $@ $^ $(LDFLAGS)
+
+controller: obj Controller
+Controller: $(obj3)
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
 obj: 
 	mkdir obj
 
@@ -46,7 +52,7 @@ ABD: obj src/ABD.cpp
 
 .PHONY: clean cleandb
 clean:
-	rm -rf obj Client Server LEGOStore
+	rm -rf obj Client Server Controller LEGOStore
 
 cleandb:
 	rm -rf *.temp

@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   CAS_Server.h
  * Author: shahrooz
  *
@@ -21,6 +21,7 @@
 #include "Cache.h"
 #include "Persistent.h"
 #include <mutex>
+#include "Util.h"
 using std::string;
 
 typedef std::vector<std::string> strVec;
@@ -31,7 +32,7 @@ public:
 	CAS_Server(const CAS_Server& orig) = delete;
 	virtual ~CAS_Server();
 	strVec get_timestamp(string &key, Cache &cache, Persistent &persistent, std::mutex &lock_t);
-	
+
 	strVec put(string &key, string &value, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t);
 
 	strVec put_fin(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t);
@@ -45,4 +46,3 @@ private:
 };
 
 #endif /* CAS_Server_H */
-

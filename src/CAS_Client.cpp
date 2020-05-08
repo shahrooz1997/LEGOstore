@@ -166,9 +166,9 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
     data.push_back(timestamp->get_string());
     data.push_back(current_class);
 
-    std::cout<< "AAAAA: Sending Value  _PUT"<<(*value).size() << "value is "<< (*value) <<std::endl;
+    //std::cout<< "AAAAA: Sending Value  _PUT"<<(*value).size() << "value is "<< (*value) <<std::endl;
     if((*value).empty()){
-	printf("WARNING!!! SENDING EMPTY STRING \n");
+	       printf("WARNING!!! SENDING EMPTY STRING \n");
     }
     DataTransfer::sendMsg(sock,DataTransfer::serialize(data));
 
@@ -566,7 +566,7 @@ uint32_t CAS_Client::get(std::string key, std::string &value, Placement &p){
 
     decode(&value, &chunks, &null_args);
 
-    DPRINTF(DEBUG_CAS_Client, "Received value is: %s\n", value.c_str());
+    printf("Received value is: %s\n", value.c_str());
 
     return S_OK;
 }

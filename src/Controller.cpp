@@ -240,3 +240,10 @@ int Controller::init_setup(std::string configFile, std::string filePath){
 
 	return 0;
 }
+
+int main(){
+
+	Controller master(1, 120, 120, "./config/setup_config.json");
+	master.init_setup("./config/input_workload.json" , "config/deployment.txt");
+	return 0;
+}

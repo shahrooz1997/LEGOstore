@@ -56,7 +56,7 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
         return;
     }
 
-    valueVec data;
+    strVec data;
     data.push_back("get_timestamp");
     data.push_back(*key);
     data.push_back(current_class);
@@ -168,7 +168,7 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
         return;
     }
 
-    valueVec data;
+    strVec data;
     data.push_back("put");
     data.push_back(*key);
     data.push_back(*value);
@@ -224,7 +224,7 @@ void _put_fin(std::string *key, std::mutex *mutex,
         return;
     }
 
-    valueVec data;
+    strVec data;
     data.push_back("put_fin");
     data.push_back(*key);
     data.push_back(timestamp->get_string());
@@ -274,8 +274,8 @@ void encode(const std::string * const data, std::vector <std::string*> *chunks,
 
     for (int i = 0; i < args->k + args->m; i++)
     {
-        int cmp_size = -1;
-        char *data_ptr = NULL;
+        //int cmp_size = -1;
+        //char *data_ptr = NULL;
         char *frag = NULL;
 
         frag = (i < args->k) ? encoded_data[i] : encoded_parity[i - args->k];
@@ -354,6 +354,8 @@ void decode(std::string *data, std::vector <std::string*> *chunks,
         encoded_parity[i] = nullptr;
     }
 
+    DPRINTF(DEBUG_CAS_Client, "The chunk size DECODE is %lu\n", chunks->at(0)->size());
+
     desc = liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, args);
 
     if (-EBACKENDNOTAVAIL == desc) {
@@ -367,7 +369,7 @@ void decode(std::string *data, std::vector <std::string*> *chunks,
 
     for(i = 0; i < args->k + args->m; i++){
         if(i < args->k){
-            for(int j = 0; j < chunks->at(0)->size(); j++){
+            for(uint j = 0; j < chunks->at(0)->size(); j++){
                 encoded_data[i][j] = chunks->at(i)->at(j);
             }
         }
@@ -391,7 +393,7 @@ void decode(std::string *data, std::vector <std::string*> *chunks,
     assert(0 == rc);
 
     data->clear();
-    for(int i = 0; i < decoded_data_len; i++){
+    for(uint i = 0; i < decoded_data_len; i++){
         data->push_back(decoded_data[i]);
     }
 
@@ -403,11 +405,11 @@ void decode(std::string *data, std::vector <std::string*> *chunks,
     free(avail_frags);
 
     for(int i = 0; i < args->k; i++){
-        delete encoded_data[i];
+        delete[] encoded_data[i];
     }
 
-    delete encoded_data;
-    delete encoded_parity;
+    delete[] encoded_data;
+    delete[] encoded_parity;
 }
 
 uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool insert){
@@ -419,6 +421,8 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
     //TODO: set window to what?
     null_args.w = 16;
     null_args.ct = CHKSUM_NONE;
+
+    DPRINTF(DEBUG_CAS_Client, "The value to be stored is %s \n", value.c_str());
 
     std::thread encoder(encode, &value, &chunks, &null_args);
 
@@ -446,10 +450,14 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
 
     for(std::vector<DC*>::iterator it = p.Q2.begin();
             it != p.Q2.end(); it++){
-	//printf("The port is: %uh", (*it)->servers[0]->port);
+
         std::thread th(_put, &key, chunks[i], &mtx, &cv, &counter,
                 (*it)->servers[0], timestamp, this->current_class);
         th.detach();
+        DPRINTF(DEBUG_CAS_Client, "Issue Q2 request to key: %s and timestamp: %s  chunk_size :%lu  chunks: ", key.c_str(), timestamp->get_string().c_str(), chunks[i]->size());
+        for (auto& el : *chunks[i])
+  	         printf("%02hhx", el);
+        std::cout << '\n';
         i++;
     }
 
@@ -466,9 +474,10 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
         std::thread th(_put_fin, &key, &mtx, &cv, &counter,
                 (*it)->servers[0], timestamp, this->current_class);
         th.detach();
+        DPRINTF(DEBUG_CAS_Client, "Issue Q3 request to key: %s \n", key.c_str());
     }
 
-    for(int i = 0; i < chunks.size(); i++){
+    for(uint i = 0; i < chunks.size(); i++){
         delete chunks[i];
     }
 
@@ -509,7 +518,7 @@ void _get(std::string *key, std::vector<std::string*> *chunks, std::mutex *mutex
         return;
     }
 
-    valueVec data;
+    strVec data;
     data.push_back("get");
     data.push_back(*key);
     data.push_back(timestamp->get_string());
@@ -526,6 +535,11 @@ void _get(std::string *key, std::vector<std::string*> *chunks, std::mutex *mutex
 
         std::unique_lock<std::mutex> lock(*mutex);
         chunks->push_back(new std::string(data_portion));
+        DPRINTF(DEBUG_CAS_Client, " chunk received for key : %s and timestamp :%s   chunk_size :%lu  is ", key->c_str(), timestamp->get_string().c_str(), data_portion.size());
+        for (auto& el : data_portion)
+  	         printf("%02hhx", el);
+        std::cout << '\n';
+
         (*counter)++;
         cv->notify_one();
     }
@@ -554,6 +568,7 @@ uint32_t CAS_Client::get(std::string key, std::string &value, Placement &p){
         std::thread th(_get, &key, &chunks, &mtx, &cv, &counter,
                 (*it)->servers[0], timestamp, this->current_class);
         th.detach();
+        DPRINTF(DEBUG_CAS_Client, "Issue Q4 request for key :%s \n", key.c_str());
         i++;
     }
 
@@ -576,7 +591,7 @@ uint32_t CAS_Client::get(std::string key, std::string &value, Placement &p){
 
     decode(&value, &chunks, &null_args);
 
-    printf("Received value is: %s\n", value.c_str());
+    printf("Received value for key : %s and timestamp is :%s  is: %s\n", key.c_str(), timestamp->get_string().c_str(), value.c_str());
 
     return S_OK;
 }

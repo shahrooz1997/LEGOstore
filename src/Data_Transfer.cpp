@@ -19,7 +19,7 @@ int DataTransfer::sendAll(int &sock, const void *data, int data_size){
 	return 1;
 }
 
-std::string DataTransfer::serialize(const valueVec &data){
+std::string DataTransfer::serialize(const strVec &data){
 
 	packet::msg enc;
 	for( auto it : data){
@@ -49,7 +49,7 @@ int DataTransfer::sendMsg(int &sock, const std::string &out_str){
 int DataTransfer::recvAll(int &sock, void *buf, int data_size){
 
 	char *iter = static_cast<char *>(buf);
-	int bytes_read = 0, result;
+	int bytes_read = 0;
 
 
 	if(data_size > 0){
@@ -57,7 +57,8 @@ int DataTransfer::recvAll(int &sock, void *buf, int data_size){
 			if(bytes_read == -1){
 				perror("recvALL -> recv");
 			}else if(bytes_read == 0){
-				fprintf(stderr, "Recvall Failed : Connection disconnected\n ");
+				fprintf(stderr, "Recvall Failed : Connection disconnected."
+								"The error msg is %s \n ", std::strerror(errno));
 			}
 			return bytes_read;
 		}
@@ -69,10 +70,10 @@ int DataTransfer::recvAll(int &sock, void *buf, int data_size){
 	return 1;
 }
 
-valueVec DataTransfer::deserialize(std::string &data){
+strVec DataTransfer::deserialize(std::string &data){
 
 	packet::msg dec;
-	valueVec out_data;
+	strVec out_data;
 
 	dec.ParseFromString(data);
 
@@ -149,11 +150,11 @@ std::string DataTransfer::serializePrp(const Properties &properties_p){
 			grp_cfg->set_read_ratio(gconfig->read_ratio);
 			grp_cfg->set_duration(gconfig->duration);
 
-			for(int i=0; i<gconfig->keys.size(); i++){
+			for(uint i=0; i<gconfig->keys.size(); i++){
 				grp_cfg->add_keys(gconfig->keys[i]);
 			}
 
-			for(int i=0; i<gconfig->client_dist.size(); i++){
+			for(uint i=0; i<gconfig->client_dist.size(); i++){
 				grp_cfg->add_client_dist(gconfig->client_dist[i]);
 			}
 
@@ -204,7 +205,7 @@ Properties DataTransfer::deserializePrp(std::string &data){
 	prp.metadata_server_timeout = gprp.metadata_server_timeout();
 	prp.timeout_per_request = gprp.timeout_per_request();
 	prp.start_time = gprp.start_time();
-	
+
 	// Datacenter need to be inserted in order
 	for(int i=0 ; i < gprp.datacenters_size(); i++){
 		DC *dc = new DC;

@@ -35,7 +35,7 @@
 #define BACKLOG 10
 #define CLIENT_PORT 10001
 
-//#define DEVELOPMENT
+#define DEVELOPMENT
 
 
 extern bool DEBUG_CAS_Client;
@@ -50,6 +50,8 @@ extern bool DEBUG_ABD_Server;
 #define DPRINTF(flag, fmt, ...) \
 	if(flag) \
         fprintf(stdout, "Time %10li - Thread: %lu : [%s][%s]%d: " fmt, time(nullptr), pthread_self(), __FILE__, __func__, __LINE__, ##__VA_ARGS__);
+
+typedef std::vector<std::string> strVec;
 
 struct Server;
 

@@ -24,7 +24,6 @@
 #include "Util.h"
 using std::string;
 
-typedef std::vector<std::string> strVec;
 
 class CAS_Server {
 public:

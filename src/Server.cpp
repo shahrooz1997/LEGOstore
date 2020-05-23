@@ -8,15 +8,14 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 	std::string recvd;
 	int result = DataTransfer::recvMsg(connection,recvd);
 	if(result != 1){
-		valueVec msg{"failure","No data Found"};
+		strVec msg{"failure","No data Found"};
 		DataTransfer::sendMsg(connection, DataTransfer::serialize(msg));
 		close(connection);
 		return;
 	}
 
-    	valueVec data = DataTransfer::deserialize(recvd);
-	std::cout << "New METHOD CALLED "<< data[0] << " The value is " << data[2]
-			<<"server port is" << portid << std::endl;
+    	strVec data = DataTransfer::deserialize(recvd);
+	std::cout << "New METHOD CALLED "<< data[0] << " The value is " << data[2] <<"server port is" << portid << std::endl;
 	std::string &method = data[0];
 	if(method == "put"){
 		result = DataTransfer::sendMsg(connection, DataTransfer::serialize(dataserver.put(data[1], data[2], data[3], data[4])));
@@ -59,7 +58,7 @@ int main(){
 	for(int i=0; i<9 ;i++){
 		dsobj[i] = new DataServer(db_list[i], socket_setup(socket_port[i]));
 	}
-	for(int i=0; i< socket_port.size(); i++){
+	for(uint i=0; i< socket_port.size(); i++){
 		//sobj[i])(db_list[i], socket_setup(socket_port[i]));
 		//std::thread newServer([temp](int port){test(temp, port);}, i);
 		std::thread newServer(test, dsobj[i], i);

@@ -9,6 +9,8 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Plac
 	test->protocol = "CAS";
    test->m = 5;
    test->k = 3;
+
+   std::cout<< "port of dcs 0 is " << dcs[0]->servers[0]->port << "port of dcs 1 is " << dcs[1]->servers[0]->port << std::endl;
    test->Q1.push_back(dcs[0]);
     test->Q1.push_back(dcs[1]);
     test->Q1.push_back(dcs[2]);
@@ -24,7 +26,7 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Plac
     test->Q4.push_back(dcs[3]);
     test->Q4.push_back(dcs[4]);
 
-	for(int i=0; i<gworkload.size(); i++){
+	for(uint i=0; i<gworkload.size(); i++){
 		placement.push_back(test);
 	}
 	return 0;
@@ -55,7 +57,6 @@ int Controller::read_setup_info(std::string &configFile){
 			sv->id = stoui(server.key());
 			server.value()["host"].get_to(sv->ip);
 
-			//TODO:: No range check being done here, conversion to 16 bit
 			sv->port = stoui(server.value()["port"].get<std::string>());
 			sv->datacenter = dc;
 			dc->servers.push_back(sv);
@@ -137,7 +138,7 @@ int Controller::generate_client_config(const std::vector<WorkloadConfig*> &input
 		}
 
 		std::cout<<__func__ << "Adding , size " << it->grp.size() <<std::endl;
-		for(int i=0; i < placement.size(); i++){
+		for(uint i=0; i < placement.size(); i++){
 			GroupConfig *gcfg = new GroupConfig;
 			gcfg->object_size = it->grp[i]->object_size;
 			gcfg->num_objects = it->grp[i]->num_objects;
@@ -210,7 +211,7 @@ int Controller::init_setup(std::string configFile, std::string filePath){
 		}
 
 		// Send the config to each client in the deployment file
-		for(int i = 0; i < addr_info.size(); i++){
+		for(uint i = 0; i < addr_info.size(); i++){
 
 			//Using datacenter_id as client id for now, can change later
 			prp.local_datacenter_id = i;

@@ -10,8 +10,9 @@
 #include <arpa/inet.h>
 #include "serialize.pb.h"
 #include "Util.h"
+#include <cerrno>
 
-typedef std::vector<std::string> valueVec;
+typedef std::vector<std::string> strVec;
 
 class DataTransfer{
 public:
@@ -23,11 +24,11 @@ public:
 
 	static int recvMsg(int sock, std::string &data);
 
-	static std::string serialize(const valueVec &data);
+	static std::string serialize(const strVec &data);
 
 	static std::string serializePrp(const Properties &properties_p);
 
-	static valueVec deserialize(std::string &data);
+	static strVec deserialize(std::string &data);
 
 	static Properties deserializePrp(std::string &data);
 };

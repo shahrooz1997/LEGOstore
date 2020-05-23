@@ -1,5 +1,6 @@
 #include "Persistent.h"
 #include "Data_Transfer.h"
+#include <cassert>
 
 Persistent::Persistent(const std::string &directory){
 
@@ -30,15 +31,19 @@ const std::vector<std::string> Persistent::get(const std::string &key){
 
 void Persistent::put(const std::string &key, std::vector<std::string> value){
 
+	if(value.empty()){
+		std::cout<<"Error ! emtpy insertion" << std::endl;
+		assert(0);
+	}
 	std::string out_str = DataTransfer::serialize(value);
 
-	DPRINTF(DEBUG_CAS_Server,"PERSISTENT PUT~!!! -- size before endonig : %lu\n", value[0].size());
-	std::vector<std::string> test_dec =  DataTransfer::deserialize(out_str);
-
-	//TODO:: do I need this anymore?
-	if(!(value[0] == test_dec[0])){
-		DPRINTF(DEBUG_CAS_Server,"ENCODE DECODE TEST FAILED!!!!! out str : %s and test_dec : %s\n", value[0].c_str(), test_dec[0].c_str());
-	}
+	// DPRINTF(DEBUG_CAS_Server,"PERSISTENT PUT~!!! -- size before endonig : %lu\n", value[0].size());
+	// std::vector<std::string> test_dec =  DataTransfer::deserialize(out_str);
+	//
+	// //TODO:: do I need this anymore?
+	// if(!(value[0] == test_dec[0])){
+	// 	DPRINTF(DEBUG_CAS_Server,"ENCODE DECODE TEST FAILED!!!!! out str : %s and test_dec : %s\n", value[0].c_str(), test_dec[0].c_str());
+	// }
 
 	rocksdb::Status s = db->Put(rocksdb::WriteOptions(), key, out_str);
 	if(!s.ok()){
@@ -65,7 +70,10 @@ void Persistent::modify_flag(const std::string &key, int label){
 	assert(s.ok());
 
 	//Modify the First Byte
-	_value[0] = static_cast<char>(label);
+	std::vector<std::string> raw_data = DataTransfer::deserialize(_value);
+	raw_data[1] = static_cast<char>(label);
+	_value = DataTransfer::serialize(raw_data);
+
 	s = db->Put(rocksdb::WriteOptions(), key, _value);
 	if(!s.ok()){
 		std::cerr << s.ToString() << std::endl;

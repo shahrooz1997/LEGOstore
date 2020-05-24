@@ -2,31 +2,34 @@
 #include <typeinfo>
 #include <ratio>
 
-int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Placement*> &placement){
-	Placement *test = new Placement;
-	Controller trial(1, 120, 120, "./config/setup_config.json");
-	std::vector<DC*> dcs = trial.prp.datacenters;
-	test->protocol = "CAS";
-   test->m = 5;
-   test->k = 3;
+int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<DC*> dcs,  std::vector<Placement*> &placement){
 
-   std::cout<< "port of dcs 0 is " << dcs[0]->servers[0]->port << "port of dcs 1 is " << dcs[1]->servers[0]->port << std::endl;
-   test->Q1.push_back(dcs[0]);
-    test->Q1.push_back(dcs[1]);
-    test->Q1.push_back(dcs[2]);
-    test->Q2.push_back(dcs[0]);
-    test->Q2.push_back(dcs[1]);
-    test->Q2.push_back(dcs[2]);
-    test->Q2.push_back(dcs[3]);
-    test->Q2.push_back(dcs[4]);
-    test->Q3.push_back(dcs[2]);
-    test->Q3.push_back(dcs[3]);
-    test->Q3.push_back(dcs[4]);
-    test->Q4.push_back(dcs[2]);
-    test->Q4.push_back(dcs[3]);
-    test->Q4.push_back(dcs[4]);
-
+	//For testing purposes
 	for(uint i=0; i<gworkload.size(); i++){
+		Placement *test = new Placement;
+		// Controller trial(1, 120, 120, "./config/setup_config.json");
+		// std::vector<DC*> dcs = trial.prp.datacenters;
+		test->protocol = "CAS";
+	   test->m = 5;
+	   test->k = 3;
+
+	   std::cout<< "port of dcs 0 is " << dcs[0]->servers[0]->port << "port of dcs 1 is " << dcs[1]->servers[0]->port << std::endl;
+	   test->Q1.push_back(dcs[0]);
+	    test->Q1.push_back(dcs[1]);
+	    test->Q1.push_back(dcs[2]);
+	    test->Q2.push_back(dcs[0]);
+	    test->Q2.push_back(dcs[1]);
+	    test->Q2.push_back(dcs[2]);
+	    test->Q2.push_back(dcs[3]);
+	    test->Q2.push_back(dcs[4]);
+	    test->Q3.push_back(dcs[2]);
+	    test->Q3.push_back(dcs[3]);
+	    test->Q3.push_back(dcs[4]);
+	    test->Q4.push_back(dcs[2]);
+	    test->Q4.push_back(dcs[3]);
+	    test->Q4.push_back(dcs[4]);
+
+
 		placement.push_back(test);
 	}
 	return 0;
@@ -132,7 +135,7 @@ int Controller::generate_client_config(const std::vector<WorkloadConfig*> &input
 
 		// Memory allocation has to happen inside function call
 		std::vector<Placement*> placement;
-		if (CostBenefitAnalysis(it->grp, placement) == 1){
+		if (CostBenefitAnalysis(it->grp, prp.datacenters, placement) == 1){
 			 std::cout<< "Cost Benefit analysis failed for timestamp : "<< it->timestamp << std::endl;
 			 return 1;
 		}
@@ -187,6 +190,12 @@ int Controller::init_setup(std::string configFile, std::string filePath){
 		return 1;
 	}
 
+	//Free "inp" data structure
+	// if(!inp.empty()){
+	// 	for(auto &it: inp){
+	// 		delete it;
+	// 	}
+	// }
 	std::string out_str;
 	int start_offset = 10; 			// In secs
 	try{

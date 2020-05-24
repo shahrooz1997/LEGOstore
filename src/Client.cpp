@@ -35,7 +35,7 @@ static inline int next_event(std::string &dist_process){
 	return 0;
 }
 
-static inline uint32_t create_threadId(int &client_id, int &grp_idx, int &req_idx){
+static inline uint32_t create_threadId(int &client_id, int &grp_idx, const int &req_idx){
 
 	uint32_t id = 0;
 	// Checking the bounds of each index
@@ -48,12 +48,12 @@ static inline uint32_t create_threadId(int &client_id, int &grp_idx, int &req_id
 	return id;
 }
 int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &keys, Placement *pp, time_point<system_clock, millis> tp,
-							std::string &dist_process, int grp_idx, int req_idx){
+							std::string &dist_process, int grp_idx, int req_idx, int desc){
 	int cnt = 0; 		// Count the number of requests
 	int reqType = 0;    // 1 for GET, 2 for PUT
 	int key_idx = -1;
 	uint32_t threadId = create_threadId(clientId, grp_idx, req_idx);
-	CAS_Client clt(test, threadId);
+	CAS_Client clt(test, threadId, desc);
 	//Scope of this seeding is global
 	//So, may lead to same operation sequence on all threads
 	srand(threadId);
@@ -86,6 +86,7 @@ int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &
 	return 0;
 }
 
+
 int key_req_gen(Properties &prop, int grp_idx, std::string dist_process){
 
 	clientId = prop.local_datacenter_id;
@@ -94,7 +95,7 @@ int key_req_gen(Properties &prop, int grp_idx, std::string dist_process){
 
 	std::this_thread::sleep_until(timePoint);
 	int avg = 0;
-//	bool key_init = true;	// True only for the first iteration of each grp
+	bool key_init = true;	// True only for the first iteration of each grp
 				// After the first iteration all keys will be initialized
 				// This assumes keys are not added while experiment happening
 	int act_cnt = 0;
@@ -112,6 +113,16 @@ int key_req_gen(Properties &prop, int grp_idx, std::string dist_process){
 		// The config for this grp index
 		grpCfg = prop.groups[j]->grp_config[it - prop.groups[j]->grp_id.begin()];
 
+		int desc = create_liberasure_instance(grpCfg->placement_p);
+
+		// Prep the database before the next epoch, write objects of specified size
+		CAS_Client client(test, create_threadId(clientId, grp_idx, 0), desc);
+		for(auto &key: grpCfg->keys){
+			std::string val(grpCfg->object_size, 'a'+ (grp_idx%26));
+			client.put(key, val, *grpCfg->placement_p, key_init);
+			numt += 1;
+		}
+
 		running = true;
 		//Start threads
 		std::vector<std::thread> threads;
@@ -119,18 +130,10 @@ int key_req_gen(Properties &prop, int grp_idx, std::string dist_process){
 		//Round up to nearest integer value
 		long numReqs = lround(grpCfg->client_dist[clientId] * grpCfg->arrival_rate);
 
-		// Prep the database before the next epoch, write objects of specified size
-		// int tmp_idx = 0;
-		// CAS_Client client(test, create_threadId(clientId, grp_idx, tmp_idx));
-		// for(auto &key: grpCfg->keys){
-		// 	std::string val(grpCfg->object_size, 'a'+ (grp_idx%26));
-		// 	client.put(key, val, *grpCfg->placement_p, key_init);
-		// 	numt += 1;
-		// }
 
 		for(long i=0; i<numReqs; i++){
 			threads.emplace_back(run_session, grpCfg->object_size, grpCfg->read_ratio, std::ref(grpCfg->keys), \
-							grpCfg->placement_p, timePoint, std::ref(dist_process), grp_idx, i);
+							grpCfg->placement_p, timePoint, std::ref(dist_process), grp_idx, i, desc);
 		}
 
 		timePoint += millis{grpCfg->duration* 1000};
@@ -141,11 +144,12 @@ int key_req_gen(Properties &prop, int grp_idx, std::string dist_process){
 			th.join();
 		}
 
-		std::cout<<"NUm value before returning" << numt.load() << std::endl;
+		destroy_liberasure_instance(desc);
+		//std::cout<<"NUm value before returning" << numt.load() << std::endl;
 		avg += numt.load()/(grpCfg->duration);
 		threads.clear();
 		numt = 0;
-		//key_init = false;
+		key_init = false;
 	}
 
 	avg = avg/act_cnt;
@@ -185,10 +189,20 @@ int main(int argc, char* argv[]){
 			return 0;
 		}
 
-		//TODO:: For testing purpose. Initialzing the key
-		CAS_Client clt(test, 1);
-		clt.put("group11", "1111aaaaa", *(cc.groups[0]->grp_config[0]->placement_p), true);
-		clt.put("group12", "22222bbbbb", *(cc.groups[0]->grp_config[0]->placement_p), true);
+		// //TODO:: For testing purpose. Initialzing the key
+		// Placement *p = cc.groups[0]->grp_config[0]->placement_p;
+		// struct ec_args null_args;
+	    // null_args.k = p->k;
+	    // null_args.m = p->m - p->k;
+	    // null_args.w = 16; // ToDo: what must it be?
+	    // null_args.ct = CHKSUM_NONE;
+		//
+		// int desc = liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, &null_args);
+		// CAS_Client clt(test, 1, desc);
+		// clt.put("group11", "1111aaaaa", *p, true);
+		// clt.put("group12", "22222bbbbb", *p, true);
+		//
+		// assert(0 == liberasurecode_instance_destroy(desc));
 
 		//TODO:: decide where to specify the distribiution
 		// Assumes the Group 0 in config contains all key grps
@@ -205,7 +219,7 @@ int main(int argc, char* argv[]){
 
 		float avg_rate = 0;
 		int ret_val =0;
-		while(wait(&ret_val) >=0){\
+		while(wait(&ret_val) >=0){
 			std::cout << "Child temination status " << WIFEXITED(ret_val) << "  Rate receved is " <<  WEXITSTATUS(ret_val) <<
 					" : " << WIFSIGNALED(ret_val) << " : " << WTERMSIG(ret_val) <<std::endl;
 			avg_rate += WEXITSTATUS(ret_val);

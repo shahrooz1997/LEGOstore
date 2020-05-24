@@ -25,6 +25,15 @@ CAS_Client::CAS_Client(Properties &prop, uint32_t client_id) {
     this->current_class = "CAS";
     this->id = client_id;
     this->prop = prop;
+    this->desc = -1;
+    //this->destroy_desc = 1;
+}
+CAS_Client::CAS_Client(Properties &prop, uint32_t client_id, int desc_l) {
+    this->current_class = "CAS";
+    this->id = client_id;
+    this->prop = prop;
+    this->desc = desc_l;
+    //this->destroy_desc = 0;
 }
 
 CAS_Client::~CAS_Client() {
@@ -247,15 +256,15 @@ void _put_fin(std::string *key, std::mutex *mutex,
 }
 
 void encode(const std::string * const data, std::vector <std::string*> *chunks,
-                        struct ec_args * const args){
+                        struct ec_args * const args, int desc){
 
     int rc = 0;
-    int desc = -1;
+    //int desc = -1;
     char *orig_data = NULL;
     char **encoded_data = NULL, **encoded_parity = NULL;
     uint64_t encoded_fragment_len = 0;
 
-    desc = liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, args);
+    //desc = liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, args);
 
     if (-EBACKENDNOTAVAIL == desc) {
         fprintf(stderr, "Backend library not available!\n");
@@ -281,14 +290,12 @@ void encode(const std::string * const data, std::vector <std::string*> *chunks,
         frag = (i < args->k) ? encoded_data[i] : encoded_parity[i - args->k];
         assert(frag != NULL);
         chunks->push_back(new std::string(frag, encoded_fragment_len));
-        //std::cout<<"ENcoded bits chunk "<<i << " : " << *(chunks[i]) <<std::endl;
-
     }
 
     rc = liberasurecode_encode_cleanup(desc, encoded_data, encoded_parity);
     assert(rc == 0);
 
-    assert(0 == liberasurecode_instance_destroy(desc));
+    //assert(0 == liberasurecode_instance_destroy(desc));
 
     return;
 }
@@ -314,7 +321,7 @@ int create_frags_array(char ***array,
     ptr = *array;
     for (i = 0; i < args->k; i++) {
         if (data[i] == NULL || skips[i] == 1) {
-            printf("%d skipped1\n", i);
+            //printf("%d skipped1\n", i);
             continue;
         }
         *ptr++ = data[i];
@@ -323,7 +330,7 @@ int create_frags_array(char ***array,
     //add parity frags
     for (i = 0; i < args->m; i++) {
         if (parity[i] == NULL || skips[i + args->k] == 1) {
-            printf("%d skipped2\n", i);
+            //printf("%d skipped2\n", i);
             continue;
         }
         *ptr++ = parity[i];
@@ -334,11 +341,11 @@ out:
 }
 
 void decode(std::string *data, std::vector <std::string*> *chunks,
-                        struct ec_args * const args){
+                        struct ec_args * const args, int desc){
 
     int i = 0;
     int rc = 0;
-    int desc = -1;
+    //int desc = -1;
     char *orig_data = NULL;
     char **encoded_data = new char*[args->k], **encoded_parity = new char*[args->m];
     uint64_t decoded_data_len = 0;
@@ -356,7 +363,7 @@ void decode(std::string *data, std::vector <std::string*> *chunks,
 
     DPRINTF(DEBUG_CAS_Client, "The chunk size DECODE is %lu\n", chunks->at(0)->size());
 
-    desc = liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, args);
+    //desc = liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, args);
 
     if (-EBACKENDNOTAVAIL == desc) {
         fprintf(stderr, "Backend library not available!\n");
@@ -400,7 +407,7 @@ void decode(std::string *data, std::vector <std::string*> *chunks,
     rc = liberasurecode_decode_cleanup(desc, decoded_data);
     assert(rc == 0);
 
-    assert(0 == liberasurecode_instance_destroy(desc));
+    //assert(0 == liberasurecode_instance_destroy(desc));
     free(orig_data);
     free(avail_frags);
 
@@ -408,6 +415,7 @@ void decode(std::string *data, std::vector <std::string*> *chunks,
         delete[] encoded_data[i];
     }
 
+    delete[] skip;
     delete[] encoded_data;
     delete[] encoded_parity;
 }
@@ -418,13 +426,12 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
     struct ec_args null_args;
     null_args.k = p.k;
     null_args.m = p.m - p.k;
-    //TODO: set window to what?
     null_args.w = 16;
     null_args.ct = CHKSUM_NONE;
 
     DPRINTF(DEBUG_CAS_Client, "The value to be stored is %s \n", value.c_str());
 
-    std::thread encoder(encode, &value, &chunks, &null_args);
+    std::thread encoder(encode, &value, &chunks, &null_args, this->desc);
 
     Timestamp *timestamp = nullptr;
     Timestamp *tmp = nullptr;
@@ -455,9 +462,9 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
                 (*it)->servers[0], timestamp, this->current_class);
         th.detach();
         DPRINTF(DEBUG_CAS_Client, "Issue Q2 request to key: %s and timestamp: %s  chunk_size :%lu  chunks: ", key.c_str(), timestamp->get_string().c_str(), chunks[i]->size());
-        for (auto& el : *chunks[i])
-  	         printf("%02hhx", el);
-        std::cout << '\n';
+        // for (auto& el : *chunks[i])
+  	    //      printf("%02hhx", el);
+        // std::cout << '\n';
         i++;
     }
 
@@ -480,6 +487,7 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
     for(uint i = 0; i < chunks.size(); i++){
         delete chunks[i];
     }
+    delete timestamp;
 
     std::unique_lock<std::mutex> lock2(mtx);
     while(counter < p.Q3.size()){
@@ -536,9 +544,9 @@ void _get(std::string *key, std::vector<std::string*> *chunks, std::mutex *mutex
         std::unique_lock<std::mutex> lock(*mutex);
         chunks->push_back(new std::string(data_portion));
         DPRINTF(DEBUG_CAS_Client, " chunk received for key : %s and timestamp :%s   chunk_size :%lu  is ", key->c_str(), timestamp->get_string().c_str(), data_portion.size());
-        for (auto& el : data_portion)
-  	         printf("%02hhx", el);
-        std::cout << '\n';
+        // for (auto& el : data_portion)
+  	    //      printf("%02hhx", el);
+        // std::cout << '\n';
 
         (*counter)++;
         cv->notify_one();
@@ -589,9 +597,13 @@ uint32_t CAS_Client::get(std::string key, std::string &value, Placement &p){
     null_args.w = 16; // ToDo: what must it be?
     null_args.ct = CHKSUM_NONE;
 
-    decode(&value, &chunks, &null_args);
+    decode(&value, &chunks, &null_args, this->desc);
 
-    printf("Received value for key : %s and timestamp is :%s  is: %s\n", key.c_str(), timestamp->get_string().c_str(), value.c_str());
+    DPRINTF(DEBUG_CAS_Client,"Received value for key : %s and timestamp is :%s  is: %s\n", key.c_str(), timestamp->get_string().c_str(), value.c_str());
 
+    for(auto it: chunks){
+        delete it;
+    }
+    delete timestamp;
     return S_OK;
 }

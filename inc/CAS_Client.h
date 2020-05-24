@@ -41,6 +41,7 @@
 class CAS_Client {
 public:
     CAS_Client(Properties &prop, uint32_t client_id);
+    CAS_Client(Properties &prop, uint32_t client_id, int desc_l);
     CAS_Client(const CAS_Client& orig) = delete;
     virtual ~CAS_Client();
 
@@ -50,6 +51,7 @@ public:
 private:
     uint32_t id;
     Properties prop;
+    int desc;
     std::string current_class; // "CAS"
 
     Timestamp* get_timestamp(std::string *key, Placement &p);

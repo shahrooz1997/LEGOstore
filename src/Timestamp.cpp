@@ -45,9 +45,8 @@ Timestamp& Timestamp::max_timestamp(std::vector<Timestamp*>& v){
 
 		}
 	}
-
-	std::cout<<"TIMESTAMP!! CHOOSIGN MAX, max at END time :"<<(*it_max)->time<<" client_id: "
-			<< (*it_max)->client_id << std::endl;
+	
+	//printf("TIMESTAMP!! CHOOSIGN MAX, max time : %u  and client_id: %u \n", (*it_max)->time, (*it_max)->client_id);
 	return *(*it_max);
 }
 

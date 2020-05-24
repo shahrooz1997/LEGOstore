@@ -17,21 +17,43 @@
 #include <unistd.h>
 #include <regex>
 
+#include <sys/time.h>
+
+char fmt_abd[64];
+char buf_abd[64];
+struct timeval tv_abd;
+struct tm *tm22_abd;
 
 ABD_Client::ABD_Client(Properties &prop, uint32_t client_id) {
     this->current_class = "ABD";
     this->id = client_id;
     this->prop = prop;
+    this->operation_id = 0;
+    char name[20];
+    name[0] = '0' + client_id;
+    name[1] = '.';
+    name[2] = 't';
+    name[3] = 'x';
+    name[4] = 't';
+    name[5] = '\0';
+    this->log_file = fopen(name, "w");
 }
 
 ABD_Client::~ABD_Client() {
+    fclose(this->log_file);
     DPRINTF(DEBUG_ABD_Client, "client with id \"%u\" has been destructed.\n", this->id);
+}
+
+uint32_t ABD_Client::get_operation_id(){
+    return operation_id;
 }
 
 void _get_timestamp_ABD(std::string *key, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter, Server *server,
-                    std::string current_class, std::vector<Timestamp*> *tss){  
+                    std::string current_class, std::vector<Timestamp*> *tss,
+                    int operation_id, ABD_Client *doer){  
     DPRINTF(DEBUG_ABD_Client, "started.\n");
+    std::string key2 = *key;
     int sock = 0; 
     struct sockaddr_in serv_addr;
     if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){ 
@@ -54,7 +76,7 @@ void _get_timestamp_ABD(std::string *key, std::mutex *mutex,
     
     valueVec data;
     data.push_back("get_timestamp");
-    data.push_back(*key);
+    data.push_back(key2);
     data.push_back(current_class);
     DataTransfer().sendMsg(sock, data);
 
@@ -73,7 +95,7 @@ void _get_timestamp_ABD(std::string *key, std::mutex *mutex,
 //    start_index++;
 //    std::size_t end_index = tmp.find("\"", start_index);
     
-    printf("get timestamp, data received is %s\n", data[1].c_str());
+//    printf("get timestamp, data received is %s\n", data[1].c_str());
     std::string timestamp_str = data[1]; // tmp.substr(start_index, end_index - start_index);
     
     std::size_t dash_pos = timestamp_str.find("-");
@@ -84,10 +106,18 @@ void _get_timestamp_ABD(std::string *key, std::mutex *mutex,
     
     Timestamp* t = new Timestamp(client_id_ts, time_ts);
     
-    std::unique_lock<std::mutex> lock(*mutex);
-    tss->push_back(t);
-    (*counter)++;
-    cv->notify_one();
+    
+    if(doer->get_operation_id() == operation_id){
+        std::unique_lock<std::mutex> lock(*mutex);
+        tss->push_back(t);
+        (*counter)++;
+        cv->notify_one();
+    }
+    else{
+        delete t;
+    }
+    
+    close(sock);
 
     return;
 }
@@ -105,21 +135,26 @@ Timestamp* ABD_Client::get_timestamp_ABD(std::string *key, Placement &p){
     for(std::vector<DC*>::iterator it = p.Q1.begin();
             it != p.Q1.end(); it++){
         std::thread th(_get_timestamp_ABD, key, &mtx, &cv, &counter,
-                (*it)->servers[0], this->current_class, &tss);
+                (*it)->servers[0], this->current_class, &tss, this->operation_id, this);
         th.detach();
     }
     
     std::unique_lock<std::mutex> lock(mtx);
-    while(counter < p.Q1.size()){
+    while(counter < p.Q1.size()/ 2 + 1){
         cv.wait(lock);
     }
-    lock.unlock();
     
     ret = new Timestamp(Timestamp::max_timestamp(tss));
     
     for(std::vector<Timestamp*>::iterator it = tss.begin(); it != tss.end(); it++){
         delete *it;
     }
+    
+    lock.unlock();
+    
+//    printf("Max timestamp found: %s\n", ret->get_string().c_str());
+    
+    this->operation_id++;
     
     DPRINTF(DEBUG_ABD_Client, "finished successfully.\n");
 
@@ -129,9 +164,13 @@ Timestamp* ABD_Client::get_timestamp_ABD(std::string *key, Placement &p){
 void _put_ABD(std::string *key, std::string *value, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter,
                     Server *server, Timestamp* timestamp,
-                    std::string current_class){
+                    std::string current_class, int operation_id, ABD_Client *doer){
     
     DPRINTF(DEBUG_ABD_Client, "started.\n");
+    
+    std::string key2 = *key;
+    std::string value2 = *value;
+    Timestamp timestamp2 = *timestamp;
     
     int sock = 0; 
     struct sockaddr_in serv_addr;
@@ -156,13 +195,13 @@ void _put_ABD(std::string *key, std::string *value, std::mutex *mutex,
     
     valueVec data;
     data.push_back("put");
-    data.push_back(*key);
-    data.push_back(*value);
-    data.push_back(timestamp->get_string());
+    data.push_back(key2);
+    data.push_back(value2);
+    data.push_back(timestamp2.get_string());
     data.push_back(current_class);
     
-    std::cout<< "AAAAA: Sending Value  _PUT"<<(*value).size() << "value is "<< (*value) <<std::endl;
-    if((*value).empty()){
+//    std::cout<< "AAAAA: Sending Value  _PUT"<<(*value).size() << "value is "<< (*value) <<std::endl;
+    if((value2).empty()){
 	printf("WARNING!!! SENDING EMPTY STRING \n");
     }
     DataTransfer().sendMsg(sock, data);
@@ -170,18 +209,33 @@ void _put_ABD(std::string *key, std::string *value, std::mutex *mutex,
     data.clear();
     DataTransfer().recvMsg(sock, data);
     
-    std::unique_lock<std::mutex> lock(*mutex);
-    (*counter)++;
-    cv->notify_one();
+    // Todo: parse data
     
-    DPRINTF(DEBUG_ABD_Client, "finished successfully. with port: %uh\n", server->port);
+    
+    if(doer->get_operation_id() == operation_id){
+        std::unique_lock<std::mutex> lock(*mutex);
+        (*counter)++;
+        cv->notify_one();
+//        printf("AAA\n");
+    }
+    
+    DPRINTF(DEBUG_ABD_Client, "finished successfully. with port: %u\n", server->port);
+    close(sock);
     
     return;
 }
 
 uint32_t ABD_Client::put(std::string key, std::string value, Placement &p, bool insert){
     
+    printf("BBBBB\n");
+    
 //    std::vector <std::string*> chunks;
+    
+    gettimeofday (&tv_abd, NULL);
+    tm22_abd = localtime (&tv_abd.tv_sec);
+    strftime (fmt_abd, sizeof (fmt_abd), "%H:%M:%S:%%06u", tm22_abd);
+    snprintf (buf_abd, sizeof (buf_abd), fmt_abd, tv_abd.tv_usec);
+    fprintf(this->log_file, "%s write invoke %s\n", buf_abd, value.c_str());
     
     Timestamp *timestamp = nullptr;
     Timestamp *tmp = nullptr;
@@ -207,27 +261,37 @@ uint32_t ABD_Client::put(std::string key, std::string value, Placement &p, bool 
     
     for(std::vector<DC*>::iterator it = p.Q2.begin();
             it != p.Q2.end(); it++){
-	printf("The port is: %uh", (*it)->servers[0]->port);
+//	printf("The port is: %uh", (*it)->servers[0]->port);
         std::thread th(_put_ABD, &key, &value, &mtx, &cv, &counter,
-                (*it)->servers[0], timestamp, this->current_class);
+                (*it)->servers[0], timestamp, this->current_class, this->operation_id, this);
         th.detach();
         i++;
     }
     
     std::unique_lock<std::mutex> lock(mtx);
-    while(counter < p.Q2.size()){
+    while(counter < p.Q2.size() / 2 + 1){
         cv.wait(lock);
     }
-    lock.unlock();
+    
+    this->operation_id++;
     
     DPRINTF(DEBUG_ABD_Client, "finished successfully.\n");
+    
+    gettimeofday (&tv_abd, NULL);
+    tm22_abd = localtime (&tv_abd.tv_sec);
+    strftime (fmt_abd, sizeof (fmt_abd), "%H:%M:%S:%%06u", tm22_abd);
+    snprintf (buf_abd, sizeof (buf_abd), fmt_abd, tv_abd.tv_usec);
+    fprintf(this->log_file, "%s write ok %s\n", buf_abd, value.c_str());
+    
     return S_OK;
 }
 
 void _get_ABD(std::string *key, std::vector<std::string*> *chunks, std::vector<Timestamp*> *tss,
                     std::mutex *mutex, std::condition_variable *cv, uint32_t *counter,
-                    Server *server, std::string current_class){
+                    Server *server, std::string current_class, int operation_id, ABD_Client *doer){
+    
     DPRINTF(DEBUG_ABD_Client, "started.\n");
+    std::string key2 = *key;
     
     int sock = 0;
     struct sockaddr_in serv_addr;
@@ -252,7 +316,7 @@ void _get_ABD(std::string *key, std::vector<std::string*> *chunks, std::vector<T
     
     valueVec data;
     data.push_back("get");
-    data.push_back(*key);
+    data.push_back(key2);
     data.push_back("None"); //ToDo: Need this??
     data.push_back(current_class);
     DataTransfer().sendMsg(sock, data);
@@ -270,21 +334,33 @@ void _get_ABD(std::string *key, std::vector<std::string*> *chunks, std::vector<T
     
     Timestamp* t = new Timestamp(client_id_ts, time_ts);
     
-    std::unique_lock<std::mutex> lock(*mutex);
-    chunks->push_back(new std::string(data_portion));
-    tss->push_back(t);
-    (*counter)++;
-    cv->notify_one();
+    
+    if(doer->get_operation_id() == operation_id){
+        std::unique_lock<std::mutex> lock(*mutex);
+        chunks->push_back(new std::string(data_portion));
+        tss->push_back(t);
+        (*counter)++;
+        cv->notify_one();
+    }
     
     DPRINTF(DEBUG_ABD_Client, "finished successfully.\n");
+    close(sock);
     
     return;
 }
 
 uint32_t ABD_Client::get(std::string key, std::string &value, Placement &p){
     
+    printf("AAAAA\n");
+    
+    gettimeofday (&tv_abd, NULL);
+    tm22_abd = localtime (&tv_abd.tv_sec);
+    strftime (fmt_abd, sizeof (fmt_abd), "%H:%M:%S:%%06u", tm22_abd);
+    snprintf (buf_abd, sizeof (buf_abd), fmt_abd, tv_abd.tv_usec);
+    fprintf(this->log_file, "%s read invoke nil\n", buf_abd);
+    
     value.clear();
-   
+    
     std::vector <std::string*> chunks;
     std::vector<Timestamp*> tss;
     
@@ -296,7 +372,7 @@ uint32_t ABD_Client::get(std::string key, std::string &value, Placement &p){
     for(std::vector<DC*>::iterator it = p.Q1.begin();
             it != p.Q1.end(); it++){
         std::thread th(_get_ABD, &key, &chunks, &tss, &mtx, &cv, &counter,
-                (*it)->servers[0], this->current_class);
+                (*it)->servers[0], this->current_class, this->operation_id, this);
         th.detach();
         i++;
     }
@@ -307,6 +383,7 @@ uint32_t ABD_Client::get(std::string key, std::string &value, Placement &p){
     }
     lock.unlock();
     
+    this->operation_id++;
     
     //ToDo: make it faster
     Timestamp *max_timestamp = new Timestamp(Timestamp::max_timestamp(tss));
@@ -337,9 +414,9 @@ uint32_t ABD_Client::get(std::string key, std::string &value, Placement &p){
     
     for(std::vector<DC*>::iterator it = p.Q2.begin();
             it != p.Q2.end(); it++){
-	printf("The port is: %uh", (*it)->servers[0]->port);
+//	printf("The port is: %uh", (*it)->servers[0]->port);
         std::thread th(_put_ABD, &key, &value, &mtx2, &cv2, &counter2,
-                (*it)->servers[0], max_timestamp, this->current_class);
+                (*it)->servers[0], max_timestamp, this->current_class, this->operation_id, this);
         th.detach();
         i++;
     }
@@ -355,7 +432,13 @@ uint32_t ABD_Client::get(std::string key, std::string &value, Placement &p){
     
     DPRINTF(DEBUG_ABD_Client, "Received value is: %s\n", value.c_str());
     
+    gettimeofday (&tv_abd, NULL);
+    tm22_abd = localtime (&tv_abd.tv_sec);
+    strftime (fmt_abd, sizeof (fmt_abd), "%H:%M:%S:%%06u", tm22_abd);
+    snprintf (buf_abd, sizeof (buf_abd), fmt_abd, tv_abd.tv_usec);
+    fprintf(this->log_file, "%s read ok %s\n", buf_abd, value.c_str());
+    
+    
     return S_OK;
 }
-
 

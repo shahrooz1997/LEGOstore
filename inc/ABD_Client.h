@@ -38,12 +38,19 @@ public:
     uint32_t put(std::string key, std::string value, Placement &p, bool insert = false);
     uint32_t get(std::string key, std::string &value, Placement &p);
     
+    uint32_t get_operation_id();
+    
 private:
+    
+    uint32_t operation_id;
+    
     uint32_t id;
     Properties prop;
     std::string current_class; // "CAS"
     
     Timestamp* get_timestamp_ABD(std::string *key, Placement &p);
+    
+    FILE* log_file;
 };
 
 #endif /* ABDCLIENT_H */

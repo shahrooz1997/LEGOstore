@@ -1,6 +1,6 @@
 CXX = g++
-CXXFLAGS = -std=c++11 -Iinc -g `pkg-config --cflags protobuf`
-LDFLAGS = -lm -lerasurecode -Llib -lrocksdb -ldl -lpthread `pkg-config --libs protobuf`
+CXXFLAGS =-Wall -std=c++11 -O -Iinc -g `pkg-config --cflags protobuf`
+LDFLAGS = -lm -lerasurecode -lrocksdb -Llib -ldl -lpthread `pkg-config --libs protobuf`
 
 
 src = $(wildcard src/*.cpp)
@@ -10,8 +10,9 @@ obj = $(patsubst src/%.cpp, obj/%.o, $(src)) #obj_t = $(src:src=obj)
 #bj = $(addsuffix .o, $(basename $(filter .cpp .cc, $(src))))
 #src1 = main.o
 #src2 = Data_Server.o
-obj2 = $(filter-out obj/main.o,  $(obj))
-obj1 = $(filter-out obj/Data_Server.o, $(obj))
+obj2 = $(filter-out obj/Client.o obj/Controller.o,  $(obj))
+obj1 = $(filter-out obj/Server.o obj/Controller.o, $(obj))
+obj3 = $(filter-out obj/Client.o obj/Server.o, $(obj))
 
 .PHONY: all
 all: obj server client
@@ -19,16 +20,27 @@ all: obj server client
 LEGOStore: $(obj) 
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-client : obj CASClient
-CASClient: $(obj1) 
+client : obj Client
+Client: $(obj1) 
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-server: obj CASServer
-CASServer: $(obj2) 
+server: obj Server
+Server: $(obj2) 
 	$(CXX) -o $@ $^ $(LDFLAGS)
+
+controller: obj Controller
+Controller: $(obj3)
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
 obj: 
 	mkdir obj
 
+proto: serialize.proto
+	mv inc/serialize.pb.cc src/serialize.pb.cpp
+
+serialize.proto:
+	protoc -I=inc --cpp_out=inc inc/serialize.proto
+	
 
 # Create object files
 $(obj): obj/%.o: src/%.cpp
@@ -42,7 +54,7 @@ ABD: obj src/ABD.cpp
 cleanall: clean cleandb
 
 clean:
-	rm -rf obj CASClient CASServer LEGOStore
+	rm -rf obj Client Server Controller LEGOStore
 
 cleandb:
 	rm -rf db*.temp

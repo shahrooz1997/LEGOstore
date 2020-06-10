@@ -62,7 +62,7 @@ void _get_timestamp_ABD(std::string *key, std::mutex *mutex,
     }
     serv_addr.sin_family = AF_INET; 
     serv_addr.sin_port = htons(server->port);
-    std::string ip_str = convert_ip_to_string(server->ip);
+    std::string ip_str = server->ip;
     
     if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){ 
         printf("\nInvalid address/ Address not supported \n"); 
@@ -74,14 +74,16 @@ void _get_timestamp_ABD(std::string *key, std::mutex *mutex,
         return; 
     }
     
-    valueVec data;
+    strVec data;
     data.push_back("get_timestamp");
     data.push_back(key2);
     data.push_back(current_class);
-    DataTransfer().sendMsg(sock, data);
+    DataTransfer().sendMsg(sock, DataTransfer::serialize(data));
 
     data.clear();
-    DataTransfer().recvMsg(sock, data); // data must have the timestamp.
+    std::string recvd;
+    DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
+    data =  DataTransfer::deserialize(recvd);
 
     
 //    std::string tmp((const char*)buf, buf_size);
@@ -181,7 +183,7 @@ void _put_ABD(std::string *key, std::string *value, std::mutex *mutex,
     
     serv_addr.sin_family = AF_INET; 
     serv_addr.sin_port = htons(server->port);
-    std::string ip_str = convert_ip_to_string(server->ip);
+    std::string ip_str = server->ip;
     
     if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){ 
         printf("\nInvalid address/ Address not supported \n"); 
@@ -193,7 +195,7 @@ void _put_ABD(std::string *key, std::string *value, std::mutex *mutex,
         return; 
     }
     
-    valueVec data;
+    strVec data;
     data.push_back("put");
     data.push_back(key2);
     data.push_back(value2);
@@ -204,10 +206,12 @@ void _put_ABD(std::string *key, std::string *value, std::mutex *mutex,
     if((value2).empty()){
 	printf("WARNING!!! SENDING EMPTY STRING \n");
     }
-    DataTransfer().sendMsg(sock, data);
+    DataTransfer().sendMsg(sock, DataTransfer::serialize(data));
     
     data.clear();
-    DataTransfer().recvMsg(sock, data);
+    std::string recvd;
+    DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
+    data =  DataTransfer::deserialize(recvd);
     
     // Todo: parse data
     
@@ -302,7 +306,7 @@ void _get_ABD(std::string *key, std::vector<std::string*> *chunks, std::vector<T
     
     serv_addr.sin_family = AF_INET; 
     serv_addr.sin_port = htons(server->port);
-    std::string ip_str = convert_ip_to_string(server->ip);
+    std::string ip_str = server->ip;
     
     if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){ 
         printf("\nInvalid address/ Address not supported \n"); 
@@ -314,15 +318,17 @@ void _get_ABD(std::string *key, std::vector<std::string*> *chunks, std::vector<T
         return; 
     }
     
-    valueVec data;
+    strVec data;
     data.push_back("get");
     data.push_back(key2);
     data.push_back("None"); //ToDo: Need this??
     data.push_back(current_class);
-    DataTransfer().sendMsg(sock, data);
+    DataTransfer().sendMsg(sock, DataTransfer::serialize(data));
     
     data.clear();
-    DataTransfer().recvMsg(sock, data);
+    std::string recvd;
+    DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
+    data =  DataTransfer::deserialize(recvd);
     std::string data_portion = data[1];
     
     std::string timestamp_str = data[2]; // tmp.substr(start_index, end_index - start_index);

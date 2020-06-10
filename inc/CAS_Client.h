@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   CAS_Client.h
  * Author: shahrooz
  *
@@ -27,11 +27,10 @@
 
 #include <stdint.h>
 #include <string>
-#include <sys/socket.h> 
-#include <stdlib.h> 
+#include <sys/socket.h>
+#include <stdlib.h>
 #include <netinet/in.h>
 #include <vector>
-#include "Util.h"
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -42,19 +41,27 @@
 class CAS_Client {
 public:
     CAS_Client(Properties &prop, uint32_t client_id);
+    CAS_Client(Properties &prop, uint32_t client_id, int desc_l);
     CAS_Client(const CAS_Client& orig) = delete;
     virtual ~CAS_Client();
-    
+
     uint32_t put(std::string key, std::string value, Placement &p, bool insert = false);
     uint32_t get(std::string key, std::string &value, Placement &p);
     
+    uint32_t get_operation_id();
+    
 private:
+    
+    uint32_t operation_id;
+    
     uint32_t id;
     Properties prop;
+    int desc;
     std::string current_class; // "CAS"
-    
+
     Timestamp* get_timestamp(std::string *key, Placement &p);
+    
+    FILE* log_file;
 };
 
 #endif /* CAS_Client_H */
-

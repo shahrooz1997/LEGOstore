@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   Timestamp.h
  * Author: shahrooz
  *
@@ -14,9 +14,8 @@
 #ifndef Timestamp_H
 #define Timestamp_H
 
-#include <string>
+#include "Util.h"
 #include <stdint.h>
-#include <vector>
 #include <assert.h>
 
 class Timestamp {
@@ -27,7 +26,7 @@ public:
     std::string get_string();
     Timestamp increase_timestamp(const uint32_t client_id);
     virtual ~Timestamp();
-    
+
     static Timestamp& max_timestamp(std::vector<Timestamp*>& v);
     friend bool operator > (Timestamp &lhs, Timestamp &rhs);
 
@@ -38,4 +37,3 @@ private:
 
 
 #endif /* Timestamp_H */
-

@@ -17,10 +17,10 @@ public:
 		: sockfd(sock),cache(500000000), persistent(directory){}
 
 	int getSocketDesc();
-	strVec get_timestamp(std::string &key, std::string &curr_class);
-	strVec put(std::string &key, std::string &value, std::string &timestamp, std::string &curr_class);
-	strVec put_fin(std::string &key, std::string &timestamp, std::string &curr_class);
-	strVec get(std::string &key, std::string &timestamp, std::string &curr_class);
+	std::string get_timestamp(std::string &key, std::string &curr_class);
+	std::string put(std::string &key, std::string &value, std::string &timestamp, std::string &curr_class);
+	std::string put_fin(std::string &key, std::string &timestamp, std::string &curr_class);
+	std::string get(std::string &key, std::string &timestamp, std::string &curr_class);
 
 private:
 

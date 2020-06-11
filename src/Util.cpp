@@ -36,6 +36,11 @@ JSON_Reader::JSON_Reader() {
 JSON_Reader::~JSON_Reader() {
 }
 
+void print_time(){
+    auto timenow = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::cout << ctime(&timenow) << std::endl;
+
+}
 std::string convert_ip_to_string(uint32_t ip){
     ip = htonl(ip);
     unsigned char *p = (unsigned char*)(&ip);
@@ -84,6 +89,27 @@ int socket_setup(const std::string &port, const std::string *IP){
 			perror("server -> set socket options");
 			continue;
 		}
+
+        enable = 0;
+        uint size_enable = sizeof(enable);
+        getsockopt(socketfd, SOL_SOCKET, SO_RCVBUF, &enable, &size_enable);
+        printf(" Size of the receive buffer is %u\n", enable);
+
+
+        enable = 212992;
+        if( setsockopt(socketfd, SOL_SOCKET, SO_RCVBUF, &enable, sizeof(enable)) == -1){
+			perror("server -> set socket options");
+			continue;
+		}
+
+
+        // struct linger sock_linger;
+        // sock_linger.l_onoff = 1;
+        // sock_linger.l_linger = MAX_LINGER_BEFORE_SOCK_CLOSE;
+        // if( setsockopt(socketfd, SOL_SOCKET, SO_LINGER, &sock_linger, sizeof(sock_linger)) == -1){
+        //     perror("server -> set socket options");
+        //     continue;
+        // }
 
 		if( bind(socketfd, ptr->ai_addr, ptr->ai_addrlen) == -1){
 			close(socketfd);

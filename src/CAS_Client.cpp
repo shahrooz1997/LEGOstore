@@ -73,44 +73,45 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
 
     data.clear();
     std::string recvd;
-    DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
-    data =  DataTransfer::deserialize(recvd);
+    if(DataTransfer::recvMsg(sock, recvd) == 1){ // data must have the timestamp.
+        data =  DataTransfer::deserialize(recvd);
 
-//    std::string tmp((const char*)buf, buf_size);
-//
-//    std::size_t pos = tmp.find("timestamp");
-//    pos = tmp.find(":", pos);
-//    std::size_t start_index = tmp.find("\"", pos);
-//    if(start_index == std::string::npos){
-//        return;
-//    }
-//    start_index++;
-//    std::size_t end_index = tmp.find("\"", start_index);
+    //    std::string tmp((const char*)buf, buf_size);
+    //
+    //    std::size_t pos = tmp.find("timestamp");
+    //    pos = tmp.find(":", pos);
+    //    std::size_t start_index = tmp.find("\"", pos);
+    //    if(start_index == std::string::npos){
+    //        return;
+    //    }
+    //    start_index++;
+    //    std::size_t end_index = tmp.find("\"", start_index);
 
-    if(data[0] == "OK"){
-    	printf("get timestamp, data received is %s\n", data[1].c_str());
-        std::string timestamp_str = data[1];
+        if(data[0] == "OK"){
+        	printf("get timestamp, data received is %s\n", data[1].c_str());
+            std::string timestamp_str = data[1];
 
-        std::size_t dash_pos = timestamp_str.find("-");
-        if(dash_pos >= timestamp_str.size()){
-            std::cerr << "SUbstr violated !!!!!!!" << timestamp_str <<std::endl;
+            std::size_t dash_pos = timestamp_str.find("-");
+            if(dash_pos >= timestamp_str.size()){
+                std::cerr << "Substr violated !!!!!!!" << timestamp_str <<std::endl;
+            }
+
+            // make client_id and time regarding the received message
+            uint32_t client_id_ts = stoi(timestamp_str.substr(0, dash_pos));
+            uint32_t time_ts = stoi(timestamp_str.substr(dash_pos + 1));
+
+            Timestamp* t = new Timestamp(client_id_ts, time_ts);
+
+            std::unique_lock<std::mutex> lock(*mutex);
+            tss->push_back(t);
+            (*counter)++;
+        }else{
+            std::unique_lock<std::mutex> lock(*mutex);
+            (*counter)++;
         }
 
-        // make client_id and time regarding the received message
-        uint32_t client_id_ts = stoi(timestamp_str.substr(0, dash_pos));
-        uint32_t time_ts = stoi(timestamp_str.substr(dash_pos + 1));
-
-        Timestamp* t = new Timestamp(client_id_ts, time_ts);
-
-        std::unique_lock<std::mutex> lock(*mutex);
-        tss->push_back(t);
-        (*counter)++;
-    }else{
-        std::unique_lock<std::mutex> lock(*mutex);
-        (*counter)++;
+        cv->notify_one();
     }
-
-    cv->notify_one();
     close(sock);
     return;
 }
@@ -484,16 +485,18 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
         DPRINTF(DEBUG_CAS_Client, "Issue Q3 request to key: %s \n", key.c_str());
     }
 
-    for(uint i = 0; i < chunks.size(); i++){
-        delete chunks[i];
-    }
-    delete timestamp;
+
 
     std::unique_lock<std::mutex> lock2(mtx);
     while(counter < p.Q3.size()){
         cv.wait(lock2);
     }
     lock2.unlock();
+
+    for(uint i = 0; i < chunks.size(); i++){
+        delete chunks[i];
+    }
+    delete timestamp;
 
     return S_OK;
 }
@@ -536,22 +539,23 @@ void _get(std::string *key, std::vector<std::string*> *chunks, std::mutex *mutex
 
     data.clear();
     std::string recvd;
-    DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
-    data =  DataTransfer::deserialize(recvd);
-    if(data[0] == "OK"){
-        std::string data_portion = data[1];
+    if (DataTransfer::recvMsg(sock, recvd) == 1){ // data must have the timestamp.
+        data =  DataTransfer::deserialize(recvd);
+        if(data[0] == "OK"){
+            std::string data_portion = data[1];
 
-        std::unique_lock<std::mutex> lock(*mutex);
-        chunks->push_back(new std::string(data_portion));
-        DPRINTF(DEBUG_CAS_Client, " chunk received for key : %s and timestamp :%s   chunk_size :%lu  is ", key->c_str(), timestamp->get_string().c_str(), data_portion.size());
-        // for (auto& el : data_portion)
-  	    //      printf("%02hhx", el);
-        // std::cout << '\n';
+            std::unique_lock<std::mutex> lock(*mutex);
+            chunks->push_back(new std::string(data_portion));
+            DPRINTF(DEBUG_CAS_Client, " chunk received for key : %s and timestamp :%s   chunk_size :%lu  is ", key->c_str(), timestamp->get_string().c_str(), data_portion.size());
+            // for (auto& el : data_portion)
+      	    //      printf("%02hhx", el);
+            // std::cout << '\n';
 
-        (*counter)++;
-        cv->notify_one();
+            (*counter)++;
+            cv->notify_one();
+        }
+        DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
     }
-    DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
     close(sock);
     return;
 }

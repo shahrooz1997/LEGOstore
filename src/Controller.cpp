@@ -2,6 +2,8 @@
 #include <typeinfo>
 #include <ratio>
 
+//Input : A vector of key groups
+// Returns the placement for each key group
 int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<DC*> dcs,  std::vector<Placement*> &placement){
 
 	//For testing purposes
@@ -141,6 +143,7 @@ int Controller::generate_client_config(const std::vector<WorkloadConfig*> &input
 		}
 
 		std::cout<<__func__ << "Adding , size " << it->grp.size() <<std::endl;
+		assert( it->grp.size() == placement.size());
 		for(uint i=0; i < placement.size(); i++){
 			GroupConfig *gcfg = new GroupConfig;
 			gcfg->object_size = it->grp[i]->object_size;
@@ -191,11 +194,11 @@ int Controller::init_setup(std::string configFile, std::string filePath){
 	}
 
 	//Free "inp" data structure
-	// if(!inp.empty()){
-	// 	for(auto &it: inp){
-	// 		delete it;
-	// 	}
-	// }
+	if(!inp.empty()){
+		for(auto &it: inp){
+			delete it;
+		}
+	}
 	std::string out_str;
 	int start_offset = 10; 			// In secs
 	try{
@@ -255,5 +258,7 @@ int main(){
 
 	Controller master(1, 120, 120, "./config/setup_config.json");
 	master.init_setup("./config/input_workload.json" , "config/deployment.txt");
+
+	
 	return 0;
 }

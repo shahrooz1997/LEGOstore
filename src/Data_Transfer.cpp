@@ -9,6 +9,7 @@ int DataTransfer::sendAll(int &sock, const void *data, int data_size){
 	while(data_size > 0){
 		if( (bytes_sent = send(sock, iter, data_size, 0)) == -1){
 			perror("sendAll -> send");
+			assert(0);
 			return -1;
 		}
 
@@ -27,6 +28,7 @@ std::string DataTransfer::serialize(const strVec &data){
 	}
 	std::string out_str;
 	enc.SerializeToString(&out_str);
+	//assert( out_str.empty() != 1);
 	return out_str;
 }
 
@@ -36,8 +38,8 @@ std::string DataTransfer::serialize(const strVec &data){
 // Return 1 on SUCCESS
 int DataTransfer::sendMsg(int &sock, const std::string &out_str){
 
-	int32_t _size = htonl(out_str.size());
-
+	//assert(out_str.empty() != 1);
+	uint32_t _size = htonl(out_str.size());
 	int result = sendAll(sock, &_size, sizeof(_size));
 	if(result == 1){
 		result = sendAll(sock, out_str.c_str(), out_str.size());
@@ -51,15 +53,16 @@ int DataTransfer::recvAll(int &sock, void *buf, int data_size){
 	char *iter = static_cast<char *>(buf);
 	int bytes_read = 0;
 
-
 	if(data_size > 0){
 		if( (bytes_read = recv(sock, iter, data_size, 0)) < 1){
 			if(bytes_read == -1){
-				perror("recvALL -> recv");
+				perror("recvALL -> recv err");
 			}else if(bytes_read == 0){
 				fprintf(stderr, "Recvall Failed : Connection disconnected."
 								"The error msg is %s \n ", std::strerror(errno));
 			}
+			//print_time();
+			assert(0);
 			return bytes_read;
 		}
 
@@ -67,6 +70,8 @@ int DataTransfer::recvAll(int &sock, void *buf, int data_size){
 		data_size -= bytes_read;
 	}
 
+	//DEBUG
+	assert(data_size == 0);
 	return 1;
 }
 
@@ -91,7 +96,7 @@ strVec DataTransfer::deserialize(std::string &data){
 //Returns 1 on SUCCESS
 int DataTransfer::recvMsg(int sock, std::string &data){
 
-	int32_t _size;
+	uint32_t _size = 0;
 	int result;
 
 	result = recvAll(sock, &_size, sizeof(_size));

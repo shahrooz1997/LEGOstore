@@ -14,6 +14,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <iostream>
 #include <vector>
 #include <string>
 #include <ctime>
@@ -26,6 +27,7 @@
 #include <unistd.h>
 #include <functional>
 #include <erasurecode.h>
+#include <chrono>
 
 
 // Define error values
@@ -33,8 +35,9 @@
 #define GENERAL_ERASURE_ERROR   -101
 
 // Backlog for socket listen
-#define BACKLOG 10
+#define BACKLOG 128
 #define CLIENT_PORT 10001
+#define MAX_LINGER_BEFORE_SOCK_CLOSE 50
 
 //#define DEVELOPMENT
 
@@ -195,6 +198,7 @@ inline uint16_t stous(const std::string& s)
 
 int socket_setup(const std::string &port, const std::string *IP = nullptr);
 int socket_cnt(int &sock, uint16_t port, const std::string &IP = "0.0.0.0");
+void print_time();
 
 //returns the liberasure desc
 inline int create_liberasure_instance(Placement *pp){

@@ -2,7 +2,6 @@
 #include <iostream>
 #include "Data_Transfer.h"
 #include <thread>
-#include <chrono>
 #include <algorithm>
 #include <sys/wait.h>
 #include <cmath>
@@ -85,8 +84,8 @@ int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &
 
 	return 0;
 }
-
-
+//NOTE:: A process is started for each grp_id
+//NOTE:: Grp key idx should match with its index in grp_config
 int key_req_gen(Properties &prop, int grp_idx, std::string dist_process){
 
 	clientId = prop.local_datacenter_id;
@@ -116,6 +115,7 @@ int key_req_gen(Properties &prop, int grp_idx, std::string dist_process){
 		int desc = create_liberasure_instance(grpCfg->placement_p);
 
 		// Prep the database before the next epoch, write objects of specified size
+		printf("Creating init threads for grp id: %d \n", grp_idx);
 		CAS_Client client(test, create_threadId(clientId, grp_idx, 0), desc);
 		for(auto &key: grpCfg->keys){
 			std::string val(grpCfg->object_size, 'a'+ (grp_idx%26));
@@ -145,7 +145,7 @@ int key_req_gen(Properties &prop, int grp_idx, std::string dist_process){
 		}
 
 		destroy_liberasure_instance(desc);
-		//std::cout<<"NUm value before returning" << numt.load() << std::endl;
+		std::cout<<"NUm value before returning" << numt.load() << std::endl;
 		avg += numt.load()/(grpCfg->duration);
 		threads.clear();
 		numt = 0;
@@ -208,6 +208,7 @@ int main(int argc, char* argv[]){
 		// Assumes the Group 0 in config contains all key grps
 		// Because initialization of all key_grps needed at start time
 		// Create a separate process for each Key group
+		// NOTE:: grp_id size and grp_config size should be equal for Groupxxxx
 		int grp_size = cc.groups[0]->grp_id.size();
 		for(int i=0; i<grp_size; i++){
 			if(fork() == 0){

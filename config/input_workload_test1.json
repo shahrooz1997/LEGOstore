@@ -1,7 +1,7 @@
 {
 "workload_config": [
         {
-            "timestamp": 10,
+            "timestamp": 5,
             "grp_id": [ 1 ],
             "grp_workload": [
                 {
@@ -20,7 +20,7 @@
                     "object_size": 50,
                     "metadata_size": 1e-09,
                     "num_objects": 1,
-                    "arrival_rate": 15,
+                    "arrival_rate": 1,
                     "read_ratio": 0.8,
                     "write_ratio": 0.1,
                     "SLO_read": 1000,
@@ -48,15 +48,15 @@
                         0.1111111111111111,
                         0.1111111111111111
                     ],
-                    "object_size": 40,
+                    "object_size": 1,
                     "metadata_size": 1e-09,
                     "num_objects": 1000000,
-                    "arrival_rate": 15,
+                    "arrival_rate": 1,
                     "read_ratio": 0.8,
                     "write_ratio": 0.1,
                     "SLO_read": 1000,
                     "SLO_write": 1000,
-                    "duration": 10,
+                    "duration": 20,
                     "time_to_decode": 0.00028,
                     "keys" : ["group12", "group11"]
                 }

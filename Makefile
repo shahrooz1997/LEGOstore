@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS =-Wall -std=c++11 -O -Iinc -g `pkg-config --cflags protobuf`
+CXXFLAGS =-Wall -std=c++11 -Iinc -g `pkg-config --cflags protobuf`
 LDFLAGS = -lm -lerasurecode -lrocksdb -Llib -ldl -lpthread `pkg-config --libs protobuf`
 
 
@@ -15,7 +15,7 @@ obj1 = $(filter-out obj/Server.o obj/Controller.o, $(obj))
 obj3 = $(filter-out obj/Client.o obj/Server.o, $(obj))
 
 .PHONY: all
-all: obj LEGOStore
+all: obj Client Server Controller 
 
 LEGOStore: $(obj) 
 	$(CXX) -o $@ $^ $(LDFLAGS)

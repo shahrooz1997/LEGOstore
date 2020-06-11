@@ -24,49 +24,51 @@ CAS_Server::~CAS_Server() {
 }
 
 //TODO:: fix the lock
-strVec CAS_Server::get_timestamp(string &key, Cache &cache, Persistent &persistent, std::mutex &lock_t){
+std::string CAS_Server::get_timestamp(string &key, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
 	//TODO:: check the different read and write lock
 	std::lock_guard<std::mutex> lock(lock_t);
 	DPRINTF(DEBUG_CAS_Server, "get_timestamp started and the key is %s\n", key.c_str());
 	const std::vector<std::string> *ptr = cache.get(key);
 	strVec data; // = (*cache.get(key))[0];
+	strVec result;
 
 	if(ptr == nullptr){
 		data = persistent.get(key);
 		DPRINTF(DEBUG_CAS_Server,"cache data checked and data is null\n");
 		if(data.empty()){
-			return {"Failed", "None"};
+			result = {"Failed", "None"};
 
 		}else{
 			DPRINTF(DEBUG_CAS_Server,"Found data in persisten. sending back! data is"\
 				"key:%s   timestamp:%s\n", key.c_str(), data[0].c_str() );
-			return {"OK", data[0]};
+			result = {"OK", data[0]};
 		}
 	}else{
 		DPRINTF(DEBUG_CAS_Server,"cache data checked and data is found\n");
 		data = (*ptr);
 		DPRINTF(DEBUG_CAS_Server,"cache data checked and data is %s\n",data[0].c_str() );
-		return {"OK", data[0]};
+		result = {"OK", data[0]};
 	}
 
-
+	assert(result.empty() != 1);
+	return DataTransfer::serialize(result);
 }
 
-strVec CAS_Server::put(string &key, string &value, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
+std::string CAS_Server::put(string &key, string &value, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
 	std::lock_guard<std::mutex> lock(lock_t);
 	DPRINTF(DEBUG_CAS_Server,"put function timestamp %s\n", timestamp.c_str());
 	insert_data(key, value, timestamp, false, cache, persistent);
-	return {"OK"};
+	return DataTransfer::serialize({"OK"});
 }
 
-strVec CAS_Server::put_fin(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
+std::string CAS_Server::put_fin(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
 	std::lock_guard<std::mutex> lock(lock_t);
 	DPRINTF(DEBUG_CAS_Server,"Calling put_fin fucntion timestamp:%s\n", timestamp.c_str());
 	insert_data(key, std::string(), timestamp, true, cache, persistent);
-	return {"OK"};
+	return DataTransfer::serialize({"OK"});
 }
 
 // Returns true if success, i.e., timestamp added as the fin timestamp for the key
@@ -102,10 +104,11 @@ bool complete_fin(std::string &key, std::string &timestamp, Cache &cache, Persis
 
 //TOD0:: when fin tag with empty value inserted, how is that handled at server for future requests, as in won't the server respond with emoty values when requested again.
 //TODO:: check, I removed the last param "required_value"
-strVec CAS_Server::get(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
+std::string CAS_Server::get(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
 	std::unique_lock<std::mutex> lock(lock_t);
 	DPRINTF(DEBUG_CAS_Server,"GET function called !! \n");
+	strVec result;
 
 	bool fnd = cache.exists(key+timestamp);
 	if(!fnd){
@@ -115,7 +118,7 @@ strVec CAS_Server::get(string &key, string &timestamp, Cache &cache, Persistent 
 			complete_fin(key, timestamp, cache, persistent);
 			//TODO::is the return value correct?
 			// Returning failed, to tell that no value is being returned
-			return {"Failed", "None"};
+			result = {"Failed", "None"};
 		}
 
 		strVec data = persistent.get(key+timestamp);
@@ -124,12 +127,15 @@ strVec CAS_Server::get(string &key, string &timestamp, Cache &cache, Persistent 
 		// Update the FIN label as well as label flag
 		insert_data(key,std::string(), timestamp, true, cache, persistent);
 		//complete_fin(key, timestamp, cache, persistent);
-		return {"OK", data[0]};
+		result = {"OK", data[0]};
 	}
 
 	insert_data(key, std::string(), timestamp, true, cache, persistent);
 	DPRINTF(DEBUG_CAS_Server," GET value found in Cache \n");
-	return {"OK", (*cache.get(key+timestamp))[0]};
+	result = {"OK", (*cache.get(key+timestamp))[0]};
+
+	assert(result.empty() != 1);
+	return DataTransfer::serialize(result);
 }
 
 

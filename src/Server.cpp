@@ -2,30 +2,39 @@
 #include <thread>
 #include "Data_Server.h"
 #include "Data_Transfer.h"
+#include <sys/ioctl.h>
+//#include <linux/sockios.h>
 
 void server_connection(int connection, DataServer &dataserver, int portid){
 
 	std::string recvd;
 	int result = DataTransfer::recvMsg(connection,recvd);
 	if(result != 1){
+		std::cout << "Waaaarninng!!!!!!!!! the result value is " << result << std::endl;
 		strVec msg{"failure","No data Found"};
 		DataTransfer::sendMsg(connection, DataTransfer::serialize(msg));
 		close(connection);
 		return;
 	}
 
-    	strVec data = DataTransfer::deserialize(recvd);
+	//DEBUG -- check if receive queue is empty
+	// char debug;
+	// int res  = recv(connection, &debug, 1, 0);
+	// assert(res == 0);
+
+
+    strVec data = DataTransfer::deserialize(recvd);
 	std::cout << "New METHOD CALLED "<< data[0] << " The value is " << data[2] <<"server port is" << portid << std::endl;
 	std::string &method = data[0];
 	if(method == "put"){
-		result = DataTransfer::sendMsg(connection, DataTransfer::serialize(dataserver.put(data[1], data[2], data[3], data[4])));
+		result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[2], data[3], data[4]));
 	}else if(method == "get"){
 		//std::cout << "GET fucntion called for server id "<< portid << std::endl;
-		result = DataTransfer::sendMsg(connection, DataTransfer::serialize(dataserver.get(data[1], data[2], data[3])));
+		result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3]));
 	}else if(method == "get_timestamp"){
-		result = DataTransfer::sendMsg(connection, DataTransfer::serialize(dataserver.get_timestamp(data[1], data[2])));
+		result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2]));
 	}else if(method == "put_fin"){
-		result = DataTransfer::sendMsg(connection, DataTransfer::serialize(dataserver.put_fin(data[1], data[2], data[3])));
+		result = DataTransfer::sendMsg(connection, dataserver.put_fin(data[1], data[2], data[3]));
 	}else {
 		DataTransfer::sendMsg(connection,  DataTransfer::serialize({"MethodNotFound", "Unknown method is called"}));
 	}
@@ -33,6 +42,35 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 	if(result != 1){
 		DataTransfer::sendMsg(connection,  DataTransfer::serialize({"Failure","Server Response failed"}));
 	}
+
+	shutdown(connection, SHUT_WR);
+
+	// //DEBUG_CAS_Server
+	// int lastOutstanding = -1;
+	// for(;;) {
+	// 	int outstanding;
+	// 	ioctl(connection, TIOCOUTQ, &outstanding);
+	// 	if(outstanding != lastOutstanding)
+	// 		printf("Outstanding: %d and socket id : %d\n", outstanding, connection);
+	// 	lastOutstanding = outstanding;
+	// 	if(!outstanding)
+	// 		break;
+	// 	std::this_thread::sleep_for(std::chrono::seconds(1));
+	// }
+
+	// int buffer = 0;
+	// for(;;) {
+	// 	int res=read(connection, &buffer, sizeof(buffer));
+	// 	if(res < 0) {
+	// 		perror("reading");
+	// 		close(connection);
+	// 		exit(1);
+	// 	}
+	// 	if(!res) {
+	// 		printf("Correct EOF\n");
+	// 		break;
+	// 	}
+	// }
 	close(connection);
 }
 
@@ -67,6 +105,7 @@ int main(){
 		newServer.detach();
 	}
 
+	//TODO:: free dsobj object here or somewhere
 	//TODO:: Change this, this is a temp FIX
 	std::mutex lock;
 	std::lock_guard<std::mutex> lck(lock);

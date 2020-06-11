@@ -22,6 +22,7 @@
 #include "Persistent.h"
 #include <mutex>
 #include "Util.h"
+#include "Data_Transfer.h"
 using std::string;
 
 
@@ -30,14 +31,14 @@ public:
 	CAS_Server();
 	CAS_Server(const CAS_Server& orig) = delete;
 	virtual ~CAS_Server();
-	strVec get_timestamp(string &key, Cache &cache, Persistent &persistent, std::mutex &lock_t);
+	string get_timestamp(string &key, Cache &cache, Persistent &persistent, std::mutex &lock_t);
 
-	strVec put(string &key, string &value, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t);
+	string put(string &key, string &value, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t);
 
-	strVec put_fin(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t);
+	string put_fin(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t);
 
 
-	strVec get(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t);
+	string get(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t);
 	void insert_data(string &key,const string &val, string &timestamp, bool label, Cache &cache, Persistent &persistent);
 
 private:

@@ -34,8 +34,10 @@
 class Reconfig {
 public:
     
-    static int reconfig(GroupConfig &old_config, GroupConfig &new_config);
+    static int reconfig(GroupConfig &old_config, GroupConfig &new_config, int key_index, int desc = -1);
     static Reconfig* get_instance();
+    
+    int send_reconfig_finish(GroupConfig &old_config, GroupConfig &new_config, int key_index, Timestamp *ret_ts, std::string *ret_v);
     
     Reconfig(const Reconfig& orig) = delete;
     virtual ~Reconfig();
@@ -49,8 +51,11 @@ private:
     uint32_t id;
     FILE* log_file;
     
-    int send_reconfig_query(GroupConfig &old_config, Timestamp* ret_ts, string *ret_v);
-    int send_reconfig_finalize(GroupConfig &old_config);
+    int desc;
+    
+    int send_reconfig_query(GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string *ret_v);
+    int send_reconfig_finalize(GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string *ret_v);
+    int send_reconfig_write(GroupConfig &new_config, int key_index, Timestamp *ret_ts, std::string *ret_v);
 };
 
 #endif /* RECONFIG_H */

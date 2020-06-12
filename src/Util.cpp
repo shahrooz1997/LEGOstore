@@ -90,17 +90,17 @@ int socket_setup(const std::string &port, const std::string *IP){
 			continue;
 		}
 
-        enable = 0;
-        uint size_enable = sizeof(enable);
-        getsockopt(socketfd, SOL_SOCKET, SO_RCVBUF, &enable, &size_enable);
-        printf(" Size of the receive buffer is %u\n", enable);
-
-
-        enable = 212992;
-        if( setsockopt(socketfd, SOL_SOCKET, SO_RCVBUF, &enable, sizeof(enable)) == -1){
-			perror("server -> set socket options");
-			continue;
-		}
+            // enable = 0;
+            // uint size_enable = sizeof(enable);
+            // getsockopt(socketfd, SOL_SOCKET, SO_RCVBUF, &enable, &size_enable);
+            // printf(" Size of the receive buffer is %u\n", enable);
+            //
+            //
+            // enable = 212992;
+            // if( setsockopt(socketfd, SOL_SOCKET, SO_RCVBUF, &enable, sizeof(enable)) == -1){
+    		// 	perror("server -> set socket options");
+    		// 	continue;
+    		// }
 
 
         // struct linger sock_linger;

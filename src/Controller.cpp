@@ -2,6 +2,9 @@
 #include <typeinfo>
 #include <ratio>
 
+using namespace std::chrono;
+using millis = duration<uint64_t, std::milli>;
+
 //Input : A vector of key groups
 // Returns the placement for each key group
 int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<DC*> dcs,  std::vector<Placement*> &placement){
@@ -200,9 +203,13 @@ int Controller::init_setup(std::string configFile, std::string filePath){
 		}
 	}
 	std::string out_str;
-	int start_offset = 10; 			// In secs
+	// Note:: We can change the start time here
+	// Start time is used by client before starting, after that it relies on duration
+	// However, contoller only uses timestamp.
+	// So, setting start time using timestamp, allows both client and controller to be in-sync
+	//TODO::  reevaluate this
+	int start_offset =  prp.groups[0]->timestamp;			// In secs //10
 	try{
-		using namespace std::chrono;
 		auto timePoint = time_point_cast<milliseconds>(system_clock::now() + seconds(start_offset));
 		uint64_t startTime = timePoint.time_since_epoch().count();
 		//std::cout << "Type of the timepoint is " << typeid(timeDur).name() << std::endl;
@@ -242,10 +249,6 @@ int Controller::init_setup(std::string configFile, std::string filePath){
 
 		}
 	}
-		// catch(std::out_of_range &e){
-		// 	std::cout<< "Exception caught! : " << e.what() << " : "<< __func__ <<std::endl;
-		// 	return 1;
-		// }
 	catch(std::logic_error &e){
 		std::cout<< "Exception caught! " << e.what() << std::endl;
 		return 1;
@@ -259,6 +262,25 @@ int main(){
 	Controller master(1, 120, 120, "./config/setup_config.json");
 	master.init_setup("./config/input_workload.json" , "config/deployment.txt");
 
-	
+	time_point<system_clock, millis> timePoint;
+	time_point<system_clock, millis> startPoint(millis{master.prp.start_time});
+	std::this_thread::sleep_until(startPoint);
+
+	// Note:: this assumes the first group has timestamp at which the experiment starts
+	for(auto grp: master.prp.groups){
+
+		timePoint = startPoint + millis{grp->timestamp * 1000};
+		std::this_thread::sleep_until(timePoint);
+
+		for(uint i=0; i< grp->grp_id.size(); i++){
+			std::cout << "Starting the reconfiguration for group id" << grp->grp_id[i] << std::endl;
+
+			//Call Reconfig function
+			//reconfig_protocol(grp->grp_config[i])
+		}
+
+	}
+
+
 	return 0;
 }

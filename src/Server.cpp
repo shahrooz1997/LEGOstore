@@ -17,12 +17,6 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 		return;
 	}
 
-	//DEBUG -- check if receive queue is empty
-	// char debug;
-	// int res  = recv(connection, &debug, 1, 0);
-	// assert(res == 0);
-
-
     strVec data = DataTransfer::deserialize(recvd);
 	std::cout << "New METHOD CALLED "<< data[0] << " The value is " << data[2] <<"server port is" << portid << std::endl;
 	std::string &method = data[0];

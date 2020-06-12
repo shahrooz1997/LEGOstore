@@ -38,7 +38,7 @@ CAS_Client::CAS_Client(Properties &prop, uint32_t client_id, int desc_l) {
     name[3] = 's';
     name[4] = '/';
     
-    sprintf(&name[5], "%lu.txt", client_id);
+    sprintf(&name[5], "%u.txt", client_id);
     this->log_file = fopen(name, "w");
     this->desc = -1;
     this->desc = desc_l;
@@ -58,7 +58,7 @@ uint32_t CAS_Client::get_operation_id(){
 void _get_timestamp(std::string *key, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter, Server *server,
                     std::string current_class, std::vector<Timestamp*> *tss,
-                    int operation_id, CAS_Client *doer){  
+                    uint32_t operation_id, CAS_Client *doer){  
     DPRINTF(DEBUG_CAS_Client, "started.\n");
     std::string key2 = *key;
     int sock = 0;
@@ -176,7 +176,7 @@ Timestamp* CAS_Client::get_timestamp(std::string *key, Placement &p){
 void _put(std::string *key, std::string *value, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter,
                     Server *server, Timestamp* timestamp,
-                    std::string current_class, int operation_id, CAS_Client *doer){
+                    std::string current_class, uint32_t operation_id, CAS_Client *doer){
     
     DPRINTF(DEBUG_CAS_Client, "started.\n");
     
@@ -242,7 +242,7 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
 void _put_fin(std::string *key, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter,
                     Server *server, Timestamp* timestamp,
-                    std::string current_class, int operation_id, CAS_Client *doer){
+                    std::string current_class, uint32_t operation_id, CAS_Client *doer){
     
     DPRINTF(DEBUG_CAS_Client, "started.\n");
     
@@ -563,7 +563,7 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
 void _get(std::string *key, std::vector<std::string*> *chunks, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter,
                     Server *server, Timestamp* timestamp,
-                    std::string current_class, int operation_id, CAS_Client *doer){
+                    std::string current_class, uint32_t operation_id, CAS_Client *doer){
     DPRINTF(DEBUG_CAS_Client, "started.\n");
    
     std::string key2 = *key;

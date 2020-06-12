@@ -30,12 +30,14 @@ ABD_Client::ABD_Client(Properties &prop, uint32_t client_id) {
     this->prop = prop;
     this->operation_id = 0;
     char name[20];
-    name[0] = '0' + client_id;
-    name[1] = '.';
-    name[2] = 't';
-    name[3] = 'x';
-    name[4] = 't';
-    name[5] = '\0';
+    
+    name[0] = 'l';
+    name[1] = 'o';
+    name[2] = 'g';
+    name[3] = 's';
+    name[4] = '/';
+    
+    sprintf(&name[5], "%u.txt", client_id);
     this->log_file = fopen(name, "w");
 }
 
@@ -51,7 +53,7 @@ uint32_t ABD_Client::get_operation_id(){
 void _get_timestamp_ABD(std::string *key, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter, Server *server,
                     std::string current_class, std::vector<Timestamp*> *tss,
-                    int operation_id, ABD_Client *doer){  
+                    uint32_t operation_id, ABD_Client *doer){  
     DPRINTF(DEBUG_ABD_Client, "started.\n");
     std::string key2 = *key;
     int sock = 0; 
@@ -166,7 +168,7 @@ Timestamp* ABD_Client::get_timestamp_ABD(std::string *key, Placement &p){
 void _put_ABD(std::string *key, std::string *value, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter,
                     Server *server, Timestamp* timestamp,
-                    std::string current_class, int operation_id, ABD_Client *doer){
+                    std::string current_class, uint32_t operation_id, ABD_Client *doer){
     
     DPRINTF(DEBUG_ABD_Client, "started.\n");
     
@@ -292,7 +294,7 @@ uint32_t ABD_Client::put(std::string key, std::string value, Placement &p, bool 
 
 void _get_ABD(std::string *key, std::vector<std::string*> *chunks, std::vector<Timestamp*> *tss,
                     std::mutex *mutex, std::condition_variable *cv, uint32_t *counter,
-                    Server *server, std::string current_class, int operation_id, ABD_Client *doer){
+                    Server *server, std::string current_class, uint32_t operation_id, ABD_Client *doer){
     
     DPRINTF(DEBUG_ABD_Client, "started.\n");
     std::string key2 = *key;
@@ -393,7 +395,7 @@ uint32_t ABD_Client::get(std::string key, std::string &value, Placement &p){
     
     //ToDo: make it faster
     Timestamp *max_timestamp = new Timestamp(Timestamp::max_timestamp(tss));
-    for(i = 0; i < tss.size(); i++){
+    for(i = 0; i < (int)tss.size(); i++){
         if(max_timestamp->get_string() == tss[i]->get_string())
             break;
     }

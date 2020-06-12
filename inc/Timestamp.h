@@ -30,7 +30,7 @@ public:
     static Timestamp& max_timestamp(std::vector<Timestamp*>& v);
     friend bool operator > (Timestamp &lhs, Timestamp &rhs);
 
-private:
+//private: // Todo: we made these variables temporarily public for reconfiguration, it must be fixed.
 	uint32_t time;
 	uint32_t client_id;
 };

@@ -14,11 +14,19 @@
 #ifndef RECONFIG_H
 #define RECONFIG_H
 
+#include "Util.h"
+#include <stdint.h>
+#include <string>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <vector>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-#include "Util.h"
 #include "Timestamp.h"
+#include <erasurecode.h>
+#include "Data_Transfer.h"
 
 
 //struct Config{

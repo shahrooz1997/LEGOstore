@@ -28,6 +28,7 @@ public:
     virtual ~Timestamp();
 
     static Timestamp& max_timestamp(std::vector<Timestamp*>& v);
+    static bool compare_timestamp(std::string left, std::string right);
     friend bool operator > (Timestamp &lhs, Timestamp &rhs);
 
 private:

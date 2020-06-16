@@ -45,7 +45,7 @@ Timestamp& Timestamp::max_timestamp(std::vector<Timestamp*>& v){
 
 		}
 	}
-	
+
 	//printf("TIMESTAMP!! CHOOSIGN MAX, max time : %u  and client_id: %u \n", (*it_max)->time, (*it_max)->client_id);
 	return *(*it_max);
 }
@@ -56,6 +56,11 @@ Timestamp Timestamp::increase_timestamp(const uint32_t client_id){
 	return ret;
 }
 
+bool Timestamp::compare_timestamp(std::string left, std::string right){
+	Timestamp left_t = Timestamp(left);
+	Timestamp right_t = Timestamp(right);
+	return (left_t > right_t);
+}
 
 Timestamp::~Timestamp(){
 

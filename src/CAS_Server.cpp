@@ -27,7 +27,7 @@ CAS_Server::~CAS_Server() {
 std::string CAS_Server::get_timestamp(string &key, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
 	//TODO:: check the different read and write lock
-	std::lock_guard<std::mutex> lock(lock_t);
+	//std::lock_guard<std::mutex> lock(lock_t);
 	DPRINTF(DEBUG_CAS_Server, "get_timestamp started and the key is %s\n", key.c_str());
 	const std::vector<std::string> *ptr = cache.get(key);
 	strVec data; // = (*cache.get(key))[0];
@@ -57,7 +57,7 @@ std::string CAS_Server::get_timestamp(string &key, Cache &cache, Persistent &per
 
 std::string CAS_Server::put(string &key, string &value, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
-	std::lock_guard<std::mutex> lock(lock_t);
+	//std::lock_guard<std::mutex> lock(lock_t);
 	DPRINTF(DEBUG_CAS_Server,"put function timestamp %s\n", timestamp.c_str());
 	insert_data(key, value, timestamp, false, cache, persistent);
 	return DataTransfer::serialize({"OK"});
@@ -65,7 +65,7 @@ std::string CAS_Server::put(string &key, string &value, string &timestamp, Cache
 
 std::string CAS_Server::put_fin(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
-	std::lock_guard<std::mutex> lock(lock_t);
+	//std::lock_guard<std::mutex> lock(lock_t);
 	DPRINTF(DEBUG_CAS_Server,"Calling put_fin fucntion timestamp:%s\n", timestamp.c_str());
 	insert_data(key, std::string(), timestamp, true, cache, persistent);
 	return DataTransfer::serialize({"OK"});
@@ -106,7 +106,7 @@ bool complete_fin(std::string &key, std::string &timestamp, Cache &cache, Persis
 //TODO:: check, I removed the last param "required_value"
 std::string CAS_Server::get(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
-	std::unique_lock<std::mutex> lock(lock_t);
+	//std::unique_lock<std::mutex> lock(lock_t);
 	DPRINTF(DEBUG_CAS_Server,"GET function called !! \n");
 	strVec result;
 

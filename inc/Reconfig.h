@@ -45,7 +45,10 @@ public:
     static int reconfig(GroupConfig &old_config, GroupConfig &new_config, int key_index, int desc = -1);
     static Reconfig* get_instance();
     
-    int send_reconfig_finish(GroupConfig &old_config, GroupConfig &new_config, int key_index, Timestamp *ret_ts, std::string *ret_v);
+    //changing the metadata.
+    
+    int send_reconfig_finish(GroupConfig &old_config, GroupConfig &new_config, int key_index, Timestamp *ret_ts = nullptr, std::string *ret_v = nullptr);
+    
     
     Reconfig(const Reconfig& orig) = delete;
     virtual ~Reconfig();
@@ -58,6 +61,7 @@ private:
     uint32_t operation_id;
     uint32_t id;
     FILE* log_file;
+    Timestamp* __timestamp; //
     
     int desc;
     

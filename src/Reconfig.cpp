@@ -55,7 +55,11 @@ int Reconfig::reconfig(GroupConfig &old_config, GroupConfig &new_config, int key
     }
     instance->send_reconfig_write(new_config, key_index, ret_ts, ret_v);
     
+    instance->__timestamp = ret_ts;
+    
     // Update local meta data at this point then make a call to send_reconfig_finish function
+    
+    
     
     return 0;
 }
@@ -877,6 +881,8 @@ void _send_reconfig_finish(std::string *key, std::mutex *mutex,
 int Reconfig::send_reconfig_finish(GroupConfig &old_config, GroupConfig &new_config, int key_index, Timestamp *ret_ts, std::string *ret_v){
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
+    
+    ret_ts = this->__timestamp;
 
     uint32_t counter = 0;
     std::mutex mtx;

@@ -12,38 +12,55 @@
  */
 
 #include "CAS_Client.h"
-#include "ABD_Client.h"
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <regex>
 
+#include <sys/time.h>
+
+char fmt_cas[64];
+char buf_cas[64];
+struct timeval tv_cas;
+struct tm *tm22_cas;
 
 //TODO: Ask more servers for timestamp if last attempt didn't work.
 
-CAS_Client::CAS_Client(Properties &prop, uint32_t client_id) {
-    this->current_class = "CAS";
-    this->id = client_id;
-    this->prop = prop;
-    this->desc = -1;
-    //this->destroy_desc = 1;
-}
 CAS_Client::CAS_Client(Properties &prop, uint32_t client_id, int desc_l) {
     this->current_class = "CAS";
     this->id = client_id;
     this->prop = prop;
+    char name[20];
+    this->operation_id = 0;
+    name[0] = 'l';
+    name[1] = 'o';
+    name[2] = 'g';
+    name[3] = 's';
+    name[4] = '/';
+    
+    sprintf(&name[5], "%u.txt", client_id);
+    this->log_file = fopen(name, "w");
+    this->desc = -1;
     this->desc = desc_l;
-    //this->destroy_desc = 0;
+    //this->destroy_desc = 1;
 }
 
+
 CAS_Client::~CAS_Client() {
+    fclose(this->log_file);
     DPRINTF(DEBUG_CAS_Client, "cliend with id \"%u\" has been destructed.\n", this->id);
+}
+
+uint32_t CAS_Client::get_operation_id(){
+    return operation_id;
 }
 
 void _get_timestamp(std::string *key, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter, Server *server,
-                    std::string current_class, std::vector<Timestamp*> *tss){
+                    std::string current_class, std::vector<Timestamp*> *tss,
+                    uint32_t operation_id, CAS_Client *doer){  
     DPRINTF(DEBUG_CAS_Client, "started.\n");
+    std::string key2 = *key;
     int sock = 0;
     struct sockaddr_in serv_addr;
     if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
@@ -67,7 +84,7 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
 
     strVec data;
     data.push_back("get_timestamp");
-    data.push_back(*key);
+    data.push_back(key2);
     data.push_back(current_class);
     DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
 
@@ -76,24 +93,25 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
     if(DataTransfer::recvMsg(sock, recvd) == 1){ // data must have the timestamp.
         data =  DataTransfer::deserialize(recvd);
 
-    //    std::string tmp((const char*)buf, buf_size);
-    //
-    //    std::size_t pos = tmp.find("timestamp");
-    //    pos = tmp.find(":", pos);
-    //    std::size_t start_index = tmp.find("\"", pos);
-    //    if(start_index == std::string::npos){
-    //        return;
-    //    }
-    //    start_index++;
-    //    std::size_t end_index = tmp.find("\"", start_index);
+        //    std::string tmp((const char*)buf, buf_size);
+        //
+        //    std::size_t pos = tmp.find("timestamp");
+        //    pos = tmp.find(":", pos);
+        //    std::size_t start_index = tmp.find("\"", pos);
+        //    if(start_index == std::string::npos){
+        //        return;
+        //    }
+        //    start_index++;
+        //    std::size_t end_index = tmp.find("\"", start_index);
+
 
         if(data[0] == "OK"){
-        	printf("get timestamp, data received is %s\n", data[1].c_str());
+            printf("get timestamp, data received is %s\n", data[1].c_str());
             std::string timestamp_str = data[1];
 
             std::size_t dash_pos = timestamp_str.find("-");
             if(dash_pos >= timestamp_str.size()){
-                std::cerr << "Substr violated !!!!!!!" << timestamp_str <<std::endl;
+                std::cerr << "SUbstr violated !!!!!!!" << timestamp_str <<std::endl;
             }
 
             // make client_id and time regarding the received message
@@ -103,15 +121,18 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
             Timestamp* t = new Timestamp(client_id_ts, time_ts);
 
             std::unique_lock<std::mutex> lock(*mutex);
-            tss->push_back(t);
-            (*counter)++;
-        }else{
-            std::unique_lock<std::mutex> lock(*mutex);
-            (*counter)++;
-        }
+            if(doer->get_operation_id() == operation_id){
 
-        cv->notify_one();
+                tss->push_back(t);
+                (*counter)++;
+                cv->notify_one();
+            }
+            else{
+                delete t;
+            }
+        }
     }
+        
     close(sock);
     return;
 }
@@ -129,7 +150,7 @@ Timestamp* CAS_Client::get_timestamp(std::string *key, Placement &p){
     for(std::vector<DC*>::iterator it = p.Q1.begin();
             it != p.Q1.end(); it++){
         std::thread th(_get_timestamp, key, &mtx, &cv, &counter,
-                (*it)->servers[0], this->current_class, &tss);
+                (*it)->servers[0], this->current_class, &tss, this->operation_id, this);
         th.detach();
     }
 
@@ -137,13 +158,14 @@ Timestamp* CAS_Client::get_timestamp(std::string *key, Placement &p){
     while(counter < p.Q1.size()){
         cv.wait(lock);
     }
-    lock.unlock();
-
+    
     ret = new Timestamp(Timestamp::max_timestamp(tss));
     for(std::vector<Timestamp*>::iterator it = tss.begin(); it != tss.end(); it++){
         delete *it;
     }
-
+    
+    this->operation_id++;
+    lock.unlock();
     DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
 
     return ret;
@@ -152,10 +174,14 @@ Timestamp* CAS_Client::get_timestamp(std::string *key, Placement &p){
 void _put(std::string *key, std::string *value, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter,
                     Server *server, Timestamp* timestamp,
-                    std::string current_class){
-
+                    std::string current_class, uint32_t operation_id, CAS_Client *doer){
+    
     DPRINTF(DEBUG_CAS_Client, "started.\n");
-
+    
+    std::string key2 = *key;
+    std::string value2 = *value;
+    Timestamp timestamp2 = *timestamp;
+    
     int sock = 0;
     struct sockaddr_in serv_addr;
     if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
@@ -180,14 +206,13 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
 
     strVec data;
     data.push_back("put");
-    data.push_back(*key);
-    data.push_back(*value);
-    data.push_back(timestamp->get_string());
+    data.push_back(key2);
+    data.push_back(value2);
+    data.push_back(timestamp2.get_string());
     data.push_back(current_class);
-
-    //std::cout<< "AAAAA: Sending Value  _PUT"<<(*value).size() << "value is "<< (*value) <<std::endl;
-    if((*value).empty()){
-	       printf("WARNING!!! SENDING EMPTY STRING \n");
+//    std::cout<< "AAAAA: Sending Value  _PUT"<<(*value).size() << "value is "<< (*value) <<std::endl;
+    if((value2).empty()){
+	printf("WARNING!!! SENDING EMPTY STRING \n");
     }
     DataTransfer::sendMsg(sock,DataTransfer::serialize(data));
 
@@ -196,23 +221,34 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
     DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
     data =  DataTransfer::deserialize(recvd);
 
+    // Todo: parse data
+    
     std::unique_lock<std::mutex> lock(*mutex);
-    (*counter)++;
-    cv->notify_one();
-
-    DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %uh\n", server->port);
+    if(doer->get_operation_id() == operation_id){
+        
+        (*counter)++;
+        cv->notify_one();
+//        printf("AAA\n");
+    }
+    
+    DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %u\n", server->port);
     close(sock);
+
     return;
 }
 
 void _put_fin(std::string *key, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter,
                     Server *server, Timestamp* timestamp,
-                    std::string current_class){
-
+                    std::string current_class, uint32_t operation_id, CAS_Client *doer){
+    
     DPRINTF(DEBUG_CAS_Client, "started.\n");
+    
+    std::string key2 = *key;
+    Timestamp timestamp2 = *timestamp;
+    
+    int sock = 0; 
 
-    int sock = 0;
     struct sockaddr_in serv_addr;
     if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
         printf("\n Socket creation error \n");
@@ -236,8 +272,8 @@ void _put_fin(std::string *key, std::mutex *mutex,
 
     strVec data;
     data.push_back("put_fin");
-    data.push_back(*key);
-    data.push_back(timestamp->get_string());
+    data.push_back(key2);
+    data.push_back(timestamp2.get_string());
     data.push_back(current_class);
     DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
 
@@ -245,14 +281,19 @@ void _put_fin(std::string *key, std::mutex *mutex,
     std::string recvd;
     DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
     data = DataTransfer::deserialize(recvd);
-
-    //TODO:: amybe check for OK response here??
+    
+    // Todo: parse data
+    
     std::unique_lock<std::mutex> lock(*mutex);
-    (*counter)++;
-    cv->notify_one();
-
-    DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
+    if(doer->get_operation_id() == operation_id){
+        (*counter)++;
+        cv->notify_one();
+//        printf("AAA\n");
+    }
+    
+    DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %u\n", server->port);
     close(sock);
+    
     return;
 }
 
@@ -422,7 +463,13 @@ void decode(std::string *data, std::vector <std::string*> *chunks,
 }
 
 uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool insert){
-
+    
+//    gettimeofday (&tv_cas, NULL);
+//    tm22_cas = localtime (&tv_cas.tv_sec);
+//    strftime (fmt_cas, sizeof (fmt_cas), "%H:%M:%S:%%06u", tm22_cas);
+//    snprintf (buf_cas, sizeof (buf_cas), fmt_cas, tv_cas.tv_usec);
+//    fprintf(this->log_file, "%s write invoke %s\n", buf_cas, value.c_str());
+    
     std::vector <std::string*> chunks;
     struct ec_args null_args;
     null_args.k = p.k;
@@ -458,9 +505,10 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
 
     for(std::vector<DC*>::iterator it = p.Q2.begin();
             it != p.Q2.end(); it++){
+//	printf("The port is: %uh", (*it)->servers[0]->port);
 
         std::thread th(_put, &key, chunks[i], &mtx, &cv, &counter,
-                (*it)->servers[0], timestamp, this->current_class);
+                (*it)->servers[0], timestamp, this->current_class, this->operation_id, this);
         th.detach();
         DPRINTF(DEBUG_CAS_Client, "Issue Q2 request to key: %s and timestamp: %s  chunk_size :%lu  chunks: ", key.c_str(), timestamp->get_string().c_str(), chunks[i]->size());
         // for (auto& el : *chunks[i])
@@ -473,14 +521,16 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
     while(counter < p.Q2.size()){
         cv.wait(lock);
     }
+    
+    this->operation_id++;
     lock.unlock();
-
+    
     // fin tag
     counter = 0;
     for(std::vector<DC*>::iterator it = p.Q3.begin();
             it != p.Q3.end(); it++){
         std::thread th(_put_fin, &key, &mtx, &cv, &counter,
-                (*it)->servers[0], timestamp, this->current_class);
+                (*it)->servers[0], timestamp, this->current_class, this->operation_id, this);
         th.detach();
         DPRINTF(DEBUG_CAS_Client, "Issue Q3 request to key: %s \n", key.c_str());
     }
@@ -491,7 +541,16 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
     while(counter < p.Q3.size()){
         cv.wait(lock2);
     }
+    
+    
+    this->operation_id++;
     lock2.unlock();
+    
+//    gettimeofday (&tv_cas, NULL);
+//    tm22_cas = localtime (&tv_cas.tv_sec);
+//    strftime (fmt_cas, sizeof (fmt_cas), "%H:%M:%S:%%06u", tm22_cas);
+//    snprintf (buf_cas, sizeof (buf_cas), fmt_cas, tv_cas.tv_usec);
+//    fprintf(this->log_file, "%s write ok %s\n", buf_cas, value.c_str());
 
     for(uint i = 0; i < chunks.size(); i++){
         delete chunks[i];
@@ -504,9 +563,12 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
 void _get(std::string *key, std::vector<std::string*> *chunks, std::mutex *mutex,
                     std::condition_variable *cv, uint32_t *counter,
                     Server *server, Timestamp* timestamp,
-                    std::string current_class){
+                    std::string current_class, uint32_t operation_id, CAS_Client *doer){
     DPRINTF(DEBUG_CAS_Client, "started.\n");
-
+   
+    std::string key2 = *key;
+    Timestamp timestamp2 = *timestamp;
+    
     int sock = 0;
     struct sockaddr_in serv_addr;
     if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
@@ -531,37 +593,48 @@ void _get(std::string *key, std::vector<std::string*> *chunks, std::mutex *mutex
 
     strVec data;
     data.push_back("get");
-    data.push_back(*key);
+    data.push_back(key2);
     data.push_back(timestamp->get_string());
     data.push_back(current_class);
     //data.push_back("True");
     DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
 
     data.clear();
+
     std::string recvd;
-    if (DataTransfer::recvMsg(sock, recvd) == 1){ // data must have the timestamp.
+
+    if(DataTransfer::recvMsg(sock, recvd) == 1){
         data =  DataTransfer::deserialize(recvd);
         if(data[0] == "OK"){
             std::string data_portion = data[1];
 
+            DPRINTF(DEBUG_CAS_Client, " chunk received for key : %s and timestamp :%s   chunk_size :%lu  is ", key2.c_str(), timestamp2.get_string().c_str(), data_portion.size());
             std::unique_lock<std::mutex> lock(*mutex);
-            chunks->push_back(new std::string(data_portion));
-            DPRINTF(DEBUG_CAS_Client, " chunk received for key : %s and timestamp :%s   chunk_size :%lu  is ", key->c_str(), timestamp->get_string().c_str(), data_portion.size());
-            // for (auto& el : data_portion)
-      	    //      printf("%02hhx", el);
-            // std::cout << '\n';
+            if(doer->get_operation_id() == operation_id){
 
-            (*counter)++;
-            cv->notify_one();
+                chunks->push_back(new std::string(data_portion));
+        //        tss->push_back(t);
+                (*counter)++;
+                cv->notify_one();
+            }
         }
-        DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
     }
+
     close(sock);
+    DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
+
     return;
 }
 
 uint32_t CAS_Client::get(std::string key, std::string &value, Placement &p){
-
+    
+//    gettimeofday (&tv_cas, NULL);
+//    tm22_cas = localtime (&tv_cas.tv_sec);
+//    strftime (fmt_cas, sizeof (fmt_cas), "%H:%M:%S:%%06u", tm22_cas);
+//    snprintf (buf_cas, sizeof (buf_cas), fmt_cas, tv_cas.tv_usec);
+//    fprintf(this->log_file, "%s read invoke nil\n", buf_cas);
+    
+    
     value.clear();
 
     Timestamp *timestamp = nullptr;
@@ -578,7 +651,7 @@ uint32_t CAS_Client::get(std::string key, std::string &value, Placement &p){
     for(std::vector<DC*>::iterator it = p.Q4.begin();
             it != p.Q4.end(); it++){
         std::thread th(_get, &key, &chunks, &mtx, &cv, &counter,
-                (*it)->servers[0], timestamp, this->current_class);
+                (*it)->servers[0], timestamp, this->current_class, this->operation_id, this);
         th.detach();
         DPRINTF(DEBUG_CAS_Client, "Issue Q4 request for key :%s \n", key.c_str());
         i++;
@@ -588,8 +661,10 @@ uint32_t CAS_Client::get(std::string key, std::string &value, Placement &p){
     while(counter < p.Q4.size()){
         cv.wait(lock);
     }
+    
+    this->operation_id++;
     lock.unlock();
-
+    
     if(chunks.size() < p.k){
         DPRINTF(DEBUG_CAS_Client, "chunks.size() < p.m\n");
     }
@@ -600,6 +675,13 @@ uint32_t CAS_Client::get(std::string key, std::string &value, Placement &p){
     null_args.m = p.m - p.k;
     null_args.w = 16; // ToDo: what must it be?
     null_args.ct = CHKSUM_NONE;
+//    gettimeofday (&tv_cas, NULL);
+//    tm22_cas = localtime (&tv_cas.tv_sec);
+//    strftime (fmt_cas, sizeof (fmt_cas), "%H:%M:%S:%%06u", tm22_cas);
+//    snprintf (buf_cas, sizeof (buf_cas), fmt_cas, tv_cas.tv_usec);
+//    fprintf(this->log_file, "%s read ok %s\n", buf_cas, value.c_str());
+    
+    
 
     decode(&value, &chunks, &null_args, this->desc);
 

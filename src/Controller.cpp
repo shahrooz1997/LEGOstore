@@ -34,6 +34,15 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<DC*>
 	    test->Q4.push_back(dcs[3]);
 	    test->Q4.push_back(dcs[4]);
 
+	    // SHAHROOZ: We need the servers participating to accomplish one protocol and number of failures we can tolerate for doing reconfiguration
+	    // SHAHROOZ: We can remake the vector of all servers. 
+	    // test->N.push_back(dcs[0]);
+	    // test->N.push_back(dcs[1]);
+	    // test->N.push_back(dcs[2]);
+	    // test->N.push_back(dcs[3]);
+	    // test->N.push_back(dcs[4]);
+	    test->f = 0; // TODO: we need to set it properly.
+
 
 		placement.push_back(test);
 	}

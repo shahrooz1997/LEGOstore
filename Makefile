@@ -50,9 +50,12 @@ $(obj): obj/%.o: src/%.cpp
 ABD: obj src/ABD.cpp
 	$(CXX) -c $(CXXFLAGS) src/ABD.cpp -o obj/ABD.o
 
-.PHONY: clean cleandb
+.PHONY: clean cleandb cleanall
+cleanall: clean cleandb
+
 clean:
 	rm -rf obj Client Server Controller LEGOStore
 
 cleandb:
-	rm -rf *.temp
+	rm -rf db*.temp
+

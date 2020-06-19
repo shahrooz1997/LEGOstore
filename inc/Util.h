@@ -46,6 +46,7 @@ extern bool DEBUG_CAS_Client;
 extern bool DEBUG_ABD_Client;
 extern bool DEBUG_CAS_Server;
 extern bool DEBUG_ABD_Server;
+extern bool DEBUG_RECONFIG_CONTROL;
 
 // ToDo: Traces must be implemented as well.
 // extern bool TRACE_CAS;
@@ -88,6 +89,8 @@ struct Placement{ // For ABD, you can use just the first portion of this struct.
     uint32_t                k;
     std::vector<DC*>        Q3;
     std::vector<DC*>        Q4;
+//    std::vector<DC*>        N; // The whole servers participating in this placement.
+    uint32_t                f; // The number of failures this placement can tolerate.
 };
 
 

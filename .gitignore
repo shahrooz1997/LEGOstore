@@ -1,4 +1,10 @@
 obj/
 nbproject/
 LEGOStore
-
+db*.temp/
+lib/
+CASClient
+CASServer
+Client
+Controller
+Server

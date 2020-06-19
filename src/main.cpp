@@ -20,6 +20,9 @@
 using namespace std;
 
 int main2(int argc, char** argv) {
+        
+//    size_t frag_header_size =  sizeof(fragment_header_t);
+//    printf("AAAAAAAAA %d\n", frag_header_size);
 
 //    struct ec_args null_args;
 //    null_args.k = 8;
@@ -69,7 +72,7 @@ int main2(int argc, char** argv) {
 
 
 
-    CAS_Client c1(p, 1);
+    CAS_Client c1(p, 1, 0); // WARN: This line does not work anymore
 
     Placement placement;
     placement.protocol = "CAS";

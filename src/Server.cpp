@@ -69,7 +69,7 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 			}else{
 				//Terminate the thread and send new config
 				//TODO:: what is the config format
-				result = DataTransfer::sendMsg(connection, std::string());
+				//result = DataTransfer::sendMsg(connection, std::string());
 			}
 		}
 	}
@@ -136,7 +136,7 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 	close(connection);
 }
 
-void test(DataServer *ds, int portid){
+void runServer(DataServer *ds, int portid){
 
 	while(1){
 		std::cout<<"Alive port "<<portid<< std::endl;
@@ -148,22 +148,28 @@ void test(DataServer *ds, int portid){
 
 }
 
-int main(){
+int main(int argc, char **argv){
 
+	std::vector<std::string> socket_port;
+	std::vector<std::string> db_list;
 
-	std::vector<std::string> socket_port{"10000", "10001", "10002", "10003","10004","10005","10006","10007","10008"};
-	std::vector<std::string> db_list{"db1.temp", "db2.temp", "db3.temp", "db4.temp", "db5.temp", "db6.temp", "db7.temp", "db8.temp", "db9.temp"};
+	if(argc == 1){
+		socket_port = {"10000", "10001", "10002", "10003","10004","10005","10006","10007","10008"};
+		db_list = {"db1.temp", "db2.temp", "db3.temp", "db4.temp", "db5.temp", "db6.temp", "db7.temp", "db8.temp", "db9.temp"};
+	}else if(argc == 3){
+		socket_port.push_back(argv[1]);
+		db_list.push_back(std::string(argv[2]) + ".temp");
+	}else{
+		std::cout << "Enter the correct number of arguments :  ./Server <port_no> <db_name>" << std::endl;
+		return 0;
+	}
 
-	DataServer *dsobj[9];
-	for(int i=0; i<9 ;i++){
+	std::vector<DataServer*> dsobj(socket_port.size(), nullptr);
+	for(uint i=0; i<socket_port.size() ;i++){
 		dsobj[i] = new DataServer(db_list[i], socket_setup(socket_port[i]));
 	}
 	for(uint i=0; i< socket_port.size(); i++){
-		//sobj[i])(db_list[i], socket_setup(socket_port[i]));
-		//std::thread newServer([temp](int port){test(temp, port);}, i);
-		std::thread newServer(test, dsobj[i], i);
-		//std::cout<<"STarting new server at port " << socket_port[i] <<" and socket id " << temp.getSocketDesc() << std::endl;
-		//std::thread newServer([&i,&socket_port,&db_list](){test(DataServer(db_list[i], socket_setup(socket_port[i])));});
+		std::thread newServer(runServer, dsobj[i], stoi(socket_port[i]));
 		newServer.detach();
 	}
 

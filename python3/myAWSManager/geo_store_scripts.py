@@ -5,7 +5,7 @@ from pathlib import Path
 ### testing ###
 import json
 import os
-
+import time
 ###
 
 
@@ -44,7 +44,7 @@ def create_keypairs(regions):
     
 
 
-def launch_set(regions,set_num, instance_type='t2.micro', DryRun = True):
+def launch_set(regions,set_num, instance_type='t2.micro', DryRun = False):
     os.system("mkdir -p sets")
     filename = "sets/set{}.json".format(set_num)
     my_file = Path(filename)
@@ -61,6 +61,8 @@ def launch_set(regions,set_num, instance_type='t2.micro', DryRun = True):
                                             location,
                                             instance_type=instance_type,
                                             DryRun=DryRun) 
+        print(type(resp))
+        print(*resp) 
         set_info.update({region_name:{'instance_info':instance_info(resp[0].instance_id, resp[0].public_ip_address).__dict__}})
 
     json.dump(set_info, set_info_file, indent=4)
@@ -106,9 +108,9 @@ def terminate_set(set_info):
 
 if __name__ == '__main__':
     #setup_aws_credentials('credentials.csv')
-    regions = json.load(open("aws_regions.json"))
-    set_info_1 = json.load(open("sets/set1.json"))
-    set_info_2 = json.load(open("sets/set2.json"))
+    #regions = json.load(open("aws_regions.json"))
+    #set_info_1 = json.load(open("sets/set1.json"))
+    #set_info_2 = json.load(open("sets/set2.json"))
     
     #print(json.dumps(set_info, indent=4))
     #start_set(set_info)
@@ -116,25 +118,28 @@ if __name__ == '__main__':
     #create_keypairs(regions)
     #launch_set(regions,2, instance_type='c5.xlarge', DryRun=False)
     #set_info = json.load(open("sets/set2.json"))
-
-    stop_set(set_info_1)
-    stop_set(set_info_2)
+	
+    #stop_set(set_info_1)
+    #stop_set(set_info_2)
     
 
 
 
 #### testing ####
 #
-#regions = json.load(open("test_region.json"))
-#set_info = launch_set(regions)
-#for resp in set_info.items():
-#    print(resp[0],' >> instance ', resp[1].instance_id, 'launched!')
-#
-#input("press enter to terminate all instances above: ")
-#
-#
-#for resp in set_info.items():
-#    terminate_instance(resp[1].instance_id, resp[0])
-#
-#print("terminated instances!")
+	regions = json.load(open("test_region.json"))
+	#create_keypairs(regions)
+
+	#set_info = launch_set(regions,1)
+	#for resp in set_info.items():
+	#    print(resp[0],' >> instance ', resp[1]['instance_id'], 'launched!')
+	set_info = json.load(open("sets/set1.json"))
+
+	input("press enter to terminate all instances above: ")
+
+	for resp in set_info.items():
+	    terminate_instance(resp[1]['instance_info']['instance_id'], resp[0])
+
+	#stop_set(set_info)
+	print("terminated instances!")
 

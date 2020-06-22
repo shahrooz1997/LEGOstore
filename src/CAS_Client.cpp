@@ -181,8 +181,8 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
     strVec data;
     data.push_back("put");
     data.push_back(*key);
-    data.push_back(*value);
     data.push_back(timestamp->get_string());
+    data.push_back(*value);    
     data.push_back(current_class);
 
     //std::cout<< "AAAAA: Sending Value  _PUT"<<(*value).size() << "value is "<< (*value) <<std::endl;

@@ -227,7 +227,6 @@ int main(int argc, char* argv[]){
 		}
 
 		std::cout<< "Final avg rate is " << avg_rate << std::endl;
-		//TOOD:: Free up the properties structure
 
 	}
 	catch(std::logic_error &e){

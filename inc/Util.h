@@ -35,7 +35,7 @@
 #define GENERAL_ERASURE_ERROR   -101
 
 // Backlog for socket listen
-#define BACKLOG 128
+#define BACKLOG 512
 #define CLIENT_PORT 10001
 #define MAX_LINGER_BEFORE_SOCK_CLOSE 50
 

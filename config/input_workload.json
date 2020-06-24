@@ -1,7 +1,7 @@
 {
 "workload_config": [
         {
-            "timestamp": 10,
+            "timestamp": 5,
             "grp_id": [ 1, 2, 3, 4, 5],
             "grp_workload": [
                 {
@@ -132,7 +132,7 @@
             ]
         },
         {
-            "timestamp": 20,
+            "timestamp": 15,
             "grp_id": [ 2, 5],
             "grp_workload": [
                 {

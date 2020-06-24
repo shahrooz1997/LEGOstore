@@ -680,6 +680,7 @@ class Placement :
     kProtocolFieldNumber = 1,
     kMFieldNumber = 4,
     kKFieldNumber = 5,
+    kFFieldNumber = 8,
   };
   // repeated uint32 q1 = 2;
   int q1_size() const;
@@ -803,6 +804,15 @@ class Placement :
   void _internal_set_k(::PROTOBUF_NAMESPACE_ID::uint32 value);
   public:
 
+  // uint32 f = 8;
+  void clear_f();
+  ::PROTOBUF_NAMESPACE_ID::uint32 f() const;
+  void set_f(::PROTOBUF_NAMESPACE_ID::uint32 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::uint32 _internal_f() const;
+  void _internal_set_f(::PROTOBUF_NAMESPACE_ID::uint32 value);
+  public:
+
   // @@protoc_insertion_point(class_scope:packet.Placement)
  private:
   class _Internal;
@@ -819,6 +829,7 @@ class Placement :
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr protocol_;
   ::PROTOBUF_NAMESPACE_ID::uint32 m_;
   ::PROTOBUF_NAMESPACE_ID::uint32 k_;
+  ::PROTOBUF_NAMESPACE_ID::uint32 f_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_serialize_2eproto;
 };
@@ -2069,6 +2080,26 @@ inline ::PROTOBUF_NAMESPACE_ID::RepeatedField< ::PROTOBUF_NAMESPACE_ID::uint32 >
 Placement::mutable_q4() {
   // @@protoc_insertion_point(field_mutable_list:packet.Placement.q4)
   return _internal_mutable_q4();
+}
+
+// uint32 f = 8;
+inline void Placement::clear_f() {
+  f_ = 0u;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint32 Placement::_internal_f() const {
+  return f_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint32 Placement::f() const {
+  // @@protoc_insertion_point(field_get:packet.Placement.f)
+  return _internal_f();
+}
+inline void Placement::_internal_set_f(::PROTOBUF_NAMESPACE_ID::uint32 value) {
+  
+  f_ = value;
+}
+inline void Placement::set_f(::PROTOBUF_NAMESPACE_ID::uint32 value) {
+  _internal_set_f(value);
+  // @@protoc_insertion_point(field_set:packet.Placement.f)
 }
 
 // -------------------------------------------------------------------

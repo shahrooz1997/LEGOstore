@@ -31,6 +31,11 @@ public:
 	static strVec deserialize(std::string &data);
 
 	static Properties deserializePrp(std::string &data);
+
+	static std::string serializeCFG(const Placement &pp);
+
+	static Placement deserializeCFG(Properties &prp, std::string &data);
+
 };
 
 

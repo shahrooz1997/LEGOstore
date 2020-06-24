@@ -52,7 +52,7 @@ int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &
 	int reqType = 0;    // 1 for GET, 2 for PUT
 	int key_idx = -1;
 	uint32_t threadId = create_threadId(clientId, grp_idx, req_idx);
-	CAS_Client clt(test, threadId, desc);
+	CAS_Client clt(test, threadId,*pp, desc);
 	//Scope of this seeding is global
 	//So, may lead to same operation sequence on all threads
 	srand(threadId);
@@ -69,10 +69,10 @@ int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &
 	//	std::cout << "Operation chosen by Client  "<<threadId<<" for key " << keys[key_idx] << "  is " << reqType << std::endl;
 		// Initiate the operation
 		if(reqType == 1){
-			clt.get(keys[key_idx],read_value, *pp);
+			clt.get(keys[key_idx],read_value);
 		}else{
 			std::string val(obj_size, 'a');
-			clt.put(keys[key_idx], val, *pp, false);
+			clt.put(keys[key_idx], val, false);
 		}
 
 		tp += millis{next_event(dist_process)};
@@ -116,10 +116,10 @@ int key_req_gen(Properties &prop, int grp_idx, std::string dist_process){
 
 		// Prep the database before the next epoch, write objects of specified size
 		printf("Creating init threads for grp id: %d \n", grp_idx);
-		CAS_Client client(test, create_threadId(clientId, grp_idx, 0), desc);
+		CAS_Client client(test, create_threadId(clientId, grp_idx, 0),  *grpCfg->placement_p, desc);
 		for(auto &key: grpCfg->keys){
 			std::string val(grpCfg->object_size, 'a'+ (grp_idx%26));
-			client.put(key, val, *grpCfg->placement_p, key_init);
+			client.put(key, val, key_init);
 			numt += 1;
 		}
 

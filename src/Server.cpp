@@ -3,6 +3,8 @@
 #include "Data_Server.h"
 #include "Data_Transfer.h"
 #include <sys/ioctl.h>
+#include <unordered_set>
+
 //#include <linux/sockios.h>
 std::atomic<bool> active(true);
 std::atomic<bool> reconfig(false);
@@ -10,17 +12,25 @@ std::mutex rcfglock;
 struct rcfgSet{
 	std::condition_variable rcv;
 	std::string highest_timestamp;
+	uint waiting_threads;
+	std::string new_cfg;
 };
+
+//Keys for which client actions are blocked
+std::unordered_set<std::string> blocked_keys;
 //Maps key to it's reconfiguration meta data
 std::unordered_map<std::string, rcfgSet*> rcfgKeys;
 
 bool key_match(std::string curr_key){
-	return (rcfgKeys.find(curr_key) != rcfgKeys.end());
+	return blocked_keys.count(curr_key);
 }
 
 int key_add(std::string curr_key){
+	// Previous reconfig still not complete
 	if(rcfgKeys.find(curr_key) == rcfgKeys.end()){
 		rcfgKeys[curr_key] = new rcfgSet;
+		rcfgKeys[curr_key]->waiting_threads = 0;
+		blocked_keys.insert(curr_key);
 		return 1;
 	}
 	else{
@@ -58,19 +68,28 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 	if(reconfig.load() && key_match(data[1])){
 		if(method != "write_config" && method != "reconfig_finalize" && method != "finish_reconfig"){
 			rcfgSet *config = rcfgKeys[data[1]];
+			config->waiting_threads++;
 			//Block the thread
-			while(reconfig.load()) {
+			while(key_match(data[1])) {
 				config->rcv.wait(rlock);
 			}
 
-			//TODO:: modify the client side of put to send timestamp always in data[2]
 			//Check which operations to service and which to reject
-			if(data.size() > 3 && !Timestamp::compare_timestamp(data[2], config->highest_timestamp)){
-				//if data[2] =< highest, then service the thread
+			if(data.size() > 3 && Timestamp::compare_timestamp(config->highest_timestamp, data[2])){
+				//if data[2] < highest and operation is not 'get_timestamp', then service the thread
 			}else{
 				//Terminate the thread and send new config
-				//TODO:: what is the config format
-				//result = DataTransfer::sendMsg(connection, std::string());
+				config->waiting_threads--;
+				result = DataTransfer::sendMsg(connection, DataTransfer::serialize({"operation_fail", config->new_cfg}));
+
+				// Garbage collect, Reconfig complete
+				if(config->waiting_threads){
+					delete config;
+					rcfgKeys.erase(data[1]);
+				}
+
+				close(connection);
+				return;
 			}
 		}
 	}
@@ -94,12 +113,13 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 	}else if(method == "write_config"){
 		result = DataTransfer::sendMsg(connection, dataserver.write_config(data[1], data[3], data[2], data[4]));
 	}else if(method == "finish_reconfig"){
-		delete rcfgKeys[data[1]];
-		rcfgKeys.erase(data[1]);
-		// TODO:: set this to false, only when list is empty
-		reconfig = false;
-		//TODO;; get the new configuration
+		//Store new config
+		rcfgKeys[data[1]]->new_cfg = data[2];
+		blocked_keys.erase(data[1]);
+		if(rcfgKeys.empty())
+			reconfig = false;
 
+		rcfgKeys[data[1]]->rcv.notify_all();
 	}
 	else {
 		DataTransfer::sendMsg(connection,  DataTransfer::serialize({"MethodNotFound", "Unknown method is called"}));

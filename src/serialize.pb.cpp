@@ -192,6 +192,7 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_serialize_2eproto::offsets[] P
   PROTOBUF_FIELD_OFFSET(::packet::Placement, k_),
   PROTOBUF_FIELD_OFFSET(::packet::Placement, q3_),
   PROTOBUF_FIELD_OFFSET(::packet::Placement, q4_),
+  PROTOBUF_FIELD_OFFSET(::packet::Placement, f_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::packet::GroupConfig, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -231,9 +232,9 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 6, -1, sizeof(::packet::Server)},
   { 14, -1, sizeof(::packet::Datacenter)},
   { 23, -1, sizeof(::packet::Placement)},
-  { 35, -1, sizeof(::packet::GroupConfig)},
-  { 48, -1, sizeof(::packet::Group)},
-  { 56, -1, sizeof(::packet::properties)},
+  { 36, -1, sizeof(::packet::GroupConfig)},
+  { 49, -1, sizeof(::packet::Group)},
+  { 57, -1, sizeof(::packet::properties)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -252,22 +253,22 @@ const char descriptor_table_protodef_serialize_2eproto[] PROTOBUF_SECTION_VARIAB
   "\t\022\014\n\004port\030\003 \001(\r\"s\n\nDatacenter\022\n\n\002id\030\001 \001("
   "\r\022\032\n\022metadata_server_ip\030\002 \001(\t\022\034\n\024metadat"
   "a_server_port\030\003 \001(\r\022\037\n\007servers\030\004 \003(\0132\016.p"
-  "acket.Server\"c\n\tPlacement\022\020\n\010protocol\030\001 "
+  "acket.Server\"n\n\tPlacement\022\020\n\010protocol\030\001 "
   "\001(\t\022\n\n\002q1\030\002 \003(\r\022\n\n\002q2\030\003 \003(\r\022\t\n\001m\030\004 \001(\r\022\t"
-  "\n\001k\030\005 \001(\r\022\n\n\002q3\030\006 \003(\r\022\n\n\002q4\030\007 \003(\r\"\276\001\n\013Gr"
-  "oupConfig\022\023\n\013object_size\030\001 \001(\r\022\023\n\013num_ob"
-  "jects\030\002 \001(\004\022\024\n\014arrival_rate\030\003 \001(\001\022\022\n\nrea"
-  "d_ratio\030\004 \001(\001\022\020\n\010duration\030\005 \001(\004\022\014\n\004keys\030"
-  "\006 \003(\014\022\023\n\013client_dist\030\007 \003(\001\022&\n\013placement_"
-  "p\030\010 \001(\0132\021.packet.Placement\"S\n\005Group\022\021\n\tt"
-  "imestamp\030\001 \001(\004\022\016\n\006grp_id\030\002 \003(\r\022\'\n\ngrp_co"
-  "nfig\030\003 \003(\0132\023.packet.GroupConfig\"\333\001\n\nprop"
-  "erties\022\033\n\023local_datacenter_id\030\001 \001(\r\022\026\n\016r"
-  "etry_attempts\030\002 \001(\r\022\037\n\027metadata_server_t"
-  "imeout\030\003 \001(\r\022\033\n\023timeout_per_request\030\004 \001("
-  "\r\022\022\n\nstart_time\030\005 \001(\004\022\'\n\013datacenters\030\006 \003"
-  "(\0132\022.packet.Datacenter\022\035\n\006groups\030\007 \003(\0132\r"
-  ".packet.Groupb\006proto3"
+  "\n\001k\030\005 \001(\r\022\n\n\002q3\030\006 \003(\r\022\n\n\002q4\030\007 \003(\r\022\t\n\001f\030\010"
+  " \001(\r\"\276\001\n\013GroupConfig\022\023\n\013object_size\030\001 \001("
+  "\r\022\023\n\013num_objects\030\002 \001(\004\022\024\n\014arrival_rate\030\003"
+  " \001(\001\022\022\n\nread_ratio\030\004 \001(\001\022\020\n\010duration\030\005 \001"
+  "(\004\022\014\n\004keys\030\006 \003(\014\022\023\n\013client_dist\030\007 \003(\001\022&\n"
+  "\013placement_p\030\010 \001(\0132\021.packet.Placement\"S\n"
+  "\005Group\022\021\n\ttimestamp\030\001 \001(\004\022\016\n\006grp_id\030\002 \003("
+  "\r\022\'\n\ngrp_config\030\003 \003(\0132\023.packet.GroupConf"
+  "ig\"\333\001\n\nproperties\022\033\n\023local_datacenter_id"
+  "\030\001 \001(\r\022\026\n\016retry_attempts\030\002 \001(\r\022\037\n\027metada"
+  "ta_server_timeout\030\003 \001(\r\022\033\n\023timeout_per_r"
+  "equest\030\004 \001(\r\022\022\n\nstart_time\030\005 \001(\004\022\'\n\013data"
+  "centers\030\006 \003(\0132\022.packet.Datacenter\022\035\n\006gro"
+  "ups\030\007 \003(\0132\r.packet.Groupb\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_serialize_2eproto_deps[1] = {
 };
@@ -283,7 +284,7 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_ser
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_serialize_2eproto_once;
 static bool descriptor_table_serialize_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_serialize_2eproto = {
-  &descriptor_table_serialize_2eproto_initialized, descriptor_table_protodef_serialize_2eproto, "serialize.proto", 821,
+  &descriptor_table_serialize_2eproto_initialized, descriptor_table_protodef_serialize_2eproto, "serialize.proto", 832,
   &descriptor_table_serialize_2eproto_once, descriptor_table_serialize_2eproto_sccs, descriptor_table_serialize_2eproto_deps, 7, 0,
   schemas, file_default_instances, TableStruct_serialize_2eproto::offsets,
   file_level_metadata_serialize_2eproto, 7, file_level_enum_descriptors_serialize_2eproto, file_level_service_descriptors_serialize_2eproto,
@@ -1053,8 +1054,8 @@ Placement::Placement(const Placement& from)
     protocol_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.protocol_);
   }
   ::memcpy(&m_, &from.m_,
-    static_cast<size_t>(reinterpret_cast<char*>(&k_) -
-    reinterpret_cast<char*>(&m_)) + sizeof(k_));
+    static_cast<size_t>(reinterpret_cast<char*>(&f_) -
+    reinterpret_cast<char*>(&m_)) + sizeof(f_));
   // @@protoc_insertion_point(copy_constructor:packet.Placement)
 }
 
@@ -1062,8 +1063,8 @@ void Placement::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_Placement_serialize_2eproto.base);
   protocol_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   ::memset(&m_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&k_) -
-      reinterpret_cast<char*>(&m_)) + sizeof(k_));
+      reinterpret_cast<char*>(&f_) -
+      reinterpret_cast<char*>(&m_)) + sizeof(f_));
 }
 
 Placement::~Placement() {
@@ -1096,8 +1097,8 @@ void Placement::Clear() {
   q4_.Clear();
   protocol_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   ::memset(&m_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&k_) -
-      reinterpret_cast<char*>(&m_)) + sizeof(k_));
+      reinterpret_cast<char*>(&f_) -
+      reinterpret_cast<char*>(&m_)) + sizeof(f_));
   _internal_metadata_.Clear();
 }
 
@@ -1168,6 +1169,13 @@ const char* Placement::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::
           CHK_(ptr);
         } else if (static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 56) {
           _internal_add_q4(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr));
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // uint32 f = 8;
+      case 8:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 64)) {
+          f_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1253,6 +1261,12 @@ failure:
       target = stream->WriteUInt32Packed(
           7, _internal_q4(), byte_size, target);
     }
+  }
+
+  // uint32 f = 8;
+  if (this->f() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(8, this->_internal_f(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -1352,6 +1366,13 @@ size_t Placement::ByteSizeLong() const {
         this->_internal_k());
   }
 
+  // uint32 f = 8;
+  if (this->f() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+        this->_internal_f());
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
         _internal_metadata_, total_size, &_cached_size_);
@@ -1397,6 +1418,9 @@ void Placement::MergeFrom(const Placement& from) {
   if (from.k() != 0) {
     _internal_set_k(from._internal_k());
   }
+  if (from.f() != 0) {
+    _internal_set_f(from._internal_f());
+  }
 }
 
 void Placement::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
@@ -1428,6 +1452,7 @@ void Placement::InternalSwap(Placement* other) {
     GetArenaNoVirtual());
   swap(m_, other->m_);
   swap(k_, other->k_);
+  swap(f_, other->f_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata Placement::GetMetadata() const {

@@ -40,27 +40,26 @@
 
 class CAS_Client {
 public:
-    CAS_Client(Properties &prop, uint32_t client_id);
-    CAS_Client(Properties &prop, uint32_t client_id, int desc_l);
+    CAS_Client(Properties &prop, uint32_t client_id, Placement &pp);
+    CAS_Client(Properties &prop, uint32_t client_id, Placement &pp, int desc_l);
     CAS_Client(const CAS_Client& orig) = delete;
     virtual ~CAS_Client();
 
-    uint32_t put(std::string key, std::string value, Placement &p, bool insert = false);
-    uint32_t get(std::string key, std::string &value, Placement &p);
-    
-    uint32_t get_operation_id();
-    
+    uint32_t put(std::string key, std::string value, bool insert = false);
+    uint32_t get(std::string key, std::string &value);
+
 private:
-    
-    uint32_t operation_id;
-    
+
     uint32_t id;
     Properties prop;
+    Placement p;
     int desc;
+    int desc_destroy;
     std::string current_class; // "CAS"
 
-    Timestamp* get_timestamp(std::string *key, Placement &p);
-    
+    Timestamp* get_timestamp(std::string *key);
+    void update_placement(std::string &new_cfg);
+
     FILE* log_file;
 };
 

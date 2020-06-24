@@ -27,6 +27,7 @@ message Placement{
 	uint32 k = 5;
 	repeated uint32 q3 = 6;
 	repeated uint32 q4 = 7;
+	uint32 f = 8;
 }
 
 message GroupConfig{

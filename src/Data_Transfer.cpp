@@ -168,6 +168,7 @@ std::string DataTransfer::serializePrp(const Properties &properties_p){
 			placement_p->set_protocol(pp->protocol);
 			placement_p->set_m(pp->m);
 			placement_p->set_k(pp->k);
+			placement_p->set_f(pp->f);
 
 			for(auto q : pp->Q1){
 				placement_p->add_q1(q->id);
@@ -267,6 +268,7 @@ Properties DataTransfer::deserializePrp(std::string &data){
 			plc->protocol = gplc.protocol();
 			plc->m = gplc.m();
 			plc->k = gplc.k();
+			plc->f = gplc.f();
 
 			for(int m=0; m < gplc.q1_size(); m++){
 				plc->Q1.push_back(prp.datacenters[gplc.q1(m)]);
@@ -289,4 +291,67 @@ Properties DataTransfer::deserializePrp(std::string &data){
 	}
 
 	return prp;
+}
+
+std::string DataTransfer::serializeCFG(const Placement &pp){
+
+	packet::Placement placement_p;
+	placement_p.set_protocol(pp.protocol);
+	placement_p.set_m(pp.m);
+	placement_p.set_k(pp.k);
+	placement_p.set_f(pp.f);
+
+	for(auto q : pp.Q1){
+		placement_p.add_q1(q->id);
+	}
+
+	for(auto q : pp.Q2){
+		placement_p.add_q2(q->id);
+	}
+
+	for(auto q : pp.Q3){
+		placement_p.add_q3(q->id);
+	}
+
+	for(auto q : pp.Q4){
+		placement_p.add_q4(q->id);
+	}
+
+	std::string str_out;
+	if(!placement_p.SerializeToString(&str_out)){
+		throw std::logic_error("Failed to serialize the message ! ");
+	}
+
+	return str_out;
+}
+
+
+Placement DataTransfer::deserializeCFG(Properties &prp, std::string &data){
+
+	Placement plc;
+	packet::Placement gplc;
+
+	if(!gplc.ParseFromString(data)){
+		throw std::logic_error("Failed to Parse the input received ! ");
+	}
+
+	plc.protocol = gplc.protocol();
+	plc.m = gplc.m();
+	plc.k = gplc.k();
+	plc.f = gplc.f();
+
+	for(int m=0; m < gplc.q1_size(); m++){
+		plc.Q1.push_back(prp.datacenters[gplc.q1(m)]);
+	}
+	for(int m=0; m < gplc.q2_size(); m++){
+		plc.Q2.push_back(prp.datacenters[gplc.q2(m)]);
+	}
+	for(int m=0; m < gplc.q3_size(); m++){
+		plc.Q3.push_back(prp.datacenters[gplc.q3(m)]);
+	}
+	for(int m=0; m < gplc.q4_size(); m++){
+		plc.Q4.push_back(prp.datacenters[gplc.q4(m)]);
+	}
+
+	return plc;
 }

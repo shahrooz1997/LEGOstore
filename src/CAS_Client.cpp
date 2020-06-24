@@ -25,17 +25,25 @@ struct timeval tv_cas;
 struct tm *tm22_cas;
 
 //TODO: Ask more servers for timestamp if last attempt didn't work.
-CAS_Client::CAS_Client(Properties &prop, uint32_t client_id) {
+
+// Use this constructor when single threaded code
+CAS_Client::CAS_Client(Properties &prop, uint32_t client_id, Placement &pp) {
     this->current_class = "CAS";
     this->id = client_id;
     this->prop = prop;
-    this->desc = -1;
+    this->p = pp;
+    this->desc = create_liberasure_instance(&(this->p));
+    this->desc_destroy = 1;
 }
 
-CAS_Client::CAS_Client(Properties &prop, uint32_t client_id, int desc_l) {
+CAS_Client::CAS_Client(Properties &prop, uint32_t client_id, Placement &pp, int desc_l) {
     this->current_class = "CAS";
     this->id = client_id;
     this->prop = prop;
+    this->p = pp;
+    this->desc = desc_l;
+    this->desc_destroy = 0;
+
     // char name[20];
     // this->operation_id = 0;
     // name[0] = 'l';
@@ -46,18 +54,21 @@ CAS_Client::CAS_Client(Properties &prop, uint32_t client_id, int desc_l) {
 
     //sprintf(&name[5], "%u.txt", client_id);
     //this->log_file = fopen(name, "w");
-    //this->desc = -1;
-    this->desc = desc_l;
+
 }
 
 
 CAS_Client::~CAS_Client() {
     //fclose(this->log_file);
+    if(this->desc_destroy){
+        destroy_liberasure_instance(this->desc);
+    }
     DPRINTF(DEBUG_CAS_Client, "cliend with id \"%u\" has been destructed.\n", this->id);
 }
 
-uint32_t CAS_Client::get_operation_id(){
-    return operation_id;
+void CAS_Client::update_placement(std::string &new_cfg){
+
+    this->p = DataTransfer::deserializeCFG(this->prop, new_cfg);
 }
 
 void _get_timestamp(std::promise<strVec> &&prm, std::string key, Server *server,
@@ -105,7 +116,7 @@ void _get_timestamp(std::promise<strVec> &&prm, std::string key, Server *server,
     return;
 }
 
-Timestamp* CAS_Client::get_timestamp(std::string *key, Placement &p){
+Timestamp* CAS_Client::get_timestamp(std::string *key){
 
     DPRINTF(DEBUG_CAS_Client, "started.\n");
 
@@ -142,7 +153,7 @@ Timestamp* CAS_Client::get_timestamp(std::string *key, Placement &p){
 
             tss.emplace_back(client_id_ts, time_ts);
         }else if(data[0] == "operation_fail"){
-
+            update_placement(data[1]);
         }
         //else : The server returned "Failed", that means the entry was not found
         // We ignore the response in that case.
@@ -427,7 +438,7 @@ void _put_fin(std::promise<strVec> &&prm, std::string key, Timestamp timestamp,
     return;
 }
 
-uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool insert){
+uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
 
 //    gettimeofday (&tv_cas, NULL);
 //    tm22_cas = localtime (&tv_cas.tv_sec);
@@ -454,7 +465,7 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
         timestamp = new Timestamp(this->id);
     }
     else{
-        tmp = this->get_timestamp(&key, p);
+        tmp = this->get_timestamp(&key);
         timestamp = new Timestamp(tmp->increase_timestamp(this->id));
         delete tmp;
     }
@@ -485,7 +496,7 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
         if(data[0] == "OK"){
 
         } else if(data[0] == "operation_fail"){
-
+            update_placement(data[1]);
         }
     }
 
@@ -506,7 +517,7 @@ uint32_t CAS_Client::put(std::string key, std::string value, Placement &p, bool 
         if(data[0] == "OK"){
 
         } else if(data[0] == "operation_fail"){
-
+            update_placement(data[1]);
         }
     }
 
@@ -574,7 +585,7 @@ void _get(std::promise<strVec> &&prm, std::string key, Timestamp timestamp,
     return;
 }
 
-uint32_t CAS_Client::get(std::string key, std::string &value, Placement &p){
+uint32_t CAS_Client::get(std::string key, std::string &value){
 
 //    gettimeofday (&tv_cas, NULL);
 //    tm22_cas = localtime (&tv_cas.tv_sec);
@@ -586,7 +597,7 @@ uint32_t CAS_Client::get(std::string key, std::string &value, Placement &p){
     value.clear();
 
     Timestamp *timestamp = nullptr;
-    timestamp = this->get_timestamp(&key, p);
+    timestamp = this->get_timestamp(&key);
 
     // phase 2
     std::vector <std::string*> chunks;
@@ -608,7 +619,7 @@ uint32_t CAS_Client::get(std::string key, std::string &value, Placement &p){
         if(data[0] == "OK"){
             chunks.push_back(new std::string(data[1]));
         } else if(data[0] == "operation_fail"){
-
+            update_placement(data[1]);
         }
     }
 

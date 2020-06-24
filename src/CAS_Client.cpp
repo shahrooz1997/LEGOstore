@@ -25,29 +25,34 @@ struct timeval tv_cas;
 struct tm *tm22_cas;
 
 //TODO: Ask more servers for timestamp if last attempt didn't work.
+CAS_Client::CAS_Client(Properties &prop, uint32_t client_id) {
+    this->current_class = "CAS";
+    this->id = client_id;
+    this->prop = prop;
+    this->desc = -1;
+}
 
 CAS_Client::CAS_Client(Properties &prop, uint32_t client_id, int desc_l) {
     this->current_class = "CAS";
     this->id = client_id;
     this->prop = prop;
-    char name[20];
-    this->operation_id = 0;
-    name[0] = 'l';
-    name[1] = 'o';
-    name[2] = 'g';
-    name[3] = 's';
-    name[4] = '/';
+    // char name[20];
+    // this->operation_id = 0;
+    // name[0] = 'l';
+    // name[1] = 'o';
+    // name[2] = 'g';
+    // name[3] = 's';
+    // name[4] = '/';
 
-    sprintf(&name[5], "%u.txt", client_id);
-    this->log_file = fopen(name, "w");
-    this->desc = -1;
+    //sprintf(&name[5], "%u.txt", client_id);
+    //this->log_file = fopen(name, "w");
+    //this->desc = -1;
     this->desc = desc_l;
-    //this->destroy_desc = 1;
 }
 
 
 CAS_Client::~CAS_Client() {
-    fclose(this->log_file);
+    //fclose(this->log_file);
     DPRINTF(DEBUG_CAS_Client, "cliend with id \"%u\" has been destructed.\n", this->id);
 }
 
@@ -90,20 +95,8 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
 
     data.clear();
     std::string recvd;
-    if(DataTransfer::recvMsg(sock, recvd) == 1){ // data must have the timestamp.
+    if(DataTransfer::recvMsg(sock, recvd) == 1){
         data =  DataTransfer::deserialize(recvd);
-
-        //    std::string tmp((const char*)buf, buf_size);
-        //
-        //    std::size_t pos = tmp.find("timestamp");
-        //    pos = tmp.find(":", pos);
-        //    std::size_t start_index = tmp.find("\"", pos);
-        //    if(start_index == std::string::npos){
-        //        return;
-        //    }
-        //    start_index++;
-        //    std::size_t end_index = tmp.find("\"", start_index);
-
 
         if(data[0] == "OK"){
             printf("get timestamp, data received is %s\n", data[1].c_str());
@@ -111,7 +104,7 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
 
             std::size_t dash_pos = timestamp_str.find("-");
             if(dash_pos >= timestamp_str.size()){
-                std::cerr << "SUbstr violated !!!!!!!" << timestamp_str <<std::endl;
+                std::cerr << "Substr violated !!!!!!!" << timestamp_str <<std::endl;
             }
 
             // make client_id and time regarding the received message
@@ -126,11 +119,19 @@ void _get_timestamp(std::string *key, std::mutex *mutex,
                 tss->push_back(t);
                 (*counter)++;
                 cv->notify_one();
+                DPRINTF(DEBUG_CAS_Client, "_get_timestamp, counter incremented : %d\n", *counter);
+
             }
             else{
                 delete t;
             }
+        }else{
+            std::unique_lock<std::mutex> lock(*mutex);
+            (*counter)++;
+            cv->notify_one();
+            DPRINTF(DEBUG_CAS_Client, "_get_timestamp, counter incremented : %d\n", *counter);
         }
+
     }
 
     close(sock);
@@ -166,6 +167,7 @@ Timestamp* CAS_Client::get_timestamp(std::string *key, Placement &p){
 
     this->operation_id++;
     lock.unlock();
+
     DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
 
     return ret;
@@ -208,8 +210,8 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
     data.push_back("put");
 
     data.push_back(key2);
-    data.push_back(value2);
     data.push_back(timestamp2.get_string());
+    data.push_back(value2);
     data.push_back(current_class);
 //    std::cout<< "AAAAA: Sending Value  _PUT"<<(*value).size() << "value is "<< (*value) <<std::endl;
     if((value2).empty()){
@@ -219,7 +221,7 @@ void _put(std::string *key, std::string *value, std::mutex *mutex,
 
     data.clear();
     std::string recvd;
-    DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
+    DataTransfer::recvMsg(sock, recvd);
     data =  DataTransfer::deserialize(recvd);
 
     // Todo: parse data

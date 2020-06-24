@@ -4,6 +4,7 @@
 #include "Data_Transfer.h"
 #include <sys/ioctl.h>
 //#include <linux/sockios.h>
+std::atomic<bool> active(true);
 std::atomic<bool> reconfig(false);
 std::mutex rcfglock;
 struct rcfgSet{
@@ -95,7 +96,10 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 	}else if(method == "finish_reconfig"){
 		delete rcfgKeys[data[1]];
 		rcfgKeys.erase(data[1]);
+		// TODO:: set this to false, only when list is empty
 		reconfig = false;
+		//TODO;; get the new configuration
+
 	}
 	else {
 		DataTransfer::sendMsg(connection,  DataTransfer::serialize({"MethodNotFound", "Unknown method is called"}));
@@ -136,9 +140,10 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 	close(connection);
 }
 
+
 void runServer(DataServer *ds, int portid){
 
-	while(1){
+	while(active.load()){
 		std::cout<<"Alive port "<<portid<< std::endl;
 		int new_sock = accept(ds->getSocketDesc(), NULL, 0);
 		std::thread cThread([&ds, new_sock, portid](){ server_connection(new_sock, *ds, portid);});
@@ -173,10 +178,15 @@ int main(int argc, char **argv){
 		newServer.detach();
 	}
 
-	//TODO:: free dsobj object here or somewhere
-	//TODO:: Change this, this is a temp FIX
-	std::mutex lock;
-	std::lock_guard<std::mutex> lck(lock);
-	std::unique_lock<std::mutex> lckd(lock);
+	std::string ch;
+	//Press q to exit the thread
+	while(ch != "quit"){
+		std::cin >> ch;
+	}
+	active = false;
+
+	std::cout<<"Waiting for all detached threads to terminate!" << std::endl;
+	std::this_thread::sleep_for(std::chrono::seconds(5));
+
 	return 0;
 }

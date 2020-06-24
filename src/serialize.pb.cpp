@@ -290,7 +290,7 @@ const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_serial
 };
 
 // Force running AddDescriptors() at dynamic initialization time.
-static bool dynamic_init_dummy_serialize_2eproto = (  ::PROTOBUF_NAMESPACE_ID::internal::AddDescriptors(&descriptor_table_serialize_2eproto), true);
+static bool dynamic_init_dummy_serialize_2eproto = (static_cast<void>(::PROTOBUF_NAMESPACE_ID::internal::AddDescriptors(&descriptor_table_serialize_2eproto)), true);
 namespace packet {
 
 // ===================================================================
@@ -560,7 +560,7 @@ const char* Server::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::int
       // uint32 id = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -576,7 +576,7 @@ const char* Server::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::int
       // uint32 port = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
-          port_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          port_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -818,7 +818,7 @@ const char* Datacenter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID:
       // uint32 id = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -834,7 +834,7 @@ const char* Datacenter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID:
       // uint32 metadata_server_port = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
-          metadata_server_port_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          metadata_server_port_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1123,7 +1123,7 @@ const char* Placement::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedUInt32Parser(_internal_mutable_q1(), ptr, ctx);
           CHK_(ptr);
         } else if (static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16) {
-          _internal_add_q1(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr));
+          _internal_add_q1(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr));
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1133,21 +1133,21 @@ const char* Placement::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedUInt32Parser(_internal_mutable_q2(), ptr, ctx);
           CHK_(ptr);
         } else if (static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24) {
-          _internal_add_q2(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr));
+          _internal_add_q2(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr));
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // uint32 m = 4;
       case 4:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
-          m_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          m_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // uint32 k = 5;
       case 5:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
-          k_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          k_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1157,7 +1157,7 @@ const char* Placement::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedUInt32Parser(_internal_mutable_q3(), ptr, ctx);
           CHK_(ptr);
         } else if (static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 48) {
-          _internal_add_q3(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr));
+          _internal_add_q3(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr));
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1167,7 +1167,7 @@ const char* Placement::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedUInt32Parser(_internal_mutable_q4(), ptr, ctx);
           CHK_(ptr);
         } else if (static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 56) {
-          _internal_add_q4(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr));
+          _internal_add_q4(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr));
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1525,14 +1525,14 @@ const char* GroupConfig::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID
       // uint32 object_size = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          object_size_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          object_size_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // uint64 num_objects = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
-          num_objects_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          num_objects_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1553,7 +1553,7 @@ const char* GroupConfig::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID
       // uint64 duration = 5;
       case 5:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
-          duration_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          duration_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1895,7 +1895,7 @@ const char* Group::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::inte
       // uint64 timestamp = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          timestamp_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          timestamp_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1905,7 +1905,7 @@ const char* Group::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::inte
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedUInt32Parser(_internal_mutable_grp_id(), ptr, ctx);
           CHK_(ptr);
         } else if (static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16) {
-          _internal_add_grp_id(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr));
+          _internal_add_grp_id(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr));
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -2157,35 +2157,35 @@ const char* properties::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID:
       // uint32 local_datacenter_id = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          local_datacenter_id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          local_datacenter_id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // uint32 retry_attempts = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
-          retry_attempts_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          retry_attempts_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // uint32 metadata_server_timeout = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
-          metadata_server_timeout_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          metadata_server_timeout_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // uint32 timeout_per_request = 4;
       case 4:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
-          timeout_per_request_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          timeout_per_request_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // uint64 start_time = 5;
       case 5:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
-          start_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          start_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;

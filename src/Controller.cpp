@@ -35,7 +35,7 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<DC*>
 	    test->Q4.push_back(dcs[4]);
 
 	    // SHAHROOZ: We need the servers participating to accomplish one protocol and number of failures we can tolerate for doing reconfiguration
-	    // SHAHROOZ: We can remake the vector of all servers. 
+	    // SHAHROOZ: We can remake the vector of all servers.
 	    // test->N.push_back(dcs[0]);
 	    // test->N.push_back(dcs[1]);
 	    // test->N.push_back(dcs[2]);
@@ -214,7 +214,7 @@ int Controller::init_setup(std::string configFile, std::string filePath){
 	std::string out_str;
 	// Note:: We can change the start time here
 	// Start time is used by client before starting, after that it relies on duration
-	// However, contoller only uses timestamp.
+	// However, contoller only uses timestamp attribute.
 	// So, setting start time using timestamp, allows both client and controller to be in-sync
 	//TODO::  reevaluate this
 	int start_offset =  prp.groups[0]->timestamp;			// In secs //10

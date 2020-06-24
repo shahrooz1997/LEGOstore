@@ -4,10 +4,10 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   Reconfig.cpp
  * Author: shahrooz
- * 
+ *
  * Created on March 23, 2020, 6:34 PM
  */
 
@@ -33,7 +33,7 @@ int Reconfig::reconfig(GroupConfig &old_config, GroupConfig &new_config, int key
         instance = new Reconfig();
         instance->id = 10000; // ToDo: We should set a common id for controller.
         instance->desc = desc;
-        
+
 //        char name[30];
 //        this->operation_id = 0;
 //        name[0] = 'l';
@@ -45,7 +45,7 @@ int Reconfig::reconfig(GroupConfig &old_config, GroupConfig &new_config, int key
 //        sprintf(&name[5], "cont.reconfig.txt");
 //        this->log_file = fopen(name, "w");
     }
-    
+
     /// ToDo: implement the Vanila reconfiguration
     Timestamp *ret_ts = nullptr;
     std::string *ret_v = nullptr;
@@ -54,13 +54,13 @@ int Reconfig::reconfig(GroupConfig &old_config, GroupConfig &new_config, int key
         instance->send_reconfig_finalize(old_config, key_index, ret_ts, ret_v);
     }
     instance->send_reconfig_write(new_config, key_index, ret_ts, ret_v);
-    
+
     instance->__timestamp = ret_ts;
-    
+
     // Update local meta data at this point then make a call to send_reconfig_finish function
-    
-    
-    
+
+
+
     return 0;
 }
 
@@ -180,11 +180,11 @@ void _send_reconfig_query(std::string *key, std::mutex *mutex,
 
     close(sock);
     return;
-    
+
     /////
-    
+
 //    std::string tmp((const char*)buf, buf_size);
-//    
+//
 //    std::size_t pos = tmp.find("timestamp");
 //    pos = tmp.find(":", pos);
 //    std::size_t start_index = tmp.find("\"", pos);
@@ -193,18 +193,18 @@ void _send_reconfig_query(std::string *key, std::mutex *mutex,
 //    }
 //    start_index++;
 //    std::size_t end_index = tmp.find("\"", start_index);
-    
+
 //	printf("get timestamp, data received is %s\n", data[1].c_str());
 //    std::string timestamp_str = data[1]; // tmp.substr(start_index, end_index - start_index);
-//    
+//
 //    std::size_t dash_pos = timestamp_str.find("-");
-//    
+//
 //    // make client_id and time regarding the received message
 //    uint32_t client_id_ts = stoi(timestamp_str.substr(0, dash_pos));
 //    uint32_t time_ts = stoi(timestamp_str.substr(dash_pos + 1));
-//    
+//
 //    Timestamp* t = new Timestamp(client_id_ts, time_ts);
-//    
+//
 //    std::unique_lock<std::mutex> lock(*mutex);
 //    tss->push_back(t);
 //    (*counter)++;
@@ -216,14 +216,14 @@ void _send_reconfig_query(std::string *key, std::mutex *mutex,
 int Reconfig::send_reconfig_query(GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string *ret_v){
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
 
-    
+
     uint32_t counter = 0;
     std::mutex mtx;
     std::condition_variable cv;
     std::vector<Timestamp*> tss;
     std::vector<string*> vs;
     int ret = 0;
-    
+
     std::vector<DC*> N;
     Placement &p = *(old_config.placement_p);
     for(std::vector<DC*>::iterator it = p.Q1.begin();
@@ -250,9 +250,9 @@ int Reconfig::send_reconfig_query(GroupConfig &old_config, int key_index, Timest
             N.push_back((*it));
         }
     }
-    
-    
-    
+
+
+
     if(old_config.placement_p->protocol == "ABD"){
         for(std::vector<DC*>::iterator it = N.begin();
                 it != N.end(); it++){ // ToDo: we have to change it to N and then wait for max(N − f , N − Q2 + 1)
@@ -260,7 +260,7 @@ int Reconfig::send_reconfig_query(GroupConfig &old_config, int key_index, Timest
                     (*it)->servers[0], &tss, &vs, false, instance->operation_id);
             th.detach();
         }
-        
+
 //        for(std::vector<DC*>::iterator it = p.Q2.begin();
 //                it != p.Q2.end(); it++){
 //            std::thread th(_send_reconfig_query, &mtx, &cv, &counter,
@@ -273,7 +273,7 @@ int Reconfig::send_reconfig_query(GroupConfig &old_config, int key_index, Timest
         while(counter < std::max(N.size() - p.f, N.size() - p.Q2.size() + 1)){
             cv.wait(lock);
         }
-        
+
         int idd = 0;
         int ii = 0;
         std::vector<Timestamp*>::iterator it_max = tss.begin();
@@ -285,24 +285,24 @@ int Reconfig::send_reconfig_query(GroupConfig &old_config, int key_index, Timest
             }
             ii++;
 	}
-        
-        
+
+
         ret_ts = new Timestamp(*tss[idd]);
         for(std::vector<Timestamp*>::iterator it = tss.begin(); it != tss.end(); it++){
             delete *it;
         }
-        
+
         ret_v = new string(*vs[idd]);
         for(std::vector<string*>::iterator it = vs.begin(); it != vs.end(); it++){
             delete *it;
         }
-        
+
         instance->operation_id++;
         lock.unlock();
     }
     else{ // CAS
-        
-        
+
+
         for(std::vector<DC*>::iterator it = N.begin();
                 it != N.end(); it++){
             std::thread th(_send_reconfig_query, &old_config.keys[key_index], &mtx, &cv, &counter,
@@ -316,18 +316,18 @@ int Reconfig::send_reconfig_query(GroupConfig &old_config, int key_index, Timest
         while(counter < max_val){
             cv.wait(lock);
         }
-        
+
         ret_ts = new Timestamp(Timestamp::max_timestamp(tss));
         for(std::vector<Timestamp*>::iterator it = tss.begin(); it != tss.end(); it++){
             delete *it;
         }
-        
+
         ret_v = nullptr;
-        
+
         instance->operation_id++;
         lock.unlock();
     }
-    
+
     DPRINTF(DEBUG_RECONFIG_CONTROL, "finished successfully.\n");
 
     return ret;
@@ -373,11 +373,11 @@ void _send_reconfig_finalize(std::string *key, std::mutex *mutex,
 
     if(data[0] == "OK"){
         printf("_send_reconfig_query, data received is %s and %s\n", data[1].c_str(), data[2].c_str());
-        
-        
+
+
         std::string data_portion = data[1];
-        
-        
+
+
         std::unique_lock<std::mutex> lock(*mutex);
         if(Reconfig::get_instance()->get_operation_id() == operation_id){
 
@@ -386,9 +386,6 @@ void _send_reconfig_finalize(std::string *key, std::mutex *mutex,
             (*counter)++;
             cv->notify_one();
         }
-    }
-    else{
-        std::unique_lock<std::mutex> lock(*mutex);
     }
 
     close(sock);
@@ -561,16 +558,16 @@ static void decode(std::string *data, std::vector <std::string*> *chunks,
 }
 
 int Reconfig::send_reconfig_finalize(GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string *ret_v){
+
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
 
-    
     uint32_t counter = 0;
     std::mutex mtx;
     std::condition_variable cv;
 //    std::vector<Timestamp*> tss;
 //    std::vector<string*> vs;
     int ret = 0;
-    
+
     std::vector<DC*> N;
     Placement &p = *(old_config.placement_p);
     for(std::vector<DC*>::iterator it = p.Q1.begin();
@@ -597,7 +594,7 @@ int Reconfig::send_reconfig_finalize(GroupConfig &old_config, int key_index, Tim
             N.push_back((*it));
         }
     }
-    
+
     std::vector <std::string*> chunks;
 
 //    uint32_t counter = 0;
@@ -618,10 +615,10 @@ int Reconfig::send_reconfig_finalize(GroupConfig &old_config, int key_index, Tim
     while(counter < p.Q4.size()){
         cv.wait(lock);
     }
-    
+
     this->operation_id++;
-    
-    
+
+
     if(chunks.size() < p.k){
         DPRINTF(DEBUG_CAS_Client, "chunks.size() < p.m\n");
     }
@@ -637,18 +634,18 @@ int Reconfig::send_reconfig_finalize(GroupConfig &old_config, int key_index, Tim
 //    strftime (fmt_cas, sizeof (fmt_cas), "%H:%M:%S:%%06u", tm22_cas);
 //    snprintf (buf_cas, sizeof (buf_cas), fmt_cas, tv_cas.tv_usec);
 //    fprintf(this->log_file, "%s read ok %s\n", buf_cas, value.c_str());
-    
-    
+
+
     string value;
     decode(&value, &chunks, &null_args, this->desc);
-    
+
     lock.unlock();
-    
+
     for(auto it: chunks){
         delete it;
     }
     delete ret_ts;
-    
+
     ret_v = new std::string(value);
 
     DPRINTF(DEBUG_RECONFIG_CONTROL,"Received value for key is: %s\n", value.c_str());
@@ -700,11 +697,11 @@ void _send_reconfig_write(std::string *key, std::mutex *mutex,
 
     if(data[0] == "OK"){
         printf("_send_reconfig_write\n");
-        
-        
+
+
 //        std::string data_portion = data[1];
-        
-        
+
+
         std::unique_lock<std::mutex> lock(*mutex);
         if(Reconfig::get_instance()->get_operation_id() == operation_id){
 
@@ -714,9 +711,6 @@ void _send_reconfig_write(std::string *key, std::mutex *mutex,
             cv->notify_one();
         }
     }
-    else{
-        std::unique_lock<std::mutex> lock(*mutex);
-    }
 
     close(sock);
     return;
@@ -724,9 +718,9 @@ void _send_reconfig_write(std::string *key, std::mutex *mutex,
 
 
 int Reconfig::send_reconfig_write(GroupConfig &new_config, int key_index, Timestamp *ret_ts, std::string *ret_v){
-    
+
     Placement &p = *(new_config.placement_p);
-    
+
     std::vector <std::string*> chunks;
     struct ec_args null_args;
     null_args.k = p.k;
@@ -736,7 +730,7 @@ int Reconfig::send_reconfig_write(GroupConfig &new_config, int key_index, Timest
 
 //    DPRINTF(DEBUG_CAS_Client, "The value to be stored is %s \n", value.c_str());
 
-    
+
 
     Timestamp *timestamp = ret_ts;
 
@@ -744,9 +738,9 @@ int Reconfig::send_reconfig_write(GroupConfig &new_config, int key_index, Timest
     std::mutex mtx;
     std::condition_variable cv;
     int i = 0;
-    
+
     if(new_config.placement_p->protocol == "ABD"){
-        
+
         for(std::vector<DC*>::iterator it = p.Q2.begin();
                 it != p.Q2.end(); it++){
     //	printf("The port is: %uh", (*it)->servers[0]->port);
@@ -768,13 +762,13 @@ int Reconfig::send_reconfig_write(GroupConfig &new_config, int key_index, Timest
 
         this->operation_id++;
         lock.unlock();
-        
-        
+
+
     }
     else{ // CAS
-        
+
         std::thread encoder(encode, ret_v, &chunks, &null_args, this->desc);
-        
+
         for(std::vector<DC*>::iterator it = p.Q2.begin();
                 it != p.Q2.end(); it++){
     //	printf("The port is: %uh", (*it)->servers[0]->port);
@@ -801,9 +795,9 @@ int Reconfig::send_reconfig_write(GroupConfig &new_config, int key_index, Timest
         }
 //        delete timestamp;
     }
-    
+
     DPRINTF(DEBUG_RECONFIG_CONTROL, "finished successfully.\n");
-    
+
     return S_OK;
 }
 
@@ -835,7 +829,9 @@ void _send_reconfig_finish(std::string *key, std::mutex *mutex,
         printf("\nConnection Failed \n");
         return;
     }
-    
+
+    //TODO:: fix this
+    // Send just placemrnt and that too based on ABD and CAS
     char *ncp = (char*)new_config;
     string ncs;
     for(int i = 0; i < (int)sizeof(GroupConfig); i++){
@@ -856,11 +852,7 @@ void _send_reconfig_finish(std::string *key, std::mutex *mutex,
 
     if(data[0] == "OK"){
         printf("_send_reconfig_write\n");
-        
-        
-//        std::string data_portion = data[1];
-        
-        
+
         std::unique_lock<std::mutex> lock(*mutex);
         if(Reconfig::get_instance()->get_operation_id() == operation_id){
 
@@ -870,9 +862,6 @@ void _send_reconfig_finish(std::string *key, std::mutex *mutex,
             cv->notify_one();
         }
     }
-    else{
-        std::unique_lock<std::mutex> lock(*mutex);
-    }
 
     close(sock);
     return;
@@ -881,7 +870,7 @@ void _send_reconfig_finish(std::string *key, std::mutex *mutex,
 int Reconfig::send_reconfig_finish(GroupConfig &old_config, GroupConfig &new_config, int key_index, Timestamp *ret_ts, std::string *ret_v){
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
-    
+
     ret_ts = this->__timestamp;
 
     uint32_t counter = 0;
@@ -890,7 +879,7 @@ int Reconfig::send_reconfig_finish(GroupConfig &old_config, GroupConfig &new_con
 //    std::vector<Timestamp*> tss;
 //    std::vector<string*> vs;
     int ret = 0;
-    
+
     std::vector<DC*> N;
     Placement &p = *(old_config.placement_p);
     for(std::vector<DC*>::iterator it = p.Q1.begin();
@@ -917,10 +906,10 @@ int Reconfig::send_reconfig_finish(GroupConfig &old_config, GroupConfig &new_con
             N.push_back((*it));
         }
     }
-    
+
     int i = 0;
-    
-    
+
+
     for(std::vector<DC*>::iterator it = N.begin();
             it != N.end(); it++){
         std::thread th(_send_reconfig_finish, &old_config.keys[key_index], &mtx, &cv, &counter,
@@ -934,13 +923,13 @@ int Reconfig::send_reconfig_finish(GroupConfig &old_config, GroupConfig &new_con
     while(counter < p.Q4.size()){
         cv.wait(lock);
     }
-    
+
     this->operation_id++;
-    
+
     lock.unlock();
-    
-    delete ret_ts;
-    
+
+    //delete ret_ts;
+
 
     DPRINTF(DEBUG_RECONFIG_CONTROL,"finished.\n");
     return ret;
@@ -953,4 +942,3 @@ Reconfig::~Reconfig() {
     delete this->instance;
     this->instance = nullptr;
 }
-

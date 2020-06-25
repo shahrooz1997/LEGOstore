@@ -9,7 +9,7 @@ int DataTransfer::sendAll(int &sock, const void *data, int data_size){
 	while(data_size > 0){
 		if( (bytes_sent = send(sock, iter, data_size, 0)) == -1){
 			perror("sendAll -> send");
-			assert(0);
+			//assert(0);
 			return -1;
 		}
 
@@ -28,7 +28,6 @@ std::string DataTransfer::serialize(const strVec &data){
 	}
 	std::string out_str;
 	enc.SerializeToString(&out_str);
-	//assert( out_str.empty() != 1);
 	return out_str;
 }
 
@@ -38,7 +37,6 @@ std::string DataTransfer::serialize(const strVec &data){
 // Return 1 on SUCCESS
 int DataTransfer::sendMsg(int &sock, const std::string &out_str){
 
-	//assert(out_str.empty() != 1);
 	uint32_t _size = htonl(out_str.size());
 	int result = sendAll(sock, &_size, sizeof(_size));
 	if(result == 1){
@@ -62,7 +60,7 @@ int DataTransfer::recvAll(int &sock, void *buf, int data_size){
 								"The error msg is %s \n ", std::strerror(errno));
 			}
 			//print_time();
-			assert(0);
+			//assert(0);
 			return bytes_read;
 		}
 
@@ -70,8 +68,6 @@ int DataTransfer::recvAll(int &sock, void *buf, int data_size){
 		data_size -= bytes_read;
 	}
 
-	//DEBUG
-	assert(data_size == 0);
 	return 1;
 }
 
@@ -171,19 +167,19 @@ std::string DataTransfer::serializePrp(const Properties &properties_p){
 			placement_p->set_f(pp->f);
 
 			for(auto q : pp->Q1){
-				placement_p->add_q1(q->id);
+				placement_p->add_q1(q);
 			}
 
 			for(auto q : pp->Q2){
-				placement_p->add_q2(q->id);
+				placement_p->add_q2(q);
 			}
 
 			for(auto q : pp->Q3){
-				placement_p->add_q3(q->id);
+				placement_p->add_q3(q);
 			}
 
 			for(auto q : pp->Q4){
-				placement_p->add_q4(q->id);
+				placement_p->add_q4(q);
 			}
 
 		}
@@ -198,19 +194,19 @@ std::string DataTransfer::serializePrp(const Properties &properties_p){
 	return str_out;
 }
 
-Properties DataTransfer::deserializePrp(std::string &data){
+Properties* DataTransfer::deserializePrp(std::string &data){
 
-	Properties prp;
+	Properties *prp = new Properties;
 	packet::properties gprp;		// Nomenclature: add 'g' in front of gRPC variables
 	if(!gprp.ParseFromString(data)){
 		throw std::logic_error("Failed to Parse the input received ! ");
 	}
 
-	prp.local_datacenter_id = gprp.local_datacenter_id();
-	prp.retry_attempts = gprp.retry_attempts();
-	prp.metadata_server_timeout = gprp.metadata_server_timeout();
-	prp.timeout_per_request = gprp.timeout_per_request();
-	prp.start_time = gprp.start_time();
+	prp->local_datacenter_id = gprp.local_datacenter_id();
+	prp->retry_attempts = gprp.retry_attempts();
+	prp->metadata_server_timeout = gprp.metadata_server_timeout();
+	prp->timeout_per_request = gprp.timeout_per_request();
+	prp->start_time = gprp.start_time();
 
 	// Datacenter need to be inserted in order
 	for(int i=0 ; i < gprp.datacenters_size(); i++){
@@ -230,7 +226,7 @@ Properties DataTransfer::deserializePrp(std::string &data){
 			dc->servers.push_back(sv);
 		}
 
-		prp.datacenters.push_back(dc);
+		prp->datacenters.push_back(dc);
 	}
 
 
@@ -271,23 +267,23 @@ Properties DataTransfer::deserializePrp(std::string &data){
 			plc->f = gplc.f();
 
 			for(int m=0; m < gplc.q1_size(); m++){
-				plc->Q1.push_back(prp.datacenters[gplc.q1(m)]);
+				plc->Q1.push_back(gplc.q1(m));
 			}
 			for(int m=0; m < gplc.q2_size(); m++){
-				plc->Q2.push_back(prp.datacenters[gplc.q2(m)]);
+				plc->Q2.push_back(gplc.q2(m));
 			}
 			for(int m=0; m < gplc.q3_size(); m++){
-				plc->Q3.push_back(prp.datacenters[gplc.q3(m)]);
+				plc->Q3.push_back(gplc.q3(m));
 			}
 			for(int m=0; m < gplc.q4_size(); m++){
-				plc->Q4.push_back(prp.datacenters[gplc.q4(m)]);
+				plc->Q4.push_back(gplc.q4(m));
 			}
 			gcfg->placement_p = plc;
 
 			grp->grp_config.push_back(gcfg);
 		}
 
-		prp.groups.push_back(grp);
+		prp->groups.push_back(grp);
 	}
 
 	return prp;
@@ -302,19 +298,19 @@ std::string DataTransfer::serializeCFG(const Placement &pp){
 	placement_p.set_f(pp.f);
 
 	for(auto q : pp.Q1){
-		placement_p.add_q1(q->id);
+		placement_p.add_q1(q);
 	}
 
 	for(auto q : pp.Q2){
-		placement_p.add_q2(q->id);
+		placement_p.add_q2(q);
 	}
 
 	for(auto q : pp.Q3){
-		placement_p.add_q3(q->id);
+		placement_p.add_q3(q);
 	}
 
 	for(auto q : pp.Q4){
-		placement_p.add_q4(q->id);
+		placement_p.add_q4(q);
 	}
 
 	std::string str_out;
@@ -326,7 +322,7 @@ std::string DataTransfer::serializeCFG(const Placement &pp){
 }
 
 
-Placement DataTransfer::deserializeCFG(Properties &prp, std::string &data){
+Placement DataTransfer::deserializeCFG(std::string &data){
 
 	Placement plc;
 	packet::Placement gplc;
@@ -341,16 +337,16 @@ Placement DataTransfer::deserializeCFG(Properties &prp, std::string &data){
 	plc.f = gplc.f();
 
 	for(int m=0; m < gplc.q1_size(); m++){
-		plc.Q1.push_back(prp.datacenters[gplc.q1(m)]);
+		plc.Q1.push_back(gplc.q1(m));
 	}
 	for(int m=0; m < gplc.q2_size(); m++){
-		plc.Q2.push_back(prp.datacenters[gplc.q2(m)]);
+		plc.Q2.push_back(gplc.q2(m));
 	}
 	for(int m=0; m < gplc.q3_size(); m++){
-		plc.Q3.push_back(prp.datacenters[gplc.q3(m)]);
+		plc.Q3.push_back(gplc.q3(m));
 	}
 	for(int m=0; m < gplc.q4_size(); m++){
-		plc.Q4.push_back(prp.datacenters[gplc.q4(m)]);
+		plc.Q4.push_back(gplc.q4(m));
 	}
 
 	return plc;

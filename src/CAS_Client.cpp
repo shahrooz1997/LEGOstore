@@ -27,7 +27,7 @@ struct tm *tm22_cas;
 //TODO: Ask more servers for timestamp if last attempt didn't work.
 
 // Use this constructor when single threaded code
-CAS_Client::CAS_Client(Properties &prop, uint32_t client_id, Placement &pp) {
+CAS_Client::CAS_Client(Properties *prop, uint32_t client_id, Placement &pp) {
     this->current_class = "CAS";
     this->id = client_id;
     this->prop = prop;
@@ -36,7 +36,7 @@ CAS_Client::CAS_Client(Properties &prop, uint32_t client_id, Placement &pp) {
     this->desc_destroy = 1;
 }
 
-CAS_Client::CAS_Client(Properties &prop, uint32_t client_id, Placement &pp, int desc_l) {
+CAS_Client::CAS_Client(Properties *prop, uint32_t client_id, Placement &pp, int desc_l) {
     this->current_class = "CAS";
     this->id = client_id;
     this->prop = prop;
@@ -68,7 +68,7 @@ CAS_Client::~CAS_Client() {
 
 void CAS_Client::update_placement(std::string &new_cfg){
 
-    this->p = DataTransfer::deserializeCFG(this->prop, new_cfg);
+    this->p = DataTransfer::deserializeCFG(new_cfg);
 }
 
 void _get_timestamp(std::promise<strVec> &&prm, std::string key, Server *server,
@@ -124,12 +124,12 @@ Timestamp* CAS_Client::get_timestamp(std::string *key){
     Timestamp *ret = nullptr;
     std::vector<std::future<strVec> > responses;
 
-    for(std::vector<DC*>::iterator it = p.Q1.begin();
-            it != p.Q1.end(); it++){
+    for(auto it = p.Q1.begin();it != p.Q1.end(); it++){
 
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
-        std::thread(_get_timestamp, std::move(prm), *key, (*it)->servers[0], this->current_class).detach();
+        std::thread(_get_timestamp, std::move(prm), *key,
+                        prop->datacenters[*it]->servers[0], this->current_class).detach();
     }
 
     //TODO:: Modify for the request timeout case
@@ -332,8 +332,8 @@ void decode(std::string *data, std::vector <std::string*> *chunks,
     delete[] encoded_parity;
 }
 
-void _put(std::promise<strVec> &&prm, std::string key, std::string value, Timestamp timestamp, Server *server,
-                    std::string current_class){
+void _put(std::promise<strVec> &&prm, std::string key, std::string value, Timestamp timestamp,
+                    Server *server, std::string current_class){
 
     DPRINTF(DEBUG_CAS_Client, "started.\n");
 
@@ -394,7 +394,6 @@ void _put_fin(std::promise<strVec> &&prm, std::string key, Timestamp timestamp,
     DPRINTF(DEBUG_CAS_Client, "started.\n");
 
     int sock = 0;
-
     struct sockaddr_in serv_addr;
     if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
         printf("\n Socket creation error \n");
@@ -476,12 +475,11 @@ uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
     // prewrite
     int i = 0;
 
-    for(std::vector<DC*>::iterator it = p.Q2.begin();
-            it != p.Q2.end(); it++){
+    for(auto it = p.Q2.begin(); it != p.Q2.end(); it++){
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
         std::thread(_put, std::move(prm), key, *chunks[i], *timestamp,
-                            (*it)->servers[0], this->current_class).detach();
+                            prop->datacenters[*it]->servers[0], this->current_class).detach();
 
         DPRINTF(DEBUG_CAS_Client, "Issue Q2 request to key: %s and timestamp: %s  chunk_size :%lu  chunks: ", key.c_str(), timestamp->get_string().c_str(), chunks[i]->size());
         // for (auto& el : *chunks[i])
@@ -501,13 +499,12 @@ uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
     }
 
     responses.clear();
-    for(std::vector<DC*>::iterator it = p.Q3.begin();
-            it != p.Q3.end(); it++){
+    for(auto it = p.Q3.begin(); it != p.Q3.end(); it++){
 
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
         std::thread(_put_fin, std::move(prm), key, *timestamp,
-                            (*it)->servers[0], this->current_class).detach();
+                        prop->datacenters[*it]->servers[0], this->current_class).detach();
         DPRINTF(DEBUG_CAS_Client, "Issue Q3 request to key: %s \n", key.c_str());
     }
 
@@ -603,12 +600,11 @@ uint32_t CAS_Client::get(std::string key, std::string &value){
     std::vector <std::string*> chunks;
     std::vector <std::future<strVec> > responses;
 
-    for(std::vector<DC*>::iterator it = p.Q4.begin();
-            it != p.Q4.end(); it++){
+    for(auto it = p.Q4.begin(); it != p.Q4.end(); it++){
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
         std::thread(_get, std::move(prm), key, *timestamp,
-                (*it)->servers[0], this->current_class).detach();
+                prop->datacenters[*it]->servers[0], this->current_class).detach();
 
         DPRINTF(DEBUG_CAS_Client, "Issue Q4 request for key :%s \n", key.c_str());
     }

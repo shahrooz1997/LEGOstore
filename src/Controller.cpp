@@ -19,20 +19,20 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<DC*>
 	   test->k = 3;
 
 	   std::cout<< "port of dcs 0 is " << dcs[0]->servers[0]->port << "port of dcs 1 is " << dcs[1]->servers[0]->port << std::endl;
-	   test->Q1.push_back(dcs[0]);
-	    test->Q1.push_back(dcs[1]);
-	    test->Q1.push_back(dcs[2]);
-	    test->Q2.push_back(dcs[0]);
-	    test->Q2.push_back(dcs[1]);
-	    test->Q2.push_back(dcs[2]);
-	    test->Q2.push_back(dcs[3]);
-	    test->Q2.push_back(dcs[4]);
-	    test->Q3.push_back(dcs[2]);
-	    test->Q3.push_back(dcs[3]);
-	    test->Q3.push_back(dcs[4]);
-	    test->Q4.push_back(dcs[2]);
-	    test->Q4.push_back(dcs[3]);
-	    test->Q4.push_back(dcs[4]);
+	   test->Q1.push_back(0);
+	    test->Q1.push_back(1);
+	    test->Q1.push_back(2);
+	    test->Q2.push_back(0);
+	    test->Q2.push_back(1);
+	    test->Q2.push_back(2);
+	    test->Q2.push_back(3);
+	    test->Q2.push_back(4);
+	    test->Q3.push_back(2);
+	    test->Q3.push_back(3);
+	    test->Q3.push_back(4);
+	    test->Q4.push_back(2);
+	    test->Q4.push_back(3);
+	    test->Q4.push_back(4);
 
 	    // SHAHROOZ: We need the servers participating to accomplish one protocol and number of failures we can tolerate for doing reconfiguration
 	    // SHAHROOZ: We can remake the vector of all servers.
@@ -42,7 +42,6 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<DC*>
 	    // test->N.push_back(dcs[3]);
 	    // test->N.push_back(dcs[4]);
 	    test->f = 0; // TODO: we need to set it properly.
-
 
 		placement.push_back(test);
 	}

@@ -7,8 +7,8 @@
 #include <cmath>
 #include "CAS_Client.h"
 
-//TODO:: Remove this, jyst for experiment purposes
-Properties test;
+// All clients use this for read-only access
+Properties *cc;
 
 //Format of THread ID given to each CAS_Client:
 // bits 32-24 => Client ID || max : 256
@@ -52,7 +52,7 @@ int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &
 	int reqType = 0;    // 1 for GET, 2 for PUT
 	int key_idx = -1;
 	uint32_t threadId = create_threadId(clientId, grp_idx, req_idx);
-	CAS_Client clt(test, threadId,*pp, desc);
+	CAS_Client clt(cc, threadId,*pp, desc);
 	//Scope of this seeding is global
 	//So, may lead to same operation sequence on all threads
 	srand(threadId);
@@ -116,7 +116,7 @@ int key_req_gen(Properties &prop, int grp_idx, std::string dist_process){
 
 		// Prep the database before the next epoch, write objects of specified size
 		printf("Creating init threads for grp id: %d \n", grp_idx);
-		CAS_Client client(test, create_threadId(clientId, grp_idx, 0),  *grpCfg->placement_p, desc);
+		CAS_Client client(cc, create_threadId(clientId, grp_idx, 0),  *grpCfg->placement_p, desc);
 		for(auto &key: grpCfg->keys){
 			std::string val(grpCfg->object_size, 'a'+ (grp_idx%26));
 			client.put(key, val, key_init);
@@ -178,13 +178,13 @@ int main(int argc, char* argv[]){
 		}
 		close(sock);
 
-		Properties cc = DataTransfer::deserializePrp(recv_str);
+		cc = DataTransfer::deserializePrp(recv_str);
 		// std::cout<< "client id " << cc.local_datacenter_id << " group " << cc.groups[0]->grp_id[1] << " arrival rate " << cc.groups[0]->grp_config[1]->arrival_rate
 		// 			<< "read ratio  " << cc.groups[0]->grp_config[1]->read_ratio << "keys" << cc.groups[0]->grp_config[1]->keys[0] << std::endl;
 		// std::cout<< "group " << cc.groups[1]->grp_id[1] << " arrival rate " << cc.groups[1]->grp_config[1]->arrival_rate
 		// 						<< "read ratio  " << cc.groups[1]->grp_config[1]->read_ratio <<  cc.groups[1]->grp_config[1]->keys[0] << std::endl;
 
-		if(cc.groups.empty()){
+		if(cc->groups.empty()){
 			std::cout << "No Key groups were found" <<std::endl;
 			return 0;
 		}
@@ -209,10 +209,10 @@ int main(int argc, char* argv[]){
 		// Because initialization of all key_grps needed at start time
 		// Create a separate process for each Key group
 		// NOTE:: grp_id size and grp_config size should be equal for Groupxxxx
-		int grp_size = cc.groups[0]->grp_id.size();
+		int grp_size = cc->groups[0]->grp_id.size();
 		for(int i=0; i<grp_size; i++){
 			if(fork() == 0){
-				int rate = key_req_gen(cc, cc.groups[0]->grp_id[i], "uniform");
+				int rate = key_req_gen(*cc, cc->groups[0]->grp_id[i], "uniform");
 				std::cout << "Rate sent is " << rate  << std::endl;
 				exit(rate);
 			}
@@ -233,7 +233,8 @@ int main(int argc, char* argv[]){
 		std::cout<< "Exception caught! " << e.what() << std::endl;
 	}
 
-
+	//TODO:: wait for time outs before terminating the thread, cleanup purposes
+	delete cc;
 	return 0;
 
 }

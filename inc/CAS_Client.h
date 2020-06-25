@@ -40,8 +40,8 @@
 
 class CAS_Client {
 public:
-    CAS_Client(Properties &prop, uint32_t client_id, Placement &pp);
-    CAS_Client(Properties &prop, uint32_t client_id, Placement &pp, int desc_l);
+    CAS_Client(Properties *prop, uint32_t client_id, Placement &pp);
+    CAS_Client(Properties *prop, uint32_t client_id, Placement &pp, int desc_l);
     CAS_Client(const CAS_Client& orig) = delete;
     virtual ~CAS_Client();
 
@@ -51,7 +51,7 @@ public:
 private:
 
     uint32_t id;
-    Properties prop;
+    Properties *prop;
     Placement p;
     int desc;
     int desc_destroy;

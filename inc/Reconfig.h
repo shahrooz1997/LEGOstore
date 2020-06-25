@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   Reconfig.h
  * Author: shahrooz
  *
@@ -30,45 +30,35 @@
 
 
 //struct Config{
-//    
+//
 //    Config(Timestamp &timestamp, Group &group); // You may set the client id in timestamp to -1
-//    
+//
 //    Timestamp *timestamp;// ToDo: do we need this?
 //    Group *group;
-//    
+//
 //    virtual ~Config();
 //};
 
 class Reconfig {
 public:
-    
-    static int reconfig(GroupConfig &old_config, GroupConfig &new_config, int key_index, int desc = -1);
-    static Reconfig* get_instance();
-    
-    //changing the metadata.
-    
-    int send_reconfig_finish(GroupConfig &old_config, GroupConfig &new_config, int key_index, Timestamp *ret_ts = nullptr, std::string *ret_v = nullptr);
-    
-    
+
+    static int start_reconfig(Properties *prop, GroupConfig &old_config, GroupConfig &new_config, int key_index, int desc);
+
     Reconfig(const Reconfig& orig) = delete;
     virtual ~Reconfig();
-    
-    uint32_t get_operation_id();
 
 private:
-    Reconfig(); // Singleton
-    static Reconfig *instance;
-    uint32_t operation_id;
+
     uint32_t id;
     FILE* log_file;
-    Timestamp* __timestamp; //
-    
+
     int desc;
-    
-    int send_reconfig_query(GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string *ret_v);
-    int send_reconfig_finalize(GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string *ret_v);
-    int send_reconfig_write(GroupConfig &new_config, int key_index, Timestamp *ret_ts, std::string *ret_v);
+
+    static int send_reconfig_query(Properties *prop, GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string *ret_v);
+    static int send_reconfig_finalize(Properties *prop, GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string *ret_v, int desc);
+    static int send_reconfig_write(Properties *prop, GroupConfig &new_config, int key_index, Timestamp *ret_ts, std::string *ret_v, int desc);
+    //static int send_reconfig_finish(GroupConfig &old_config, GroupConfig &new_config, int key_index, Timestamp *ret_ts = nullptr, std::string *ret_v = nullptr);
+
 };
 
 #endif /* RECONFIG_H */
-

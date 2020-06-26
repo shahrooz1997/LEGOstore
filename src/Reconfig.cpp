@@ -6,7 +6,7 @@
 
 /*
  * File:   Reconfig.cpp
- * Author: shahrooz
+ * Author: Praneet Soni
  *
  * Created on March 23, 2020, 6:34 PM
  */
@@ -21,20 +21,27 @@ using std::string;
 int Reconfig::start_reconfig(Properties *prop, GroupConfig &old_config, GroupConfig &new_config, int key_index, int desc){
 
     Timestamp *ret_ts = nullptr;
-    std::string *ret_v = nullptr;
+    std::string ret_v;
     Reconfig::send_reconfig_query(prop, old_config, key_index, ret_ts, ret_v);
     if(old_config.placement_p->protocol == "CAS"){
         Reconfig::send_reconfig_finalize(prop, old_config, key_index, ret_ts, ret_v, desc);
     }
-    //Reconfig::send_reconfig_write(new_config, key_index, ret_ts, ret_v, desc);
+    Reconfig::send_reconfig_write(prop, new_config, key_index, ret_ts, ret_v, desc);
 
     // Update local meta data at this point then make a call to send_reconfig_finish function
 
-    // Call finish reconfig
+    Reconfig::send_reconfig_finish(prop, old_config, new_config, key_index);
 
-    return 0;
+    delete ret_ts;
+    return S_OK;
 }
-
+template <typename T>
+void set_intersection(Placement *p, std::unordered_set<T> &res){
+    res.insert(p->Q1.begin(), p->Q1.end());
+    res.insert(p->Q2.begin(), p->Q2.end());
+    res.insert(p->Q3.begin(), p->Q3.end());
+    res.insert(p->Q4.begin(), p->Q4.end());
+}
 
 void _send_reconfig_query(std::promise<strVec> &&prm, std::string key, Server *server,
                             std::string current_class){
@@ -79,7 +86,7 @@ void _send_reconfig_query(std::promise<strVec> &&prm, std::string key, Server *s
     return;
 }
 
-int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string *ret_v){
+int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string &ret_v){
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
 
     std::vector<Timestamp> tss;
@@ -88,22 +95,19 @@ int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, int
     std::vector<std::future<strVec> > responses;
 
     Placement *p = old_config.placement_p;
-    old_servers.insert(p->Q1.begin(), p->Q1.end());
-    old_servers.insert(p->Q2.begin(), p->Q2.end());
-    old_servers.insert(p->Q3.begin(), p->Q3.end());
-    old_servers.insert(p->Q4.begin(), p->Q4.end());
+    set_intersection(p, old_servers);
 
-    if(old_config.placement_p->protocol == "ABD"){
+    if(p->protocol == "ABD"){
 
     }
-    else if(old_config.placement_p->protocol == "CAS") {
+    else if(p->protocol == "CAS") {
 
         for(auto it = old_servers.begin();it != old_servers.end(); it++){
 
             std::promise<strVec> prm;
             responses.emplace_back(prm.get_future());
             std::thread(_send_reconfig_query, std::move(prm), old_config.keys[key_index],
-                            prop->datacenters[*it]->servers[0], "CAS").detach();
+                            prop->datacenters[*it]->servers[0], p->protocol).detach();
         }
 
         uint32_t max_val = std::max(old_servers.size() - p->f, old_servers.size() - p->Q3.size() + 1);
@@ -362,7 +366,7 @@ void _send_reconfig_finalize(std::promise<strVec> &&prm, std::string key, Timest
 }
 
 int Reconfig::send_reconfig_finalize(Properties *prop, GroupConfig &old_config, int key_index,
-                                Timestamp *ret_ts, std::string *ret_v, int desc){
+                                Timestamp *ret_ts, std::string &ret_v, int desc){
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
 
@@ -405,308 +409,178 @@ int Reconfig::send_reconfig_finalize(Properties *prop, GroupConfig &old_config, 
 //    fprintf(this->log_file, "%s read ok %s\n", buf_cas, value.c_str());
 
 
-    string value;
-    decode(&value, &chunks, &null_args, desc);
+    decode(&ret_v, &chunks, &null_args, desc);
 
     for(auto it: chunks){
         delete it;
     }
 
-    //delete ret_ts;
-
-    ret_v = new std::string(value);
-
-    DPRINTF(DEBUG_RECONFIG_CONTROL,"Received value for key is: %s\n", value.c_str());
+    DPRINTF(DEBUG_RECONFIG_CONTROL,"Received value for key is: %s\n", ret_v.c_str());
     return S_OK;
 }
 
-// void _send_reconfig_write(std::string *key, std::mutex *mutex,
-//                     std::condition_variable *cv, uint32_t *counter, Server *server,
-//                     Timestamp* timestamp, std::string *value, bool is_cas,
-//                     uint32_t operation_id){
-//     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
-//     std::string key2 = *key;
-//     Timestamp timestamp2 = *timestamp;
-//     std::string vaule2 = *value;
-//     int sock = 0;
-//     struct sockaddr_in serv_addr;
-//     if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-//         printf("\n Socket creation error \n");
-//         return;
-//     }
-//     serv_addr.sin_family = AF_INET;
-//     serv_addr.sin_port = htons(server->port);
-//     std::string ip_str = server->ip;
-//     //std::string ip_str = convert_ip_to_string(server->ip);
-//
-//     if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
-//         printf("\nInvalid address/ Address not supported \n");
-//         return;
-//     }
-//
-//     if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
-//         printf("\nConnection Failed \n");
-//         return;
-//     }
-//
-//     strVec data;
-//     data.push_back("write_config");
-//     data.push_back(key2);
-//     data.push_back(timestamp2.get_string());
-//     data.push_back(vaule2);
-//     if(is_cas)
-//         data.push_back("fin");
-//     DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
-//
-//     data.clear();
-//     std::string recvd;
-//     DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
-//     data =  DataTransfer::deserialize(recvd);
-//
-//     if(data[0] == "OK"){
-//         printf("_send_reconfig_write\n");
-//
-//
-// //        std::string data_portion = data[1];
-//
-//
-//         std::unique_lock<std::mutex> lock(*mutex);
-//         if(Reconfig::get_instance()->get_operation_id() == operation_id){
-//
-// //            chunks->push_back(new std::string(data_portion));
-//     //        tss->push_back(t);
-//             (*counter)++;
-//             cv->notify_one();
-//         }
-//     }
-//
-//     close(sock);
-//     return;
-// }
-//
-//
-// int Reconfig::send_reconfig_write(GroupConfig &new_config, int key_index, Timestamp *ret_ts, std::string *ret_v){
-//
-//     Placement &p = *(new_config.placement_p);
-//
-//     std::vector <std::string*> chunks;
-//     struct ec_args null_args;
-//     null_args.k = p.k;
-//     null_args.m = p.m - p.k;
-//     null_args.w = 16;
-//     null_args.ct = CHKSUM_NONE;
-//
-// //    DPRINTF(DEBUG_CAS_Client, "The value to be stored is %s \n", value.c_str());
-//
-//
-//
-//     Timestamp *timestamp = ret_ts;
-//
-//     uint32_t counter = 0;
-//     std::mutex mtx;
-//     std::condition_variable cv;
-//     int i = 0;
-//
-//     if(new_config.placement_p->protocol == "ABD"){
-//
-//         for(std::vector<DC*>::iterator it = p.Q2.begin();
-//                 it != p.Q2.end(); it++){
-//     //	printf("The port is: %uh", (*it)->servers[0]->port);
-//
-//             std::thread th(_send_reconfig_write, &new_config.keys[key_index], &mtx, &cv, &counter,
-//                     (*it)->servers[0], timestamp, ret_v, false, this->operation_id);
-//             th.detach();
-//
-//             // for (auto& el : *chunks[i])
-//                 //      printf("%02hhx", el);
-//             // std::cout << '\n';
-//             i++;
-//         }
-//
-//         std::unique_lock<std::mutex> lock(mtx);
-//         while(counter < p.Q2.size()){
-//             cv.wait(lock);
-//         }
-//
-//         this->operation_id++;
-//         lock.unlock();
-//
-//
-//     }
-//     else{ // CAS
-//
-//         std::thread encoder(encode, ret_v, &chunks, &null_args, this->desc);
-//
-//         for(std::vector<DC*>::iterator it = p.Q2.begin();
-//                 it != p.Q2.end(); it++){
-//     //	printf("The port is: %uh", (*it)->servers[0]->port);
-//
-//             std::thread th(_send_reconfig_write, &new_config.keys[key_index], &mtx, &cv, &counter,
-//                     (*it)->servers[0], timestamp, chunks[i], false, this->operation_id);
-//             th.detach();
-//
-//             // for (auto& el : *chunks[i])
-//                 //      printf("%02hhx", el);
-//             // std::cout << '\n';
-//             i++;
-//         }
-//
-//         std::unique_lock<std::mutex> lock(mtx);
-//         while(counter < p.Q2.size()){
-//             cv.wait(lock);
-//         }
-//
-//         this->operation_id++;
-//         lock.unlock();
-//         for(auto it: chunks){
-//             delete it;
-//         }
-// //        delete timestamp;
-//     }
-//
-//     DPRINTF(DEBUG_RECONFIG_CONTROL, "finished successfully.\n");
-//
-//     return S_OK;
-// }
-//
-// void _send_reconfig_finish(std::string *key, std::mutex *mutex,
-//                     std::condition_variable *cv, uint32_t *counter, Server *server,
-//                     Timestamp* timestamp,
-//                     uint32_t operation_id, GroupConfig *new_config){
-//     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
-//     std::string key2 = *key;
-//     Timestamp timestamp2 = *timestamp;
-//     GroupConfig new_config2 = *new_config;
-//     int sock = 0;
-//     struct sockaddr_in serv_addr;
-//     if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-//         printf("\n Socket creation error \n");
-//         return;
-//     }
-//     serv_addr.sin_family = AF_INET;
-//     serv_addr.sin_port = htons(server->port);
-//     std::string ip_str = server->ip;
-//     //std::string ip_str = convert_ip_to_string(server->ip);
-//
-//     if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
-//         printf("\nInvalid address/ Address not supported \n");
-//         return;
-//     }
-//
-//     if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
-//         printf("\nConnection Failed \n");
-//         return;
-//     }
-//
-//     //TODO:: fix this
-//     // Send just placemrnt and that too based on ABD and CAS
-//     char *ncp = (char*)new_config;
-//     string ncs;
-//     for(int i = 0; i < (int)sizeof(GroupConfig); i++){
-//         ncs.push_back(ncp[i]);
-//     }
-//
-//     strVec data;
-//     data.push_back("finish_reconfig");
-//     data.push_back(key2);
-//     data.push_back(timestamp2.get_string());
-//     data.push_back(ncs);
-//     DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
-//
-//     data.clear();
-//     std::string recvd;
-//     DataTransfer::recvMsg(sock, recvd); // data must have the timestamp.
-//     data =  DataTransfer::deserialize(recvd);
-//
-//     if(data[0] == "OK"){
-//         printf("_send_reconfig_write\n");
-//
-//         std::unique_lock<std::mutex> lock(*mutex);
-//         if(Reconfig::get_instance()->get_operation_id() == operation_id){
-//
-// //            chunks->push_back(new std::string(data_portion));
-//     //        tss->push_back(t);
-//             (*counter)++;
-//             cv->notify_one();
-//         }
-//     }
-//
-//     close(sock);
-//     return;
-// }
-//
-// int Reconfig::send_reconfig_finish(GroupConfig &old_config, GroupConfig &new_config, int key_index, Timestamp *ret_ts, std::string *ret_v){
-//
-//     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
-//
-//     ret_ts = this->__timestamp;
-//
-//     uint32_t counter = 0;
-//     std::mutex mtx;
-//     std::condition_variable cv;
-// //    std::vector<Timestamp*> tss;
-// //    std::vector<string*> vs;
-//     int ret = 0;
-//
-//     std::vector<DC*> N;
-//     Placement &p = *(old_config.placement_p);
-//     for(std::vector<DC*>::iterator it = p.Q1.begin();
-//             it != p.Q1.end(); it++){
-//         if(std::find(N.begin(), N.end(), (*it)) == N.end()){
-//             N.push_back((*it));
-//         }
-//     }
-//     for(std::vector<DC*>::iterator it = p.Q2.begin();
-//             it != p.Q2.end(); it++){
-//         if(std::find(N.begin(), N.end(), (*it)) == N.end()){
-//             N.push_back((*it));
-//         }
-//     }
-//     for(std::vector<DC*>::iterator it = p.Q3.begin();
-//             it != p.Q3.end(); it++){
-//         if(std::find(N.begin(), N.end(), (*it)) == N.end()){
-//             N.push_back((*it));
-//         }
-//     }
-//     for(std::vector<DC*>::iterator it = p.Q4.begin();
-//             it != p.Q4.end(); it++){
-//         if(std::find(N.begin(), N.end(), (*it)) == N.end()){
-//             N.push_back((*it));
-//         }
-//     }
-//
-//     int i = 0;
-//
-//
-//     for(std::vector<DC*>::iterator it = N.begin();
-//             it != N.end(); it++){
-//         std::thread th(_send_reconfig_finish, &old_config.keys[key_index], &mtx, &cv, &counter,
-//                 (*it)->servers[0], ret_ts, this->operation_id, &new_config);
-//         th.detach();
-// //        DPRINTF(DEBUG_CAS_Client, "Issue Q4 request for key :%s \n", key.c_str());
-//         i++;
-//     }
-//
-//     std::unique_lock<std::mutex> lock(mtx);
-//     while(counter < p.Q4.size()){
-//         cv.wait(lock);
-//     }
-//
-//     this->operation_id++;
-//
-//     lock.unlock();
-//
-//     //delete ret_ts;
-//
-//
-//     DPRINTF(DEBUG_RECONFIG_CONTROL,"finished.\n");
-//     return ret;
-// }
-//
-// Reconfig::Reconfig() {
-// }
-//
-// Reconfig::~Reconfig() {
-//     delete this->instance;
-//     this->instance = nullptr;
-// }
+void _send_reconfig_write(std::promise<strVec> &&prm, std::string key, Server *server,
+                    Timestamp timestamp, std::string value, std::string current_class){
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
+
+    int sock = 0;
+    struct sockaddr_in serv_addr;
+    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+        printf("\n Socket creation error \n");
+        return;
+    }
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(server->port);
+    std::string ip_str = server->ip;
+    //std::string ip_str = convert_ip_to_string(server->ip);
+
+    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
+        printf("\nInvalid address/ Address not supported \n");
+        return;
+    }
+
+    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
+        printf("\nConnection Failed \n");
+        return;
+    }
+
+    strVec data;
+    data.push_back("write_config");
+    data.push_back(key);
+    data.push_back(timestamp.get_string());
+    data.push_back(value);
+    data.push_back(current_class);
+
+    DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
+
+    data.clear();
+    std::string recvd;
+
+    if(DataTransfer::recvMsg(sock, recvd) == 1){
+        data =  DataTransfer::deserialize(recvd);
+        prm.set_value(std::move(data));
+    }
+
+    close(sock);
+    return;
+}
+
+
+int Reconfig::send_reconfig_write(Properties *prop, GroupConfig &new_config, int key_index,
+                        Timestamp *ret_ts, std::string &ret_v, int desc){
+
+    Placement *p = new_config.placement_p;
+    std::vector<std::future<strVec> > responses;
+    std::vector <std::string*> chunks;
+
+    struct ec_args null_args;
+    null_args.k = p->k;
+    null_args.m = p->m - p->k;
+    null_args.w = 16;
+    null_args.ct = CHKSUM_NONE;
+
+    int i = 0;
+
+    if(p->protocol == "ABD"){
+
+    }
+    else if(p->protocol == "CAS"){
+
+        encode(&ret_v, &chunks, &null_args, desc);
+
+        for(auto it = p->Q2.begin(); it != p->Q2.end(); it++){
+
+            std::promise<strVec> prm;
+            responses.emplace_back(prm.get_future());
+            std::thread(_send_reconfig_write, std::move(prm), new_config.keys[key_index],
+                    prop->datacenters[*it]->servers[0], *ret_ts, *chunks[i], p->protocol).detach();
+            i++;
+        }
+
+        for(auto &it: responses){
+            strVec data = it.get();
+
+            if(data[0] == "OK"){}
+        }
+
+        for(auto it: chunks){
+            delete it;
+        }
+    }
+
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "finished successfully.\n");
+
+    return S_OK;
+}
+
+void _send_reconfig_finish(std::promise<strVec> &&prm, std::string key, Server *server,
+                    std::string new_config){
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
+
+    int sock = 0;
+    struct sockaddr_in serv_addr;
+    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+        printf("\n Socket creation error \n");
+        return;
+    }
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(server->port);
+    std::string ip_str = server->ip;
+
+    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
+        printf("\nInvalid address/ Address not supported \n");
+        return;
+    }
+
+    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
+        printf("\nConnection Failed \n");
+        return;
+    }
+
+    strVec data;
+    data.push_back("finish_reconfig");
+    data.push_back(key);
+    data.push_back(new_config);
+    DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
+
+    data.clear();
+    std::string recvd;
+
+    if(DataTransfer::recvMsg(sock, recvd) == 1){
+        data =  DataTransfer::deserialize(recvd);
+        prm.set_value(std::move(data));
+    }
+
+    close(sock);
+    return;
+}
+
+// The key_index is always with respect to the old_config keys order
+int Reconfig::send_reconfig_finish(Properties *prop, GroupConfig &old_config, GroupConfig &new_config, int key_index){
+
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "reconfig finish - initiated.\n");
+
+    std::unordered_set<uint32_t> old_servers;
+    std::vector<std::future<strVec> > responses;
+    Placement *p = old_config.placement_p;
+    std::string new_cfg = DataTransfer::serializeCFG(*new_config.placement_p);
+
+    set_intersection(p, old_servers);
+
+    for(auto it = old_servers.begin(); it != old_servers.end(); it++){
+        std::promise<strVec> prm;
+        responses.emplace_back(prm.get_future());
+        std::thread(_send_reconfig_finish, std::move(prm), old_config.keys[key_index],
+                    prop->datacenters[*it]->servers[0], new_cfg).detach();
+    }
+
+    for(auto &it:responses){
+        strVec data = it.get();
+        if(data[0] == "OK"){
+            // Finish reconfig reached the server
+        }
+    }
+
+    DPRINTF(DEBUG_RECONFIG_CONTROL,"reconfig finish - finished.\n");
+    return S_OK;
+}

@@ -120,6 +120,7 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 			reconfig = false;
 
 		rcfgKeys[data[1]]->rcv.notify_all();
+		DataTransfer::sendMsg(connection,  DataTransfer::serialize({"OK"}));
 	}
 	else {
 		DataTransfer::sendMsg(connection,  DataTransfer::serialize({"MethodNotFound", "Unknown method is called"}));

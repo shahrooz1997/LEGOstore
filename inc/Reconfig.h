@@ -28,17 +28,6 @@
 #include <erasurecode.h>
 #include "Data_Transfer.h"
 
-
-//struct Config{
-//
-//    Config(Timestamp &timestamp, Group &group); // You may set the client id in timestamp to -1
-//
-//    Timestamp *timestamp;// ToDo: do we need this?
-//    Group *group;
-//
-//    virtual ~Config();
-//};
-
 class Reconfig {
 public:
 
@@ -49,15 +38,10 @@ public:
 
 private:
 
-    uint32_t id;
-    FILE* log_file;
-
-    int desc;
-
-    static int send_reconfig_query(Properties *prop, GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string *ret_v);
-    static int send_reconfig_finalize(Properties *prop, GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string *ret_v, int desc);
-    static int send_reconfig_write(Properties *prop, GroupConfig &new_config, int key_index, Timestamp *ret_ts, std::string *ret_v, int desc);
-    //static int send_reconfig_finish(GroupConfig &old_config, GroupConfig &new_config, int key_index, Timestamp *ret_ts = nullptr, std::string *ret_v = nullptr);
+    static int send_reconfig_query(Properties *prop, GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string &ret_v);
+    static int send_reconfig_finalize(Properties *prop, GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string &ret_v, int desc);
+    static int send_reconfig_write(Properties *prop, GroupConfig &new_config, int key_index, Timestamp *ret_ts, std::string &ret_v, int desc);
+    static int send_reconfig_finish(Properties *prop, GroupConfig &old_config, GroupConfig &new_config, int key_index);
 
 };
 

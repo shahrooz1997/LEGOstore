@@ -33,8 +33,8 @@ std::string DataServer::reconfig_finalize(std::string &key, std::string &timesta
     std::string result;
     if(curr_class == "CAS"){
         result = CAS.get(key, timestamp, cache, persistent, lock);
-    }else if(curr_class == "ABD"){
-
+    }else{
+        //Error scenario;
     }
     return result;
 }

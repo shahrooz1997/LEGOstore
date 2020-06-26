@@ -33,7 +33,7 @@ public:
     static bool compare_timestamp(std::string left, std::string right);
     friend bool operator > (Timestamp &lhs, Timestamp &rhs);
 
-//private: // Todo: we made these variables temporarily public for reconfiguration, it must be fixed.
+private: 
 	uint32_t time;
 	uint32_t client_id;
 };

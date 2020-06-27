@@ -265,14 +265,32 @@ int Controller::init_setup(std::string configFile, std::string filePath){
 	return 0;
 }
 
+int Controller::get_metadata_info(std::string &key, GroupConfig *old_config){
+	if(key_metadata.find(key) == key_metadata.end()){
+		//Key not found
+		old_config = nullptr;
+		return 1;
+	}else{
+		old_config = key_metadata[key];
+		return 0;
+	}
+}
+
+int Controller::update_metadata_info(std::string &key, GroupConfig *new_config){
+	key_metadata[key] = new_config;
+	return 0;
+}
+
 int main(){
 
 	Controller master(1, 120, 120, "./config/setup_config.json");
 	master.init_setup("./config/input_workload.json" , "config/deployment.txt");
 
-	time_point<system_clock, millis> timePoint;
+	//startPoint already includes the timestamp of first group
+	// The for loop assumes the startPoint to not include any offset at all
 	time_point<system_clock, millis> startPoint(millis{master.prp.start_time});
-	std::this_thread::sleep_until(startPoint);
+	startPoint -= millis{master.prp.groups[0]->timestamp * 1000};
+	time_point<system_clock, millis> timePoint;
 
 	// Note:: this assumes the first group has timestamp at which the experiment starts
 	for(auto grp: master.prp.groups){
@@ -280,11 +298,37 @@ int main(){
 		timePoint = startPoint + millis{grp->timestamp * 1000};
 		std::this_thread::sleep_until(timePoint);
 
+		//TODO:: Add some heuristics on how to sequence the reconf
+		// Do reconfiguration of one grp at a time
+		// Cos they are using a common placement and that's used for liberasure desc
 		for(uint i=0; i< grp->grp_id.size(); i++){
 			std::cout << "Starting the reconfiguration for group id" << grp->grp_id[i] << std::endl;
+			GroupConfig *curr = grp->grp_config[i];
+			GroupConfig *old = nullptr;
+			std::vector<std::thread> pool;
 
-			//Call Reconfig function
-			//reconfig_protocol(grp->grp_config[i])
+			// TODO:: CHECK THIS, whether it should take the old or the new placement
+			// TODO:: fix the code in Reconfig class accordingly
+			// TODO:: cause old and new have diff config
+			//int desc = create_liberasure_instance(curr->placement_p);
+
+			// Do the reconfiguration for each key in the group
+			for(uint i=0; i< curr->keys.size(); i++){
+				std::string key(curr->keys[i]);
+				if(master.get_metadata_info(key, old) == 0){
+					//pool.emplace_back(Reconfig::start_reconfig, &master.prp, std::ref(*old), std::ref(*curr), i, desc);
+					master.update_metadata_info(key, curr);
+				}else{
+					//NO need for reconfig protocol as this is a new key
+					master.update_metadata_info(key, curr);
+				}
+			}
+
+			//Waiting for all reconfig to finish
+			for(auto &it: pool){
+				it.join();
+			}
+
 		}
 
 	}

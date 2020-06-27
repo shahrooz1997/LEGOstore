@@ -85,6 +85,7 @@ int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &
 	return 0;
 }
 //NOTE:: A process is started for each grp_id
+//NOTE:: So, the number of grps cannot increase during the experiment but can decrease
 //NOTE:: Grp key idx should match with its index in grp_config
 int key_req_gen(Properties &prop, int grp_idx, std::string dist_process){
 
@@ -179,30 +180,12 @@ int main(int argc, char* argv[]){
 		close(sock);
 
 		cc = DataTransfer::deserializePrp(recv_str);
-		// std::cout<< "client id " << cc.local_datacenter_id << " group " << cc.groups[0]->grp_id[1] << " arrival rate " << cc.groups[0]->grp_config[1]->arrival_rate
-		// 			<< "read ratio  " << cc.groups[0]->grp_config[1]->read_ratio << "keys" << cc.groups[0]->grp_config[1]->keys[0] << std::endl;
-		// std::cout<< "group " << cc.groups[1]->grp_id[1] << " arrival rate " << cc.groups[1]->grp_config[1]->arrival_rate
-		// 						<< "read ratio  " << cc.groups[1]->grp_config[1]->read_ratio <<  cc.groups[1]->grp_config[1]->keys[0] << std::endl;
 
 		if(cc->groups.empty()){
 			std::cout << "No Key groups were found" <<std::endl;
 			return 0;
 		}
 
-		// //TODO:: For testing purpose. Initialzing the key
-		// Placement *p = cc.groups[0]->grp_config[0]->placement_p;
-		// struct ec_args null_args;
-	    // null_args.k = p->k;
-	    // null_args.m = p->m - p->k;
-	    // null_args.w = 16; // ToDo: what must it be?
-	    // null_args.ct = CHKSUM_NONE;
-		//
-		// int desc = liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, &null_args);
-		// CAS_Client clt(test, 1, desc);
-		// clt.put("group11", "1111aaaaa", *p, true);
-		// clt.put("group12", "22222bbbbb", *p, true);
-		//
-		// assert(0 == liberasurecode_instance_destroy(desc));
 
 		//TODO:: decide where to specify the distribiution
 		// Assumes the Group 0 in config contains all key grps

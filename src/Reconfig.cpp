@@ -18,6 +18,14 @@
 
 using std::string;
 
+template <typename T>
+void set_intersection(Placement *p, std::unordered_set<T> &res){
+    res.insert(p->Q1.begin(), p->Q1.end());
+    res.insert(p->Q2.begin(), p->Q2.end());
+    res.insert(p->Q3.begin(), p->Q3.end());
+    res.insert(p->Q4.begin(), p->Q4.end());
+}
+
 int Reconfig::start_reconfig(Properties *prop, GroupConfig &old_config, GroupConfig &new_config, int key_index, int desc){
 
     Timestamp *ret_ts = nullptr;
@@ -28,19 +36,13 @@ int Reconfig::start_reconfig(Properties *prop, GroupConfig &old_config, GroupCon
     }
     Reconfig::send_reconfig_write(prop, new_config, key_index, ret_ts, ret_v, desc);
 
+    //TODO::
     // Update local meta data at this point then make a call to send_reconfig_finish function
 
     Reconfig::send_reconfig_finish(prop, old_config, new_config, key_index);
 
     delete ret_ts;
     return S_OK;
-}
-template <typename T>
-void set_intersection(Placement *p, std::unordered_set<T> &res){
-    res.insert(p->Q1.begin(), p->Q1.end());
-    res.insert(p->Q2.begin(), p->Q2.end());
-    res.insert(p->Q3.begin(), p->Q3.end());
-    res.insert(p->Q4.begin(), p->Q4.end());
 }
 
 void _send_reconfig_query(std::promise<strVec> &&prm, std::string key, Server *server,
@@ -89,6 +91,7 @@ void _send_reconfig_query(std::promise<strVec> &&prm, std::string key, Server *s
 int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string &ret_v){
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
 
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "reconfig query started\n");
     std::vector<Timestamp> tss;
     std::vector<string*> vs;
     std::unordered_set<uint32_t> old_servers;
@@ -469,6 +472,7 @@ void _send_reconfig_write(std::promise<strVec> &&prm, std::string key, Server *s
 int Reconfig::send_reconfig_write(Properties *prop, GroupConfig &new_config, int key_index,
                         Timestamp *ret_ts, std::string &ret_v, int desc){
 
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "reconfig write started.\n");
     Placement *p = new_config.placement_p;
     std::vector<std::future<strVec> > responses;
     std::vector <std::string*> chunks;

@@ -4,6 +4,7 @@
 #include <json.hpp>
 #include <fstream>
 #include "Data_Transfer.h"
+#include "Reconfig.h"
 #include <thread>
 #include <iostream>
 
@@ -19,9 +20,13 @@ public:
 	int generate_client_config(const std::vector<WorkloadConfig*> &input);
 	int init_setup(std::string configFile, std::string filePath);
 	int read_deployment_info(std::string &filePath, std::vector<std::pair<std::string, uint16_t> > &info);
-//TODO:: remove the comment here
-//private:
+
+	int get_metadata_info(std::string &key, GroupConfig *old_config);
+	int update_metadata_info(std::string &key, GroupConfig *new_config);
 	Properties prp;
+
+private:
+	std::unordered_map<std::string, GroupConfig*> key_metadata;
 };
 
 

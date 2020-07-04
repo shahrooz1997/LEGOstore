@@ -26,21 +26,38 @@ void set_intersection(Placement *p, std::unordered_set<T> &res){
     res.insert(p->Q4.begin(), p->Q4.end());
 }
 
+int Reconfig::get_metadata_info(std::string &key, GroupConfig **old_config){
+	std::unique_lock<std::mutex> lock(lock_t);
+	if(key_metadata.find(key) == key_metadata.end()){
+		//Key not found
+		*old_config = nullptr;
+		return 1;
+	}else{
+		*old_config = key_metadata[key];
+		return 0;
+	}
+}
+
+int Reconfig::update_metadata_info(std::string &key, GroupConfig *new_config){
+	std::unique_lock<std::mutex> lock(lock_t);
+	key_metadata[key] = new_config;
+	return 0;
+}
+
 int Reconfig::start_reconfig(Properties *prop, GroupConfig &old_config, GroupConfig &new_config,
-                                                            int key_index, int old_desc, int new_desc){
+                                                            std::string key, int old_desc, int new_desc){
 
     Timestamp *ret_ts = nullptr;
     std::string ret_v;
-    Reconfig::send_reconfig_query(prop, old_config, key_index, &ret_ts, ret_v);
+    Reconfig::send_reconfig_query(prop, old_config, key, &ret_ts, ret_v);
     if(old_config.placement_p->protocol == "CAS"){
-        Reconfig::send_reconfig_finalize(prop, old_config, key_index, ret_ts, ret_v, old_desc);
+        Reconfig::send_reconfig_finalize(prop, old_config, key, ret_ts, ret_v, old_desc);
     }
-    Reconfig::send_reconfig_write(prop, new_config, key_index, ret_ts, ret_v, new_desc);
+    Reconfig::send_reconfig_write(prop, new_config, key, ret_ts, ret_v, new_desc);
 
-    //TODO::
-    // Update local meta data at this point then make a call to send_reconfig_finish function
+    update_metadata_info(key, &new_config);
 
-    Reconfig::send_reconfig_finish(prop, old_config, new_config, key_index, ret_ts);
+    Reconfig::send_reconfig_finish(prop, old_config, new_config, key, ret_ts);
 
     delete ret_ts;
     return S_OK;
@@ -51,23 +68,7 @@ void _send_reconfig_query(std::promise<strVec> &&prm, std::string key, Server *s
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
 
     int sock = 0;
-    struct sockaddr_in serv_addr;
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        printf("\n Socket creation error \n");
-        return;
-    }
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(server->port);
-    std::string ip_str = server->ip;
-    //std::string ip_str = convert_ip_to_string(server->ip);
-
-    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
-        printf("\nInvalid address/ Address not supported \n");
-        return;
-    }
-
-    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
-        printf("\nConnection Failed \n");
+    if(client_cnt(sock, server) == S_FAIL){
         return;
     }
 
@@ -90,7 +91,7 @@ void _send_reconfig_query(std::promise<strVec> &&prm, std::string key, Server *s
     return;
 }
 
-int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, int key_index, Timestamp **ret_ts, std::string &ret_v){
+int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, std::string &key, Timestamp **ret_ts, std::string &ret_v){
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "reconfig query started\n");
     std::vector<Timestamp> tss;
@@ -113,7 +114,7 @@ int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, int
 
             std::promise<strVec> prm;
             responses.emplace_back(prm.get_future());
-            std::thread(_send_reconfig_query, std::move(prm), old_config.keys[key_index],
+            std::thread(_send_reconfig_query, std::move(prm), key,
                             prop->datacenters[*it]->servers[0], p->protocol).detach();
         }
 
@@ -335,23 +336,7 @@ void _send_reconfig_finalize(std::promise<strVec> &&prm, std::string key, Timest
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
 
     int sock = 0;
-    struct sockaddr_in serv_addr;
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        printf("\n Socket creation error \n");
-        return;
-    }
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(server->port);
-    std::string ip_str = server->ip;
-    //std::string ip_str = convert_ip_to_string(server->ip);
-
-    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
-        printf("\nInvalid address/ Address not supported \n");
-        return;
-    }
-
-    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
-        printf("\nConnection Failed \n");
+    if(client_cnt(sock, server) == S_FAIL){
         return;
     }
 
@@ -374,7 +359,7 @@ void _send_reconfig_finalize(std::promise<strVec> &&prm, std::string key, Timest
     return;
 }
 
-int Reconfig::send_reconfig_finalize(Properties *prop, GroupConfig &old_config, int key_index,
+int Reconfig::send_reconfig_finalize(Properties *prop, GroupConfig &old_config, std::string &key,
                                 Timestamp *ret_ts, std::string &ret_v, int desc){
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, " send_reconfig_finalize started.\n");
@@ -387,7 +372,7 @@ int Reconfig::send_reconfig_finalize(Properties *prop, GroupConfig &old_config, 
     for(auto it = p->Q4.begin(); it != p->Q4.end(); it++){
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
-        std::thread(_send_reconfig_finalize, std::move(prm), old_config.keys[key_index], *ret_ts,
+        std::thread(_send_reconfig_finalize, std::move(prm), key, *ret_ts,
                 prop->datacenters[*it]->servers[0], p->protocol).detach();
     }
 
@@ -433,23 +418,7 @@ void _send_reconfig_write(std::promise<strVec> &&prm, std::string key, Server *s
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
 
     int sock = 0;
-    struct sockaddr_in serv_addr;
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        printf("\n Socket creation error \n");
-        return;
-    }
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(server->port);
-    std::string ip_str = server->ip;
-    //std::string ip_str = convert_ip_to_string(server->ip);
-
-    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
-        printf("\nInvalid address/ Address not supported \n");
-        return;
-    }
-
-    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
-        printf("\nConnection Failed \n");
+    if(client_cnt(sock, server) == S_FAIL){
         return;
     }
 
@@ -475,7 +444,7 @@ void _send_reconfig_write(std::promise<strVec> &&prm, std::string key, Server *s
 }
 
 
-int Reconfig::send_reconfig_write(Properties *prop, GroupConfig &new_config, int key_index,
+int Reconfig::send_reconfig_write(Properties *prop, GroupConfig &new_config, std::string &key,
                         Timestamp *ret_ts, std::string &ret_v, int desc){
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "reconfig write started.\n");
@@ -502,7 +471,7 @@ int Reconfig::send_reconfig_write(Properties *prop, GroupConfig &new_config, int
 
             std::promise<strVec> prm;
             responses.emplace_back(prm.get_future());
-            std::thread(_send_reconfig_write, std::move(prm), new_config.keys[key_index],
+            std::thread(_send_reconfig_write, std::move(prm), key,
                     prop->datacenters[*it]->servers[0], *ret_ts, *chunks[i], p->protocol).detach();
             i++;
         }
@@ -528,22 +497,7 @@ void _send_reconfig_finish(std::promise<strVec> &&prm, std::string key, Timestam
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
 
     int sock = 0;
-    struct sockaddr_in serv_addr;
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        printf("\n Socket creation error \n");
-        return;
-    }
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(server->port);
-    std::string ip_str = server->ip;
-
-    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
-        printf("\nInvalid address/ Address not supported \n");
-        return;
-    }
-
-    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
-        printf("\nConnection Failed \n");
+    if(client_cnt(sock, server) == S_FAIL){
         return;
     }
 
@@ -566,9 +520,8 @@ void _send_reconfig_finish(std::promise<strVec> &&prm, std::string key, Timestam
     return;
 }
 
-// The key_index is always with respect to the old_config keys order
 int Reconfig::send_reconfig_finish(Properties *prop, GroupConfig &old_config, GroupConfig &new_config,
-                                        int key_index, Timestamp *ret_ts){
+                                        std::string &key, Timestamp *ret_ts){
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "reconfig finish - initiated.\n");
 
@@ -582,7 +535,7 @@ int Reconfig::send_reconfig_finish(Properties *prop, GroupConfig &old_config, Gr
     for(auto it = old_servers.begin(); it != old_servers.end(); it++){
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
-        std::thread(_send_reconfig_finish, std::move(prm), old_config.keys[key_index],
+        std::thread(_send_reconfig_finish, std::move(prm), key,
                     *ret_ts, prop->datacenters[*it]->servers[0], new_cfg).detach();
     }
 

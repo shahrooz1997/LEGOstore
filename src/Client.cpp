@@ -98,12 +98,12 @@ int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &
 		}
 
 		assert(result != S_FAIL);
-		
+
 		tp += millis{next_event(dist_process)};
 		std::this_thread::sleep_until(tp);
 	}
 
-	std::cout<<"COunt value before returning" << cnt << std::endl;
+	//std::cout<<"COunt value before returning" << cnt << std::endl;
 	numt += cnt;
 
 	return 0;

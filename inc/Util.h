@@ -202,6 +202,8 @@ inline uint16_t stous(const std::string& s)
 
 int socket_setup(const std::string &port, const std::string *IP = nullptr);
 int socket_cnt(int &sock, uint16_t port, const std::string &IP = "0.0.0.0");
+int client_cnt(int &sock, Server *server);
+
 void print_time();
 
 //returns the liberasure desc

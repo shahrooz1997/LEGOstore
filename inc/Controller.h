@@ -21,12 +21,10 @@ public:
 	int init_setup(std::string configFile, std::string filePath);
 	int read_deployment_info(std::string &filePath, std::vector<std::pair<std::string, uint16_t> > &info);
 
-	int get_metadata_info(std::string &key, GroupConfig **old_config);
-	int update_metadata_info(std::string &key, GroupConfig *new_config);
 	Properties prp;
-
+	Reconfig config_t;
 private:
-	std::unordered_map<std::string, GroupConfig*> key_metadata;
+
 };
 
 

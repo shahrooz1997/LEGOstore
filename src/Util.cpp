@@ -161,3 +161,28 @@ int socket_cnt(int &sock, uint16_t port, const std::string &IP){
 
     return 0;
 }
+
+//Returns 0 on success
+int client_cnt(int &sock, Server *server){
+
+    struct sockaddr_in serv_addr;
+    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+        printf("\n Socket creation error \n");
+        return S_FAIL;
+    }
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(server->port);
+    std::string ip_str = server->ip;
+
+    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
+        printf("\nInvalid address/ Address not supported \n");
+        return S_FAIL;
+    }
+
+    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
+        printf("\nConnection Failed \n");
+        return S_FAIL;
+    }
+
+    return S_OK;
+}

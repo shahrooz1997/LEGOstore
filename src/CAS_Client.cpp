@@ -81,26 +81,10 @@ void _get_timestamp(std::promise<strVec> &&prm, std::string key, Server *server,
     DPRINTF(DEBUG_CAS_Client, "started.\n");
 
     int sock = 0;
-    struct sockaddr_in serv_addr;
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        printf("\n Socket creation error \n");
+    if(client_cnt(sock, server) == S_FAIL){
         return;
     }
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(server->port);
-    std::string ip_str = server->ip;
-    //std::string ip_str = convert_ip_to_string(server->ip);
-
-    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
-        printf("\nInvalid address/ Address not supported \n");
-        return;
-    }
-
-    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
-        printf("\nConnection Failed \n");
-        return;
-    }
-
+    
     strVec data;
     data.push_back("get_timestamp");
     data.push_back(key);
@@ -357,24 +341,7 @@ void _put(std::promise<strVec> &&prm, std::string key, std::string value, Timest
     DPRINTF(DEBUG_CAS_Client, "started.\n");
 
     int sock = 0;
-    struct sockaddr_in serv_addr;
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        printf("\n Socket creation error \n");
-        return;
-    }
-
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(server->port);
-    std::string ip_str = server->ip;
-    //std::string ip_str = convert_ip_to_string(server->ip);
-
-    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
-        printf("\nInvalid address/ Address not supported \n");
-        return;
-    }
-
-    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
-        printf("\nConnection Failed \n");
+    if(client_cnt(sock, server) == S_FAIL){
         return;
     }
 
@@ -413,24 +380,7 @@ void _put_fin(std::promise<strVec> &&prm, std::string key, Timestamp timestamp,
     DPRINTF(DEBUG_CAS_Client, "started.\n");
 
     int sock = 0;
-    struct sockaddr_in serv_addr;
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        printf("\n Socket creation error \n");
-        return;
-    }
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(server->port);
-    std::string ip_str = server->ip;
-    //std::string ip_str = convert_ip_to_string(server->ip);
-
-
-    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
-        printf("\nInvalid address/ Address not supported \n");
-        return;
-    }
-
-    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
-        printf("\nConnection Failed \n");
+    if(client_cnt(sock, server) == S_FAIL){
         return;
     }
 
@@ -488,8 +438,8 @@ uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
 
         DPRINTF(DEBUG_CAS_Client, "The value to be stored is %s \n", value.c_str());
 
-        //std::thread encoder(encode, &value, &chunks, &null_args, this->desc);
-        encode(&value, &chunks, &null_args, this->desc);
+        std::thread encoder(encode, &value, &chunks, &null_args, this->desc);
+        //encode(&value, &chunks, &null_args, this->desc);
 
         Timestamp *timestamp = nullptr;
         Timestamp *tmp = nullptr;
@@ -509,7 +459,7 @@ uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
         }
 
         // Join the encoder thread
-        //encoder.join();
+        encoder.join();
 
         if(timestamp == nullptr){
             free_chunks(chunks);
@@ -617,24 +567,7 @@ void _get(std::promise<strVec> &&prm, std::string key, Timestamp timestamp,
     DPRINTF(DEBUG_CAS_Client, "started.\n");
 
     int sock = 0;
-    struct sockaddr_in serv_addr;
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        printf("\n Socket creation error \n");
-        return;
-    }
-
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(server->port);
-    std::string ip_str = server->ip;
-    //std::string ip_str = convert_ip_to_string(server->ip);
-
-    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
-        printf("\nInvalid address/ Address not supported \n");
-        return;
-    }
-
-    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
-        printf("\nConnection Failed \n");
+    if(client_cnt(sock, server) == S_FAIL){
         return;
     }
 
@@ -743,13 +676,7 @@ uint32_t CAS_Client::get(std::string key, std::string &value){
 
         decode(&value, &chunks, &null_args, this->desc);
 
-        //DPRINTF(DEBUG_CAS_Client,"Received value for key : %s and timestamp is :%s  is: %s\n", key.c_str(), timestamp->get_string().c_str(), value.c_str());
-
         free_chunks(chunks);
-        // for(auto it: chunks){
-        //     delete it;
-        // }
-
     }
     return op_status? S_OK: S_FAIL;
 }

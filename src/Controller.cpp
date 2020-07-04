@@ -261,21 +261,6 @@ int Controller::init_setup(std::string configFile, std::string filePath){
 	return 0;
 }
 
-int Controller::get_metadata_info(std::string &key, GroupConfig **old_config){
-	if(key_metadata.find(key) == key_metadata.end()){
-		//Key not found
-		*old_config = nullptr;
-		return 1;
-	}else{
-		*old_config = key_metadata[key];
-		return 0;
-	}
-}
-
-int Controller::update_metadata_info(std::string &key, GroupConfig *new_config){
-	key_metadata[key] = new_config;
-	return 0;
-}
 
 // Return true if match
 static inline bool compare_placement(Placement *old, Placement *curr){
@@ -350,16 +335,17 @@ int main(){
 			// Do the reconfiguration for each key in the group
 			for(uint i=0; i< curr->keys.size(); i++){
 				std::string key(curr->keys[i]);
-				if(master.get_metadata_info(key, &old) == 0 && !compare_placement(old->placement_p, curr->placement_p)){
+				if(master.config_t.get_metadata_info(key, &old) == 0 && !compare_placement(old->placement_p, curr->placement_p)){
 					int old_desc = 0, new_desc = 0;
 					update_desc_info(open_desc, old->placement_p, curr->placement_p, old_desc, new_desc);
 					std::cout << "Starting the reconfig protocol for key " << key <<std::endl;
-					pool.emplace_back(Reconfig::start_reconfig, &master.prp, std::ref(*old),
-													std::ref(*curr), i, old_desc, new_desc);
-				}// Else NO need for reconfig protocol as this is a new key
+					pool.emplace_back(&Reconfig::start_reconfig, &master.config_t, &master.prp, std::ref(*old),
+											std::ref(*curr), key, old_desc, new_desc);
+				}else{// Else NO need for reconfig protocol as this is a new key
 				// or the placement is same as before
-				master.update_metadata_info(key, curr);
 
+					master.config_t.update_metadata_info(key, curr);
+				}
 			}
 
 			//Waiting for all reconfig to finish for this group

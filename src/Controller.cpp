@@ -7,32 +7,27 @@ using millis = duration<uint64_t, std::milli>;
 
 //Input : A vector of key groups
 // Returns the placement for each key group
-int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<DC*> dcs,  std::vector<Placement*> &placement){
-
+int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Placement*> &placement){
+	static int temp = 0;
 	//For testing purposes
 	for(uint i=0; i<gworkload.size(); i++){
 		Placement *test = new Placement;
 		// Controller trial(1, 120, 120, "./config/setup_config.json");
 		// std::vector<DC*> dcs = trial.prp.datacenters;
 		test->protocol = "CAS";
-	   test->m = 5;
-	   test->k = 3;
+		test->m = 5;
+		if(temp){
+			test->k = 2;
+			test->Q1.insert(begin(test->Q1), {0,1,2,3});
+		}else{
+			test->k = 3;
+			test->Q1.insert(begin(test->Q1), {0,1,2});
+		}
 
-	   std::cout<< "port of dcs 0 is " << dcs[0]->servers[0]->port << "port of dcs 1 is " << dcs[1]->servers[0]->port << std::endl;
-	   test->Q1.push_back(0);
-	    test->Q1.push_back(1);
-	    test->Q1.push_back(2);
-	    test->Q2.push_back(0);
-	    test->Q2.push_back(1);
-	    test->Q2.push_back(2);
-	    test->Q2.push_back(3);
-	    test->Q2.push_back(4);
-	    test->Q3.push_back(2);
-	    test->Q3.push_back(3);
-	    test->Q3.push_back(4);
-	    test->Q4.push_back(2);
-	    test->Q4.push_back(3);
-	    test->Q4.push_back(4);
+		test->Q2.insert(begin(test->Q2), {0,1,2,3,4});
+		test->Q3.insert(begin(test->Q3), {2,3,4});
+		test->Q4.insert(begin(test->Q4), {2,3,4});
+
 
 	    // SHAHROOZ: We need the servers participating to accomplish one protocol and number of failures we can tolerate for doing reconfiguration
 	    // SHAHROOZ: We can remake the vector of all servers.
@@ -45,6 +40,7 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<DC*>
 
 		placement.push_back(test);
 	}
+	temp +=1;
 	return 0;
 }
 
@@ -148,7 +144,7 @@ int Controller::generate_client_config(const std::vector<WorkloadConfig*> &input
 
 		// Memory allocation has to happen inside function call
 		std::vector<Placement*> placement;
-		if (CostBenefitAnalysis(it->grp, prp.datacenters, placement) == 1){
+		if (CostBenefitAnalysis(it->grp, placement) == 1){
 			 std::cout<< "Cost Benefit analysis failed for timestamp : "<< it->timestamp << std::endl;
 			 return 1;
 		}
@@ -265,13 +261,13 @@ int Controller::init_setup(std::string configFile, std::string filePath){
 	return 0;
 }
 
-int Controller::get_metadata_info(std::string &key, GroupConfig *old_config){
+int Controller::get_metadata_info(std::string &key, GroupConfig **old_config){
 	if(key_metadata.find(key) == key_metadata.end()){
 		//Key not found
-		old_config = nullptr;
+		*old_config = nullptr;
 		return 1;
 	}else{
-		old_config = key_metadata[key];
+		*old_config = key_metadata[key];
 		return 0;
 	}
 }
@@ -281,9 +277,51 @@ int Controller::update_metadata_info(std::string &key, GroupConfig *new_config){
 	return 0;
 }
 
+// Return true if match
+static inline bool compare_placement(Placement *old, Placement *curr){
+	if(old->protocol != curr->protocol)
+		return false;
+	else if(old->m != curr->m || old->k != curr->k)
+		return false;
+	else if(old->Q1 != curr->Q1 || old->Q2 != curr->Q2)
+		return false;
+	else if(old->Q3 != curr->Q3 || old->Q4 != curr->Q4)
+		return false;
+	else
+		return true;
+}
+
+static inline void lookup_desc_info(std::unordered_map<std::string, int> &open_desc, Placement *p, int &desc){
+
+	std::string temp = std::to_string(p->m) + ":" + std::to_string(p->k);
+	if(open_desc.count(temp)){
+		desc = open_desc[temp];
+	}else{
+		desc = create_liberasure_instance(p);
+		open_desc[temp] = desc;
+	}
+}
+
+static inline void update_desc_info(std::unordered_map<std::string, int> &open_desc, Placement *old,
+							Placement *curr, int &old_desc, int &new_desc){
+	if(old->protocol == "CAS"){
+		lookup_desc_info(open_desc, old, old_desc);
+	}
+	if(curr->protocol == "CAS"){
+		lookup_desc_info(open_desc, curr, new_desc);
+	}
+}
+
+static inline void delete_desc_info(std::unordered_map<std::string, int> &open_desc){
+
+	for(auto &desc:open_desc){
+		destroy_liberasure_instance(desc.second);
+	}
+}
+
 int main(){
 
-	Controller master(1, 120, 120, "./config/setup_config.json");
+	Controller master(2, 120, 120, "./config/setup_config.json");
 	master.init_setup("./config/input_workload.json" , "config/deployment.txt");
 
 	//startPoint already includes the timestamp of first group
@@ -291,6 +329,8 @@ int main(){
 	time_point<system_clock, millis> startPoint(millis{master.prp.start_time});
 	startPoint -= millis{master.prp.groups[0]->timestamp * 1000};
 	time_point<system_clock, millis> timePoint;
+
+	std::unordered_map<std::string, int> open_desc;
 
 	// Note:: this assumes the first group has timestamp at which the experiment starts
 	for(auto grp: master.prp.groups){
@@ -301,30 +341,28 @@ int main(){
 		//TODO:: Add some heuristics on how to sequence the reconf
 		// Do reconfiguration of one grp at a time
 		// Cos they are using a common placement and that's used for liberasure desc
-		for(uint i=0; i< grp->grp_id.size(); i++){
-			std::cout << "Starting the reconfiguration for group id" << grp->grp_id[i] << std::endl;
-			GroupConfig *curr = grp->grp_config[i];
+		for(uint j=0; j< grp->grp_config.size(); j++){
+			std::cout << "Starting the reconfiguration for group id" << grp->grp_id[j] << std::endl;
+			GroupConfig *curr = grp->grp_config[j];
 			GroupConfig *old = nullptr;
 			std::vector<std::thread> pool;
-
-			// TODO:: CHECK THIS, whether it should take the old or the new placement
-			// TODO:: fix the code in Reconfig class accordingly
-			// TODO:: cause old and new have diff config
-			//int desc = create_liberasure_instance(curr->placement_p);
 
 			// Do the reconfiguration for each key in the group
 			for(uint i=0; i< curr->keys.size(); i++){
 				std::string key(curr->keys[i]);
-				if(master.get_metadata_info(key, old) == 0){
-					//pool.emplace_back(Reconfig::start_reconfig, &master.prp, std::ref(*old), std::ref(*curr), i, desc);
-					master.update_metadata_info(key, curr);
-				}else{
-					//NO need for reconfig protocol as this is a new key
-					master.update_metadata_info(key, curr);
-				}
+				if(master.get_metadata_info(key, &old) == 0 && !compare_placement(old->placement_p, curr->placement_p)){
+					int old_desc = 0, new_desc = 0;
+					update_desc_info(open_desc, old->placement_p, curr->placement_p, old_desc, new_desc);
+					std::cout << "Starting the reconfig protocol for key " << key <<std::endl;
+					pool.emplace_back(Reconfig::start_reconfig, &master.prp, std::ref(*old),
+													std::ref(*curr), i, old_desc, new_desc);
+				}// Else NO need for reconfig protocol as this is a new key
+				// or the placement is same as before
+				master.update_metadata_info(key, curr);
+
 			}
 
-			//Waiting for all reconfig to finish
+			//Waiting for all reconfig to finish for this group
 			for(auto &it: pool){
 				it.join();
 			}
@@ -333,6 +371,6 @@ int main(){
 
 	}
 
-
+	//delete_desc_info(open_desc);
 	return 0;
 }

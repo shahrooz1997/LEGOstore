@@ -29,13 +29,14 @@
 #include <erasurecode.h>
 #include <chrono>
 
-
 // Define error values
 #define S_OK                    0
+#define S_FAIL 					1
+#define S_RECFG					2
 #define GENERAL_ERASURE_ERROR   -101
 
 // Backlog for socket listen
-#define BACKLOG 512
+#define BACKLOG 1024
 #define CLIENT_PORT 10001
 #define MAX_LINGER_BEFORE_SOCK_CLOSE 50
 
@@ -210,7 +211,8 @@ inline int create_liberasure_instance(Placement *pp){
 	null_args.m = pp->m - pp->k;
 	null_args.w = 16; // ToDo: what must it be?
 	null_args.ct = CHKSUM_NONE;
-
+	//EC_BACKEND_LIBERASURECODE_RS_VAND
+	//EC_BACKEND_JERASURE_RS_VAND
 	return liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, &null_args);
 }
 
@@ -220,5 +222,6 @@ inline int destroy_liberasure_instance(int desc){
 	}
 	return 0;
 }
+
 
 #endif /* UTIL_H */

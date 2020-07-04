@@ -6,44 +6,115 @@
 #include <unordered_set>
 
 //#include <linux/sockios.h>
-std::atomic<bool> active(true);
+//std::atomic<bool> active(true);
 std::atomic<bool> reconfig(false);
 std::mutex rcfglock;
+
+enum rcfg_state{
+	RECONFIG_BLOCK,
+	RECONFIG_QUERY,
+	RECONFIG_FINALIZE,
+	RECONFIG_WRITE,
+	RECONFIG_FINISH
+};
+
+//ccv is there to ensure ordering amongst
+// reconfiguration protocol msgs
 struct rcfgSet{
 	std::condition_variable rcv;
+	std::condition_variable ccv;
 	std::string highest_timestamp;
 	uint waiting_threads;
 	std::string new_cfg;
+	rcfg_state state;
 };
 
 //Keys for which client actions are blocked
-std::unordered_set<std::string> blocked_keys;
+//std::unordered_set<std::string> blocked_keys;
 //Maps key to it's reconfiguration meta data
 std::unordered_map<std::string, rcfgSet*> rcfgKeys;
 
 bool key_match(std::string curr_key){
-	return blocked_keys.count(curr_key);
+	if(rcfgKeys.find(curr_key) != rcfgKeys.end()){
+		if(rcfgKeys[curr_key]->state != RECONFIG_FINISH)
+			return true;
+	}
+	return false;
 }
 
-int key_add(std::string curr_key){
-	// Previous reconfig still not complete
+int key_add(std::string &curr_key){
+
 	if(rcfgKeys.find(curr_key) == rcfgKeys.end()){
 		rcfgKeys[curr_key] = new rcfgSet;
 		rcfgKeys[curr_key]->waiting_threads = 0;
-		blocked_keys.insert(curr_key);
+		rcfgKeys[curr_key]->state = RECONFIG_BLOCK;
 		return 1;
-	}
-	else{
+	}else if(rcfgKeys.find(curr_key) != rcfgKeys.end() && rcfgKeys[curr_key]->state == RECONFIG_BLOCK){
+		return 1;
+	}else{ 	// Previous reconfig still not complete
 		std::cout << "Reconfiguration for the same key is already in progresss !!" << std::endl;
 		//assert(0);
 		return -1;
 	}
 }
 
-void update_timestamp(std::string curr_key, std::string curr_timestamp){
-	rcfgKeys[curr_key]->highest_timestamp = curr_timestamp;
+std::string reconfig_query(DataServer &ds, std::string &curr_key, std::string &curr_class){
+	DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", curr_key.c_str());
+	reconfig = true;
+	if(key_add(curr_key) == 1){
+		rcfgSet *config = rcfgKeys[curr_key];
+		config->state = RECONFIG_QUERY;
+		config->ccv.notify_all();
+		return ds.reconfig_query(curr_key, curr_class);
+	}else{
+		return DataTransfer::serialize({"Failed"});
+	}
 }
 
+std::string reconfig_finalize(DataServer &ds, std::unique_lock<std::mutex> &lck,
+	 					std::string &key, std::string &timestamp, std::string &curr_class){
+	DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
+	key_add(key);
+	rcfgSet *config = rcfgKeys[key];
+	while(config->state == RECONFIG_BLOCK){
+		config->ccv.wait(lck);
+	}
+	// state > RECONFIG_BLOCK
+	return ds.reconfig_finalize(key, timestamp, curr_class);
+}
+
+
+std::string write_config(DataServer &ds, std::unique_lock<std::mutex> &lck, std::string &key,
+					std::string &value, std::string &timestamp, std::string &curr_class){
+	DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
+	key_add(key);
+	rcfgSet *config = rcfgKeys[key];
+	while(config->state == RECONFIG_BLOCK){
+		config->ccv.wait(lck);
+	}
+	config->state = RECONFIG_WRITE;
+	config->ccv.notify_all();
+	return ds.write_config(key, value, timestamp, curr_class);
+
+}
+
+std::string finish_reconfig(std::unique_lock<std::mutex> &lck, std::string &key,
+								 std::string &timestamp, std::string &cfg){
+	DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
+	key_add(key);
+	rcfgSet *config = rcfgKeys[key];
+	while(config->state < RECONFIG_WRITE){
+		config->ccv.wait(lck);
+	}
+
+	config->state = RECONFIG_FINISH;
+	config->highest_timestamp = timestamp;
+	config->new_cfg = cfg;
+	if(rcfgKeys.empty())
+		reconfig = false;
+	config->rcv.notify_all();
+	return DataTransfer::serialize({"OK"});
+}
 
 void server_connection(int connection, DataServer &dataserver, int portid){
 
@@ -61,7 +132,7 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 	// Data[1] -> key
 	// Data[2] -> timestamp
     strVec data = DataTransfer::deserialize(recvd);
-	std::cout << "New METHOD CALLED "<< data[0] << " The value is " << data[2] <<"server port is" << portid << std::endl;
+	std::cout << "New METHOD CALLED "<< data[0] << " The key is " << data[1] <<"server port is" << portid << std::endl;
 	std::string &method = data[0];
 
 	std::unique_lock<std::mutex> rlock(rcfglock);
@@ -70,20 +141,26 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 			rcfgSet *config = rcfgKeys[data[1]];
 			config->waiting_threads++;
 			//Block the thread
-			while(key_match(data[1])) {
+			while(config->state != RECONFIG_FINISH) {
 				config->rcv.wait(rlock);
 			}
 
+			config->waiting_threads--;
 			//Check which operations to service and which to reject
 			if(data.size() > 3 && Timestamp::compare_timestamp(config->highest_timestamp, data[2])){
 				//if data[2] < highest and operation is not 'get_timestamp', then service the thread
+				// Garbage collect, Reconfig complete
+				if(config->waiting_threads == 0){
+					delete config;
+					rcfgKeys.erase(data[1]);
+				}
+
 			}else{
 				//Terminate the thread and send new config
-				config->waiting_threads--;
 				result = DataTransfer::sendMsg(connection, DataTransfer::serialize({"operation_fail", config->new_cfg}));
-
+				printf("OPERATION FAILED sent out for method: %s key : %s and timestamp:%s ", data[0].c_str(), data[1].c_str(), data[2].c_str());
 				// Garbage collect, Reconfig complete
-				if(config->waiting_threads){
+				if(config->waiting_threads == 0){
 					delete config;
 					rcfgKeys.erase(data[1]);
 				}
@@ -104,23 +181,13 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 	}else if(method == "put_fin"){
 		result = DataTransfer::sendMsg(connection, dataserver.put_fin(data[1], data[2], data[3]));
 	}else if(method == "reconfig_query"){
-		reconfig = true;
-		if(key_add(data[1]) == 1)
-			result = DataTransfer::sendMsg(connection, dataserver.reconfig_query(data[1], data[2]));
+		result = DataTransfer::sendMsg(connection, reconfig_query(dataserver, data[1], data[2]));
 	}else if(method == "reconfig_finalize"){
-		update_timestamp(data[1], data[2]);
-		result = DataTransfer::sendMsg(connection, dataserver.reconfig_finalize(data[1], data[2], data[3]));
+		result = DataTransfer::sendMsg(connection, reconfig_finalize(dataserver, rlock, data[1], data[2], data[3]));
 	}else if(method == "write_config"){
-		result = DataTransfer::sendMsg(connection, dataserver.write_config(data[1], data[3], data[2], data[4]));
+		result = DataTransfer::sendMsg(connection, write_config(dataserver, rlock, data[1], data[3], data[2], data[4]));
 	}else if(method == "finish_reconfig"){
-		//Store new config
-		rcfgKeys[data[1]]->new_cfg = data[2];
-		blocked_keys.erase(data[1]);
-		if(rcfgKeys.empty())
-			reconfig = false;
-
-		rcfgKeys[data[1]]->rcv.notify_all();
-		DataTransfer::sendMsg(connection,  DataTransfer::serialize({"OK"}));
+		result = DataTransfer::sendMsg(connection, finish_reconfig(rlock, data[1], data[2], data[3]));
 	}
 	else {
 		DataTransfer::sendMsg(connection,  DataTransfer::serialize({"MethodNotFound", "Unknown method is called"}));
@@ -131,40 +198,15 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 	}
 
 	shutdown(connection, SHUT_WR);
-
-	// //DEBUG_CAS_Server
-	// int lastOutstanding = -1;
-	// for(;;) {
-	// 	int outstanding;
-	// 	ioctl(connection, TIOCOUTQ, &outstanding);
-	// 	if(outstanding != lastOutstanding)
-	// 		printf("Outstanding: %d and socket id : %d\n", outstanding, connection);
-	// 	lastOutstanding = outstanding;
-	// 	if(!outstanding)
-	// 		break;
-	// 	std::this_thread::sleep_for(std::chrono::seconds(1));
-	// }
-
-	// int buffer = 0;
-	// for(;;) {
-	// 	int res=read(connection, &buffer, sizeof(buffer));
-	// 	if(res < 0) {
-	// 		perror("reading");
-	// 		close(connection);
-	// 		exit(1);
-	// 	}
-	// 	if(!res) {
-	// 		printf("Correct EOF\n");
-	// 		break;
-	// 	}
-	// }
 	close(connection);
 }
 
 
-void runServer(DataServer *ds, int portid){
+void runServer(std::string &db_name, std::string &socket_port){
 
-	while(active.load()){
+	DataServer *ds = new DataServer(db_name, socket_setup(socket_port));
+	while(1){
+		int portid = stoi(socket_port);
 		std::cout<<"Alive port "<<portid<< std::endl;
 		int new_sock = accept(ds->getSocketDesc(), NULL, 0);
 		std::thread cThread([&ds, new_sock, portid](){ server_connection(new_sock, *ds, portid);});
@@ -190,21 +232,18 @@ int main(int argc, char **argv){
 		return 0;
 	}
 
-	std::vector<DataServer*> dsobj(socket_port.size(), nullptr);
-	for(uint i=0; i<socket_port.size() ;i++){
-		dsobj[i] = new DataServer(db_list[i], socket_setup(socket_port[i]));
-	}
+
 	for(uint i=0; i< socket_port.size(); i++){
-		std::thread newServer(runServer, dsobj[i], stoi(socket_port[i]));
-		newServer.detach();
+		if(fork() == 0){
+			runServer(db_list[i], socket_port[i]);
+		}
 	}
 
 	std::string ch;
-	//Press q to exit the thread
+	//Enter quit to exit the thread
 	while(ch != "quit"){
 		std::cin >> ch;
 	}
-	active = false;
 
 	std::cout<<"Waiting for all detached threads to terminate!" << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(5));

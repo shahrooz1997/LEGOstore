@@ -57,7 +57,7 @@ private:
     int desc_destroy;
     std::string current_class; // "CAS"
 
-    Timestamp* get_timestamp(std::string *key);
+    uint32_t get_timestamp(std::string *key, Timestamp **timestamp);
     void update_placement(std::string &new_cfg);
 
     FILE* log_file;

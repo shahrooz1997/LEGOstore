@@ -26,20 +26,21 @@ void set_intersection(Placement *p, std::unordered_set<T> &res){
     res.insert(p->Q4.begin(), p->Q4.end());
 }
 
-int Reconfig::start_reconfig(Properties *prop, GroupConfig &old_config, GroupConfig &new_config, int key_index, int desc){
+int Reconfig::start_reconfig(Properties *prop, GroupConfig &old_config, GroupConfig &new_config,
+                                                            int key_index, int old_desc, int new_desc){
 
     Timestamp *ret_ts = nullptr;
     std::string ret_v;
-    Reconfig::send_reconfig_query(prop, old_config, key_index, ret_ts, ret_v);
+    Reconfig::send_reconfig_query(prop, old_config, key_index, &ret_ts, ret_v);
     if(old_config.placement_p->protocol == "CAS"){
-        Reconfig::send_reconfig_finalize(prop, old_config, key_index, ret_ts, ret_v, desc);
+        Reconfig::send_reconfig_finalize(prop, old_config, key_index, ret_ts, ret_v, old_desc);
     }
-    Reconfig::send_reconfig_write(prop, new_config, key_index, ret_ts, ret_v, desc);
+    Reconfig::send_reconfig_write(prop, new_config, key_index, ret_ts, ret_v, new_desc);
 
     //TODO::
     // Update local meta data at this point then make a call to send_reconfig_finish function
 
-    Reconfig::send_reconfig_finish(prop, old_config, new_config, key_index);
+    Reconfig::send_reconfig_finish(prop, old_config, new_config, key_index, ret_ts);
 
     delete ret_ts;
     return S_OK;
@@ -84,12 +85,12 @@ void _send_reconfig_query(std::promise<strVec> &&prm, std::string key, Server *s
         prm.set_value(std::move(data));
     }
 
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "finished.\n");
     close(sock);
     return;
 }
 
-int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string &ret_v){
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
+int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, int key_index, Timestamp **ret_ts, std::string &ret_v){
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "reconfig query started\n");
     std::vector<Timestamp> tss;
@@ -99,6 +100,9 @@ int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, int
 
     Placement *p = old_config.placement_p;
     set_intersection(p, old_servers);
+
+    //TODO:: CHeck this and confirm
+    //old_servers.insert()
 
     if(p->protocol == "ABD"){
 
@@ -140,18 +144,20 @@ int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, int
 
                         tss.emplace_back(client_id_ts, time_ts);
                     }
+                    //if "Failed", then need to retry
                     //reponses.erase(it);
+                    max_val--;
                     break;
                 }
             }
-            max_val--;
+
         }
 
-        ret_ts = new Timestamp(Timestamp::max_timestamp2(tss));
+        *ret_ts = new Timestamp(Timestamp::max_timestamp2(tss));
 
     }
 
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "finished successfully.\n");
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "send_reconfig_query finished successfully.\n");
 
     return S_OK;
 }
@@ -371,7 +377,7 @@ void _send_reconfig_finalize(std::promise<strVec> &&prm, std::string key, Timest
 int Reconfig::send_reconfig_finalize(Properties *prop, GroupConfig &old_config, int key_index,
                                 Timestamp *ret_ts, std::string &ret_v, int desc){
 
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
+    DPRINTF(DEBUG_RECONFIG_CONTROL, " send_reconfig_finalize started.\n");
 
     std::vector<std::future<strVec> > responses;
     std::vector <std::string*> chunks;
@@ -418,7 +424,7 @@ int Reconfig::send_reconfig_finalize(Properties *prop, GroupConfig &old_config, 
         delete it;
     }
 
-    DPRINTF(DEBUG_RECONFIG_CONTROL,"Received value for key is: %s\n", ret_v.c_str());
+    DPRINTF(DEBUG_RECONFIG_CONTROL," send_reconfig_finalize Received value for key is: %s\n", ret_v.c_str());
     return S_OK;
 }
 
@@ -512,13 +518,13 @@ int Reconfig::send_reconfig_write(Properties *prop, GroupConfig &new_config, int
         }
     }
 
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "finished successfully.\n");
+    DPRINTF(DEBUG_RECONFIG_CONTROL, " send_reconfig_write finished successfully.\n");
 
     return S_OK;
 }
 
-void _send_reconfig_finish(std::promise<strVec> &&prm, std::string key, Server *server,
-                    std::string new_config){
+void _send_reconfig_finish(std::promise<strVec> &&prm, std::string key, Timestamp timestamp,
+                    Server *server, std::string new_config){
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
 
     int sock = 0;
@@ -544,6 +550,7 @@ void _send_reconfig_finish(std::promise<strVec> &&prm, std::string key, Server *
     strVec data;
     data.push_back("finish_reconfig");
     data.push_back(key);
+    data.push_back(timestamp.get_string());
     data.push_back(new_config);
     DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
 
@@ -560,7 +567,8 @@ void _send_reconfig_finish(std::promise<strVec> &&prm, std::string key, Server *
 }
 
 // The key_index is always with respect to the old_config keys order
-int Reconfig::send_reconfig_finish(Properties *prop, GroupConfig &old_config, GroupConfig &new_config, int key_index){
+int Reconfig::send_reconfig_finish(Properties *prop, GroupConfig &old_config, GroupConfig &new_config,
+                                        int key_index, Timestamp *ret_ts){
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "reconfig finish - initiated.\n");
 
@@ -575,7 +583,7 @@ int Reconfig::send_reconfig_finish(Properties *prop, GroupConfig &old_config, Gr
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
         std::thread(_send_reconfig_finish, std::move(prm), old_config.keys[key_index],
-                    prop->datacenters[*it]->servers[0], new_cfg).detach();
+                    *ret_ts, prop->datacenters[*it]->servers[0], new_cfg).detach();
     }
 
     for(auto &it:responses){

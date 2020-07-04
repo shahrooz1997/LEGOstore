@@ -31,17 +31,17 @@
 class Reconfig {
 public:
 
-    static int start_reconfig(Properties *prop, GroupConfig &old_config, GroupConfig &new_config, int key_index, int desc);
+    static int start_reconfig(Properties *prop, GroupConfig &old_config, GroupConfig &new_config, int key_index, int old_desc, int new_desc);
 
     Reconfig(const Reconfig& orig) = delete;
     virtual ~Reconfig();
 
 private:
 
-    static int send_reconfig_query(Properties *prop, GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string &ret_v);
+    static int send_reconfig_query(Properties *prop, GroupConfig &old_config, int key_index, Timestamp **ret_ts, std::string &ret_v);
     static int send_reconfig_finalize(Properties *prop, GroupConfig &old_config, int key_index, Timestamp *ret_ts, std::string &ret_v, int desc);
     static int send_reconfig_write(Properties *prop, GroupConfig &new_config, int key_index, Timestamp *ret_ts, std::string &ret_v, int desc);
-    static int send_reconfig_finish(Properties *prop, GroupConfig &old_config, GroupConfig &new_config, int key_index);
+    static int send_reconfig_finish(Properties *prop, GroupConfig &old_config, GroupConfig &new_config, int key_index, Timestamp *ret_ts);
 
 };
 

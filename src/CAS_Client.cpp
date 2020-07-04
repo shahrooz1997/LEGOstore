@@ -69,6 +69,10 @@ CAS_Client::~CAS_Client() {
 void CAS_Client::update_placement(std::string &new_cfg){
 
     this->p = DataTransfer::deserializeCFG(new_cfg);
+    if(this->desc_destroy){
+        destroy_liberasure_instance(this->desc);
+        this->desc = create_liberasure_instance(&(this->p));
+    }
 }
 
 void _get_timestamp(std::promise<strVec> &&prm, std::string key, Server *server,
@@ -116,54 +120,69 @@ void _get_timestamp(std::promise<strVec> &&prm, std::string key, Server *server,
     return;
 }
 
-Timestamp* CAS_Client::get_timestamp(std::string *key){
+uint32_t CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp){
 
     DPRINTF(DEBUG_CAS_Client, "started.\n");
 
     std::vector<Timestamp> tss;
-    Timestamp *ret = nullptr;
+    *timestamp = nullptr;
     std::vector<std::future<strVec> > responses;
+    int retries = this->prop->retry_attempts;
+    bool op_status = false;    //Success
 
-    for(auto it = p.Q1.begin();it != p.Q1.end(); it++){
+    while(!op_status && retries--){
+        for(auto it = p.Q1.begin();it != p.Q1.end(); it++){
 
-        std::promise<strVec> prm;
-        responses.emplace_back(prm.get_future());
-        std::thread(_get_timestamp, std::move(prm), *key,
-                        prop->datacenters[*it]->servers[0], this->current_class).detach();
-    }
-
-    //TODO:: Modify for the request timeout case
-    //Assuming everyone has to respond
-    for(auto &it:responses){
-        strVec data = it.get();
-
-        if(data[0] == "OK"){
-            printf("get timestamp, data received is %s\n", data[1].c_str());
-            std::string timestamp_str = data[1];
-
-            std::size_t dash_pos = timestamp_str.find("-");
-            if(dash_pos >= timestamp_str.size()){
-                std::cerr << "Substr violated !!!!!!!" << timestamp_str <<std::endl;
-                assert(0);
-            }
-
-            // make client_id and time regarding the received message
-            uint32_t client_id_ts = stoi(timestamp_str.substr(0, dash_pos));
-            uint32_t time_ts = stoi(timestamp_str.substr(dash_pos + 1));
-
-            tss.emplace_back(client_id_ts, time_ts);
-        }else if(data[0] == "operation_fail"){
-            update_placement(data[1]);
+            std::promise<strVec> prm;
+            responses.emplace_back(prm.get_future());
+            std::thread(_get_timestamp, std::move(prm), *key,
+                            prop->datacenters[*it]->servers[0], this->current_class).detach();
         }
-        //else : The server returned "Failed", that means the entry was not found
-        // We ignore the response in that case.
+
+        for(auto &it:responses){
+            strVec data = it.get();
+
+            if(data[0] == "OK"){
+                printf("get timestamp for key :%s, data received is %s\n", key->c_str(), data[1].c_str());
+                std::string timestamp_str = data[1];
+
+                std::size_t dash_pos = timestamp_str.find("-");
+                if(dash_pos >= timestamp_str.size()){
+                    std::cerr << "Substr violated !!!!!!!" << timestamp_str <<std::endl;
+                    assert(0);
+                }
+
+                // make client_id and time regarding the received message
+                uint32_t client_id_ts = stoi(timestamp_str.substr(0, dash_pos));
+                uint32_t time_ts = stoi(timestamp_str.substr(dash_pos + 1));
+
+                tss.emplace_back(client_id_ts, time_ts);
+                op_status = true;   // For get_timestamp, even if one response Received
+                                    // operation is success
+            }else if(data[0] == "operation_fail"){
+                update_placement(data[1]);
+                op_status = false;      // Retry the operation
+                printf("get_timestamp : operation failed received! for key : %s", key->c_str());
+                return S_RECFG;
+                //break;
+            }
+            //else : The server returned "Failed", that means the entry was not found
+            // We ignore the response in that case.
+            // The servers can return Failed for timestamp, which is acceptable
+        }
+
+        responses.clear();
     }
 
-    ret = new Timestamp(Timestamp::max_timestamp2(tss));
+    if(op_status){
+        *timestamp = new Timestamp(Timestamp::max_timestamp2(tss));
+        DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
+    }else{
+        DPRINTF(DEBUG_CAS_Client, "Operation Failed.\n");
+        return S_FAIL;
+    }
 
-    DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
-
-    return ret;
+    return S_OK;
 }
 
 
@@ -437,6 +456,14 @@ void _put_fin(std::promise<strVec> &&prm, std::string key, Timestamp timestamp,
     return;
 }
 
+void static inline free_chunks(std::vector<std::string*> &chunks){
+
+    for(uint i = 0; i < chunks.size(); i++){
+        delete chunks[i];
+    }
+}
+
+
 uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
 
 //    gettimeofday (&tv_cas, NULL);
@@ -445,92 +472,143 @@ uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
 //    snprintf (buf_cas, sizeof (buf_cas), fmt_cas, tv_cas.tv_usec);
 //    fprintf(this->log_file, "%s write invoke %s\n", buf_cas, value.c_str());
 
-    std::vector <std::string*> chunks;
-    struct ec_args null_args;
-    null_args.k = p.k;
-    null_args.m = p.m - p.k;
-    null_args.w = 16;
-    null_args.ct = CHKSUM_NONE;
 
-    DPRINTF(DEBUG_CAS_Client, "The value to be stored is %s \n", value.c_str());
+    int retries = this->prop->retry_attempts;
+    bool op_status = false;
 
-    std::thread encoder(encode, &value, &chunks, &null_args, this->desc);
+    while(!op_status && retries--){
 
-    Timestamp *timestamp = nullptr;
-    Timestamp *tmp = nullptr;
-    std::vector<std::future<strVec> > responses;
+        std::vector <std::string*> chunks;
+        op_status = true;
+        struct ec_args null_args;
+        null_args.k = p.k;
+        null_args.m = p.m - p.k;
+        null_args.w = 16;
+        null_args.ct = CHKSUM_NONE;
 
-    if(insert){ // This is a new key
-        timestamp = new Timestamp(this->id);
-    }
-    else{
-        tmp = this->get_timestamp(&key);
-        timestamp = new Timestamp(tmp->increase_timestamp(this->id));
-        delete tmp;
-    }
+        DPRINTF(DEBUG_CAS_Client, "The value to be stored is %s \n", value.c_str());
 
-    // Join the encoder thread
-    encoder.join();
+        //std::thread encoder(encode, &value, &chunks, &null_args, this->desc);
+        encode(&value, &chunks, &null_args, this->desc);
 
-    // prewrite
-    int i = 0;
+        Timestamp *timestamp = nullptr;
+        Timestamp *tmp = nullptr;
+        int status = S_OK;
+        std::vector<std::future<strVec> > responses;
 
-    for(auto it = p.Q2.begin(); it != p.Q2.end(); it++){
-        std::promise<strVec> prm;
-        responses.emplace_back(prm.get_future());
-        std::thread(_put, std::move(prm), key, *chunks[i], *timestamp,
+        if(insert){ // This is a new key
+            timestamp = new Timestamp(this->id);
+        }
+        else{
+            status = this->get_timestamp(&key, &tmp);
+
+            if(tmp != nullptr){
+                timestamp = new Timestamp(tmp->increase_timestamp(this->id));
+                delete tmp;
+            }
+        }
+
+        // Join the encoder thread
+        //encoder.join();
+
+        if(timestamp == nullptr){
+            free_chunks(chunks);
+
+            // Temporary fix for reconfig protocol, because
+            // EC library not thread safe, so cannot create new 'desc'
+            if(status == S_RECFG && !this->desc_destroy){
+                return S_RECFG;
+            }
+
+            DPRINTF(DEBUG_CAS_Client, "get_timestamp operation failed key %s \n", key.c_str());
+            op_status = false;
+            continue;
+        }
+
+
+        // prewrite
+        int i = 0;
+
+        for(auto it = p.Q2.begin(); it != p.Q2.end(); it++){
+            std::promise<strVec> prm;
+            responses.emplace_back(prm.get_future());
+            std::thread(_put, std::move(prm), key, *chunks[i], *timestamp,
+                                prop->datacenters[*it]->servers[0], this->current_class).detach();
+
+            DPRINTF(DEBUG_CAS_Client, "Issue Q2 request to key: %s and timestamp: %s  chunk_size :%lu  chunks: ", key.c_str(), timestamp->get_string().c_str(), chunks[i]->size());
+            // for (auto& el : *chunks[i])
+      	    //      printf("%02hhx", el);
+            // std::cout << '\n';
+            i++;
+        }
+
+        free_chunks(chunks);
+
+        for(auto &it:responses){
+            strVec data = it.get();
+
+            if(data[0] == "OK"){
+
+            } else{
+                delete timestamp;
+                if(data[0] == "operation_fail"){
+                    update_placement(data[1]);
+
+                    // Temporary fix for reconfig protocol, because
+                    // EC library not thread safe, so cannot create new 'desc'
+                    if(!this->desc_destroy){
+                        return S_RECFG;
+                    }
+                }
+                op_status = false;
+                printf("_put operation failed for key : %s   %s \n", key.c_str(), data[0].c_str());
+                break;
+            }
+        }
+
+        responses.clear();
+
+        if(!op_status){
+            continue;
+        }
+
+        for(auto it = p.Q3.begin(); it != p.Q3.end(); it++){
+
+            std::promise<strVec> prm;
+            responses.emplace_back(prm.get_future());
+            std::thread(_put_fin, std::move(prm), key, *timestamp,
                             prop->datacenters[*it]->servers[0], this->current_class).detach();
-
-        DPRINTF(DEBUG_CAS_Client, "Issue Q2 request to key: %s and timestamp: %s  chunk_size :%lu  chunks: ", key.c_str(), timestamp->get_string().c_str(), chunks[i]->size());
-        // for (auto& el : *chunks[i])
-  	    //      printf("%02hhx", el);
-        // std::cout << '\n';
-        i++;
-    }
-
-    for(auto &it:responses){
-        strVec data = it.get();
-
-        if(data[0] == "OK"){
-
-        } else if(data[0] == "operation_fail"){
-            update_placement(data[1]);
+            DPRINTF(DEBUG_CAS_Client, "Issue Q3 request to key: %s \n", key.c_str());
         }
-    }
 
-    responses.clear();
-    for(auto it = p.Q3.begin(); it != p.Q3.end(); it++){
+        delete timestamp;
 
-        std::promise<strVec> prm;
-        responses.emplace_back(prm.get_future());
-        std::thread(_put_fin, std::move(prm), key, *timestamp,
-                        prop->datacenters[*it]->servers[0], this->current_class).detach();
-        DPRINTF(DEBUG_CAS_Client, "Issue Q3 request to key: %s \n", key.c_str());
-    }
+        for(auto &it:responses){
+            strVec data = it.get();
 
-    for(auto &it:responses){
-        strVec data = it.get();
+            if(data[0] == "OK"){
 
-        if(data[0] == "OK"){
+            }else{
+                if(data[0] == "operation_fail"){
+                    update_placement(data[1]);
 
-        } else if(data[0] == "operation_fail"){
-            update_placement(data[1]);
+                    // Temporary fix for reconfig protocol, because
+                    // EC library not thread safe, so cannot create new 'desc'
+                    if(!this->desc_destroy){
+                        return S_RECFG;
+                    }
+                }
+                op_status = false;
+                printf("_put_fin operation failed for key :%s  %s \n", key.c_str(), data[0].c_str());
+                break;
+            }
         }
+
+        responses.clear();
+
     }
 
-
-//    gettimeofday (&tv_cas, NULL);
-//    tm22_cas = localtime (&tv_cas.tv_sec);
-//    strftime (fmt_cas, sizeof (fmt_cas), "%H:%M:%S:%%06u", tm22_cas);
-//    snprintf (buf_cas, sizeof (buf_cas), fmt_cas, tv_cas.tv_usec);
-//    fprintf(this->log_file, "%s write ok %s\n", buf_cas, value.c_str());
-
-    for(uint i = 0; i < chunks.size(); i++){
-        delete chunks[i];
-    }
-    delete timestamp;
-
-    return S_OK;
+    return op_status? S_OK : S_FAIL;
 }
 
 void _get(std::promise<strVec> &&prm, std::string key, Timestamp timestamp,
@@ -593,56 +671,85 @@ uint32_t CAS_Client::get(std::string key, std::string &value){
 
     value.clear();
 
-    Timestamp *timestamp = nullptr;
-    timestamp = this->get_timestamp(&key);
+    int retries = this->prop->retry_attempts;
+    bool op_status = false;
 
-    // phase 2
-    std::vector <std::string*> chunks;
-    std::vector <std::future<strVec> > responses;
+    while(!op_status && retries--){
 
-    for(auto it = p.Q4.begin(); it != p.Q4.end(); it++){
-        std::promise<strVec> prm;
-        responses.emplace_back(prm.get_future());
-        std::thread(_get, std::move(prm), key, *timestamp,
-                prop->datacenters[*it]->servers[0], this->current_class).detach();
+        Timestamp *timestamp = nullptr;
+        int status = this->get_timestamp(&key, &timestamp);
+        op_status = true;
 
-        DPRINTF(DEBUG_CAS_Client, "Issue Q4 request for key :%s \n", key.c_str());
-    }
-
-    for(auto &it:responses){
-        strVec data = it.get();
-
-        if(data[0] == "OK"){
-            chunks.push_back(new std::string(data[1]));
-        } else if(data[0] == "operation_fail"){
-            update_placement(data[1]);
+        // Temporary fix for reconfig protocol, because
+        // EC library not thread safe, so cannot create new 'desc'
+        if(status == S_RECFG && !this->desc_destroy){
+            return S_RECFG;
         }
+
+        if(timestamp == nullptr){
+            DPRINTF(DEBUG_CAS_Client, "get_timestamp operation failed %s \n", value.c_str());
+            op_status = false;
+            continue;
+        }
+
+        // phase 2
+        std::vector <std::string*> chunks;
+        std::vector <std::future<strVec> > responses;
+
+        for(auto it = p.Q4.begin(); it != p.Q4.end(); it++){
+            std::promise<strVec> prm;
+            responses.emplace_back(prm.get_future());
+            std::thread(_get, std::move(prm), key, *timestamp,
+                    prop->datacenters[*it]->servers[0], this->current_class).detach();
+
+            DPRINTF(DEBUG_CAS_Client, "Issue Q4 request for key :%s \n", key.c_str());
+        }
+
+        delete timestamp;
+
+        for(auto &it:responses){
+            strVec data = it.get();
+
+            if(data[0] == "OK"){
+                chunks.push_back(new std::string(data[1]));
+            }else{
+                free_chunks(chunks);
+                if(data[0] == "operation_fail"){
+                    update_placement(data[1]);
+
+                    // Temporary fix for reconfig protocol, because
+                    // EC library not thread safe, so cannot create new 'desc'
+                    if(!this->desc_destroy){
+                        return S_RECFG;
+                    }
+                }
+                op_status = false;
+                printf("get operation failed for key:%s  %s\n", key.c_str(), data[0].c_str());
+                break;
+            }
+        }
+
+        responses.clear();
+
+        if(!op_status){
+            continue;
+        }
+        // Decode only if above operation success
+        struct ec_args null_args;
+        null_args.k = p.k;
+        null_args.m = p.m - p.k;
+        null_args.w = 16; // ToDo: what must it be?
+        null_args.ct = CHKSUM_NONE;
+
+        decode(&value, &chunks, &null_args, this->desc);
+
+        //DPRINTF(DEBUG_CAS_Client,"Received value for key : %s and timestamp is :%s  is: %s\n", key.c_str(), timestamp->get_string().c_str(), value.c_str());
+
+        free_chunks(chunks);
+        // for(auto it: chunks){
+        //     delete it;
+        // }
+
     }
-
-    if(chunks.size() < p.k){
-        DPRINTF(DEBUG_CAS_Client, "chunks.size() < p.m\n");
-    }
-
-    // Decode
-    struct ec_args null_args;
-    null_args.k = p.k;
-    null_args.m = p.m - p.k;
-    null_args.w = 16; // ToDo: what must it be?
-    null_args.ct = CHKSUM_NONE;
-//    gettimeofday (&tv_cas, NULL);
-//    tm22_cas = localtime (&tv_cas.tv_sec);
-//    strftime (fmt_cas, sizeof (fmt_cas), "%H:%M:%S:%%06u", tm22_cas);
-//    snprintf (buf_cas, sizeof (buf_cas), fmt_cas, tv_cas.tv_usec);
-//    fprintf(this->log_file, "%s read ok %s\n", buf_cas, value.c_str());
-
-
-    decode(&value, &chunks, &null_args, this->desc);
-
-    DPRINTF(DEBUG_CAS_Client,"Received value for key : %s and timestamp is :%s  is: %s\n", key.c_str(), timestamp->get_string().c_str(), value.c_str());
-
-    for(auto it: chunks){
-        delete it;
-    }
-    delete timestamp;
-    return S_OK;
+    return op_status? S_OK: S_FAIL;
 }

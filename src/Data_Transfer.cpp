@@ -36,7 +36,7 @@ std::string DataTransfer::serialize(const strVec &data){
 //sends it across the socket
 // Return 1 on SUCCESS
 int DataTransfer::sendMsg(int &sock, const std::string &out_str){
-
+	assert(!out_str.empty());
 	uint32_t _size = htonl(out_str.size());
 	int result = sendAll(sock, &_size, sizeof(_size));
 	if(result == 1){
@@ -59,8 +59,6 @@ int DataTransfer::recvAll(int &sock, void *buf, int data_size){
 				fprintf(stderr, "Recvall Failed : Connection disconnected."
 								"The error msg is %s \n ", std::strerror(errno));
 			}
-			//print_time();
-			//assert(0);
 			return bytes_read;
 		}
 
@@ -104,11 +102,13 @@ int DataTransfer::recvMsg(int sock, std::string &data){
 			result = recvAll(sock, const_cast<char *>(data.c_str()), _size);
 			if(result != 1){
 				data.clear();
+				std::cout<<"Clearing the result due to error" << std::endl;
 				return result;
 			}
 		}
 	}
 
+	assert(!data.empty());
 	return 1;
 }
 

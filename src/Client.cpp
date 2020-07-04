@@ -22,18 +22,6 @@ std::atomic<int> numt(0);
 using namespace std::chrono;
 using millis = duration<uint64_t, std::milli>;
 
-static inline int next_event(std::string &dist_process){
-	if(dist_process == "uniform"){
-		return 1000;
-	}else if(dist_process == "poisson"){
-		//TODO:: Check this!
-		return -log(1 - (double)rand()/(RAND_MAX)) * 1000;
-	}else{
-		throw std::logic_error("Distribution process specified is unknown !! ");
-	}
-	return 0;
-}
-
 static inline uint32_t create_threadId(int &client_id, int &grp_idx, const int &req_idx){
 
 	uint32_t id = 0;
@@ -46,6 +34,39 @@ static inline uint32_t create_threadId(int &client_id, int &grp_idx, const int &
 
 	return id;
 }
+
+void initialise_db(Properties *prop, int grp_idx){
+	auto it = find(prop->groups[0]->grp_id.begin(), prop->groups[0]->grp_id.end(), grp_idx);
+	int idx = it - begin(prop->groups[0]->grp_id);
+	GroupConfig *grpCfg = prop->groups[0]->grp_config[idx];
+	CAS_Client client(prop, create_threadId(clientId, grp_idx, 0), *grpCfg->placement_p);
+	std::vector<std::thread> pool;
+
+	for(auto &key: grpCfg->keys){
+		std::string val(grpCfg->object_size, 'a'+ (grp_idx%26));
+		pool.emplace_back(&CAS_Client::put, &client, key, val, true);
+		std::cout<< "Initialisation of key : " << key << " is done!!" << std::endl;
+		numt += 1;
+	}
+
+	for(auto &it:pool){
+		it.join();
+	}
+}
+
+static inline int next_event(std::string &dist_process){
+	if(dist_process == "uniform"){
+		return 1000;
+	}else if(dist_process == "poisson"){
+		//TODO:: Check this!
+		return -log(1 - (double)rand()/(RAND_MAX)) * 1000;
+	}else{
+		throw std::logic_error("Distribution process specified is unknown !! ");
+	}
+	return 0;
+}
+
+
 int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &keys, Placement *pp, time_point<system_clock, millis> tp,
 							std::string &dist_process, int grp_idx, int req_idx, int desc){
 	int cnt = 0; 		// Count the number of requests
@@ -63,18 +84,21 @@ int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &
 		// Choose the operation type
 		double random_ratio = (double)(rand() % 100) / 100.00;
 		reqType = random_ratio <= read_ratio? 1:2;
+		int result = S_OK;
 
 		//Choose a random key
 		key_idx = rand()%(keys.size());
 	//	std::cout << "Operation chosen by Client  "<<threadId<<" for key " << keys[key_idx] << "  is " << reqType << std::endl;
 		// Initiate the operation
 		if(reqType == 1){
-			clt.get(keys[key_idx],read_value);
+			result = clt.get(keys[key_idx],read_value);
 		}else{
 			std::string val(obj_size, 'a');
-			clt.put(keys[key_idx], val, false);
+			result = clt.put(keys[key_idx], val, false);
 		}
 
+		assert(result != S_FAIL);
+		
 		tp += millis{next_event(dist_process)};
 		std::this_thread::sleep_until(tp);
 	}
@@ -95,11 +119,13 @@ int key_req_gen(Properties &prop, int grp_idx, std::string dist_process){
 
 	std::this_thread::sleep_until(timePoint);
 	int avg = 0;
-	bool key_init = true;	// True only for the first iteration of each grp
-				// After the first iteration all keys will be initialized
-				// This assumes keys are not added while experiment happening
+
 	int act_cnt = 0;
 	GroupConfig *grpCfg;
+
+	// After this call all keys will be initialized
+	// This assumes keys and key groups are not added while experiment happening
+	initialise_db(cc, grp_idx);
 
 	for(uint j=0; j<prop.groups.size() ; j++){
 		// If the key id doesn't exist in this timestamp, skip it
@@ -114,15 +140,8 @@ int key_req_gen(Properties &prop, int grp_idx, std::string dist_process){
 		grpCfg = prop.groups[j]->grp_config[it - prop.groups[j]->grp_id.begin()];
 
 		int desc = create_liberasure_instance(grpCfg->placement_p);
-
-		// Prep the database before the next epoch, write objects of specified size
 		printf("Creating init threads for grp id: %d \n", grp_idx);
-		CAS_Client client(cc, create_threadId(clientId, grp_idx, 0),  *grpCfg->placement_p, desc);
-		for(auto &key: grpCfg->keys){
-			std::string val(grpCfg->object_size, 'a'+ (grp_idx%26));
-			client.put(key, val, key_init);
-			numt += 1;
-		}
+
 
 		running = true;
 		//Start threads
@@ -150,7 +169,6 @@ int key_req_gen(Properties &prop, int grp_idx, std::string dist_process){
 		avg += numt.load()/(grpCfg->duration);
 		threads.clear();
 		numt = 0;
-		key_init = false;
 	}
 
 	avg = avg/act_cnt;
@@ -166,7 +184,7 @@ int main(int argc, char* argv[]){
 	}
 	int newSocket = socket_setup(argv[1]);
 	std::cout<< "Waiting for connection from Controller." <<std::endl;
-	std::cout<< "Atomic variable is lock free? " << running.is_lock_free() << " : another opinion : " << ATOMIC_BOOL_LOCK_FREE << std::endl;
+	//std::cout<< "Atomic variable is lock free? " << running.is_lock_free() << " : another opinion : " << ATOMIC_BOOL_LOCK_FREE << std::endl;
 	int sock = accept(newSocket, NULL, 0);
 	close(newSocket);
 

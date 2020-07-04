@@ -103,7 +103,6 @@ bool complete_fin(std::string &key, std::string &timestamp, Cache &cache, Persis
 }
 
 //TOD0:: when fin tag with empty value inserted, how is that handled at server for future requests, as in won't the server respond with emoty values when requested again.
-//TODO:: check, I removed the last param "required_value"
 std::string CAS_Server::get(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
 	//std::unique_lock<std::mutex> lock(lock_t);

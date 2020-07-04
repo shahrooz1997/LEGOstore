@@ -16,7 +16,6 @@
 #include <cstring>
 #include <arpa/inet.h>
 
-
 #ifdef DEVELOPMENT
 bool DEBUG_CAS_Client = true;
 bool DEBUG_ABD_Client = true;
@@ -28,7 +27,7 @@ bool DEBUG_CAS_Client = false;
 bool DEBUG_ABD_Client = false;
 bool DEBUG_CAS_Server = false;
 bool DEBUG_ABD_Server = false;
-bool DEBUG_RECONFIG_CONTROL = false;
+bool DEBUG_RECONFIG_CONTROL = true;
 #endif
 
 

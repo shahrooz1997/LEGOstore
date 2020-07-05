@@ -141,11 +141,6 @@ std::string CAS_Server::get(string &key, string &timestamp, Cache &cache, Persis
 //Add client ID
 void CAS_Server::insert_data(string &key,const string &val, string &timestamp, bool label, Cache &cache, Persistent &persistent){
 
-	//TODO:: Can we avoid this??
-	// Why is this there
-	//(cache.exists(key+timestamp)){
-	//	return;
-	//}
 	int _label = label? 1:0;
 
 	//TODO:: ALready in FIN, so no way that we need to store naything , cos no way values

@@ -207,25 +207,10 @@ int Controller::init_setup(std::string configFile, std::string filePath){
 		}
 	}
 	std::string out_str;
-	// Note:: We can change the start time here
-	// Start time is used by client before starting, after that it relies on duration
-	// However, contoller only uses timestamp attribute.
-	// So, setting start time using timestamp, allows both client and controller to be in-sync
-	//TODO::  reevaluate this
-	int start_offset =  prp.groups[0]->timestamp;			// In secs //10
+
 	try{
-		auto timePoint = time_point_cast<milliseconds>(system_clock::now() + seconds(start_offset));
+		auto timePoint = time_point_cast<milliseconds>(system_clock::now());
 		uint64_t startTime = timePoint.time_since_epoch().count();
-		//std::cout << "Type of the timepoint is " << typeid(timeDur).name() << std::endl;
-		//std::cout << "time of start is " << timeDur << "  and current time is " << time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count() << std::endl;
-
-		// if(tp != timePoint){
-		// 	std::cout << "FAILLED!! " <<std::endl;
-		// }else{
-		// 	std::cout << "SUCCESS!! " <<std::endl;
-		// }
-
-		// std::cout << "time of start is " << tp.time_since_epoch().count() << std::endl;
 
 
 		std::vector<std::pair<std::string, uint16_t> > addr_info;
@@ -312,7 +297,6 @@ int main(){
 	//startPoint already includes the timestamp of first group
 	// The for loop assumes the startPoint to not include any offset at all
 	time_point<system_clock, millis> startPoint(millis{master.prp.start_time});
-	startPoint -= millis{master.prp.groups[0]->timestamp * 1000};
 	time_point<system_clock, millis> timePoint;
 
 	std::unordered_map<std::string, int> open_desc;

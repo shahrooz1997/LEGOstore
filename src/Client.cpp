@@ -22,12 +22,12 @@ std::atomic<int> numt(0);
 using namespace std::chrono;
 using millis = duration<uint64_t, std::milli>;
 
-static inline uint32_t create_threadId(int &client_id, int &grp_idx, const int &req_idx){
+static inline uint32_t create_threadId(int &client_id, int &grp_id, const int &req_idx){
 
 	uint32_t id = 0;
 	// Checking the bounds of each index
-	if( req_idx < (1<<12) && grp_idx < (1<<12) && clientId < (1<<8) ){
-		id = ((clientId << 24) | (grp_idx << 12) | (req_idx));
+	if( req_idx < (1<<12) && grp_id < (1<<12) && clientId < (1<<8) ){
+		id = ((clientId << 24) | (grp_id << 12) | (req_idx));
 	}else{
 		throw std::logic_error("The thread ID can be redundant. Idx exceeded its bound");
 	}
@@ -35,15 +35,13 @@ static inline uint32_t create_threadId(int &client_id, int &grp_idx, const int &
 	return id;
 }
 
-void initialise_db(Properties *prop, int grp_idx){
-	auto it = find(prop->groups[0]->grp_id.begin(), prop->groups[0]->grp_id.end(), grp_idx);
-	int idx = it - begin(prop->groups[0]->grp_id);
-	GroupConfig *grpCfg = prop->groups[0]->grp_config[idx];
-	CAS_Client client(prop, create_threadId(clientId, grp_idx, 0), *grpCfg->placement_p);
+void initialise_db(Properties *prop, GroupConfig *grpCfg, int grp_id){
+
+	CAS_Client client(prop, create_threadId(clientId, grp_id, 0), *grpCfg->placement_p);
 	std::vector<std::thread> pool;
 
 	for(auto &key: grpCfg->keys){
-		std::string val(grpCfg->object_size, 'a'+ (grp_idx%26));
+		std::string val(grpCfg->object_size, 'a'+ (grp_id%26));
 		pool.emplace_back(&CAS_Client::put, &client, key, val, true);
 		std::cout<< "Initialisation of key : " << key << " is done!!" << std::endl;
 		numt += 1;
@@ -68,11 +66,11 @@ static inline int next_event(std::string &dist_process){
 
 
 int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &keys, Placement *pp, time_point<system_clock, millis> tp,
-							std::string &dist_process, int grp_idx, int req_idx, int desc){
+							std::string &dist_process, int grp_id, int req_idx, int desc){
 	int cnt = 0; 		// Count the number of requests
 	int reqType = 0;    // 1 for GET, 2 for PUT
 	int key_idx = -1;
-	uint32_t threadId = create_threadId(clientId, grp_idx, req_idx);
+	uint32_t threadId = create_threadId(clientId, grp_id, req_idx);
 	CAS_Client clt(cc, threadId,*pp, desc);
 	//Scope of this seeding is global
 	//So, may lead to same operation sequence on all threads
@@ -108,71 +106,58 @@ int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &
 
 	return 0;
 }
+
+
 //NOTE:: A process is started for each grp_id
-//NOTE:: So, the number of grps cannot increase during the experiment but can decrease
-//NOTE:: Grp key idx should match with its index in grp_config
-int key_req_gen(Properties &prop, int grp_idx, std::string dist_process){
+//NOTE:: Grp_id is just a unique identifier for this grp, can be modified easily later on
+int key_req_gen(Properties &prop, int grp_idx, int grp_config_idx, int grp_id, std::string dist_process){
 
 	clientId = prop.local_datacenter_id;
-	uint64_t startTime = prop.start_time;
-	time_point<system_clock, millis> timePoint(millis{startTime});
-
-	std::this_thread::sleep_until(timePoint);
 	int avg = 0;
 
-	int act_cnt = 0;
-	GroupConfig *grpCfg;
+	//int act_cnt = 0;
+	GroupConfig *grpCfg = prop.groups[grp_idx]->grp_config[grp_config_idx];
+	auto timePoint = time_point_cast<milliseconds>(system_clock::now());
 
 	// After this call all keys will be initialized
 	// This assumes keys and key groups are not added while experiment happening
-	initialise_db(cc, grp_idx);
+	initialise_db(cc, grpCfg, grp_id);
 
-	for(uint j=0; j<prop.groups.size() ; j++){
-		// If the key id doesn't exist in this timestamp, skip it
-		auto it = find(prop.groups[j]->grp_id.begin(), prop.groups[j]->grp_id.end(), grp_idx);
-		if( it == prop.groups[j]->grp_id.end()){
-			++j;
-			continue;
-		}
-
-		act_cnt++;
-		// The config for this grp index
-		grpCfg = prop.groups[j]->grp_config[it - prop.groups[j]->grp_id.begin()];
-
-		int desc = create_liberasure_instance(grpCfg->placement_p);
-		printf("Creating init threads for grp id: %d \n", grp_idx);
+	int desc = create_liberasure_instance(grpCfg->placement_p);
+	printf("Creating init threads for grp id: %d \n", grp_idx);
 
 
-		running = true;
-		//Start threads
-		std::vector<std::thread> threads;
+	running = true;
+	//Start threads
+	std::vector<std::thread> threads;
 
-		//Round up to nearest integer value
-		long numReqs = lround(grpCfg->client_dist[clientId] * grpCfg->arrival_rate);
+	//Round up to nearest integer value
+	long numReqs = lround(grpCfg->client_dist[clientId] * grpCfg->arrival_rate);
 
 
-		for(long i=0; i<numReqs; i++){
-			threads.emplace_back(run_session, grpCfg->object_size, grpCfg->read_ratio, std::ref(grpCfg->keys), \
-							grpCfg->placement_p, timePoint, std::ref(dist_process), grp_idx, i, desc);
-		}
-
-		timePoint += millis{grpCfg->duration* 1000};
-		std::this_thread::sleep_until(timePoint);
-
-		running = false;
-		for(auto &th: threads){
-			th.join();
-		}
-
-		destroy_liberasure_instance(desc);
-		std::cout<<"NUm value before returning" << numt.load() << std::endl;
-		avg += numt.load()/(grpCfg->duration);
-		threads.clear();
-		numt = 0;
+	for(long i=0; i<numReqs; i++){
+		threads.emplace_back(run_session, grpCfg->object_size, grpCfg->read_ratio, std::ref(grpCfg->keys), \
+						grpCfg->placement_p, timePoint, std::ref(dist_process), grp_id, i, desc);
 	}
 
-	avg = avg/act_cnt;
+	timePoint += millis{grpCfg->duration* 1000};
+	std::this_thread::sleep_until(timePoint);
+
+	running = false;
+	for(auto &th: threads){
+		th.join();
+	}
+
+	destroy_liberasure_instance(desc);
+	std::cout<<"NUm value before returning" << numt.load() << std::endl;
+	avg = numt.load()/(grpCfg->duration);
+
 	std::cout<<"Average arrival Rate : " << avg << std::endl;
+
+	if(avg < numReqs){
+		fprintf(stderr, "WARNING!! The average arrival rate for group :%d and group_config :%d is\
+							less that required : %d / %ld", grp_idx, grp_config_idx, avg, numReqs);
+	}
 	return avg;
 }
 
@@ -199,25 +184,32 @@ int main(int argc, char* argv[]){
 
 		cc = DataTransfer::deserializePrp(recv_str);
 
-		if(cc->groups.empty()){
-			std::cout << "No Key groups were found" <<std::endl;
-			return 0;
-		}
+		time_point<system_clock, millis> startPoint(millis{cc->start_time});
+		time_point<system_clock, millis> timePoint;
 
+		int idx = 0;
 
-		//TODO:: decide where to specify the distribiution
-		// Assumes the Group 0 in config contains all key grps
-		// Because initialization of all key_grps needed at start time
-		// Create a separate process for each Key group
-		// NOTE:: grp_id size and grp_config size should be equal for Groupxxxx
-		int grp_size = cc->groups[0]->grp_id.size();
-		for(int i=0; i<grp_size; i++){
-			if(fork() == 0){
-				int rate = key_req_gen(*cc, cc->groups[0]->grp_id[i], "uniform");
-				std::cout << "Rate sent is " << rate  << std::endl;
-				exit(rate);
+		for(auto grp: cc->groups){
+
+			timePoint = startPoint + millis{grp->timestamp * 1000};
+			std::this_thread::sleep_until(timePoint);
+
+			//TODO:: decide where to specify the distribiution
+			// NOTE:: grp_id size and grp_config size should be equal for Groupxxxx
+			int grp_size = grp->grp_id.size();
+			for(int i=0; i<grp_size; i++){
+				if(fork() == 0){
+					// Note:: Grp_id can be anything, here it is provided by the config file
+					int rate = key_req_gen(*cc, idx, i, grp->grp_id[i], "uniform");
+					std::cout << "Rate sent is " << rate  << std::endl;
+					exit(rate);
+				}
 			}
+
+			idx++;
 		}
+
+
 
 		float avg_rate = 0;
 		int ret_val =0;

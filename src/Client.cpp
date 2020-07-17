@@ -200,7 +200,7 @@ int main(int argc, char* argv[]){
 			for(int i=0; i<grp_size; i++){
 				if(fork() == 0){
 					// Note:: Grp_id can be anything, here it is provided by the config file
-					int rate = key_req_gen(*cc, idx, i, grp->grp_id[i], "uniform");
+					int rate = key_req_gen(*cc, idx, i, grp->grp_id[i], "poisson");
 					std::cout << "Rate sent is " << rate  << std::endl;
 					exit(rate);
 				}

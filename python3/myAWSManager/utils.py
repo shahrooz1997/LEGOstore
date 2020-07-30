@@ -25,7 +25,7 @@ def create_instance_with_keypair(region_name, image_id, keypair, instance_type='
         }
     ],
     SecurityGroups=[
-    'geostore',
+    'launch-wizard-1',
     ],
     MinCount=1,
     MaxCount=1,
@@ -62,7 +62,7 @@ def stop_instance(instance_id, region_name):
     return responses
 
 def terminate_instance(instance_ids, region_name):
-    client = boto3.resource('ec2', region_name=region_name)
+    client = boto3.client('ec2', region_name=region_name)
     if type(instance_ids) is not list:
         instance_ids = [instance_ids]
     responses = client.terminate_instances(InstanceIds=instance_ids)

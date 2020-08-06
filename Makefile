@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS =-Wall -std=c++11 -Iinc -g `pkg-config --cflags protobuf`
-LDFLAGS = -lm -lerasurecode -lrocksdb -Llib -ldl -lpthread -lgf_complete -lJerasure `pkg-config --libs protobuf`
+LDFLAGS = -lm -lerasurecode -lrocksdb -Llib -ldl -lpthread `pkg-config --libs protobuf`
 
 
 src = $(wildcard src/*.cpp)
@@ -15,7 +15,7 @@ obj1 = $(filter-out obj/Server.o obj/Controller.o, $(obj))
 obj3 = $(filter-out obj/Client.o obj/Server.o, $(obj))
 
 .PHONY: all
-all: obj Client Server Controller 
+all: obj proto Client Server Controller 
 
 LEGOStore: $(obj) 
 	$(CXX) -o $@ $^ $(LDFLAGS)

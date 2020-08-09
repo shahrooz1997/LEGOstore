@@ -291,7 +291,7 @@ static inline void delete_desc_info(std::unordered_map<std::string, int> &open_d
 
 int main(){
 
-	Controller master(2, 120, 120, "./config/setup_config.json");
+	Controller master(2, 120, 120, "./config/scripts/local_config.json");
 	master.init_setup("./config/input_workload.json" , "config/deployment.txt");
 
 	//startPoint already includes the timestamp of first group

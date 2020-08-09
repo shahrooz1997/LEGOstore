@@ -12,7 +12,6 @@
  */
 
 #include "CAS_Server.h"
-#include "Timestamp.h"
 
 using std::string;
 
@@ -23,10 +22,8 @@ CAS_Server::CAS_Server() {
 CAS_Server::~CAS_Server() {
 }
 
-//TODO:: fix the lock
 std::string CAS_Server::get_timestamp(string &key, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
-	//TODO:: check the different read and write lock
 	//std::lock_guard<std::mutex> lock(lock_t);
 	DPRINTF(DEBUG_CAS_Server, "get_timestamp started and the key is %s\n", key.c_str());
 	const std::vector<std::string> *ptr = cache.get(key);
@@ -102,7 +99,8 @@ bool complete_fin(std::string &key, std::string &timestamp, Cache &cache, Persis
 	return false;
 }
 
-//TOD0:: when fin tag with empty value inserted, how is that handled at server for future requests, as in won't the server respond with emoty values when requested again.
+//TOD0:: when fin tag with empty value inserted, how is that handled at server for future requests,
+// as in won't the server respond with emoty values when requested again.
 std::string CAS_Server::get(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
 	//std::unique_lock<std::mutex> lock(lock_t);
@@ -115,8 +113,6 @@ std::string CAS_Server::get(string &key, string &timestamp, Cache &cache, Persis
 		if(!fnd){
 			//insert_data(key, "None", timestamp, true, cache, persistent);
 			complete_fin(key, timestamp, cache, persistent);
-			//TODO::is the return value correct?
-			// Returning failed, to tell that no value is being returned
 			result = {"Failed", "None"};
 		}
 
@@ -145,7 +141,7 @@ void CAS_Server::insert_data(string &key,const string &val, string &timestamp, b
 
 	//TODO:: ALready in FIN, so no way that we need to store naything , cos no way values
 	// can come now in a msg right???
-	//TODO:: should i add it to cache on write, from persistent
+	//TODO:: should I add it to cache on write, from persistent
 	//If not found, that means either tuple not present
 	// OR tuple is in pre stage
 	// chekcing to set FIN flag

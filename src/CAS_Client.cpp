@@ -84,7 +84,7 @@ void _get_timestamp(std::promise<strVec> &&prm, std::string key, Server *server,
     if(client_cnt(sock, server) == S_FAIL){
         return;
     }
-    
+
     strVec data;
     data.push_back("get_timestamp");
     data.push_back(key);
@@ -640,22 +640,23 @@ uint32_t CAS_Client::get(std::string key, std::string &value){
 
         delete timestamp;
 
+
         for(auto &it:responses){
             strVec data = it.get();
 
             if(data[0] == "OK"){
                 chunks.push_back(new std::string(data[1]));
-            }else{
+            }else if(data[0] == "operation_fail"){
                 free_chunks(chunks);
-                if(data[0] == "operation_fail"){
-                    update_placement(data[1]);
 
-                    // Temporary fix for reconfig protocol, because
-                    // EC library not thread safe, so cannot create new 'desc'
-                    if(!this->desc_destroy){
-                        return S_RECFG;
-                    }
+                update_placement(data[1]);
+
+                // Temporary fix for reconfig protocol, because
+                // EC library not thread safe, so cannot create new 'desc'
+                if(!this->desc_destroy){
+                    return S_RECFG;
                 }
+
                 op_status = false;
                 printf("get operation failed for key:%s  %s\n", key.c_str(), data[0].c_str());
                 break;
@@ -663,6 +664,12 @@ uint32_t CAS_Client::get(std::string key, std::string &value){
         }
 
         responses.clear();
+
+        if(chunks.size() < p.k){
+            free_chunks(chunks);
+            op_status = false;
+            printf("get operation failed for key:%s\n", key.c_str());
+        }
 
         if(!op_status){
             continue;

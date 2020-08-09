@@ -10,7 +10,7 @@ std::string DataServer::get_timestamp(std::string &key, std::string &curr_class)
     if(curr_class == "CAS"){
         result = CAS.get_timestamp(key,cache, persistent, lock);
     }else if(curr_class == "ABD"){
-
+        result = ABD.get_timestamp(key,cache, persistent, lock);
     }
 
     return result;
@@ -57,7 +57,7 @@ std::string DataServer::put(std::string &key, std::string &value, std::string &t
     if(curr_class == "CAS"){
         result = CAS.put(key,value, timestamp, cache, persistent, lock);
     }else if(curr_class == "ABD"){
-
+        result = ABD.put(key,value, timestamp, cache, persistent, lock);
     }
     return result;
 }
@@ -66,9 +66,10 @@ std::string DataServer::put_fin(std::string &key, std::string &timestamp, std::s
     std::string result;
     if(curr_class == "CAS"){
         result = CAS.put_fin(key, timestamp, cache, persistent, lock);
-    }else if(curr_class == "ABD"){
-
     }
+    // else if(curr_class == "ABD"){
+    //
+    // }
     return result;
 }
 
@@ -77,7 +78,7 @@ std::string DataServer::get(std::string &key, std::string &timestamp, std::strin
     if(curr_class == "CAS"){
         result = CAS.get(key, timestamp, cache, persistent, lock);
     }else if(curr_class == "ABD"){
-
+        result = ABD.get(key, timestamp, cache, persistent, lock);
     }
     return result;
 }

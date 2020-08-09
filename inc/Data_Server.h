@@ -4,6 +4,7 @@
 #include "Cache.h"
 #include "Persistent.h"
 #include "CAS_Server.h"
+#include "ABD_Server.h"
 #include <unordered_map>
 #include <condition_variable>
 #include "Timestamp.h"
@@ -13,7 +14,6 @@ typedef std::vector<std::string> strVec;
 class DataServer{
 
 public:
-	//TODO:: confirm the backlog value, set to 2048 in py
 	// TODO:: removed the null value of socket, directly intializing class variable
 
 	DataServer(std::string directory, int sock)
@@ -35,6 +35,8 @@ private:
 	Cache cache;
 	Persistent persistent;
 	CAS_Server CAS;
+	ABD_Server ABD;
+
 };
 
 #endif

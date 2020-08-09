@@ -216,6 +216,8 @@ int main(int argc, char* argv[]){
 		while(wait(&ret_val) >=0){
 			std::cout << "Child temination status " << WIFEXITED(ret_val) << "  Rate receved is " <<  WEXITSTATUS(ret_val) <<
 					" : " << WIFSIGNALED(ret_val) << " : " << WTERMSIG(ret_val) <<std::endl;
+
+			// TODO:: Modify this - right now accumulates rate for all processes, spread across the length of the experiment
 			avg_rate += WEXITSTATUS(ret_val);
 		}
 

@@ -122,7 +122,7 @@ int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, std
         max_val = std::max(max_val, (uint32_t)(old_servers.size() - p->Q4.size() + 1));
 
         //POll all the values until you find the requisite responses
-        // This is a busy loop, but it's not controller so it's fine
+        // This is a busy loop, but it's on controller so it's fine
         while(max_val){
             for(auto &it:responses){
                 if(it.valid() && it.wait_for(std::chrono::milliseconds(10)) == std::future_status::ready){

@@ -223,6 +223,7 @@ public:
     uint16_t get_port();
     bool is_connected();
     int operator*();
+    void close();
 
 private:
     std::string ip;

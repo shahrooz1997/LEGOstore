@@ -215,7 +215,7 @@ Connect::Connect(const std::string ip, const uint16_t port): ip(ip), port(port),
 }
 
 Connect::~Connect(){
-    close(sock);
+    ::close(sock);
 }
 
 std::string Connect::get_ip(){
@@ -237,6 +237,10 @@ int Connect::operator*(){
         print_error("Trying to get the fd of a socket which is not connected.");
         return -1;
     }
+}
+
+void Connect::close(){
+    ::close(sock);
 }
 
 void Connect::print_error(std::string const &m){

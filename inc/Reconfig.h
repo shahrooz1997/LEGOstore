@@ -44,7 +44,7 @@ private:
     static int send_reconfig_finish(Properties *prop, GroupConfig &old_config, GroupConfig &new_config, std::string &key, Timestamp *ret_ts);
 
     std::unordered_map<std::string, GroupConfig*> key_metadata;
-	std::mutex lock_t;
+    std::mutex lock_t;
 };
 
 #endif /* RECONFIG_H */

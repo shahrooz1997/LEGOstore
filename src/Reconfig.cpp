@@ -50,7 +50,7 @@ int Reconfig::start_reconfig(Properties *prop, GroupConfig &old_config, GroupCon
     Timestamp *ret_ts = nullptr;
     std::string ret_v;
     Reconfig::send_reconfig_query(prop, old_config, key, &ret_ts, ret_v);
-    if(old_config.placement_p->protocol == "CAS"){
+    if(old_config.placement_p->protocol == CAS_PROTOCOL_NAME){
         Reconfig::send_reconfig_finalize(prop, old_config, key, ret_ts, ret_v, old_desc);
     }
     Reconfig::send_reconfig_write(prop, new_config, key, ret_ts, ret_v, new_desc);
@@ -68,6 +68,9 @@ void _send_reconfig_query(std::promise<strVec> &&prm, std::string key, Server *s
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
 
     Connect c(server->ip, server->port);
+    if(!c.is_connected()){
+        return;
+    }
 
     strVec data;
     data.push_back("reconfig_query");
@@ -91,7 +94,7 @@ int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, std
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "reconfig query started\n");
     std::vector<Timestamp> tss;
-    std::vector<string*> vs;
+    std::vector<string> vs;
     std::unordered_set<uint32_t> old_servers;
     std::vector<std::future<strVec> > responses;
 
@@ -102,7 +105,42 @@ int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, std
     //old_servers.insert()
 
     if(p->protocol == ABD_PROTOCOL_NAME){
+        
+        for(auto it = old_servers.begin(); it != old_servers.end(); it++){
 
+            std::promise<strVec> prm;
+            responses.emplace_back(prm.get_future());
+            std::thread(_send_reconfig_query, std::move(prm), key,
+                            prop->datacenters[*it]->servers[0], p->protocol).detach();
+        }
+
+        uint32_t max_val = (uint32_t)(old_servers.size() - p->Q2.size() + 1); // Todo: change it to old.Q1
+
+        //POll all the values until you find the requisite responses
+        // This is a busy loop, but it's on controller so it's fine
+        while(max_val){
+            for(auto &it:responses){
+                if(it.valid() && it.wait_for(std::chrono::milliseconds(10)) == std::future_status::ready){
+
+                    strVec data = it.get();
+
+                    if(data[0] == "OK"){
+                        printf("reconfig query, data received is %s\n", data[1].c_str());
+                        vs.emplace_back(data[1]);
+                        tss.emplace_back(data[2]);
+                    }
+                    //if "Failed", then need to retry
+                    //reponses.erase(it);
+                    max_val--;
+                    break;
+                }
+            }
+
+        }
+
+        uint32_t max_ts_i = Timestamp::max_timestamp3(tss);
+        *ret_ts = new Timestamp(tss[max_ts_i]);
+        ret_v = vs[max_ts_i];
     }
     else if(p->protocol == CAS_PROTOCOL_NAME) {
 
@@ -319,8 +357,8 @@ void _send_reconfig_finalize(std::promise<strVec> &&prm, std::string key, Timest
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
 
-    int sock = 0;
-    if(client_cnt(sock, server) == S_FAIL){
+    Connect c(server->ip, server->port);
+    if(!c.is_connected()){
         return;
     }
 
@@ -329,17 +367,16 @@ void _send_reconfig_finalize(std::promise<strVec> &&prm, std::string key, Timest
     data.push_back(key);
     data.push_back(timestamp.get_string());
     data.push_back(current_class);
-    DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
+    DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
 
     data.clear();
     std::string recvd;
 
-    if(DataTransfer::recvMsg(sock, recvd) == 1){
+    if(DataTransfer::recvMsg(*c, recvd) == 1){
         data =  DataTransfer::deserialize(recvd);
         prm.set_value(std::move(data));
     }
 
-    close(sock);
     return;
 }
 
@@ -372,6 +409,7 @@ int Reconfig::send_reconfig_finalize(Properties *prop, GroupConfig &old_config, 
 
     if(chunks.size() < p->k){
         DPRINTF(DEBUG_CAS_Client, "chunks.size() < p.m\n");
+        assert(0);
     }
 
     // Decode
@@ -380,13 +418,7 @@ int Reconfig::send_reconfig_finalize(Properties *prop, GroupConfig &old_config, 
     null_args.m = p->m - p->k;
     null_args.w = 16; // ToDo: what must it be?
     null_args.ct = CHKSUM_NONE;
-//    gettimeofday (&tv_cas, NULL);
-//    tm22_cas = localtime (&tv_cas.tv_sec);
-//    strftime (fmt_cas, sizeof (fmt_cas), "%H:%M:%S:%%06u", tm22_cas);
-//    snprintf (buf_cas, sizeof (buf_cas), fmt_cas, tv_cas.tv_usec);
-//    fprintf(this->log_file, "%s read ok %s\n", buf_cas, value.c_str());
-
-
+    
     decode(&ret_v, &chunks, &null_args, desc);
 
     for(auto it: chunks){
@@ -401,8 +433,8 @@ void _send_reconfig_write(std::promise<strVec> &&prm, std::string key, Server *s
                     Timestamp timestamp, std::string value, std::string current_class){
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
 
-    int sock = 0;
-    if(client_cnt(sock, server) == S_FAIL){
+    Connect c(server->ip, server->port);
+    if(!c.is_connected()){
         return;
     }
 
@@ -413,17 +445,16 @@ void _send_reconfig_write(std::promise<strVec> &&prm, std::string key, Server *s
     data.push_back(value);
     data.push_back(current_class);
 
-    DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
+    DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
 
     data.clear();
     std::string recvd;
 
-    if(DataTransfer::recvMsg(sock, recvd) == 1){
+    if(DataTransfer::recvMsg(*c, recvd) == 1){
         data =  DataTransfer::deserialize(recvd);
         prm.set_value(std::move(data));
     }
 
-    close(sock);
     return;
 }
 
@@ -444,14 +475,36 @@ int Reconfig::send_reconfig_write(Properties *prop, GroupConfig &new_config, std
 
     int i = 0;
 
-    if(p->protocol == "ABD"){
-
-    }
-    else if(p->protocol == "CAS"){
-
-        encode(&ret_v, &chunks, &null_args, desc);
+    if(p->protocol == ABD_PROTOCOL_NAME){
 
         for(auto it = p->Q2.begin(); it != p->Q2.end(); it++){
+
+            std::promise<strVec> prm;
+            responses.emplace_back(prm.get_future());
+            std::thread(_send_reconfig_write, std::move(prm), key,
+                    prop->datacenters[*it]->servers[0], *ret_ts, ret_v, p->protocol).detach();
+            i++;
+        }
+
+        for(auto &it: responses){
+            strVec data = it.get();
+
+            if(data[0] == "OK"){}
+            else{
+                // failure! send the message to all servers.
+            }
+        }
+    }
+    else if(p->protocol == CAS_PROTOCOL_NAME){
+
+        encode(&ret_v, &chunks, &null_args, desc);
+        
+        // Should be sent to union of Q2 and Q3
+        std::unordered_set<uint32_t> Q2_Q3;
+        Q2_Q3.insert(p->Q2.begin(), p->Q2.end());
+        Q2_Q3.insert(p->Q3.begin(), p->Q3.end());
+
+        for(auto it = Q2_Q3.begin(); it != Q2_Q3.end(); it++){
 
             std::promise<strVec> prm;
             responses.emplace_back(prm.get_future());
@@ -464,6 +517,9 @@ int Reconfig::send_reconfig_write(Properties *prop, GroupConfig &new_config, std
             strVec data = it.get();
 
             if(data[0] == "OK"){}
+            else{
+                // failure! send the message to all servers.
+            }
         }
 
         for(auto it: chunks){

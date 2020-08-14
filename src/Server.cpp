@@ -59,28 +59,28 @@ int key_add(std::string &curr_key){
 }
 
 std::string reconfig_query(DataServer &ds, std::string &curr_key, std::string &curr_class){
-	DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", curr_key.c_str());
-	reconfig = true;
-	if(key_add(curr_key) == 1){
-		rcfgSet *config = rcfgKeys[curr_key];
-		config->state = RECONFIG_QUERY;
-		config->ccv.notify_all();
-		return ds.reconfig_query(curr_key, curr_class);
-	}else{
-		return DataTransfer::serialize({"Failed"});
-	}
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", curr_key.c_str());
+    reconfig = true;
+    if(key_add(curr_key) == 1){
+        rcfgSet *config = rcfgKeys[curr_key];
+        config->state = RECONFIG_QUERY;
+        config->ccv.notify_all();
+        return ds.reconfig_query(curr_key, curr_class);
+    }else{
+        return DataTransfer::serialize({"Failed"});
+    }
 }
 
 std::string reconfig_finalize(DataServer &ds, std::unique_lock<std::mutex> &lck,
 	 					std::string &key, std::string &timestamp, std::string &curr_class){
-	DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
-	key_add(key);
-	rcfgSet *config = rcfgKeys[key];
-	while(config->state == RECONFIG_BLOCK){
-		config->ccv.wait(lck);
-	}
-	// state > RECONFIG_BLOCK
-	return ds.reconfig_finalize(key, timestamp, curr_class);
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
+    key_add(key);
+    rcfgSet *config = rcfgKeys[key];
+    while(config->state == RECONFIG_BLOCK){
+        config->ccv.wait(lck);
+    }
+    // state > RECONFIG_BLOCK // Todo: what is it for here?
+    return ds.reconfig_finalize(key, timestamp, curr_class);
 }
 
 

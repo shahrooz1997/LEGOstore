@@ -76,7 +76,7 @@ strVec DataTransfer::deserialize(std::string &data){
 
 	dec.ParseFromString(data);
 
-	int val_size  = dec.value_size();
+	int val_size = dec.value_size();
 
 	for(int i=0; i<val_size; i++){
 		out_data.push_back(dec.value(i));

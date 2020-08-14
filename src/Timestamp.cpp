@@ -72,6 +72,26 @@ Timestamp& Timestamp::max_timestamp2(std::vector<Timestamp>& v){
 	return *it_max;
 }
 
+uint32_t Timestamp::max_timestamp3(std::vector<Timestamp>& v){
+	assert(!v.empty());
+        
+        uint32_t i = 0;
+
+	std::vector<Timestamp>::iterator it_max = v.begin();
+        uint32_t max_i = i;
+	for(std::vector<Timestamp>::iterator it = v.begin(); it != v.end(); it++){
+            if(it->time > it_max->time ||
+                    (it->time == it_max->time && it->client_id < it_max->client_id)){
+                    it_max = it;
+                    max_i = i;
+            }
+            i++;
+	}
+
+	//printf("TIMESTAMP!! CHOOSIGN MAX, max time : %u  and client_id: %u \n", (*it_max)->time, (*it_max)->client_id);
+	return max_i;
+}
+
 Timestamp Timestamp::increase_timestamp(const uint32_t client_id){
 	Timestamp ret(client_id);
 	ret.time = this->time + 1;

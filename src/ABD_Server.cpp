@@ -21,9 +21,6 @@ using std::string;
 ABD_Server::ABD_Server() {
 }
 
-ABD_Server::ABD_Server(const ABD_Server& orig) {
-}
-
 ABD_Server::~ABD_Server() {
 }
 
@@ -58,8 +55,8 @@ std::string ABD_Server::get_timestamp(string &key, Cache &cache, Persistent &per
 
 std::string ABD_Server::put(string &key, string &value, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
-	//std::lock_guard<std::mutex> lock(lock_t);
-	DPRINTF(DEBUG_ABD_Server,"put function timestamp %s\n", timestamp.c_str());
+    //std::lock_guard<std::mutex> lock(lock_t);
+    DPRINTF(DEBUG_ABD_Server,"put function timestamp %s\n", timestamp.c_str());
     const std::vector<std::string> *ptr = cache.get(key);
     strVec data;
     strVec result;
@@ -84,8 +81,8 @@ std::string ABD_Server::put(string &key, string &value, string &timestamp, Cache
 
 std::string ABD_Server::get(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
-	//std::unique_lock<std::mutex> lock(lock_t);
-	DPRINTF(DEBUG_ABD_Server,"GET function called !! \n");
+    //std::unique_lock<std::mutex> lock(lock_t);
+    DPRINTF(DEBUG_ABD_Server,"GET function called !! \n");
     const std::vector<std::string> *ptr = cache.get(key);
     strVec data;
     strVec result;

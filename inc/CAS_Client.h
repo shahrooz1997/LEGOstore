@@ -60,7 +60,17 @@ private:
     uint32_t get_timestamp(std::string *key, Timestamp **timestamp);
     void update_placement(std::string &new_cfg);
 
+
+// Logging
+#ifdef LOGGING_ON
+    
+    char log_fmt[64];
+    char log_buf[64];
+    struct timeval log_tv;
+    struct tm *log_tm;
+
     FILE* log_file;
+#endif
 };
 
 #endif /* CAS_Client_H */

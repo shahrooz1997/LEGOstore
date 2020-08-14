@@ -19,47 +19,234 @@
 #include <future>
 #include <sys/time.h>
 
-char fmt_cas[64];
-char buf_cas[64];
-struct timeval tv_cas;
-struct tm *tm22_cas;
+
+
+namespace liberasure{
+    
+    void encode(const std::string * const data, std::vector <std::string*> *chunks,
+                        struct ec_args * const args, int desc){
+
+        int rc = 0;
+        //int desc = -1;
+        char *orig_data = NULL;
+        char **encoded_data = NULL, **encoded_parity = NULL;
+        uint64_t encoded_fragment_len = 0;
+
+        //desc = liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, args);
+
+        if (-EBACKENDNOTAVAIL == desc) {
+            fprintf(stderr, "Backend library not available!\n");
+            return;
+        } else if ((args->k + args->m) > EC_MAX_FRAGMENTS) {
+            assert(-EINVALIDPARAMS == desc);
+            return;
+        } else
+            assert(desc > 0);
+
+        orig_data = (char*) data->c_str();
+        assert(orig_data != NULL);
+        rc = liberasurecode_encode(desc, orig_data, data->size(),
+                &encoded_data, &encoded_parity, &encoded_fragment_len);
+        assert(0 == rc); // ToDo: Add a lot of crash handler...
+
+        for (int i = 0; i < args->k + args->m; i++)
+        {
+            //int cmp_size = -1;
+            //char *data_ptr = NULL;
+            char *frag = NULL;
+
+            frag = (i < args->k) ? encoded_data[i] : encoded_parity[i - args->k];
+            assert(frag != NULL);
+            chunks->push_back(new std::string(frag, encoded_fragment_len));
+        }
+
+        rc = liberasurecode_encode_cleanup(desc, encoded_data, encoded_parity);
+        assert(rc == 0);
+
+        //assert(0 == liberasurecode_instance_destroy(desc));
+
+        return;
+    }
+
+    int create_frags_array(char ***array,
+                        char **data, char **parity, struct ec_args *args, int *skips){
+        // N.B. this function sets pointer reference to the ***array
+        // from **data and **parity so DO NOT free each value of
+        // the array independently because the data and parity will
+        // be expected to be cleanup via liberasurecode_encode_cleanup
+        int num_frags = 0;
+        int i = 0;
+        char **ptr = NULL;
+        *array = (char **) malloc((args->k + args->m) * sizeof(char *));
+        if (array == NULL) {
+            num_frags = -1;
+            goto out;
+        }
+        //add data frags
+        ptr = *array;
+        for (i = 0; i < args->k; i++) {
+            if (data[i] == NULL || skips[i] == 1) {
+                //printf("%d skipped1\n", i);
+                continue;
+            }
+            *ptr++ = data[i];
+            num_frags++;
+        }
+        //add parity frags
+        for (i = 0; i < args->m; i++) {
+            if (parity[i] == NULL || skips[i + args->k] == 1) {
+                //printf("%d skipped2\n", i);
+                continue;
+            }
+            *ptr++ = parity[i];
+            num_frags++;
+        }
+    out:
+        return num_frags;
+    }
+
+    void decode(std::string *data, std::vector <std::string*> *chunks,
+                        struct ec_args * const args, int desc){
+
+        int i = 0;
+        int rc = 0;
+        //int desc = -1;
+        char *orig_data = NULL;
+        char **encoded_data = new char*[args->k], **encoded_parity = new char*[args->m];
+        uint64_t decoded_data_len = 0;
+        char *decoded_data = NULL;
+        char **avail_frags = NULL;
+        int num_avail_frags = 0;
+
+        for(int i = 0; i < args->k; i++){
+            encoded_data[i] = new char[chunks->at(0)->size()];
+        }
+
+        for(int i = 0; i < args->m; i++){
+            encoded_parity[i] = nullptr;
+        }
+
+        DPRINTF(DEBUG_CAS_Client, "The chunk size DECODE is %lu\n", chunks->at(0)->size());
+
+        //desc = liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, args);
+
+        if (-EBACKENDNOTAVAIL == desc) {
+            fprintf(stderr, "Backend library not available!\n");
+            return;
+        } else if ((args->k + args->m) > EC_MAX_FRAGMENTS) {
+            assert(-EINVALIDPARAMS == desc);
+            return;
+        } else
+            assert(desc > 0);
+
+        for(i = 0; i < args->k + args->m; i++){
+            if(i < args->k){
+                for(uint j = 0; j < chunks->at(0)->size(); j++){
+                    encoded_data[i][j] = chunks->at(i)->at(j);
+                }
+            }
+        }
+
+        int *skip = new int[args->k + args->m];
+        for(int i = 0; i < args->k + args->m; i++){
+            skip[i] = 1;
+        }
+
+        for(int i = 0; i < args->k; i++){
+            skip[i] = 0;
+        }
+
+        num_avail_frags = create_frags_array(&avail_frags, encoded_data,
+                                             encoded_parity, args, skip);
+        assert(num_avail_frags > 0);
+        rc = liberasurecode_decode(desc, avail_frags, num_avail_frags,
+                                   chunks->at(0)->size(), 1,
+                                   &decoded_data, &decoded_data_len);
+        assert(0 == rc);
+
+        data->clear();
+        for(uint i = 0; i < decoded_data_len; i++){
+            data->push_back(decoded_data[i]);
+        }
+
+        rc = liberasurecode_decode_cleanup(desc, decoded_data);
+        assert(rc == 0);
+
+        //assert(0 == liberasurecode_instance_destroy(desc));
+        free(orig_data);
+        free(avail_frags);
+
+        for(int i = 0; i < args->k; i++){
+            delete[] encoded_data[i];
+        }
+
+        delete[] skip;
+        delete[] encoded_data;
+        delete[] encoded_parity;
+    }
+
+}
 
 //TODO: Ask more servers for timestamp if last attempt didn't work.
 
 // Use this constructor when single threaded code
 CAS_Client::CAS_Client(Properties *prop, uint32_t client_id, Placement &pp) {
-    this->current_class = "CAS";
+    this->current_class = CAS_PROTOCOL_NAME;
     this->id = client_id;
     this->prop = prop;
     this->p = pp;
     this->desc = create_liberasure_instance(&(this->p));
     this->desc_destroy = 1;
+    
+    
+//    this->operation_id = 0;
+    
+#ifdef LOGGING_ON
+    char name[20];
+    name[0] = 'l';
+    name[1] = 'o';
+    name[2] = 'g';
+    name[3] = 's';
+    name[4] = '/';
+
+    sprintf(&name[5], "%u.txt", client_id);
+    this->log_file = fopen(name, "w");
+#endif
+    
 }
 
 CAS_Client::CAS_Client(Properties *prop, uint32_t client_id, Placement &pp, int desc_l) {
-    this->current_class = "CAS";
+    this->current_class = CAS_PROTOCOL_NAME;
     this->id = client_id;
     this->prop = prop;
     this->p = pp;
     this->desc = desc_l;
     this->desc_destroy = 0;
+    
+    
+//    this->operation_id = 0;
 
-    // char name[20];
-    // this->operation_id = 0;
-    // name[0] = 'l';
-    // name[1] = 'o';
-    // name[2] = 'g';
-    // name[3] = 's';
-    // name[4] = '/';
+#ifdef LOGGING_ON
+    char name[20];
+    name[0] = 'l';
+    name[1] = 'o';
+    name[2] = 'g';
+    name[3] = 's';
+    name[4] = '/';
 
-    //sprintf(&name[5], "%u.txt", client_id);
-    //this->log_file = fopen(name, "w");
+    sprintf(&name[5], "%u.txt", client_id);
+    this->log_file = fopen(name, "w");
+#endif
 
 }
 
 
 CAS_Client::~CAS_Client() {
-    //fclose(this->log_file);
+    
+#ifdef LOGGING_ON
+    fclose(this->log_file);
+#endif
+    
     if(this->desc_destroy){
         destroy_liberasure_instance(this->desc);
     }
@@ -169,172 +356,6 @@ uint32_t CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp){
     return S_OK;
 }
 
-
-void encode(const std::string * const data, std::vector <std::string*> *chunks,
-                        struct ec_args * const args, int desc){
-
-    int rc = 0;
-    //int desc = -1;
-    char *orig_data = NULL;
-    char **encoded_data = NULL, **encoded_parity = NULL;
-    uint64_t encoded_fragment_len = 0;
-
-    //desc = liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, args);
-
-    if (-EBACKENDNOTAVAIL == desc) {
-        fprintf(stderr, "Backend library not available!\n");
-        return;
-    } else if ((args->k + args->m) > EC_MAX_FRAGMENTS) {
-        assert(-EINVALIDPARAMS == desc);
-        return;
-    } else
-        assert(desc > 0);
-
-    orig_data = (char*) data->c_str();
-    assert(orig_data != NULL);
-    rc = liberasurecode_encode(desc, orig_data, data->size(),
-            &encoded_data, &encoded_parity, &encoded_fragment_len);
-    assert(0 == rc); // ToDo: Add a lot of crash handler...
-
-    for (int i = 0; i < args->k + args->m; i++)
-    {
-        //int cmp_size = -1;
-        //char *data_ptr = NULL;
-        char *frag = NULL;
-
-        frag = (i < args->k) ? encoded_data[i] : encoded_parity[i - args->k];
-        assert(frag != NULL);
-        chunks->push_back(new std::string(frag, encoded_fragment_len));
-    }
-
-    rc = liberasurecode_encode_cleanup(desc, encoded_data, encoded_parity);
-    assert(rc == 0);
-
-    //assert(0 == liberasurecode_instance_destroy(desc));
-
-    return;
-}
-
-int create_frags_array(char ***array,
-                              char **data,
-                              char **parity,
-                              struct ec_args *args,
-                              int *skips){
-    // N.B. this function sets pointer reference to the ***array
-    // from **data and **parity so DO NOT free each value of
-    // the array independently because the data and parity will
-    // be expected to be cleanup via liberasurecode_encode_cleanup
-    int num_frags = 0;
-    int i = 0;
-    char **ptr = NULL;
-    *array = (char **) malloc((args->k + args->m) * sizeof(char *));
-    if (array == NULL) {
-        num_frags = -1;
-        goto out;
-    }
-    //add data frags
-    ptr = *array;
-    for (i = 0; i < args->k; i++) {
-        if (data[i] == NULL || skips[i] == 1) {
-            //printf("%d skipped1\n", i);
-            continue;
-        }
-        *ptr++ = data[i];
-        num_frags++;
-    }
-    //add parity frags
-    for (i = 0; i < args->m; i++) {
-        if (parity[i] == NULL || skips[i + args->k] == 1) {
-            //printf("%d skipped2\n", i);
-            continue;
-        }
-        *ptr++ = parity[i];
-        num_frags++;
-    }
-out:
-    return num_frags;
-}
-
-void decode(std::string *data, std::vector <std::string*> *chunks,
-                        struct ec_args * const args, int desc){
-
-    int i = 0;
-    int rc = 0;
-    //int desc = -1;
-    char *orig_data = NULL;
-    char **encoded_data = new char*[args->k], **encoded_parity = new char*[args->m];
-    uint64_t decoded_data_len = 0;
-    char *decoded_data = NULL;
-    char **avail_frags = NULL;
-    int num_avail_frags = 0;
-
-    for(int i = 0; i < args->k; i++){
-        encoded_data[i] = new char[chunks->at(0)->size()];
-    }
-
-    for(int i = 0; i < args->m; i++){
-        encoded_parity[i] = nullptr;
-    }
-
-    DPRINTF(DEBUG_CAS_Client, "The chunk size DECODE is %lu\n", chunks->at(0)->size());
-
-    //desc = liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, args);
-
-    if (-EBACKENDNOTAVAIL == desc) {
-        fprintf(stderr, "Backend library not available!\n");
-        return;
-    } else if ((args->k + args->m) > EC_MAX_FRAGMENTS) {
-        assert(-EINVALIDPARAMS == desc);
-        return;
-    } else
-        assert(desc > 0);
-
-    for(i = 0; i < args->k + args->m; i++){
-        if(i < args->k){
-            for(uint j = 0; j < chunks->at(0)->size(); j++){
-                encoded_data[i][j] = chunks->at(i)->at(j);
-            }
-        }
-    }
-
-    int *skip = new int[args->k + args->m];
-    for(int i = 0; i < args->k + args->m; i++){
-        skip[i] = 1;
-    }
-
-    for(int i = 0; i < args->k; i++){
-        skip[i] = 0;
-    }
-
-    num_avail_frags = create_frags_array(&avail_frags, encoded_data,
-                                         encoded_parity, args, skip);
-    assert(num_avail_frags > 0);
-    rc = liberasurecode_decode(desc, avail_frags, num_avail_frags,
-                               chunks->at(0)->size(), 1,
-                               &decoded_data, &decoded_data_len);
-    assert(0 == rc);
-
-    data->clear();
-    for(uint i = 0; i < decoded_data_len; i++){
-        data->push_back(decoded_data[i]);
-    }
-
-    rc = liberasurecode_decode_cleanup(desc, decoded_data);
-    assert(rc == 0);
-
-    //assert(0 == liberasurecode_instance_destroy(desc));
-    free(orig_data);
-    free(avail_frags);
-
-    for(int i = 0; i < args->k; i++){
-        delete[] encoded_data[i];
-    }
-
-    delete[] skip;
-    delete[] encoded_data;
-    delete[] encoded_parity;
-}
-
 void _put(std::promise<strVec> &&prm, std::string key, std::string value, Timestamp timestamp,
                     Server *server, std::string current_class){
 
@@ -416,11 +437,14 @@ void static inline free_chunks(std::vector<std::string*> &chunks){
 
 uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
 
-//    gettimeofday (&tv_cas, NULL);
-//    tm22_cas = localtime (&tv_cas.tv_sec);
-//    strftime (fmt_cas, sizeof (fmt_cas), "%H:%M:%S:%%06u", tm22_cas);
-//    snprintf (buf_cas, sizeof (buf_cas), fmt_cas, tv_cas.tv_usec);
-//    fprintf(this->log_file, "%s write invoke %s\n", buf_cas, value.c_str());
+#ifdef LOGGING_ON
+    gettimeofday (&log_tv, NULL);
+    log_tm = localtime (&log_tv.tv_sec);
+    strftime (log_fmt, sizeof (log_fmt), "%H:%M:%S:%%06u", log_tm);
+    snprintf (log_buf, sizeof (log_buf), log_fmt, log_tv.tv_usec);
+    fprintf(this->log_file, "%s write invoke %s\n", log_buf, value.c_str());
+#endif
+    
 
 
     int retries = this->prop->retry_attempts;
@@ -438,7 +462,7 @@ uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
 
         DPRINTF(DEBUG_CAS_Client, "The value to be stored is %s \n", value.c_str());
 
-        std::thread encoder(encode, &value, &chunks, &null_args, this->desc);
+        std::thread encoder(liberasure::encode, &value, &chunks, &null_args, this->desc);
         //encode(&value, &chunks, &null_args, this->desc);
 
         Timestamp *timestamp = nullptr;
@@ -595,12 +619,13 @@ void _get(std::promise<strVec> &&prm, std::string key, Timestamp timestamp,
 
 uint32_t CAS_Client::get(std::string key, std::string &value){
 
-//    gettimeofday (&tv_cas, NULL);
-//    tm22_cas = localtime (&tv_cas.tv_sec);
-//    strftime (fmt_cas, sizeof (fmt_cas), "%H:%M:%S:%%06u", tm22_cas);
-//    snprintf (buf_cas, sizeof (buf_cas), fmt_cas, tv_cas.tv_usec);
-//    fprintf(this->log_file, "%s read invoke nil\n", buf_cas);
-
+#ifdef LOGGING_ON
+    gettimeofday (&log_tv, NULL);
+    log_tm = localtime (&log_tv.tv_sec);
+    strftime (log_fmt, sizeof (log_fmt), "%H:%M:%S:%%06u", log_tm);
+    snprintf (log_buf, sizeof (log_buf), log_fmt, log_tv.tv_usec);
+    fprintf(this->log_file, "%s read invoke nil\n", log_buf);
+#endif
 
     value.clear();
 
@@ -681,7 +706,7 @@ uint32_t CAS_Client::get(std::string key, std::string &value){
         null_args.w = 16; // ToDo: what must it be?
         null_args.ct = CHKSUM_NONE;
 
-        decode(&value, &chunks, &null_args, this->desc);
+        liberasure::decode(&value, &chunks, &null_args, this->desc);
 
         free_chunks(chunks);
     }

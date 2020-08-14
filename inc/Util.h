@@ -15,6 +15,7 @@
 #define UTIL_H
 
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <string>
 #include <ctime>
@@ -40,6 +41,9 @@
 #define CLIENT_PORT 10001
 #define MAX_LINGER_BEFORE_SOCK_CLOSE 50
 
+#define CAS_PROTOCOL_NAME "CAS"
+#define ABD_PROTOCOL_NAME "ABD"
+
 //#define DEVELOPMENT
 
 
@@ -48,6 +52,8 @@ extern bool DEBUG_ABD_Client;
 extern bool DEBUG_CAS_Server;
 extern bool DEBUG_ABD_Server;
 extern bool DEBUG_RECONFIG_CONTROL;
+
+//#define LOGGING_ON
 
 // ToDo: Traces must be implemented as well.
 // extern bool TRACE_CAS;
@@ -130,16 +136,16 @@ struct WorkloadConfig{
 struct GroupConfig{
     uint32_t                object_size;
     uint64_t                num_objects;
-    double                  arrival_rate;		// Combined arrival rate
+    double                  arrival_rate; // Combined arrival rate
     double                  read_ratio;
-    uint64_t				duration;
+    uint64_t		    duration;
     std::vector<std::string>keys;
-	std::vector<double>		client_dist;
+    std::vector<double>	    client_dist;
     Placement*              placement_p;
 
-	~GroupConfig(){
-		delete placement_p;
-	}
+    ~GroupConfig(){
+            delete placement_p;
+    }
 };
 
 struct Group{
@@ -153,24 +159,24 @@ struct Group{
 		}
 	}
 };
+
 struct Properties{
     uint32_t                local_datacenter_id;
     uint32_t                retry_attempts;
     uint32_t                metadata_server_timeout;
     uint32_t                timeout_per_request;
-	uint64_t				start_time;
+    uint64_t                start_time;
     std::vector <DC*>       datacenters;
     std::vector <Group*>    groups;
 
-	~Properties(){
-
-		for(auto &it:datacenters){
-			delete it;
-		}
-		for(auto &it:groups){
-			delete it;
-		}
-	}
+    ~Properties(){
+        for(auto &it:datacenters){
+            delete it;
+        }
+        for(auto &it:groups){
+            delete it;
+        }
+    }
 };
 
 class JSON_Reader {
@@ -203,6 +209,29 @@ inline uint16_t stous(const std::string& s)
 int socket_setup(const std::string &port, const std::string *IP = nullptr);
 int socket_cnt(int &sock, uint16_t port, const std::string &IP = "0.0.0.0");
 int client_cnt(int &sock, Server *server);
+
+// Todo: use this connection throughout the project
+// socket connect upgrade
+class Connect{
+public:
+
+    Connect(const std::string ip, const uint16_t port);
+    Connect(const Connect& orig) = delete;
+    ~Connect();
+    
+    std::string get_ip();
+    uint16_t get_port();
+    bool is_connected();
+    int operator*();
+
+private:
+    std::string ip;
+    uint16_t    port;
+    int sock;
+    bool connected;
+    
+    void print_error(std::string const &m); // thread safe print
+};
 
 void print_time();
 

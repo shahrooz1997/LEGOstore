@@ -18,7 +18,7 @@ class DataTransfer{
 public:
 	static int sendAll(int &sock, const void *data, int data_size);
 
-	static int sendMsg(int &sock,const std::string &out_str);
+	static int sendMsg(int sock,const std::string &out_str);
 
 	static int recvAll(int &sock, void *buf, int data_size);
 

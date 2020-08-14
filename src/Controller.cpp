@@ -249,16 +249,25 @@ int Controller::init_setup(std::string configFile, std::string filePath){
 
 // Return true if match
 static inline bool compare_placement(Placement *old, Placement *curr){
-	if(old->protocol != curr->protocol)
-		return false;
-	else if(old->m != curr->m || old->k != curr->k)
-		return false;
-	else if(old->Q1 != curr->Q1 || old->Q2 != curr->Q2)
-		return false;
-	else if(old->Q3 != curr->Q3 || old->Q4 != curr->Q4)
-		return false;
-	else
-		return true;
+    if(old->protocol != curr->protocol)
+            return false;
+    if(old->protocol == ABD_PROTOCOL_NAME){
+        if(old->Q1 != curr->Q1 || old->Q2 != curr->Q2)
+            return false;
+        else
+            return true;
+    }
+    else{
+        if(old->m != curr->m || old->k != curr->k)
+            return false;
+        else if(old->Q1 != curr->Q1 || old->Q2 != curr->Q2)
+            return false;
+        else if(old->Q3 != curr->Q3 || old->Q4 != curr->Q4)
+            return false;
+        else
+            return true;
+    }
+    return true;
 }
 
 static inline void lookup_desc_info(std::unordered_map<std::string, int> &open_desc, Placement *p, int &desc){
@@ -274,10 +283,10 @@ static inline void lookup_desc_info(std::unordered_map<std::string, int> &open_d
 
 static inline void update_desc_info(std::unordered_map<std::string, int> &open_desc, Placement *old,
 							Placement *curr, int &old_desc, int &new_desc){
-	if(old->protocol == "CAS"){
+	if(old->protocol == CAS_PROTOCOL_NAME){
 		lookup_desc_info(open_desc, old, old_desc);
 	}
-	if(curr->protocol == "CAS"){
+	if(curr->protocol == CAS_PROTOCOL_NAME){
 		lookup_desc_info(open_desc, curr, new_desc);
 	}
 }
@@ -291,56 +300,53 @@ static inline void delete_desc_info(std::unordered_map<std::string, int> &open_d
 
 int main(){
 
-	Controller master(2, 120, 120, "./config/scripts/local_config.json");
-	master.init_setup("./config/input_workload.json" , "config/deployment.txt");
+    Controller master(2, 120, 120, "./config/scripts/local_config.json");
+    master.init_setup("./config/input_workload.json" , "config/deployment.txt");
 
-	//startPoint already includes the timestamp of first group
-	// The for loop assumes the startPoint to not include any offset at all
-	time_point<system_clock, millis> startPoint(millis{master.prp.start_time});
-	time_point<system_clock, millis> timePoint;
+    //startPoint already includes the timestamp of first group
+    // The for loop assumes the startPoint to not include any offset at all
+    time_point<system_clock, millis> startPoint(millis{master.prp.start_time});
+    time_point<system_clock, millis> timePoint;
 
-	std::unordered_map<std::string, int> open_desc;
+    std::unordered_map<std::string, int> open_desc;
 
-	// Note:: this assumes the first group has timestamp at which the experiment starts
-	for(auto grp: master.prp.groups){
+    // Note:: this assumes the first group has timestamp at which the experiment starts
+    for(auto grp: master.prp.groups){
 
-		timePoint = startPoint + millis{grp->timestamp * 1000};
-		std::this_thread::sleep_until(timePoint);
+        timePoint = startPoint + millis{grp->timestamp * 1000};
+        std::this_thread::sleep_until(timePoint);
 
-		//TODO:: Add some heuristics on how to sequence the reconf
-		// Do reconfiguration of one grp at a time
-		// Cos they are using a common placement and that's used for liberasure desc
-		for(uint j=0; j< grp->grp_config.size(); j++){
-			std::cout << "Starting the reconfiguration for group id" << grp->grp_id[j] << std::endl;
-			GroupConfig *curr = grp->grp_config[j];
-			GroupConfig *old = nullptr;
-			std::vector<std::thread> pool;
+        //TODO:: Add some heuristics on how to sequence the reconf
+        // Do reconfiguration of one grp at a time
+        // Cos they are using a common placement and that's used for liberasure desc
+        for(uint j=0; j< grp->grp_config.size(); j++){
+            std::cout << "Starting the reconfiguration for group id" << grp->grp_id[j] << std::endl;
+            GroupConfig *curr = grp->grp_config[j];
+            GroupConfig *old = nullptr;
+            std::vector<std::thread> pool;
 
-			// Do the reconfiguration for each key in the group
-			for(uint i=0; i< curr->keys.size(); i++){
-				std::string key(curr->keys[i]);
-				if(master.config_t.get_metadata_info(key, &old) == 0 && !compare_placement(old->placement_p, curr->placement_p)){
-					int old_desc = 0, new_desc = 0;
-					update_desc_info(open_desc, old->placement_p, curr->placement_p, old_desc, new_desc);
-					std::cout << "Starting the reconfig protocol for key " << key <<std::endl;
-					pool.emplace_back(&Reconfig::start_reconfig, &master.config_t, &master.prp, std::ref(*old),
-											std::ref(*curr), key, old_desc, new_desc);
-				}else{// Else NO need for reconfig protocol as this is a new key
-				// or the placement is same as before
+            // Do the reconfiguration for each key in the group
+            for(uint i=0; i< curr->keys.size(); i++){
+                std::string key(curr->keys[i]);
+                int status = master.config_t.get_metadata_info(key, &old);
+                if(status == 0 && !compare_placement(old->placement_p, curr->placement_p)){
+                    int old_desc = 0, new_desc = 0;
+                    update_desc_info(open_desc, old->placement_p, curr->placement_p, old_desc, new_desc);
+                    std::cout << "Starting the reconfig protocol for key " << key <<std::endl;
+                    pool.emplace_back(&Reconfig::start_reconfig, &master.config_t, &master.prp, std::ref(*old),
+                                        std::ref(*curr), key, old_desc, new_desc); // the second argument is this pointer to Reconfig class
+                }else if(status == 0){// Else NO need for reconfig protocol as this is a new key, just save the info
+                    master.config_t.update_metadata_info(key, curr);
+                } // or the placement is same as before
+            }
 
-					master.config_t.update_metadata_info(key, curr);
-				}
-			}
+            //Waiting for all reconfig to finish for this group
+            for(auto &it: pool){
+                    it.join();
+            }
+        }
+    }
 
-			//Waiting for all reconfig to finish for this group
-			for(auto &it: pool){
-				it.join();
-			}
-
-		}
-
-	}
-
-	//delete_desc_info(open_desc);
-	return 0;
+    //delete_desc_info(open_desc);
+    return 0;
 }

@@ -35,7 +35,7 @@ std::string DataTransfer::serialize(const strVec &data){
 //Called after socket connection established
 //sends it across the socket
 // Return 1 on SUCCESS
-int DataTransfer::sendMsg(int &sock, const std::string &out_str){
+int DataTransfer::sendMsg(int sock, const std::string &out_str){
 	assert(!out_str.empty());
 	uint32_t _size = htonl(out_str.size());
 	int result = sendAll(sock, &_size, sizeof(_size));

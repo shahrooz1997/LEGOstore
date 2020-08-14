@@ -67,27 +67,23 @@ void _send_reconfig_query(std::promise<strVec> &&prm, std::string key, Server *s
                             std::string current_class){
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
 
-    int sock = 0;
-    if(client_cnt(sock, server) == S_FAIL){
-        return;
-    }
+    Connect c(server->ip, server->port);
 
     strVec data;
     data.push_back("reconfig_query");
     data.push_back(key);
     data.push_back(current_class);
-    DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
+    DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
 
     data.clear();
     std::string recvd;
 
-    if(DataTransfer::recvMsg(sock, recvd) == 1){
+    if(DataTransfer::recvMsg(*c, recvd) == 1){
         data =  DataTransfer::deserialize(recvd);
         prm.set_value(std::move(data));
     }
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "finished.\n");
-    close(sock);
     return;
 }
 
@@ -105,12 +101,12 @@ int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, std
     //TODO:: CHeck this and confirm
     //old_servers.insert()
 
-    if(p->protocol == "ABD"){
+    if(p->protocol == ABD_PROTOCOL_NAME){
 
     }
-    else if(p->protocol == "CAS") {
+    else if(p->protocol == CAS_PROTOCOL_NAME) {
 
-        for(auto it = old_servers.begin();it != old_servers.end(); it++){
+        for(auto it = old_servers.begin(); it != old_servers.end(); it++){
 
             std::promise<strVec> prm;
             responses.emplace_back(prm.get_future());
@@ -118,8 +114,8 @@ int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, std
                             prop->datacenters[*it]->servers[0], p->protocol).detach();
         }
 
-        uint32_t max_val = std::max(old_servers.size() - p->f, old_servers.size() - p->Q3.size() + 1);
-        max_val = std::max(max_val, (uint32_t)(old_servers.size() - p->Q4.size() + 1));
+//        uint32_t max_val = std::max(old_servers.size() - p->f, old_servers.size() - p->Q3.size() + 1);
+        uint32_t max_val = std::max((uint32_t)(old_servers.size() - p->Q3.size() + 1), (uint32_t)(old_servers.size() - p->Q4.size() + 1)); // Todo: change it to old.Q1
 
         //POll all the values until you find the requisite responses
         // This is a busy loop, but it's on controller so it's fine
@@ -131,19 +127,7 @@ int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, std
 
                     if(data[0] == "OK"){
                         printf("reconfig query, data received is %s\n", data[1].c_str());
-                        std::string timestamp_str = data[1];
-
-                        std::size_t dash_pos = timestamp_str.find("-");
-                        if(dash_pos >= timestamp_str.size()){
-                            std::cerr << "Substr violated !!!!!!!" << timestamp_str <<std::endl;
-                            assert(0);
-                        }
-
-                        // make client_id and time regarding the received message
-                        uint32_t client_id_ts = stoi(timestamp_str.substr(0, dash_pos));
-                        uint32_t time_ts = stoi(timestamp_str.substr(dash_pos + 1));
-
-                        tss.emplace_back(client_id_ts, time_ts);
+                        tss.emplace_back(data[1]);
                     }
                     //if "Failed", then need to retry
                     //reponses.erase(it);

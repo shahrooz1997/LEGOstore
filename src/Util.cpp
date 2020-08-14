@@ -186,3 +186,62 @@ int client_cnt(int &sock, Server *server){
 
     return S_OK;
 }
+
+
+Connect::Connect(const std::string ip, const uint16_t port): ip(ip), port(port),
+                    sock(0), connected(false){
+
+    struct sockaddr_in serv_addr;
+    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+        print_error("Socket creation error");
+    }
+    else{
+        serv_addr.sin_family = AF_INET;
+        serv_addr.sin_port = htons(port);
+        std::string ip_str = ip;
+
+        if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
+            print_error("Invalid address/ Address not supported");
+        }
+        else{
+            if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
+                print_error("Connection Failed");
+            }
+            else{
+                connected = true;
+            }
+        }
+    }
+}
+
+Connect::~Connect(){
+    close(sock);
+}
+
+std::string Connect::get_ip(){
+    return ip;
+}
+
+uint16_t Connect::get_port(){
+    return port;
+}
+
+bool Connect::is_connected(){
+    return connected;
+}
+
+int Connect::operator*(){
+    if(is_connected())
+        return this->sock;
+    else{
+        print_error("Trying to get the fd of a socket which is not connected.");
+        return -1;
+    }
+}
+
+void Connect::print_error(std::string const &m){
+    std::stringstream msg; // Make it thread safe
+    msg << "ip=" << this->ip << ", port=" << this->port << ": ERROR SOCKET CONNECTION, ";
+    msg << m << std::endl;
+    std::cerr << msg.str();
+}

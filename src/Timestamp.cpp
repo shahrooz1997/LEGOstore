@@ -26,6 +26,12 @@ Timestamp::Timestamp(const Timestamp &t){
 
 Timestamp::Timestamp(std::string &str){
 	std::size_t dash_pos = str.find("-");
+        if(dash_pos >= str.size()){
+            std::stringstream msg; // thread safe printing
+            msg << "Timestamp::Timestamp: BAD FORMAT: " << str << std::endl;
+            std::cerr << msg.str();
+            assert(0);
+        }
 	this->client_id = stoi(str.substr(0, dash_pos));
 	this->time = stoi(str.substr(dash_pos + 1));
 }

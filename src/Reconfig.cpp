@@ -536,8 +536,8 @@ void _send_reconfig_finish(std::promise<strVec> &&prm, std::string key, Timestam
                     Server *server, std::string new_config){
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
 
-    int sock = 0;
-    if(client_cnt(sock, server) == S_FAIL){
+    Connect c(server->ip, server->port);
+    if(!c.is_connected()){
         return;
     }
 
@@ -546,17 +546,16 @@ void _send_reconfig_finish(std::promise<strVec> &&prm, std::string key, Timestam
     data.push_back(key);
     data.push_back(timestamp.get_string());
     data.push_back(new_config);
-    DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
+    DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
 
     data.clear();
     std::string recvd;
 
-    if(DataTransfer::recvMsg(sock, recvd) == 1){
+    if(DataTransfer::recvMsg(*c, recvd) == 1){
         data =  DataTransfer::deserialize(recvd);
         prm.set_value(std::move(data));
     }
 
-    close(sock);
     return;
 }
 
@@ -583,6 +582,9 @@ int Reconfig::send_reconfig_finish(Properties *prop, GroupConfig &old_config, Gr
         strVec data = it.get();
         if(data[0] == "OK"){
             // Finish reconfig reached the server
+        }
+        else{
+            // failure! send the message to all servers.
         }
     }
 

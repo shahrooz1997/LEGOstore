@@ -86,34 +86,34 @@ std::string reconfig_finalize(DataServer &ds, std::unique_lock<std::mutex> &lck,
 
 std::string write_config(DataServer &ds, std::unique_lock<std::mutex> &lck, std::string &key,
 					std::string &value, std::string &timestamp, std::string &curr_class){
-	DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
-	key_add(key);
-	rcfgSet *config = rcfgKeys[key];
-	while(config->state == RECONFIG_BLOCK){
-		config->ccv.wait(lck);
-	}
-	config->state = RECONFIG_WRITE;
-	config->ccv.notify_all();
-	return ds.write_config(key, value, timestamp, curr_class);
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
+    key_add(key);
+    rcfgSet *config = rcfgKeys[key];
+    while(config->state == RECONFIG_BLOCK){
+            config->ccv.wait(lck);
+    }
+    config->state = RECONFIG_WRITE;
+    config->ccv.notify_all();
+    return ds.write_config(key, value, timestamp, curr_class);
 
 }
 
 std::string finish_reconfig(std::unique_lock<std::mutex> &lck, std::string &key,
 								 std::string &timestamp, std::string &cfg){
-	DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
-	key_add(key);
-	rcfgSet *config = rcfgKeys[key];
-	while(config->state < RECONFIG_WRITE){
-		config->ccv.wait(lck);
-	}
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
+    key_add(key);
+    rcfgSet *config = rcfgKeys[key];
+    while(config->state < RECONFIG_WRITE){
+            config->ccv.wait(lck);
+    }
 
-	config->state = RECONFIG_FINISH;
-	config->highest_timestamp = timestamp;
-	config->new_cfg = cfg;
-	if(rcfgKeys.empty())
-		reconfig = false;
-	config->rcv.notify_all();
-	return DataTransfer::serialize({"OK"});
+    config->state = RECONFIG_FINISH;
+    config->highest_timestamp = timestamp; // Why?????
+    config->new_cfg = cfg;
+    if(rcfgKeys.empty())
+            reconfig = false;
+    config->rcv.notify_all();
+    return DataTransfer::serialize({"OK"});
 }
 
 void server_connection(int connection, DataServer &dataserver, int portid){

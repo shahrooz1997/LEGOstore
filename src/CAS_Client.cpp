@@ -267,8 +267,8 @@ void _get_timestamp(std::promise<strVec> &&prm, std::string key, Server *server,
 
     DPRINTF(DEBUG_CAS_Client, "started.\n");
 
-    int sock = 0;
-    if(client_cnt(sock, server) == S_FAIL){
+    Connect c(server->ip, server->port);
+    if(!c.is_connected()){
         return;
     }
 
@@ -276,18 +276,17 @@ void _get_timestamp(std::promise<strVec> &&prm, std::string key, Server *server,
     data.push_back("get_timestamp");
     data.push_back(key);
     data.push_back(current_class);
-    DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
+    DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
 
     data.clear();
     std::string recvd;
 
     // If the socket recv itself fails, then 'promise' value will not be made available
-    if(DataTransfer::recvMsg(sock, recvd) == 1){
+    if(DataTransfer::recvMsg(*c, recvd) == 1){
         data =  DataTransfer::deserialize(recvd);
         prm.set_value(std::move(data));
     }
 
-    close(sock);
     return;
 }
 

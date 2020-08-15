@@ -162,6 +162,9 @@ namespace liberasure{
         rc = liberasurecode_decode(desc, avail_frags, num_avail_frags,
                                    chunks->at(0)->size(), 1,
                                    &decoded_data, &decoded_data_len);
+        if(rc != 0)
+        printf("rc is %d.\n", rc);
+        
         assert(0 == rc);
 
         data->clear();
@@ -313,7 +316,7 @@ uint32_t CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp){
             strVec data = it.get();
 
             if(data[0] == "OK"){
-                printf("get timestamp for key :%s, data received is %s\n", key->c_str(), data[1].c_str());
+//                printf("get timestamp for key :%s, data received is %s\n", key->c_str(), data[1].c_str());
                 std::string timestamp_str = data[1];
 
                 std::size_t dash_pos = timestamp_str.find("-");
@@ -330,6 +333,7 @@ uint32_t CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp){
                 op_status = true;   // For get_timestamp, even if one response Received
                                     // operation is success
             }else if(data[0] == "operation_fail"){
+                printf("SSSS operation_fail\n");
                 update_placement(data[1]);
                 op_status = false;      // Retry the operation
                 printf("get_timestamp : operation failed received! for key : %s", key->c_str());
@@ -525,6 +529,9 @@ uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
             } else{
                 delete timestamp;
                 if(data[0] == "operation_fail"){
+                    
+                    printf("SSSS operation_fail\n");
+                    
                     update_placement(data[1]);
 
                     // Temporary fix for reconfig protocol, because
@@ -563,6 +570,7 @@ uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
 
             }else{
                 if(data[0] == "operation_fail"){
+                    printf("SSSS operation_fail\n");
                     update_placement(data[1]);
 
                     // Temporary fix for reconfig protocol, because
@@ -671,6 +679,7 @@ uint32_t CAS_Client::get(std::string key, std::string &value){
             if(data[0] == "OK"){
                 chunks.push_back(new std::string(data[1]));
             }else if(data[0] == "operation_fail"){
+                printf("SSSS operation_fail\n");
                 free_chunks(chunks);
 
                 update_placement(data[1]);

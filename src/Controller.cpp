@@ -8,40 +8,43 @@ using millis = duration<uint64_t, std::milli>;
 //Input : A vector of key groups
 // Returns the placement for each key group
 int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Placement*> &placement){
-	static int temp = 0;
-	//For testing purposes
-	for(uint i=0; i<gworkload.size(); i++){
-		Placement *test = new Placement;
-		// Controller trial(1, 120, 120, "./config/setup_config.json");
-		// std::vector<DC*> dcs = trial.prp.datacenters;
-		test->protocol = "CAS";
-		test->m = 5;
-		if(temp){
-			test->k = 2;
-			test->Q1.insert(begin(test->Q1), {0,1,2,3});
-		}else{
-			test->k = 3;
-			test->Q1.insert(begin(test->Q1), {0,1,2});
-		}
+    static int temp = 0;
+    //For testing purposes
+    for(uint i=0; i<gworkload.size(); i++){
+        Placement *test = new Placement;
+        // Controller trial(1, 120, 120, "./config/setup_config.json");
+        // std::vector<DC*> dcs = trial.prp.datacenters;
+        test->protocol = CAS_PROTOCOL_NAME;
+        test->m = 5;
+        if(temp){
+            test->k = 3;
+            test->Q1.insert(begin(test->Q1), {0,1,2});
+            test->Q2.insert(begin(test->Q2), {0,1,2,3,4});
+            test->Q3.insert(begin(test->Q3), {2,3,4});
+            test->Q4.insert(begin(test->Q4), {2,3,4});
+            
+            
+        }else{
+            test->k = 2;
+            test->Q1.insert(begin(test->Q1), {0,1,2,3});
+            test->Q2.insert(begin(test->Q2), {0,1,2,3,4});
+            test->Q3.insert(begin(test->Q3), {2,3,4});
+            test->Q4.insert(begin(test->Q4), {2,3});
+        }
 
-		test->Q2.insert(begin(test->Q2), {0,1,2,3,4});
-		test->Q3.insert(begin(test->Q3), {2,3,4});
-		test->Q4.insert(begin(test->Q4), {2,3,4});
+        // SHAHROOZ: We need the servers participating to accomplish one protocol and number of failures we can tolerate for doing reconfiguration
+        // SHAHROOZ: We can remake the vector of all servers.
+        // test->N.push_back(dcs[0]);
+        // test->N.push_back(dcs[1]);
+        // test->N.push_back(dcs[2]);
+        // test->N.push_back(dcs[3]);
+        // test->N.push_back(dcs[4]);
+        test->f = 0; // TODO: we need to set it properly.
 
-
-	    // SHAHROOZ: We need the servers participating to accomplish one protocol and number of failures we can tolerate for doing reconfiguration
-	    // SHAHROOZ: We can remake the vector of all servers.
-	    // test->N.push_back(dcs[0]);
-	    // test->N.push_back(dcs[1]);
-	    // test->N.push_back(dcs[2]);
-	    // test->N.push_back(dcs[3]);
-	    // test->N.push_back(dcs[4]);
-	    test->f = 0; // TODO: we need to set it properly.
-
-		placement.push_back(test);
-	}
-	temp +=1;
-	return 0;
+        placement.push_back(test);
+    }
+    temp +=1;
+    return 0;
 }
 
 int Controller::read_setup_info(std::string &configFile){
@@ -193,9 +196,14 @@ int Controller::init_setup(std::string configFile, std::string filePath){
 	if( read_input_workload(configFile, inp) == 1){
 		return 1;
 	}
+        
+//        // adding information about key into metadata of controller
+//        for(prp.){
+//            
+//        }
 
 	// Create Client Config
-	if( generate_client_config(inp) == 1){
+	if(generate_client_config(inp) == 1){
 		std::cout<< "Client Config generation failed!! " << std::endl;
 		return 1;
 	}
@@ -320,7 +328,7 @@ int main(){
         // Do reconfiguration of one grp at a time
         // Cos they are using a common placement and that's used for liberasure desc
         for(uint j=0; j< grp->grp_config.size(); j++){
-            std::cout << "Starting the reconfiguration for group id" << grp->grp_id[j] << std::endl;
+            std::cout << "Starting the reconfiguration for group id " << grp->grp_id[j] << std::endl;
             GroupConfig *curr = grp->grp_config[j];
             GroupConfig *old = nullptr;
             std::vector<std::thread> pool;
@@ -329,14 +337,16 @@ int main(){
             for(uint i=0; i< curr->keys.size(); i++){
                 std::string key(curr->keys[i]);
                 int status = master.config_t.get_metadata_info(key, &old);
+                std::cout << "the key is " << key << " status is " << status << std::endl;
                 if(status == 0 && !compare_placement(old->placement_p, curr->placement_p)){
                     int old_desc = 0, new_desc = 0;
                     update_desc_info(open_desc, old->placement_p, curr->placement_p, old_desc, new_desc);
                     std::cout << "Starting the reconfig protocol for key " << key <<std::endl;
                     pool.emplace_back(&Reconfig::start_reconfig, &master.config_t, &master.prp, std::ref(*old),
                                         std::ref(*curr), key, old_desc, new_desc); // the second argument is this pointer to Reconfig class
-                }else if(status == 0){// Else NO need for reconfig protocol as this is a new key, just save the info
+                }else if(status == 1){// Else NO need for reconfig protocol as this is a new key, just save the info
                     master.config_t.update_metadata_info(key, curr);
+                    std::cout << "No need to reconfig for key " << key << std:: endl;
                 } // or the placement is same as before
             }
 

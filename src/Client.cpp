@@ -156,7 +156,7 @@ int key_req_gen(Properties &prop, int grp_idx, int grp_config_idx, int grp_id, s
 
 	if(avg < numReqs){
 		fprintf(stderr, "WARNING!! The average arrival rate for group :%d and group_config :%d is\
-							less that required : %d / %ld", grp_idx, grp_config_idx, avg, numReqs);
+							less than required : %d / %ld", grp_idx, grp_config_idx, avg, numReqs);
 	}
 	return avg;
 }

@@ -65,6 +65,7 @@ std::string reconfig_query(DataServer &ds, std::string &curr_key, std::string &c
         rcfgSet *config = rcfgKeys[curr_key];
         config->state = RECONFIG_QUERY;
         config->ccv.notify_all();
+        std::cout << "SSSSS reconfig_query is received." << std::endl;
         return ds.reconfig_query(curr_key, curr_class);
     }else{
         return DataTransfer::serialize({"Failed"});
@@ -113,6 +114,9 @@ std::string finish_reconfig(std::unique_lock<std::mutex> &lck, std::string &key,
     if(rcfgKeys.empty())
             reconfig = false;
     config->rcv.notify_all();
+    
+    std::cout << "SSSSS finish_reconfig is received." << std::endl;
+    
     return DataTransfer::serialize({"OK"});
 }
 
@@ -132,7 +136,7 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 	// Data[1] -> key
 	// Data[2] -> timestamp
     strVec data = DataTransfer::deserialize(recvd);
-	std::cout << "New METHOD CALLED "<< data[0] << " The key is " << data[1] <<"server port is" << portid << std::endl;
+	std::cout << "SSSSS New METHOD CALLED "<< data[0] << " The key is " << data[1] <<"server port is" << portid << std::endl;
 	std::string &method = data[0];
 
 	std::unique_lock<std::mutex> rlock(rcfglock);

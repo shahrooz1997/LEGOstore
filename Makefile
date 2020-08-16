@@ -15,7 +15,7 @@ obj1 = $(filter-out obj/Server.o obj/Controller.o, $(obj))
 obj3 = $(filter-out obj/Client.o obj/Server.o, $(obj))
 
 .PHONY: all
-all: obj proto Client Server Controller 
+all: obj Client Server Controller 
 
 LEGOStore: $(obj) 
 	$(CXX) -o $@ $^ $(LDFLAGS)

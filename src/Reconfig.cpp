@@ -65,7 +65,7 @@ int Reconfig::start_reconfig(Properties *prop, GroupConfig &old_config, GroupCon
 
 void _send_reconfig_query(std::promise<strVec> &&prm, std::string key, Server *server,
                             std::string current_class){
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started on key \"%s\" and port %hu\n", key.c_str(), server->port);
 
     Connect c(server->ip, server->port);
     if(!c.is_connected()){
@@ -83,16 +83,17 @@ void _send_reconfig_query(std::promise<strVec> &&prm, std::string key, Server *s
 
     if(DataTransfer::recvMsg(*c, recvd) == 1){
         data =  DataTransfer::deserialize(recvd);
+        DPRINTF(DEBUG_RECONFIG_CONTROL, "recieved data for key \"%s\" and port %hu: data is %s\n", key.c_str(), server->port, data[1].c_str());
         prm.set_value(std::move(data));
     }
 
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "finished.\n");
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "finished on key \"%s\" and port %hu\n", key.c_str(), server->port);
     return;
 }
 
 int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, std::string &key, Timestamp **ret_ts, std::string &ret_v){
 
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "reconfig query started\n");
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started on key \"%s\"\n", key.c_str());
     std::vector<Timestamp> tss;
     std::vector<string> vs;
     std::unordered_set<uint32_t> old_servers;
@@ -167,10 +168,16 @@ int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, std
                         printf("reconfig query, data received is %s\n", data[1].c_str());
                         tss.emplace_back(data[1]);
                     }
+                    else{
+                        printf("reconfig query, ERROR in received data: %s\n", data[1].c_str());
+                    }
                     //if "Failed", then need to retry
                     //reponses.erase(it);
                     max_val--;
+                    printf("max_val for key %s is %u\n", key.c_str(), max_val);
                     break;
+                    
+                    
                 }
             }
 
@@ -180,7 +187,7 @@ int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, std
 
     }
 
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "send_reconfig_query finished successfully.\n");
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "finished successfully on key \"%s\"\n", key.c_str());
 
     return S_OK;
 }
@@ -355,7 +362,7 @@ static void decode(std::string *data, std::vector <std::string*> *chunks,
 void _send_reconfig_finalize(std::promise<strVec> &&prm, std::string key, Timestamp timestamp,
                     Server *server, std::string current_class){
 
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started on key \"%s\" and port %hu\n", key.c_str(), server->port);
 
     Connect c(server->ip, server->port);
     if(!c.is_connected()){
@@ -376,14 +383,16 @@ void _send_reconfig_finalize(std::promise<strVec> &&prm, std::string key, Timest
         data =  DataTransfer::deserialize(recvd);
         prm.set_value(std::move(data));
     }
-
+    
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "finished on key \"%s\" and port %hu\n", key.c_str(), server->port);
+    
     return;
 }
 
 int Reconfig::send_reconfig_finalize(Properties *prop, GroupConfig &old_config, std::string &key,
                                 Timestamp *ret_ts, std::string &ret_v, int desc){
 
-    DPRINTF(DEBUG_RECONFIG_CONTROL, " send_reconfig_finalize started.\n");
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started on key \"%s\"\n", key.c_str());
 
     std::vector<std::future<strVec> > responses;
     std::vector <std::string*> chunks;
@@ -411,6 +420,26 @@ int Reconfig::send_reconfig_finalize(Properties *prop, GroupConfig &old_config, 
         DPRINTF(DEBUG_CAS_Client, "chunks.size() < p.m\n");
         assert(0);
     }
+    
+//    for(int t = 0; t < chunks.size(); t++){
+//        printf("chunk[%d] = ", t);
+//        for(int tt = 0; tt < chunks[t]->size(); tt++){
+//            printf("%02X", chunks[t]->at(tt));
+//        }
+//        printf("\n");
+//    }
+    
+    char bbuf[1024*128];
+        int bbuf_i = 0;
+        for(int t = 0; t < chunks.size(); t++){
+            bbuf_i += sprintf(bbuf + bbuf_i, "%s-chunk[%d] = ", key.c_str(), t);
+            for(int tt = 0; tt < chunks[t]->size(); tt++){
+                bbuf_i += sprintf(bbuf + bbuf_i, "%02X", chunks[t]->at(tt) & 0xff);
+//                printf("%02X", chunks[t]->at(tt));
+            }
+            bbuf_i += sprintf(bbuf + bbuf_i, "\n");
+        }
+        printf("%s", bbuf);
 
     // Decode
     struct ec_args null_args;
@@ -425,13 +454,13 @@ int Reconfig::send_reconfig_finalize(Properties *prop, GroupConfig &old_config, 
         delete it;
     }
 
-    DPRINTF(DEBUG_RECONFIG_CONTROL," send_reconfig_finalize Received value for key is: %s\n", ret_v.c_str());
+    DPRINTF(DEBUG_RECONFIG_CONTROL,"finished value for key \"%s\" is: \"%s\"\n", key.c_str(), ret_v.c_str());
     return S_OK;
 }
 
 void _send_reconfig_write(std::promise<strVec> &&prm, std::string key, Server *server,
                     Timestamp timestamp, std::string value, std::string current_class){
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started on key \"%s\" and port %hu\n", key.c_str(), server->port);
 
     Connect c(server->ip, server->port);
     if(!c.is_connected()){
@@ -454,7 +483,7 @@ void _send_reconfig_write(std::promise<strVec> &&prm, std::string key, Server *s
         data =  DataTransfer::deserialize(recvd);
         prm.set_value(std::move(data));
     }
-
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "finished on key \"%s\" and port %hu\n", key.c_str(), server->port);
     return;
 }
 
@@ -462,7 +491,7 @@ void _send_reconfig_write(std::promise<strVec> &&prm, std::string key, Server *s
 int Reconfig::send_reconfig_write(Properties *prop, GroupConfig &new_config, std::string &key,
                         Timestamp *ret_ts, std::string &ret_v, int desc){
 
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "reconfig write started.\n");
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started on key \"%s\"\n", key.c_str());
     Placement *p = new_config.placement_p;
     std::vector<std::future<strVec> > responses;
     std::vector <std::string*> chunks;
@@ -527,14 +556,14 @@ int Reconfig::send_reconfig_write(Properties *prop, GroupConfig &new_config, std
         }
     }
 
-    DPRINTF(DEBUG_RECONFIG_CONTROL, " send_reconfig_write finished successfully.\n");
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "finished successfully on key \"%s\"\n", key.c_str());
 
     return S_OK;
 }
 
 void _send_reconfig_finish(std::promise<strVec> &&prm, std::string key, Timestamp timestamp,
                     Server *server, std::string new_config){
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started on key \"%s\" and port %hu\n", key.c_str(), server->port);
 
     Connect c(server->ip, server->port);
     if(!c.is_connected()){
@@ -555,14 +584,14 @@ void _send_reconfig_finish(std::promise<strVec> &&prm, std::string key, Timestam
         data =  DataTransfer::deserialize(recvd);
         prm.set_value(std::move(data));
     }
-
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "finished on key \"%s\" and port %hu\n", key.c_str(), server->port);
     return;
 }
 
 int Reconfig::send_reconfig_finish(Properties *prop, GroupConfig &old_config, GroupConfig &new_config,
                                         std::string &key, Timestamp *ret_ts){
 
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "reconfig finish - initiated.\n");
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started on key \"%s\"\n", key.c_str());
 
     std::unordered_set<uint32_t> old_servers;
     std::vector<std::future<strVec> > responses;
@@ -588,6 +617,6 @@ int Reconfig::send_reconfig_finish(Properties *prop, GroupConfig &old_config, Gr
         }
     }
 
-    DPRINTF(DEBUG_RECONFIG_CONTROL,"reconfig finish - finished.\n");
+    DPRINTF(DEBUG_RECONFIG_CONTROL,"finished on key \"%s\"\n", key.c_str());
     return S_OK;
 }

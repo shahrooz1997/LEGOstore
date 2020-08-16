@@ -332,6 +332,11 @@ int main(){
             GroupConfig *curr = grp->grp_config[j];
             GroupConfig *old = nullptr;
             std::vector<std::thread> pool;
+            
+            //Testing purpose, should be removed
+//            if(curr->keys[0] == "group21"){
+//                continue;
+//            }
 
             // Do the reconfiguration for each key in the group
             for(uint i=0; i< curr->keys.size(); i++){

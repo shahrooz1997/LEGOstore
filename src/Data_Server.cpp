@@ -56,9 +56,20 @@ std::string DataServer::write_config(std::string &key, std::string &value, std::
 std::string DataServer::put(std::string &key, std::string &value, std::string &timestamp, std::string &curr_class){
     std::string result;
     if(curr_class == CAS_PROTOCOL_NAME){
-        result = CAS.put(key,value, timestamp, cache, persistent, lock);
+        char bbuf[1024*128];
+        int bbuf_i = 0;
+//        for(int t = 0; t < chunks.size(); t++){
+        bbuf_i += sprintf(bbuf + bbuf_i, "%s-chunk = ", key.c_str());
+        for(int tt = 0; tt < value.size(); tt++){
+            bbuf_i += sprintf(bbuf + bbuf_i, "%02X", value.at(tt) & 0xff);
+//                printf("%02X", chunks[t]->at(tt));
+        }
+        bbuf_i += sprintf(bbuf + bbuf_i, "\n");
+//        }
+        printf("%s", bbuf);
+        result = CAS.put(key, value, timestamp, cache, persistent, lock);
     }else if(curr_class == ABD_PROTOCOL_NAME){
-        result = ABD.put(key,value, timestamp, cache, persistent, lock);
+        result = ABD.put(key, value, timestamp, cache, persistent, lock);
     }
     return result;
 }

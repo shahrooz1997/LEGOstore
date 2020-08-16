@@ -7,6 +7,9 @@
 #include <cmath>
 #include "CAS_Client.h"
 
+using std::cout;
+using std::endl;
+
 // All clients use this for read-only access
 Properties *cc;
 
@@ -37,19 +40,20 @@ static inline uint32_t create_threadId(int &client_id, int &grp_id, const int &r
 
 void initialise_db(Properties *prop, GroupConfig *grpCfg, int grp_id){
 
-	CAS_Client client(prop, create_threadId(clientId, grp_id, 0), *grpCfg->placement_p);
-	std::vector<std::thread> pool;
+    CAS_Client client(prop, create_threadId(clientId, grp_id, 0), *grpCfg->placement_p);
+    std::vector<std::thread> pool;
 
-	for(auto &key: grpCfg->keys){
-		std::string val(grpCfg->object_size, 'a'+ (grp_id%26));
-		pool.emplace_back(&CAS_Client::put, &client, key, val, true);
-		std::cout<< "Initialisation of key : " << key << " is done!!" << std::endl;
-		numt += 1;
-	}
+    for(auto &key: grpCfg->keys){
+//      std::string val(grpCfg->object_size, 'a'+ (grp_id%26));
+        std::string val(grpCfg->object_size, 'a');
+        pool.emplace_back(&CAS_Client::put, &client, key, val, true);
+        std::cout<< "Initialisation of key : " << key << " is done!!" << std::endl;
+        numt += 1;
+    }
 
-	for(auto &it:pool){
-		it.join();
-	}
+    for(auto &it:pool){
+            it.join();
+    }
 }
 
 static inline int next_event(std::string &dist_process){
@@ -90,12 +94,17 @@ int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &
 		// Initiate the operation
 		if(reqType == 1){
 			result = clt.get(keys[key_idx],read_value);
+                        cout << "get done on key: " << keys[key_idx] << "with value " << read_value << endl;
 		}else{
 			std::string val(obj_size, 'a');
 			result = clt.put(keys[key_idx], val, false);
+                        cout << "put done on key: " << keys[key_idx] << endl;
 		}
 
 		assert(result != S_FAIL);
+                
+                if(result == S_RECFG)
+                    return 1;
 
 		tp += millis{next_event(dist_process)};
 		std::this_thread::sleep_until(tp);
@@ -121,7 +130,7 @@ int key_req_gen(Properties &prop, int grp_idx, int grp_config_idx, int grp_id, s
 
 	// After this call all keys will be initialized
 	// This assumes keys and key groups are not added while experiment happening
-	initialise_db(cc, grpCfg, grp_id);
+//	initialise_db(cc, grpCfg, grp_id);
 
 	int desc = create_liberasure_instance(grpCfg->placement_p);
 	printf("Creating init threads for grp id: %d \n", grp_idx);
@@ -188,6 +197,17 @@ int main(int argc, char* argv[]){
 		time_point<system_clock, millis> timePoint;
 
 		int idx = 0;
+                
+                // initialization
+                // Note: the first group must include all the keys
+//                for(auto grp: cc->groups){
+                    int grp_size = cc->groups[0]->grp_id.size();
+                    for(int i=0; i<grp_size; i++){
+                        
+                        initialise_db(cc, cc->groups[0]->grp_config[i], cc->groups[0]->grp_id[i]);
+                       
+                    }
+//                }
 
 		for(auto grp: cc->groups){
 
@@ -199,10 +219,11 @@ int main(int argc, char* argv[]){
 			int grp_size = grp->grp_id.size();
 			for(int i=0; i<grp_size; i++){
 				if(fork() == 0){
-					// Note:: Grp_id can be anything, here it is provided by the config file
-					int rate = key_req_gen(*cc, idx, i, grp->grp_id[i], "poisson");
-					std::cout << "Rate sent is " << rate  << std::endl;
-					exit(rate);
+                                    cout << "key_req_gen is called for group " << grp->grp_id[i] << endl;
+                                    // Note:: Grp_id can be anything, here it is provided by the config file
+                                    int rate = key_req_gen(*cc, idx, i, grp->grp_id[i], "poisson");
+                                    std::cout << "Rate sent is " << rate  << std::endl;
+                                    exit(rate);
 				}
 			}
 

@@ -510,9 +510,9 @@ uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
         char bbuf[1024*128];
         int bbuf_i = 0;
         bbuf_i += sprintf(bbuf + bbuf_i, "%s-main value is %s\n", key.c_str(), value.c_str());
-        for(int t = 0; t < chunks.size(); t++){
+        for(uint t = 0; t < chunks.size(); t++){
             bbuf_i += sprintf(bbuf + bbuf_i, "%s-chunk[%d] = ", key.c_str(), t);
-            for(int tt = 0; tt < chunks[t]->size(); tt++){
+            for(uint tt = 0; tt < chunks[t]->size(); tt++){
                 bbuf_i += sprintf(bbuf + bbuf_i, "%02X", chunks[t]->at(tt) & 0xff);
 //                printf("%02X", chunks[t]->at(tt));
             }

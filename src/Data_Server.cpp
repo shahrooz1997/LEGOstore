@@ -60,7 +60,7 @@ std::string DataServer::put(std::string &key, std::string &value, std::string &t
         int bbuf_i = 0;
 //        for(int t = 0; t < chunks.size(); t++){
         bbuf_i += sprintf(bbuf + bbuf_i, "%s-chunk = ", key.c_str());
-        for(int tt = 0; tt < value.size(); tt++){
+        for(uint tt = 0; tt < value.size(); tt++){
             bbuf_i += sprintf(bbuf + bbuf_i, "%02X", value.at(tt) & 0xff);
 //                printf("%02X", chunks[t]->at(tt));
         }

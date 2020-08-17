@@ -431,9 +431,9 @@ int Reconfig::send_reconfig_finalize(Properties *prop, GroupConfig &old_config, 
     
     char bbuf[1024*128];
         int bbuf_i = 0;
-        for(int t = 0; t < chunks.size(); t++){
+        for(uint t = 0; t < chunks.size(); t++){
             bbuf_i += sprintf(bbuf + bbuf_i, "%s-chunk[%d] = ", key.c_str(), t);
-            for(int tt = 0; tt < chunks[t]->size(); tt++){
+            for(uint tt = 0; tt < chunks[t]->size(); tt++){
                 bbuf_i += sprintf(bbuf + bbuf_i, "%02X", chunks[t]->at(tt) & 0xff);
 //                printf("%02X", chunks[t]->at(tt));
             }

@@ -72,6 +72,8 @@ struct Server{
     std::string             ip;
     uint16_t                port;
     DC*                     datacenter;
+    Server();
+    Server(const Server &orig);
 };
 
 typedef struct Datacenter{
@@ -79,12 +81,15 @@ typedef struct Datacenter{
     std::string             metadata_server_ip;
     uint32_t                metadata_server_port;
     std::vector<Server*>    servers;
+    
+    Datacenter();
+    Datacenter(const Datacenter& orig);
 
-	~Datacenter(){
-		for(auto &it:servers){
-				delete it;
-		}
-	}
+    ~Datacenter(){
+        for(auto &it:servers){
+            delete it;
+        }
+    }
 } DC;
 
 
@@ -142,6 +147,9 @@ struct GroupConfig{
     std::vector<std::string>keys;
     std::vector<double>	    client_dist;
     Placement*              placement_p;
+    
+    GroupConfig();
+    GroupConfig(const GroupConfig& orig);
 
     ~GroupConfig(){
             delete placement_p;
@@ -152,12 +160,15 @@ struct Group{
     uint64_t                timestamp;
     std::vector<uint32_t>   grp_id;
     std::vector<GroupConfig*>grp_config;
-
-	~Group(){
-		for(auto &it: grp_config){
-			delete it;
-		}
-	}
+    
+    Group();
+    Group(const Group& orig);
+    
+    ~Group(){
+        for(auto &it: grp_config){
+                delete it;
+        }
+    }
 };
 
 struct Properties{

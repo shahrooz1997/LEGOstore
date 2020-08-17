@@ -11,7 +11,7 @@ using std::cout;
 using std::endl;
 
 // All clients use this for read-only access
-Properties *cc;
+Properties *cc = nullptr;
 
 //Format of THread ID given to each CAS_Client:
 // bits 32-24 => Client ID || max : 256
@@ -24,6 +24,8 @@ std::atomic<int> numt(0);
 
 using namespace std::chrono;
 using millis = duration<uint64_t, std::milli>;
+
+static std::unordered_set<std::string> initialized_keys;
 
 static inline uint32_t create_threadId(int &client_id, int &grp_id, const int &req_idx){
 
@@ -39,15 +41,27 @@ static inline uint32_t create_threadId(int &client_id, int &grp_id, const int &r
 }
 
 void initialise_db(Properties *prop, GroupConfig *grpCfg, int grp_id){
+    
 
     CAS_Client client(prop, create_threadId(clientId, grp_id, 0), *grpCfg->placement_p);
+    
+//    cout << "placement_p" << grpCfg->placement_p->Q1.size() << " " << grpCfg->placement_p->Q2.size() << " " << grpCfg->placement_p->Q3.size() << " " << grpCfg->placement_p->Q4.size() << " " << grpCfg->placement_p->protocol << endl;
+
+    
     std::vector<std::thread> pool;
 
     for(auto &key: grpCfg->keys){
+        
+//        std::pair<std::unordered_set<std::string>::iterator,bool> ins_ret = initialized_keys.emplace(key);
+//        if(!ins_ret.second){
+//            continue;
+//        }
+        
 //      std::string val(grpCfg->object_size, 'a'+ (grp_id%26));
         std::string val(grpCfg->object_size, 'a');
         pool.emplace_back(&CAS_Client::put, &client, key, val, true);
         std::cout<< "Initialisation of key : " << key << " is done!!" << std::endl;
+        
         numt += 1;
     }
 
@@ -172,85 +186,82 @@ int key_req_gen(Properties &prop, int grp_idx, int grp_config_idx, int grp_id, s
 
 int main(int argc, char* argv[]){
 
-	if(argc != 2){
-		std::cout<<"Incorrect number of arguments: Please specify the port number" << std::endl;
-		return 1;
-	}
-	int newSocket = socket_setup(argv[1]);
-	std::cout<< "Waiting for connection from Controller." <<std::endl;
-	//std::cout<< "Atomic variable is lock free? " << running.is_lock_free() << " : another opinion : " << ATOMIC_BOOL_LOCK_FREE << std::endl;
-	int sock = accept(newSocket, NULL, 0);
-	close(newSocket);
+    if(argc != 2){
+            std::cout<<"Incorrect number of arguments: Please specify the port number" << std::endl;
+            return 1;
+    }
+    int newSocket = socket_setup(argv[1]);
+    std::cout<< "Waiting for connection from Controller." <<std::endl;
+    //std::cout<< "Atomic variable is lock free? " << running.is_lock_free() << " : another opinion : " << ATOMIC_BOOL_LOCK_FREE << std::endl;
+//    int sock = accept(newSocket, NULL, 0);
+//	close(newSocket);
 
-	std::string recv_str;
-	try{
+    std::string recv_str;
+    try{
+        while(true){ // Try to receive new workloads group from Controller
+            int sock = accept(newSocket, NULL, 0);
+            if(DataTransfer::recvMsg(sock, recv_str) != 1){
+                std::cout<< "Client Config could not be received! " << std::endl;
+                return 1;
+            }
+            close(sock);
+            
+            if(cc != nullptr){
+                delete cc;
+                cc = nullptr;
+            }
+            cc = DataTransfer::deserializePrp(recv_str); // Note: the received property must contain only one group
 
-		if(DataTransfer::recvMsg(sock, recv_str) != 1){
-			std::cout<< "Client Config could not be received! " << std::endl;
-			return 1;
-		}
-		close(sock);
+            time_point<system_clock, millis> startPoint(millis{cc->start_time});
+            time_point<system_clock, millis> timePoint;
 
-		cc = DataTransfer::deserializePrp(recv_str);
+            int idx = 0;
 
-		time_point<system_clock, millis> startPoint(millis{cc->start_time});
-		time_point<system_clock, millis> timePoint;
+            // initialization
+//            cout << "cc->groups[0]->grp_id.size() : " << cc->groups[0]->grp_id.size() << endl;
+            for(uint i = 0; i < cc->groups[0]->grp_id.size(); i++){
+//                cout << "initialise_db called" << endl;
+                initialise_db(cc, cc->groups[0]->grp_config[i], cc->groups[0]->grp_id[i]);
+            }
 
-		int idx = 0;
-                
-                // initialization
-                // Note: the first group must include all the keys
-//                for(auto grp: cc->groups){
-                    int grp_size = cc->groups[0]->grp_id.size();
-                    for(int i=0; i<grp_size; i++){
-                        
-                        initialise_db(cc, cc->groups[0]->grp_config[i], cc->groups[0]->grp_id[i]);
-                       
+            for(auto grp: cc->groups){ // Note: we will remove this for loop in the future.
+                timePoint = startPoint + millis{grp->timestamp * 1000};
+                std::this_thread::sleep_until(timePoint);
+
+                //TODO:: decide where to specify the distribiution
+                // NOTE:: grp_id size and grp_config size should be equal for Groupxxxx
+                for(uint i=0; i<grp->grp_id.size(); i++){
+                    if(fork() == 0){
+                        cout << "key_req_gen is called for group " << grp->grp_id[i] << endl;
+                        // Note:: Grp_id can be anything, here it is provided by the config file
+                        int rate = key_req_gen(*cc, idx, i, grp->grp_id[i], "poisson");
+                        std::cout << "Rate sent is " << rate  << std::endl;
+                        exit(rate);
                     }
-//                }
+                }
+                idx++;
+            }
 
-		for(auto grp: cc->groups){
+            float avg_rate = 0;
+            int ret_val =0;
+            while(wait(&ret_val) >=0){
+                std::cout << "Child temination status " << WIFEXITED(ret_val) << "  Rate receved is " <<  WEXITSTATUS(ret_val) <<
+                            " : " << WIFSIGNALED(ret_val) << " : " << WTERMSIG(ret_val) <<std::endl;
 
-			timePoint = startPoint + millis{grp->timestamp * 1000};
-			std::this_thread::sleep_until(timePoint);
+                // TODO:: Modify this - right now accumulates rate for all processes, spread across the length of the experiment
+                avg_rate += WEXITSTATUS(ret_val);
+            }
 
-			//TODO:: decide where to specify the distribiution
-			// NOTE:: grp_id size and grp_config size should be equal for Groupxxxx
-			int grp_size = grp->grp_id.size();
-			for(int i=0; i<grp_size; i++){
-				if(fork() == 0){
-                                    cout << "key_req_gen is called for group " << grp->grp_id[i] << endl;
-                                    // Note:: Grp_id can be anything, here it is provided by the config file
-                                    int rate = key_req_gen(*cc, idx, i, grp->grp_id[i], "poisson");
-                                    std::cout << "Rate sent is " << rate  << std::endl;
-                                    exit(rate);
-				}
-			}
+            std::cout<< "Final avg rate is " << avg_rate << std::endl;
+        }
+    }
+    catch(std::logic_error &e){
+        std::cout<< "Exception caught! " << e.what() << std::endl;
+    }
 
-			idx++;
-		}
-
-
-
-		float avg_rate = 0;
-		int ret_val =0;
-		while(wait(&ret_val) >=0){
-			std::cout << "Child temination status " << WIFEXITED(ret_val) << "  Rate receved is " <<  WEXITSTATUS(ret_val) <<
-					" : " << WIFSIGNALED(ret_val) << " : " << WTERMSIG(ret_val) <<std::endl;
-
-			// TODO:: Modify this - right now accumulates rate for all processes, spread across the length of the experiment
-			avg_rate += WEXITSTATUS(ret_val);
-		}
-
-		std::cout<< "Final avg rate is " << avg_rate << std::endl;
-
-	}
-	catch(std::logic_error &e){
-		std::cout<< "Exception caught! " << e.what() << std::endl;
-	}
-
-	//TODO:: wait for time outs before terminating the thread, cleanup purposes
-	delete cc;
-	return 0;
+    //TODO:: wait for time outs before terminating the thread, cleanup purposes
+    close(newSocket);
+    delete cc;
+    return 0;
 
 }

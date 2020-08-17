@@ -5,6 +5,9 @@
 using namespace std::chrono;
 using millis = duration<uint64_t, std::milli>;
 
+static std::vector<std::pair<std::string, uint16_t> > addr_info;
+
+
 //Input : A vector of key groups
 // Returns the placement for each key group
 int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Placement*> &placement){
@@ -214,42 +217,51 @@ int Controller::init_setup(std::string configFile, std::string filePath){
 			delete it;
 		}
 	}
-	std::string out_str;
+        auto timePoint = time_point_cast<milliseconds>(system_clock::now());
+        uint64_t startTime = timePoint.time_since_epoch().count();
+        prp.local_datacenter_id = 0;
+        prp.start_time = startTime;
+        
+        if(read_deployment_info(filePath, addr_info) == 1){
+            return 1;
+        }
+        
+//	std::string out_str;
 
-	try{
-		auto timePoint = time_point_cast<milliseconds>(system_clock::now());
-		uint64_t startTime = timePoint.time_since_epoch().count();
-
-
-		std::vector<std::pair<std::string, uint16_t> > addr_info;
-		if( read_deployment_info(filePath, addr_info) == 1){
-			return 1;
-		}
-
-		// Send the config to each client in the deployment file
-		for(uint i = 0; i < addr_info.size(); i++){
-
-			//Using datacenter_id as client id for now, can change later
-			prp.local_datacenter_id = i;
-			prp.start_time = startTime;
-			out_str = DataTransfer::serializePrp(prp);
-			int connection = 0;
-			if(socket_cnt(connection, addr_info[i].second, addr_info[i].first) == 1){
-				std::cout << "Connection to Client failed!" << std::endl;
-				return 1;
-			}
-		//	std::cout<< __func__ << " : ip for client" << i << " : " << addr_info[i].second <<"  " <<  addr_info[i].first <<std::endl;
-			if(DataTransfer::sendMsg(connection, out_str) != 1){
-				std::cout << "Data Transfer to client " << i << " failed!" << std::endl;
-				return 1;
-			}
-
-		}
-	}
-	catch(std::logic_error &e){
-		std::cout<< "Exception caught! " << e.what() << std::endl;
-		return 1;
-	}
+//	try{
+//		auto timePoint = time_point_cast<milliseconds>(system_clock::now());
+//		uint64_t startTime = timePoint.time_since_epoch().count();
+//
+//
+//		std::vector<std::pair<std::string, uint16_t> > addr_info;
+//		if( read_deployment_info(filePath, addr_info) == 1){
+//			return 1;
+//		}
+//
+//		// Send the config to each client in the deployment file
+//		for(uint i = 0; i < addr_info.size(); i++){
+//
+//			//Using datacenter_id as client id for now, can change later
+//			prp.local_datacenter_id = i;
+//			prp.start_time = startTime;
+//			out_str = DataTransfer::serializePrp(prp);
+//			int connection = 0;
+//			if(socket_cnt(connection, addr_info[i].second, addr_info[i].first) == 1){
+//				std::cout << "Connection to Client failed!" << std::endl;
+//				return 1;
+//			}
+//		//	std::cout<< __func__ << " : ip for client" << i << " : " << addr_info[i].second <<"  " <<  addr_info[i].first <<std::endl;
+//			if(DataTransfer::sendMsg(connection, out_str) != 1){
+//				std::cout << "Data Transfer to client " << i << " failed!" << std::endl;
+//				return 1;
+//			}
+//
+//		}
+//	}
+//	catch(std::logic_error &e){
+//		std::cout<< "Exception caught! " << e.what() << std::endl;
+//		return 1;
+//	}
 
 	return 0;
 }
@@ -306,6 +318,45 @@ static inline void delete_desc_info(std::unordered_map<std::string, int> &open_d
 	}
 }
 
+int Controller::send_config_group_to_client(uint32_t group_number){
+    try{
+        Properties prp_to_send;
+        prp_to_send.retry_attempts = prp.retry_attempts;
+        prp_to_send.timeout_per_request = prp.timeout_per_request;
+        prp_to_send.start_time = prp.start_time;
+        prp_to_send.retry_attempts = prp.retry_attempts;
+        prp_to_send.retry_attempts = prp.retry_attempts;
+        for(uint32_t i = 0; i < prp.datacenters.size(); i++){
+            prp_to_send.datacenters.push_back(new DC(*(prp.datacenters[i])));
+        }
+        prp_to_send.groups.push_back(new Group(*(prp.groups[group_number])));
+        
+        std::string out_str;
+        // Send the config to each client in the deployment file
+        for(uint i = 0; i < addr_info.size(); i++){
+            //Using datacenter_id as client id for now, can change later
+            prp_to_send.local_datacenter_id = i;
+            out_str = DataTransfer::serializePrp(prp_to_send);
+            int connection = 0;
+            if(socket_cnt(connection, addr_info[i].second, addr_info[i].first) == 1){
+                    std::cout << "Connection to Client failed!" << std::endl;
+                    return 1;
+            }
+    //	std::cout<< __func__ << " : ip for client" << i << " : " << addr_info[i].second <<"  " <<  addr_info[i].first <<std::endl;
+            if(DataTransfer::sendMsg(connection, out_str) != 1){
+                    std::cout << "Data Transfer to client " << i << " failed!" << std::endl;
+                    return 1;
+            }
+            close(connection);
+        }
+    }
+    catch(std::logic_error &e){
+        std::cout<< "Exception caught! " << e.what() << std::endl;
+        return 1;
+    }
+    return 0;
+}
+
 int main(){
 
     Controller master(2, 120, 120, "./config/scripts/local_config.json");
@@ -319,10 +370,15 @@ int main(){
     std::unordered_map<std::string, int> open_desc;
 
     // Note:: this assumes the first group has timestamp at which the experiment starts
-    for(auto grp: master.prp.groups){
+    for(uint32_t grp_i = 0; grp_i < master.prp.groups.size(); grp_i++){
+        
+        Group* grp = master.prp.groups[grp_i];
 
         timePoint = startPoint + millis{grp->timestamp * 1000};
         std::this_thread::sleep_until(timePoint);
+        
+        // send the group config to clients
+        master.send_config_group_to_client(grp_i);
 
         //TODO:: Add some heuristics on how to sequence the reconf
         // Do reconfiguration of one grp at a time
@@ -360,6 +416,7 @@ int main(){
                     it.join();
             }
         }
+//        break;
     }
 
     //delete_desc_info(open_desc);

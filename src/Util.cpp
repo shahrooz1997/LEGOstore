@@ -249,3 +249,64 @@ void Connect::print_error(std::string const &m){
     msg << m << std::endl;
     std::cerr << msg.str();
 }
+
+Server::Server(){
+    this->id = -1;
+    this->port = 0;
+    this->datacenter = nullptr;
+}
+
+Server::Server(const Server &orig){
+    this->id = orig.id;
+    this->ip = orig.ip;
+    this->port = orig.port;
+    this->datacenter = nullptr;
+}
+
+Datacenter::Datacenter(){
+    this->id = -1;
+    this->metadata_server_port = 0;
+}
+
+Datacenter::Datacenter(const Datacenter& orig){
+    this->id = orig.id;
+    this->metadata_server_ip = orig.metadata_server_ip;
+    this->metadata_server_port = orig.metadata_server_port;
+    for(auto s: orig.servers){
+        Server* s_temp = new Server(*s);
+        s_temp->datacenter = this;
+        this->servers.push_back(s_temp);
+    }
+}
+
+GroupConfig::GroupConfig(){
+    object_size = 0;
+    num_objects = 0;
+    arrival_rate = 0; // Combined arrival rate
+    read_ratio = 0;
+    duration = 0;
+    placement_p = nullptr;
+}
+
+GroupConfig::GroupConfig(const GroupConfig& orig){
+    object_size = orig.object_size;
+    num_objects = orig.num_objects;
+    arrival_rate = orig.arrival_rate; // Combined arrival rate
+    read_ratio = orig.read_ratio;
+    duration = orig.duration;
+    keys = orig.keys;
+    client_dist = orig.client_dist;
+    placement_p = new Placement(*(orig.placement_p));
+}
+
+Group::Group(){
+    timestamp = -1;
+}
+
+Group::Group(const Group& orig){
+    timestamp = orig.timestamp;
+    grp_id = orig.grp_id;
+    for(auto gc: orig.grp_config){
+        this->grp_config.push_back(new GroupConfig(*(gc)));
+    }
+}

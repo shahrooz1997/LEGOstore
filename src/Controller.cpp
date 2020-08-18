@@ -20,24 +20,45 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Plac
         
         
         if(temp){
-            test->protocol = CAS_PROTOCOL_NAME;
-            test->k = 3;
-            test->Q1.insert(begin(test->Q1), {0,1,2});
-            test->Q2.insert(begin(test->Q2), {0,1,2,3,4});
-            test->Q3.insert(begin(test->Q3), {2,3,4});
-            test->Q4.insert(begin(test->Q4), {2,3,4});
-            std::unordered_set<uint32_t> Q2_Q3;
-            Q2_Q3.insert(test->Q2.begin(), test->Q2.end());
-            Q2_Q3.insert(test->Q3.begin(), test->Q3.end());
-            test->m = Q2_Q3.size(); // Note: it must be the size of Q2 U Q3 for reconfiguration to work
+            //CAS
+//            test->protocol = CAS_PROTOCOL_NAME;
+//            test->k = 3;
+//            test->Q1.insert(begin(test->Q1), {0,1,2});
+//            test->Q2.insert(begin(test->Q2), {0,1,2,3,4});
+//            test->Q3.insert(begin(test->Q3), {2,3,4});
+//            test->Q4.insert(begin(test->Q4), {2,3,4});
+//            std::unordered_set<uint32_t> Q2_Q3;
+//            Q2_Q3.insert(test->Q2.begin(), test->Q2.end());
+//            Q2_Q3.insert(test->Q3.begin(), test->Q3.end());
+//            test->m = Q2_Q3.size(); // Note: it must be the size of Q2 U Q3 for reconfiguration to work
             
-            
-        }else{
+            // ABD
             test->protocol = ABD_PROTOCOL_NAME;
             test->m = 5;
             test->k = 0;
-            test->Q1.insert(begin(test->Q1), {0,1,2,3});
-            test->Q2.insert(begin(test->Q2), {0,1,2,3});
+            test->Q1.insert(begin(test->Q1), {2, 3, 4});
+            test->Q2.insert(begin(test->Q2), {0, 1, 2});
+            test->Q3.clear();
+            test->Q4.clear();
+        }else{
+            // CAS
+//            test->protocol = CAS_PROTOCOL_NAME;
+//            test->k = 2;
+//            test->Q1.insert(begin(test->Q1), {0,1,2,3});
+//            test->Q2.insert(begin(test->Q2), {0,1,2,3,4});
+//            test->Q3.insert(begin(test->Q3), {2,3,4});
+//            test->Q4.insert(begin(test->Q4), {2,3});
+//            std::unordered_set<uint32_t> Q2_Q3;
+//            Q2_Q3.insert(test->Q2.begin(), test->Q2.end());
+//            Q2_Q3.insert(test->Q3.begin(), test->Q3.end());
+//            test->m = Q2_Q3.size(); // Note: it must be the size of Q2 U Q3 for reconfiguration to work
+            
+            // ABD
+            test->protocol = ABD_PROTOCOL_NAME;
+            test->m = 5;
+            test->k = 0;
+            test->Q1.insert(begin(test->Q1), {0, 1, 2});
+            test->Q2.insert(begin(test->Q2), {0, 2, 3, 4});
             test->Q3.clear();
             test->Q4.clear();
         }
@@ -53,7 +74,7 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Plac
 
         placement.push_back(test);
     }
-//    temp +=1;
+    temp +=1;
     return 0;
 }
 
@@ -327,6 +348,7 @@ static inline void delete_desc_info(std::unordered_map<std::string, int> &open_d
 
 int Controller::send_config_group_to_client(uint32_t group_number){
     try{
+        DPRINTF(DEBUG_RECONFIG_CONTROL, "started.\n");
         Properties prp_to_send;
         prp_to_send.retry_attempts = prp.retry_attempts;
         prp_to_send.timeout_per_request = prp.timeout_per_request;
@@ -340,6 +362,7 @@ int Controller::send_config_group_to_client(uint32_t group_number){
         
         std::string out_str;
         // Send the config to each client in the deployment file
+//        DPRINTF(DEBUG_RECONFIG_CONTROL, "addr_info.size() = %u\n", addr_info.size());
         for(uint i = 0; i < addr_info.size(); i++){
             //Using datacenter_id as client id for now, can change later
             prp_to_send.local_datacenter_id = i;
@@ -354,6 +377,7 @@ int Controller::send_config_group_to_client(uint32_t group_number){
                     std::cout << "Data Transfer to client " << i << " failed!" << std::endl;
                     return 1;
             }
+            DPRINTF(DEBUG_RECONFIG_CONTROL, "sent done.\n");
             close(connection);
         }
     }
@@ -368,6 +392,8 @@ int main(){
 
     Controller master(2, 120, 120, "./config/scripts/local_config.json");
     master.init_setup("./config/input_workload.json" , "config/deployment.txt");
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "controller created\n");
+
 
     //startPoint already includes the timestamp of first group
     // The for loop assumes the startPoint to not include any offset at all
@@ -425,12 +451,11 @@ int main(){
             for(auto &it: pool){
                     it.join();
             }
-            
-            if(!init)
-                master.send_config_group_to_client(grp_i);
-            init = false;
-            
         }
+        
+        if(!init)
+            master.send_config_group_to_client(grp_i);
+        init = false;
 //        break;
     }
 

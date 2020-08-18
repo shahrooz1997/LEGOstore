@@ -22,9 +22,7 @@ std::string DataServer::reconfig_query(std::string &key, std::string &curr_class
     if(curr_class == CAS_PROTOCOL_NAME){
         result = CAS.get_timestamp(key, cache, persistent, lock);
     }else if(curr_class == ABD_PROTOCOL_NAME){
-        // Directly do a get here for ABD i think
-        std::string t; // This is dummy
-        result = ABD.get(key, t, cache, persistent, lock);
+        result = ABD.get_timestamp(key, cache, persistent, lock);
     }
 
     return result;

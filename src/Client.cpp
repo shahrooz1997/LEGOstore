@@ -144,11 +144,15 @@ int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &
             // Initiate the operation
             if(reqType == 1){
                 result = clt.get(keys[key_idx],read_value);
-                cout << "get done on key: " << keys[key_idx] << "with value " << read_value << endl;
+                DPRINTF(DEBUG_CAS_Client, "get done on key: %s with value: %s\n", keys[key_idx].c_str(), read_value.c_str());
+//                cout << "get done on key: " << keys[key_idx] << " with value " << read_value << endl;
+                fflush(stdout);
             }else{
                 std::string val(obj_size, 'a');
                 result = clt.put(keys[key_idx], val, false);
-                cout << "put done on key: " << keys[key_idx] << endl;
+                DPRINTF(DEBUG_CAS_Client, "put done on key: %s with value: %s\n", keys[key_idx].c_str(), val.c_str());
+//                cout << "put done on key: " << keys[key_idx] << endl;
+                fflush(stdout);
             }
 
             assert(result != S_FAIL);
@@ -279,10 +283,13 @@ int main(int argc, char* argv[]){
     //std::cout<< "Atomic variable is lock free? " << running.is_lock_free() << " : another opinion : " << ATOMIC_BOOL_LOCK_FREE << std::endl;
 //    int sock = accept(newSocket, NULL, 0);
 //	close(newSocket);
+    
+    // ToDo: there is a bug in the number of receiving messages from controller; for now it is resolved with the following variable
+    int number_of_messages = 2;
 
     std::string recv_str;
     try{
-        while(true){ // Try to receive new workloads group from Controller
+        while(number_of_messages--){ // Try to receive new workloads group from Controller
             int sock = accept(newSocket, NULL, 0);
             if(DataTransfer::recvMsg(sock, recv_str) != 1){
                 std::cout<< "Client Config could not be received! " << std::endl;
@@ -295,6 +302,8 @@ int main(int argc, char* argv[]){
                 cc = nullptr;
             }
             cc = DataTransfer::deserializePrp(recv_str); // Note: the received property must contain only one group
+            
+            DPRINTF(DEBUG_CAS_Client, "new placement k attr is %u\n", cc->groups[0]->grp_config[0]->placement_p->k)
 
             time_point<system_clock, millis> startPoint(millis{cc->start_time});
             time_point<system_clock, millis> timePoint;
@@ -308,13 +317,15 @@ int main(int argc, char* argv[]){
                 initialise_db(cc, cc->groups[0]->grp_config[i], cc->groups[0]->grp_id[i]);
             }
 
-            for(auto grp: cc->groups){ // Note: we will remove this for loop in the future.
+//            for(auto grp: cc->groups){ // Note: we will remove this for loop in the future.
+            auto grp = cc->groups[0];
                 timePoint = startPoint + millis{grp->timestamp * 1000};
                 std::this_thread::sleep_until(timePoint);
 
                 //TODO:: decide where to specify the distribiution
                 // NOTE:: grp_id size and grp_config size should be equal for Groupxxxx
                 for(uint i=0; i<grp->grp_id.size(); i++){
+                    fflush(stdout);
                     if(fork() == 0){
                         cout << "key_req_gen is called for group " << grp->grp_id[i] << endl;
                         // Note:: Grp_id can be anything, here it is provided by the config file
@@ -324,7 +335,7 @@ int main(int argc, char* argv[]){
                     }
                 }
                 idx++;
-            }
+//            }
 
             float avg_rate = 0;
             int ret_val =0;

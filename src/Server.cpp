@@ -104,9 +104,9 @@ std::string finish_reconfig(std::unique_lock<std::mutex> &lck, std::string &key,
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
     key_add(key);
     rcfgSet *config = rcfgKeys[key];
-    while(config->state < RECONFIG_WRITE){
-            config->ccv.wait(lck);
-    }
+//    while(config->state < RECONFIG_WRITE){
+//        config->ccv.wait(lck);
+//    }
 
     config->state = RECONFIG_FINISH;
     config->highest_timestamp = timestamp;

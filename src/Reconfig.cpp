@@ -126,9 +126,12 @@ int Reconfig::send_reconfig_query(Properties *prop, GroupConfig &old_config, std
                     strVec data = it.get();
 
                     if(data[0] == "OK"){
-                        printf("reconfig query, data received is %s\n", data[1].c_str());
+                        DPRINTF(DEBUG_RECONFIG_CONTROL, "get timestamp for key :%s, ts: %s, value: %s\n", key.c_str(), data[2].c_str(), data[1].c_str());
                         vs.emplace_back(data[1]);
                         tss.emplace_back(data[2]);
+                    }
+                    else{
+                        DPRINTF(DEBUG_RECONFIG_CONTROL, "reconfig query, ERROR in received data: %s\n", data[1].c_str());
                     }
                     //if "Failed", then need to retry
                     //reponses.erase(it);

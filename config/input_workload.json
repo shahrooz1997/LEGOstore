@@ -2,33 +2,8 @@
 "workload_config": [
         {
             "timestamp": 5,
-            "grp_id": [ 1, 2, 3, 4, 5],
+            "grp_id": [2, 5],
             "grp_workload": [
-                {
-                    "availability_target": 2,
-                    "client_dist": [
-                        1,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111
-                    ],
-                    "object_size": 50,
-                    "metadata_size": 1e-09,
-                    "num_objects": 0.9,
-                    "arrival_rate": 75,
-                    "read_ratio": 0.9,
-                    "write_ratio": 0.1,
-                    "SLO_read": 1000,
-                    "SLO_write": 1000,
-                    "duration": 20,
-                    "time_to_decode": 0.00028,
-                    "keys" : ["group11", "group12"]
-                },
                 {
                     "availability_target": 2,
                     "client_dist": [
@@ -45,7 +20,7 @@
                     "object_size": 30,
                     "metadata_size": 1e-09,
                     "num_objects": 10001,
-                    "arrival_rate": 75,
+                    "arrival_rate": 1,
                     "read_ratio": 0.9,
                     "write_ratio": 0.1,
                     "SLO_read": 1000,
@@ -67,60 +42,10 @@
                         0.1111111111111111,
                         0.1111111111111111
                     ],
-                    "object_size": 50,
-                    "metadata_size": 1e-09,
-                    "num_objects": 20001,
-                    "arrival_rate": 75,
-                    "read_ratio": 0.9,
-                    "write_ratio": 0.1,
-                    "SLO_read": 1000,
-                    "SLO_write": 1000,
-                    "duration": 20,
-                    "time_to_decode": 0.00028,
-                    "keys" : ["group31"]
-                },
-                {
-                    "availability_target": 2,
-                    "client_dist": [
-                        1,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111
-                    ],
-                    "object_size": 67,
-                    "metadata_size": 1e-09,
-                    "num_objects": 30001,
-                    "arrival_rate": 75,
-                    "read_ratio": 0.9,
-                    "write_ratio": 0.1,
-                    "SLO_read": 1000,
-                    "SLO_write": 1000,
-                    "duration": 20,
-                    "time_to_decode": 0.00028,
-                    "keys" : ["group41", "group42"]
-                },
-                {
-                    "availability_target": 2,
-                    "client_dist": [
-                        1,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111,
-                        0.1111111111111111
-                    ],
                     "object_size": 70,
                     "metadata_size": 1e-09,
                     "num_objects": 40001,
-                    "arrival_rate": 75,
+                    "arrival_rate": 1,
                     "read_ratio": 0.9,
                     "write_ratio": 0.1,
                     "SLO_read": 1000,
@@ -132,7 +57,7 @@
             ]
         },
         {
-            "timestamp": 15,
+            "timestamp": 20,
             "grp_id": [ 2, 5],
             "grp_workload": [
                 {

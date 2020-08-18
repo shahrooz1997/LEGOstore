@@ -647,6 +647,7 @@ uint32_t CAS_Client::get(std::string key, std::string &value){
     snprintf (log_buf, sizeof (log_buf), log_fmt, log_tv.tv_usec);
     fprintf(this->log_file, "%s read invoke nil\n", log_buf);
 #endif
+    
 
     value.clear();
 

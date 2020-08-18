@@ -136,8 +136,13 @@ void server_connection(int connection, DataServer &dataserver, int portid){
     // Data[1] -> key
     // Data[2] -> timestamp
     strVec data = DataTransfer::deserialize(recvd);
-    std::cout << "SSSSS New METHOD CALLED "<< data[0] << " The key is " << data[1] <<"server port is" << portid << std::endl;
     std::string &method = data[0];
+    
+    if(method != "get" && method != "put" && method != "get_timestamp"){
+        DPRINTF(DEBUG_RECONFIG_CONTROL, "The method %s is called. The key is %s, server port is %u\n",
+                    method.c_str(), data[1].c_str(), portid);
+    }
+    
 
     std::unique_lock<std::mutex> rlock(rcfglock);
     if(reconfig.load() && key_match(data[1])){
@@ -189,12 +194,18 @@ void server_connection(int connection, DataServer &dataserver, int portid){
     }
 
     if(method == "put"){
-            result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[3], data[2], data[4]));
+        DPRINTF(DEBUG_RECONFIG_CONTROL, "The method put is called. The key is %s, ts: %s, value: %s, class: %s, server port is %u\n",
+                    data[1].c_str(), data[2].c_str(), data[3].c_str(), data[4].c_str(), portid);
+        result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[3], data[2], data[4]));
     }else if(method == "get"){
-            //std::cout << "GET fucntion called for server id "<< portid << std::endl;
-            result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3]));
+        DPRINTF(DEBUG_RECONFIG_CONTROL, "The method get is called. The key is %s, ts: %s, class: %s, server port is %u\n",
+                    data[1].c_str(), data[2].c_str(), data[3].c_str(), portid);
+        //std::cout << "GET fucntion called for server id "<< portid << std::endl;
+        result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3]));
     }else if(method == "get_timestamp"){
-            result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2]));
+        DPRINTF(DEBUG_RECONFIG_CONTROL, "The method get_timestamp is called. The key is %s, class: %s, server port is %u\n",
+                    data[1].c_str(), data[2].c_str(), portid);
+        result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2]));
     }else if(method == "put_fin"){
             result = DataTransfer::sendMsg(connection, dataserver.put_fin(data[1], data[2], data[3]));
     }else if(method == "reconfig_query"){

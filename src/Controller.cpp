@@ -17,10 +17,10 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Plac
         Placement *test = new Placement;
         // Controller trial(1, 120, 120, "./config/setup_config.json");
         // std::vector<DC*> dcs = trial.prp.datacenters;
-        test->protocol = CAS_PROTOCOL_NAME;
+        
         
         if(temp){
-            
+            test->protocol = CAS_PROTOCOL_NAME;
             test->k = 3;
             test->Q1.insert(begin(test->Q1), {0,1,2});
             test->Q2.insert(begin(test->Q2), {0,1,2,3,4});
@@ -33,12 +33,13 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Plac
             
             
         }else{
+            test->protocol = ABD_PROTOCOL_NAME;
             test->m = 5;
-            test->k = 2;
+            test->k = 0;
             test->Q1.insert(begin(test->Q1), {0,1,2,3});
-            test->Q2.insert(begin(test->Q2), {0,1,2,3,4});
-            test->Q3.insert(begin(test->Q3), {2,3,4});
-            test->Q4.insert(begin(test->Q4), {2,3});
+            test->Q2.insert(begin(test->Q2), {0,1,2,3});
+            test->Q3.clear();
+            test->Q4.clear();
         }
 
         // SHAHROOZ: We need the servers participating to accomplish one protocol and number of failures we can tolerate for doing reconfiguration
@@ -52,7 +53,7 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Plac
 
         placement.push_back(test);
     }
-    temp +=1;
+//    temp +=1;
     return 0;
 }
 

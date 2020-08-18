@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <cmath>
 #include "CAS_Client.h"
+#include "ABD_Client.h"
 
 using std::cout;
 using std::endl;
@@ -14,7 +15,8 @@ using std::endl;
 Properties *cc = nullptr;
 
 //Format of THread ID given to each CAS_Client:
-// bits 32-24 => Client ID || max : 256
+// bit  32 is 1 for ABD and 0 for CAS
+// bits 31-24 => Client ID || max : 128
 // bits 12-23 => Key Id  || max : 4096
 // bits 0-11 => thread num per keyID || max : 4096
 int clientId;
@@ -27,46 +29,78 @@ using millis = duration<uint64_t, std::milli>;
 
 static std::unordered_set<std::string> initialized_keys;
 
-static inline uint32_t create_threadId(int &client_id, int &grp_id, const int &req_idx){
+static inline uint32_t create_threadId(std::string protocol, int &client_id, int &grp_id, const int &req_idx){
 
 	uint32_t id = 0;
 	// Checking the bounds of each index
-	if( req_idx < (1<<12) && grp_id < (1<<12) && clientId < (1<<8) ){
+	if((req_idx < (1 << 12)) && (grp_id < (1 << 12)) && (clientId < (1 << 7))){
 		id = ((clientId << 24) | (grp_id << 12) | (req_idx));
 	}else{
 		throw std::logic_error("The thread ID can be redundant. Idx exceeded its bound");
 	}
+        
+        if(protocol == ABD_PROTOCOL_NAME){
+            id |= (1 << 31);
+        }
 
 	return id;
 }
 
 void initialise_db(Properties *prop, GroupConfig *grpCfg, int grp_id){
     
+    if(grpCfg->placement_p->protocol == CAS_PROTOCOL_NAME){
+        CAS_Client client(prop, create_threadId(grpCfg->placement_p->protocol, clientId, grp_id, 0), *grpCfg->placement_p);
 
-    CAS_Client client(prop, create_threadId(clientId, grp_id, 0), *grpCfg->placement_p);
-    
-//    cout << "placement_p" << grpCfg->placement_p->Q1.size() << " " << grpCfg->placement_p->Q2.size() << " " << grpCfg->placement_p->Q3.size() << " " << grpCfg->placement_p->Q4.size() << " " << grpCfg->placement_p->protocol << endl;
+    //    cout << "placement_p" << grpCfg->placement_p->Q1.size() << " " << grpCfg->placement_p->Q2.size() << " " << grpCfg->placement_p->Q3.size() << " " << grpCfg->placement_p->Q4.size() << " " << grpCfg->placement_p->protocol << endl;
 
-    
-    std::vector<std::thread> pool;
 
-    for(auto &key: grpCfg->keys){
-        
-//        std::pair<std::unordered_set<std::string>::iterator,bool> ins_ret = initialized_keys.emplace(key);
-//        if(!ins_ret.second){
-//            continue;
-//        }
-        
-//      std::string val(grpCfg->object_size, 'a'+ (grp_id%26));
-        std::string val(grpCfg->object_size, 'a');
-        pool.emplace_back(&CAS_Client::put, &client, key, val, true);
-        std::cout<< "Initialisation of key : " << key << " is done!!" << std::endl;
-        
-        numt += 1;
+        std::vector<std::thread> pool;
+
+        for(auto &key: grpCfg->keys){
+
+            std::pair<std::unordered_set<std::string>::iterator,bool> ins_ret = initialized_keys.emplace(key);
+            if(!ins_ret.second){
+                continue;
+            }
+
+    //      std::string val(grpCfg->object_size, 'a'+ (grp_id%26));
+            std::string val(grpCfg->object_size, 'a');
+            pool.emplace_back(&CAS_Client::put, &client, key, val, true);
+            std::cout<< "Initialisation of key : " << key << " is done!!" << std::endl;
+
+            numt += 1;
+        }
+
+        for(auto &it:pool){
+                it.join();
+        }
     }
+    else{ // ABD
+        ABD_Client client(prop, create_threadId(grpCfg->placement_p->protocol, clientId, grp_id, 0), *grpCfg->placement_p);
 
-    for(auto &it:pool){
-            it.join();
+    //    cout << "placement_p" << grpCfg->placement_p->Q1.size() << " " << grpCfg->placement_p->Q2.size() << " " << grpCfg->placement_p->Q3.size() << " " << grpCfg->placement_p->Q4.size() << " " << grpCfg->placement_p->protocol << endl;
+
+
+        std::vector<std::thread> pool;
+
+        for(auto &key: grpCfg->keys){
+
+            std::pair<std::unordered_set<std::string>::iterator,bool> ins_ret = initialized_keys.emplace(key);
+            if(!ins_ret.second){
+                continue;
+            }
+
+    //      std::string val(grpCfg->object_size, 'a'+ (grp_id%26));
+            std::string val(grpCfg->object_size, 'a');
+            pool.emplace_back(&ABD_Client::put, &client, key, val, true);
+            std::cout<< "Initialisation of key : " << key << " is done!!" << std::endl;
+
+            numt += 1;
+        }
+
+        for(auto &it:pool){
+                it.join();
+        }
     }
 }
 
@@ -85,49 +119,91 @@ static inline int next_event(std::string &dist_process){
 
 int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &keys, Placement *pp, time_point<system_clock, millis> tp,
 							std::string &dist_process, int grp_id, int req_idx, int desc){
-	int cnt = 0; 		// Count the number of requests
-	int reqType = 0;    // 1 for GET, 2 for PUT
-	int key_idx = -1;
-	uint32_t threadId = create_threadId(clientId, grp_id, req_idx);
-	CAS_Client clt(cc, threadId,*pp, desc);
-	//Scope of this seeding is global
-	//So, may lead to same operation sequence on all threads
-	srand(threadId);
+    int cnt = 0; 		// Count the number of requests
+    int reqType = 0;    // 1 for GET, 2 for PUT
+    int key_idx = -1;
+    uint32_t threadId = create_threadId(pp->protocol, clientId, grp_id, req_idx);
 
-	std::string read_value;
-	while(running.load()){
-		cnt+= 1;
-		// Choose the operation type
-		double random_ratio = (double)(rand() % 100) / 100.00;
-		reqType = random_ratio <= read_ratio? 1:2;
-		int result = S_OK;
+    if(pp->protocol == CAS_PROTOCOL_NAME){
+        CAS_Client clt(cc, threadId, *pp, desc);
+        //Scope of this seeding is global
+        //So, may lead to same operation sequence on all threads
+        srand(threadId);
 
-		//Choose a random key
-		key_idx = rand()%(keys.size());
-	//	std::cout << "Operation chosen by Client  "<<threadId<<" for key " << keys[key_idx] << "  is " << reqType << std::endl;
-		// Initiate the operation
-		if(reqType == 1){
-			result = clt.get(keys[key_idx],read_value);
-                        cout << "get done on key: " << keys[key_idx] << "with value " << read_value << endl;
-		}else{
-			std::string val(obj_size, 'a');
-			result = clt.put(keys[key_idx], val, false);
-                        cout << "put done on key: " << keys[key_idx] << endl;
-		}
+        std::string read_value;
+        while(running.load()){
+            cnt += 1;
+            // Choose the operation type
+            double random_ratio = (double)(rand() % 100) / 100.00;
+            reqType = random_ratio <= read_ratio? 1:2;
+            int result = S_OK;
 
-		assert(result != S_FAIL);
-                
-                if(result == S_RECFG)
-                    return 1;
+            //Choose a random key
+            key_idx = rand()%(keys.size());
+    //	std::cout << "Operation chosen by Client  "<<threadId<<" for key " << keys[key_idx] << "  is " << reqType << std::endl;
+            // Initiate the operation
+            if(reqType == 1){
+                result = clt.get(keys[key_idx],read_value);
+                cout << "get done on key: " << keys[key_idx] << "with value " << read_value << endl;
+            }else{
+                std::string val(obj_size, 'a');
+                result = clt.put(keys[key_idx], val, false);
+                cout << "put done on key: " << keys[key_idx] << endl;
+            }
 
-		tp += millis{next_event(dist_process)};
-		std::this_thread::sleep_until(tp);
-	}
+            assert(result != S_FAIL);
 
-	//std::cout<<"COunt value before returning" << cnt << std::endl;
-	numt += cnt;
+            if(result == S_RECFG)
+                return 1;
 
-	return 0;
+            tp += millis{next_event(dist_process)};
+            std::this_thread::sleep_until(tp);
+        }
+
+        //std::cout<<"COunt value before returning" << cnt << std::endl;
+        numt += cnt;
+    }
+    else{ // ABD
+        ABD_Client clt(cc, threadId, *pp);
+        //Scope of this seeding is global
+        //So, may lead to same operation sequence on all threads
+        srand(threadId);
+
+        std::string read_value;
+        while(running.load()){
+            cnt += 1;
+            // Choose the operation type
+            double random_ratio = (double)(rand() % 100) / 100.00;
+            reqType = random_ratio <= read_ratio? 1:2;
+            int result = S_OK;
+
+            //Choose a random key
+            key_idx = rand()%(keys.size());
+    //	std::cout << "Operation chosen by Client  "<<threadId<<" for key " << keys[key_idx] << "  is " << reqType << std::endl;
+            // Initiate the operation
+            if(reqType == 1){
+                result = clt.get(keys[key_idx],read_value);
+                cout << "get done on key: " << keys[key_idx] << "with value " << read_value << endl;
+            }else{
+                std::string val(obj_size, 'a');
+                result = clt.put(keys[key_idx], val, false);
+                cout << "put done on key: " << keys[key_idx] << endl;
+            }
+
+            assert(result != S_FAIL);
+
+            if(result == S_RECFG)
+                return 1;
+
+            tp += millis{next_event(dist_process)};
+            std::this_thread::sleep_until(tp);
+        }
+
+        //std::cout<<"COunt value before returning" << cnt << std::endl;
+        numt += cnt;
+    }
+
+    return 0;
 }
 
 
@@ -135,53 +211,61 @@ int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &
 //NOTE:: Grp_id is just a unique identifier for this grp, can be modified easily later on
 int key_req_gen(Properties &prop, int grp_idx, int grp_config_idx, int grp_id, std::string dist_process){
 
-	clientId = prop.local_datacenter_id;
-	int avg = 0;
+    clientId = prop.local_datacenter_id;
+    int avg = 0;
 
-	//int act_cnt = 0;
-	GroupConfig *grpCfg = prop.groups[grp_idx]->grp_config[grp_config_idx];
-	auto timePoint = time_point_cast<milliseconds>(system_clock::now());
+    //int act_cnt = 0;
+    GroupConfig *grpCfg = prop.groups[grp_idx]->grp_config[grp_config_idx];
+    auto timePoint = time_point_cast<milliseconds>(system_clock::now());
 
-	// After this call all keys will be initialized
-	// This assumes keys and key groups are not added while experiment happening
+    // After this call all keys will be initialized
+    // This assumes keys and key groups are not added while experiment happening
 //	initialise_db(cc, grpCfg, grp_id);
 
-	int desc = create_liberasure_instance(grpCfg->placement_p);
-	printf("Creating init threads for grp id: %d \n", grp_idx);
+    int desc = -1;
+    
+    if(grpCfg->placement_p->protocol == CAS_PROTOCOL_NAME){
+        desc = create_liberasure_instance(grpCfg->placement_p);
+    }
+    
+    printf("Creating init threads for grp id: %d \n", grp_idx);
+
+    running = true;
+    //Start threads
+    std::vector<std::thread> threads;
+
+    //Round up to nearest integer value
+    long numReqs = lround(grpCfg->client_dist[clientId] * grpCfg->arrival_rate);
 
 
-	running = true;
-	//Start threads
-	std::vector<std::thread> threads;
+    for(long i=0; i<numReqs; i++){
+            threads.emplace_back(run_session, grpCfg->object_size, grpCfg->read_ratio, std::ref(grpCfg->keys), \
+                                            grpCfg->placement_p, timePoint, std::ref(dist_process), grp_id, i, desc);
+    }
 
-	//Round up to nearest integer value
-	long numReqs = lround(grpCfg->client_dist[clientId] * grpCfg->arrival_rate);
+    timePoint += millis{grpCfg->duration* 1000};
+    std::this_thread::sleep_until(timePoint);
 
+    running = false;
+    for(auto &th: threads){
+            th.join();
+    }
 
-	for(long i=0; i<numReqs; i++){
-		threads.emplace_back(run_session, grpCfg->object_size, grpCfg->read_ratio, std::ref(grpCfg->keys), \
-						grpCfg->placement_p, timePoint, std::ref(dist_process), grp_id, i, desc);
-	}
+    
+    if(grpCfg->placement_p->protocol == CAS_PROTOCOL_NAME){
+        destroy_liberasure_instance(desc);
+    }
+    
+    std::cout<<"NUm value before returning" << numt.load() << std::endl;
+    avg = numt.load()/(grpCfg->duration);
 
-	timePoint += millis{grpCfg->duration* 1000};
-	std::this_thread::sleep_until(timePoint);
+    std::cout<<"Average arrival Rate : " << avg << std::endl;
 
-	running = false;
-	for(auto &th: threads){
-		th.join();
-	}
-
-	destroy_liberasure_instance(desc);
-	std::cout<<"NUm value before returning" << numt.load() << std::endl;
-	avg = numt.load()/(grpCfg->duration);
-
-	std::cout<<"Average arrival Rate : " << avg << std::endl;
-
-	if(avg < numReqs){
-		fprintf(stderr, "WARNING!! The average arrival rate for group :%d and group_config :%d is\
-							less than required : %d / %ld", grp_idx, grp_config_idx, avg, numReqs);
-	}
-	return avg;
+    if(avg < numReqs){
+            fprintf(stderr, "WARNING!! The average arrival rate for group :%d and group_config :%d is\
+                                                    less than required : %d / %ld", grp_idx, grp_config_idx, avg, numReqs);
+    }
+    return avg;
 }
 
 int main(int argc, char* argv[]){

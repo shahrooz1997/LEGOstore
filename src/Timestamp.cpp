@@ -32,8 +32,8 @@ Timestamp::Timestamp(std::string &str){
             std::cerr << msg.str();
             assert(0);
         }
-	this->client_id = stoi(str.substr(0, dash_pos));
-	this->time = stoi(str.substr(dash_pos + 1));
+	this->client_id = strtoul(str.substr(0, dash_pos).c_str(), NULL, 10);
+	this->time = strtoul(str.substr(dash_pos + 1).c_str(), NULL, 10);
 }
 
 std::string Timestamp::get_string(){

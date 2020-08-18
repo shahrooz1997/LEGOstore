@@ -31,7 +31,7 @@ namespace ABD_thread_helper{
         }
 
         strVec data;
-        data.push_back("get"); // Todo: to make consistent throughout the project change it to get_timestamp
+        data.push_back("get_timestamp");
         data.push_back(key);
         data.push_back(current_class);
         DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
@@ -44,6 +44,8 @@ namespace ABD_thread_helper{
             data =  DataTransfer::deserialize(recvd);
             prm.set_value(std::move(data));
         }
+        
+        DPRINTF(DEBUG_ABD_Client, "finished.\n");
 
         return;
     }
@@ -80,7 +82,7 @@ namespace ABD_thread_helper{
             prm.set_value(std::move(data));
         }
 
-        DPRINTF(DEBUG_ABD_Client, "finished successfully. with port: %u\n", server->port);
+        DPRINTF(DEBUG_ABD_Client, "finished with server port: %u\n", server->port);
 
         return;
     }
@@ -143,7 +145,7 @@ uint32_t ABD_Client::get_timestamp(std::string *key, Timestamp **timestamp, std:
             strVec data = it.get();
 
             if(data[0] == "OK"){
-                printf("get timestamp for key :%s, data received is %s\n", key->c_str(), data[2].c_str());
+                printf("get timestamp for key :%s, ts: %s, value: %s\n", key->c_str(), data[2].c_str(), data[1].c_str());
                 
                 vs.emplace_back(data[1]);
                 tss.emplace_back(data[2]);
@@ -225,6 +227,7 @@ uint32_t ABD_Client::put(std::string key, std::string value, bool insert){
 
 
         // put
+        DPRINTF(DEBUG_ABD_Client, "Issue Q2 request to key: %s and timestamp: %s  value :%s ", key.c_str(), timestamp->get_string().c_str(), value.c_str());
         int i = 0;
 
         for(auto it = p.Q2.begin(); it != p.Q2.end(); it++){
@@ -233,7 +236,6 @@ uint32_t ABD_Client::put(std::string key, std::string value, bool insert){
             std::thread(ABD_thread_helper::_put, std::move(prm), key, value, *timestamp,
                                 prop->datacenters[*it]->servers[0], this->current_class).detach();
 
-            DPRINTF(DEBUG_ABD_Client, "Issue Q2 request to key: %s and timestamp: %s  value :%s ", key.c_str(), timestamp->get_string().c_str(), value.c_str());
             i++;
         }
 

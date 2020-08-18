@@ -109,7 +109,7 @@ std::string finish_reconfig(std::unique_lock<std::mutex> &lck, std::string &key,
     }
 
     config->state = RECONFIG_FINISH;
-    config->highest_timestamp = timestamp; // Why?????
+    config->highest_timestamp = timestamp;
     config->new_cfg = cfg;
     if(rcfgKeys.empty())
             reconfig = false;
@@ -122,87 +122,100 @@ std::string finish_reconfig(std::unique_lock<std::mutex> &lck, std::string &key,
 
 void server_connection(int connection, DataServer &dataserver, int portid){
 
-	std::string recvd;
-	int result = DataTransfer::recvMsg(connection,recvd);
-	if(result != 1){
-		strVec msg{"failure","No data Found"};
-		DataTransfer::sendMsg(connection, DataTransfer::serialize(msg));
-		close(connection);
-		return;
-	}
+    std::string recvd;
+    int result = DataTransfer::recvMsg(connection,recvd);
+    if(result != 1){
+        strVec msg{"failure","No data Found"};
+        DataTransfer::sendMsg(connection, DataTransfer::serialize(msg));
+        close(connection);
+        return;
+    }
 
-	// if data.size > 3
-	// Data[0] -> method_name
-	// Data[1] -> key
-	// Data[2] -> timestamp
+    // if data.size > 3
+    // Data[0] -> method_name
+    // Data[1] -> key
+    // Data[2] -> timestamp
     strVec data = DataTransfer::deserialize(recvd);
-	std::cout << "SSSSS New METHOD CALLED "<< data[0] << " The key is " << data[1] <<"server port is" << portid << std::endl;
-	std::string &method = data[0];
+    std::cout << "SSSSS New METHOD CALLED "<< data[0] << " The key is " << data[1] <<"server port is" << portid << std::endl;
+    std::string &method = data[0];
 
-	std::unique_lock<std::mutex> rlock(rcfglock);
-	if(reconfig.load() && key_match(data[1])){
-		if(method != "write_config" && method != "reconfig_finalize" && method != "finish_reconfig"){
-			rcfgSet *config = rcfgKeys[data[1]];
-			config->waiting_threads++;
-			//Block the thread
-			while(config->state != RECONFIG_FINISH) {
-				config->rcv.wait(rlock);
-			}
+    std::unique_lock<std::mutex> rlock(rcfglock);
+    if(reconfig.load() && key_match(data[1])){
+        if(method != "write_config" && method != "reconfig_finalize" && method != "finish_reconfig"){
+            
+            DPRINTF(DEBUG_RECONFIG_CONTROL, "method %s is called while reconfiguration is going on"
+                    ". key is %s\n", method.c_str(), data[1].c_str());
 
-			config->waiting_threads--;
-			//Check which operations to service and which to reject
-			if(data.size() > 3 && Timestamp::compare_timestamp(config->highest_timestamp, data[2])){
-				//if data[2] < highest and operation is not 'get_timestamp', then service the thread
-				// Garbage collect, Reconfig complete
-				if(config->waiting_threads == 0){
-					delete config;
-					rcfgKeys.erase(data[1]);
-				}
+            
+            rcfgSet *config = rcfgKeys[data[1]];
+            config->waiting_threads++;
+            //Block the thread
+            while(config->state != RECONFIG_FINISH) {
+                config->rcv.wait(rlock);
+            }
 
-			}else{
-				//Terminate the thread and send new config
-				result = DataTransfer::sendMsg(connection, DataTransfer::serialize({"operation_fail", config->new_cfg}));
-				printf("OPERATION FAILED sent out for method: %s key : %s and timestamp:%s ", data[0].c_str(), data[1].c_str(), data[2].c_str());
-				// Garbage collect, Reconfig complete
-				if(config->waiting_threads == 0){
-					delete config;
-					rcfgKeys.erase(data[1]);
-				}
+            config->waiting_threads--;
+            //Check which operations to service and which to reject
+            if(data.size() > 3 && Timestamp::compare_timestamp(config->highest_timestamp, data[2])){
+                //if data[2] < highest and operation is not 'get_timestamp', then service the thread
+                // Garbage collect, Reconfig complete
+                
+                DPRINTF(DEBUG_RECONFIG_CONTROL, "method %s was called while reconfiguration was going on"
+                        ". key is %s, reconfiguration is finished and because of the timestamp we fulfilled"
+                        " the operation\n", method.c_str(), data[1].c_str());
+                
+                if(config->waiting_threads == 0){
+                    delete config;
+                    rcfgKeys.erase(data[1]);
+                }
 
-				close(connection);
-				return;
-			}
-		}
-	}
+            }else{
+                //Terminate the thread and send new config
+                DPRINTF(DEBUG_RECONFIG_CONTROL, "method %s was called while reconfiguration was going on"
+                        ". key is %s, reconfiguration is finished and because of the timestamp we declined"
+                        " the operation\n", method.c_str(), data[1].c_str());
+                result = DataTransfer::sendMsg(connection, DataTransfer::serialize({"operation_fail", config->new_cfg}));
+                printf("OPERATION FAILED sent out for method: %s key : %s and timestamp:%s ", data[0].c_str(), data[1].c_str(), data[2].c_str());
+                // Garbage collect, Reconfig complete
+                if(config->waiting_threads == 0){
+                    delete config;
+                    rcfgKeys.erase(data[1]);
+                }
 
-	if(method == "put"){
-		result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[3], data[2], data[4]));
-	}else if(method == "get"){
-		//std::cout << "GET fucntion called for server id "<< portid << std::endl;
-		result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3]));
-	}else if(method == "get_timestamp"){
-		result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2]));
-	}else if(method == "put_fin"){
-		result = DataTransfer::sendMsg(connection, dataserver.put_fin(data[1], data[2], data[3]));
-	}else if(method == "reconfig_query"){
-		result = DataTransfer::sendMsg(connection, reconfig_query(dataserver, data[1], data[2]));
-	}else if(method == "reconfig_finalize"){
-		result = DataTransfer::sendMsg(connection, reconfig_finalize(dataserver, rlock, data[1], data[2], data[3]));
-	}else if(method == "write_config"){
-		result = DataTransfer::sendMsg(connection, write_config(dataserver, rlock, data[1], data[3], data[2], data[4]));
-	}else if(method == "finish_reconfig"){
-		result = DataTransfer::sendMsg(connection, finish_reconfig(rlock, data[1], data[2], data[3]));
-	}
-	else {
-		DataTransfer::sendMsg(connection,  DataTransfer::serialize({"MethodNotFound", "Unknown method is called"}));
-	}
+                close(connection);
+                return;
+            }
+        }
+    }
 
-	if(result != 1){
-		DataTransfer::sendMsg(connection,  DataTransfer::serialize({"Failure","Server Response failed"}));
-	}
+    if(method == "put"){
+            result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[3], data[2], data[4]));
+    }else if(method == "get"){
+            //std::cout << "GET fucntion called for server id "<< portid << std::endl;
+            result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3]));
+    }else if(method == "get_timestamp"){
+            result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2]));
+    }else if(method == "put_fin"){
+            result = DataTransfer::sendMsg(connection, dataserver.put_fin(data[1], data[2], data[3]));
+    }else if(method == "reconfig_query"){
+            result = DataTransfer::sendMsg(connection, reconfig_query(dataserver, data[1], data[2]));
+    }else if(method == "reconfig_finalize"){
+            result = DataTransfer::sendMsg(connection, reconfig_finalize(dataserver, rlock, data[1], data[2], data[3]));
+    }else if(method == "write_config"){
+            result = DataTransfer::sendMsg(connection, write_config(dataserver, rlock, data[1], data[3], data[2], data[4]));
+    }else if(method == "finish_reconfig"){
+            result = DataTransfer::sendMsg(connection, finish_reconfig(rlock, data[1], data[2], data[3]));
+    }
+    else {
+            DataTransfer::sendMsg(connection,  DataTransfer::serialize({"MethodNotFound", "Unknown method is called"}));
+    }
 
-	shutdown(connection, SHUT_WR);
-	close(connection);
+    if(result != 1){
+            DataTransfer::sendMsg(connection,  DataTransfer::serialize({"Failure","Server Response failed"}));
+    }
+
+    shutdown(connection, SHUT_WR);
+    close(connection);
 }
 
 

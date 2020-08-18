@@ -528,6 +528,19 @@ int Reconfig::send_reconfig_write(Properties *prop, GroupConfig &new_config, std
 
         encode(&ret_v, &chunks, &null_args, desc);
         
+        char bbuf[1024*128];
+        int bbuf_i = 0;
+        bbuf_i += sprintf(bbuf + bbuf_i, "%s-main ret_v is %s\n", key.c_str(), ret_v.c_str());
+        for(uint t = 0; t < chunks.size(); t++){
+            bbuf_i += sprintf(bbuf + bbuf_i, "%s-chunk[%d] = ", key.c_str(), t);
+            for(uint tt = 0; tt < chunks[t]->size(); tt++){
+                bbuf_i += sprintf(bbuf + bbuf_i, "%02X", chunks[t]->at(tt) & 0xff);
+//                printf("%02X", chunks[t]->at(tt));
+            }
+            bbuf_i += sprintf(bbuf + bbuf_i, "\n");
+        }
+        printf("%s", bbuf);
+        
         // Should be sent to union of Q2 and Q3
         std::unordered_set<uint32_t> Q2_Q3;
         Q2_Q3.insert(p->Q2.begin(), p->Q2.end());

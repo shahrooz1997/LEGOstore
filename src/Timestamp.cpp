@@ -101,7 +101,7 @@ Timestamp Timestamp::increase_timestamp(const uint32_t client_id){
 bool Timestamp::compare_timestamp(std::string left, std::string right){
 	Timestamp left_t = Timestamp(left);
 	Timestamp right_t = Timestamp(right);
-	return (left_t > right_t);
+	return ((left_t > right_t) || (left_t == right_t));
 }
 
 Timestamp::~Timestamp(){
@@ -109,8 +109,15 @@ Timestamp::~Timestamp(){
 }
 
 bool operator > (Timestamp &lhs, Timestamp &rhs){
-	if(lhs.time > rhs.time || (lhs.time == rhs.time && lhs.client_id < rhs.client_id ) ){
-		return true;
-	}
-	return false;
+    if(lhs.time > rhs.time || (lhs.time == rhs.time && lhs.client_id < rhs.client_id)){
+        return true;
+    }
+    return false;
+}
+
+bool operator== (Timestamp &lhs, Timestamp &rhs){
+    if(lhs.time == rhs.time && lhs.client_id == rhs.client_id){
+        return true;
+    }
+    return false;
 }

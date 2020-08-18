@@ -670,6 +670,8 @@ uint32_t CAS_Client::get(std::string key, std::string &value){
             op_status = false;
             continue;
         }
+        
+        DPRINTF(DEBUG_CAS_Client, "value for key %s requested on timestamp %s \n", key.c_str(), timestamp->get_string().c_str());
 
         // phase 2
         std::vector <std::string*> chunks;
@@ -727,6 +729,19 @@ uint32_t CAS_Client::get(std::string key, std::string &value){
         null_args.m = p.m - p.k;
         null_args.w = 16; // ToDo: what must it be?
         null_args.ct = CHKSUM_NONE;
+        
+        char bbuf[1024*128];
+        int bbuf_i = 0;
+        bbuf_i += sprintf(bbuf + bbuf_i, "%s-get function value is %s\n", key.c_str(), value.c_str());
+        for(uint t = 0; t < chunks.size(); t++){
+            bbuf_i += sprintf(bbuf + bbuf_i, "%s-chunk[%d] = ", key.c_str(), t);
+            for(uint tt = 0; tt < chunks[t]->size(); tt++){
+                bbuf_i += sprintf(bbuf + bbuf_i, "%02X", chunks[t]->at(tt) & 0xff);
+//                printf("%02X", chunks[t]->at(tt));
+            }
+            bbuf_i += sprintf(bbuf + bbuf_i, "\n");
+        }
+        printf("%s", bbuf);
 
         liberasure::decode(&value, &chunks, &null_args, this->desc);
 

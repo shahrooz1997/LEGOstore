@@ -18,16 +18,22 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Plac
         // Controller trial(1, 120, 120, "./config/setup_config.json");
         // std::vector<DC*> dcs = trial.prp.datacenters;
         test->protocol = CAS_PROTOCOL_NAME;
-        test->m = 5;
+        
         if(temp){
+            
             test->k = 3;
             test->Q1.insert(begin(test->Q1), {0,1,2});
             test->Q2.insert(begin(test->Q2), {0,1,2,3,4});
             test->Q3.insert(begin(test->Q3), {2,3,4});
             test->Q4.insert(begin(test->Q4), {2,3,4});
+            std::unordered_set<uint32_t> Q2_Q3;
+            Q2_Q3.insert(test->Q2.begin(), test->Q2.end());
+            Q2_Q3.insert(test->Q3.begin(), test->Q3.end());
+            test->m = Q2_Q3.size(); // Note: it must be the size of Q2 U Q3 for reconfiguration to work
             
             
         }else{
+            test->m = 5;
             test->k = 2;
             test->Q1.insert(begin(test->Q1), {0,1,2,3});
             test->Q2.insert(begin(test->Q2), {0,1,2,3,4});
@@ -368,6 +374,8 @@ int main(){
     time_point<system_clock, millis> timePoint;
 
     std::unordered_map<std::string, int> open_desc;
+    
+    bool init = true;
 
     // Note:: this assumes the first group has timestamp at which the experiment starts
     for(uint32_t grp_i = 0; grp_i < master.prp.groups.size(); grp_i++){
@@ -378,7 +386,8 @@ int main(){
         std::this_thread::sleep_until(timePoint);
         
         // send the group config to clients
-        master.send_config_group_to_client(grp_i);
+        if(init)
+            master.send_config_group_to_client(grp_i);
 
         //TODO:: Add some heuristics on how to sequence the reconf
         // Do reconfiguration of one grp at a time
@@ -415,6 +424,11 @@ int main(){
             for(auto &it: pool){
                     it.join();
             }
+            
+            if(!init)
+                master.send_config_group_to_client(grp_i);
+            init = false;
+            
         }
 //        break;
     }

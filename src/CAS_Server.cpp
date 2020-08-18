@@ -145,17 +145,17 @@ void CAS_Server::insert_data(string &key,const string &val, string &timestamp, b
 	//If not found, that means either tuple not present
 	// OR tuple is in pre stage
 	// chekcing to set FIN flag
-	bool fnd = cache.exists(key+timestamp);
+//	bool fnd = cache.exists(key+timestamp);
 
-	if(!fnd){
-		fnd = persistent.exists(key+timestamp);
+//	if(!fnd){
+//		fnd = persistent.exists(key+timestamp);
 
 		// If Tag not seen before, add the tuple
-		if(!fnd){
+//		if(!fnd){
 			if(!val.empty()){
 				std::vector<string> value{val, std::to_string(_label)};
 
-				DPRINTF(DEBUG_CAS_Server,"timestamp : %s  not found ,so writing it!!\n", timestamp.c_str());
+				DPRINTF(DEBUG_CAS_Server,"timestamp : %s is being written\n", timestamp.c_str());
 				///TODO:: optimize and create threads here
 				// For thread, add label check here and then return
 				DPRINTF(DEBUG_CAS_Server,"Adding entries to both cache and persitent\n");
@@ -169,10 +169,10 @@ void CAS_Server::insert_data(string &key,const string &val, string &timestamp, b
 				//persistent.put(key, {timestamp});
 			}
 			return;
-		}
+//		}
 		DPRINTF(DEBUG_CAS_Server,"TAG found in persistent\n ");
 		//TODO:: Need to insert in cache where. otherwise modify being done in next steps maybe invalid
-	}
+//	}
 
 	//TODO:: Before fin, check the key if you can infact finish the write and check python code for same.
 	if(label){
@@ -185,7 +185,7 @@ void CAS_Server::insert_data(string &key,const string &val, string &timestamp, b
 		// Take care of case where data not in Cache
 		cache.modify_flag(key+timestamp,_label);
 		persistent.modify_flag(key+timestamp, _label);
-		complete_fin(key, timestamp, cache, persistent);
+		complete_fin(key, timestamp, cache, persistent); // What is this for??
 	}
 
 }

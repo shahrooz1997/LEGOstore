@@ -49,6 +49,7 @@ int Reconfig::start_reconfig(Properties *prop, GroupConfig &old_config, GroupCon
 
     Timestamp *ret_ts = nullptr;
     std::string ret_v;
+    key = std::string(old_config.placement_p->protocol + key);
     Reconfig::send_reconfig_query(prop, old_config, key, &ret_ts, ret_v);
     if(old_config.placement_p->protocol == CAS_PROTOCOL_NAME){
         Reconfig::send_reconfig_finalize(prop, old_config, key, ret_ts, ret_v, old_desc);
@@ -506,6 +507,12 @@ int Reconfig::send_reconfig_write(Properties *prop, GroupConfig &new_config, std
     null_args.ct = CHKSUM_NONE;
 
     int i = 0;
+    
+    key.erase(key.begin());
+    key.erase(key.begin());
+    key.erase(key.begin());
+    
+    key = std::string(p->protocol + key);
 
     if(p->protocol == ABD_PROTOCOL_NAME){
 

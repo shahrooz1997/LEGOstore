@@ -317,19 +317,22 @@ uint32_t CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp){
 
             if(data[0] == "OK"){
 //                printf("get timestamp for key :%s, data received is %s\n", key->c_str(), data[1].c_str());
-                std::string timestamp_str = data[1];
-
-                std::size_t dash_pos = timestamp_str.find("-");
-                if(dash_pos >= timestamp_str.size()){
-                    std::cerr << "Substr violated !!!!!!!" << timestamp_str <<std::endl;
-                    assert(0);
-                }
-
-                // make client_id and time regarding the received message
-                uint32_t client_id_ts = stoi(timestamp_str.substr(0, dash_pos));
-                uint32_t time_ts = stoi(timestamp_str.substr(dash_pos + 1));
-
-                tss.emplace_back(client_id_ts, time_ts);
+//                std::string timestamp_str = data[1];
+//
+//                std::size_t dash_pos = timestamp_str.find("-");
+//                if(dash_pos >= timestamp_str.size()){
+//                    std::cerr << "Substr violated !!!!!!!" << timestamp_str <<std::endl;
+//                    assert(0);
+//                }
+//
+//                // make client_id and time regarding the received message
+//                uint32_t client_id_ts = stoi(timestamp_str.substr(0, dash_pos));
+//                uint32_t time_ts = stoi(timestamp_str.substr(dash_pos + 1));
+//
+//                tss.emplace_back(client_id_ts, time_ts);
+                
+                tss.emplace_back(data[1]);
+                
                 op_status = true;   // For get_timestamp, even if one response Received
                                     // operation is success
             }else if(data[0] == "operation_fail"){
@@ -448,7 +451,7 @@ uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
     fprintf(this->log_file, "%s write invoke %s\n", log_buf, value.c_str());
 #endif
     
-
+    key = std::string("CAS" + key);
 
     int retries = this->prop->retry_attempts;
     bool op_status = false;
@@ -648,6 +651,7 @@ uint32_t CAS_Client::get(std::string key, std::string &value){
     fprintf(this->log_file, "%s read invoke nil\n", log_buf);
 #endif
     
+    key = std::string("CAS" + key);
 
     value.clear();
 

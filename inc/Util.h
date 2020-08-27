@@ -176,6 +176,7 @@ struct Reconfig_key_info{
     uint32_t curr_conf_id;
     Placement *curr_placement;
     bool is_done;
+    std::string timestamp;
     uint32_t next_conf_id;
     Placement *next_placement;
     
@@ -233,7 +234,9 @@ int client_cnt(int &sock, Server *server);
 class Connect{
 public:
 
-    Connect(const std::string ip, const uint16_t port);
+    Connect(const std::string& ip, const uint16_t port);
+    Connect(const std::string& ip, const std::string& port);
+    
     Connect(const Connect& orig) = delete;
     ~Connect();
     

@@ -15,6 +15,7 @@
 #include "Util.h"
 #include <cstring>
 #include <arpa/inet.h>
+#include <inttypes.h>
 
 #ifdef DEVELOPMENT
 bool DEBUG_CAS_Client = true;
@@ -189,9 +190,51 @@ int client_cnt(int &sock, Server *server){
 }
 
 
-Connect::Connect(const std::string ip, const uint16_t port): ip(ip), port(port),
+Connect::Connect(const std::string& ip, const uint16_t port): ip(ip), port(port),
                     sock(0), connected(false){
 
+    struct sockaddr_in serv_addr;
+    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+        print_error("Socket creation error");
+    }
+    else{
+        serv_addr.sin_family = AF_INET;
+        serv_addr.sin_port = htons(port);
+        std::string ip_str = ip;
+
+        if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
+            print_error("Invalid address/ Address not supported");
+        }
+        else{
+            if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
+                print_error("Connection Failed");
+            }
+            else{
+                connected = true;
+            }
+        }
+    }
+}
+
+Connect::Connect(const std::string& ip, const std::string& port): ip(ip),
+                    sock(0), connected(false){
+    
+    // Convert string to uint16_t
+    bool correct = true;
+    char *end;
+    errno = 0;
+    intmax_t val = strtoimax(port.c_str(), &end, 10);
+    if (errno == ERANGE || val < 0 || val > UINT16_MAX || end == str || *end != '\0')
+      correct = false;
+    
+    if(correct)
+        this->port = (uint16_t) val;
+    else{
+        print_error("BAD FORMAT INPUT PORT, defualt port " METADATA_SERVER_PORT " is used.");
+        intmax_t val = strtoimax(METADATA_SERVER_PORT, &end, 10);
+        this->port = (uint16_t) val;
+    }
+    
     struct sockaddr_in serv_addr;
     if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
         print_error("Socket creation error");

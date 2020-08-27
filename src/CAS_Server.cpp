@@ -14,6 +14,7 @@
 
 
 // NOTE:: Shahrooz: in the future, we will change the structure to have a link list of timestamp for each key. add pv_timestamp to Data_handler struct and you know the continuation.
+//        Shahrooz: Maybe, it is better to have a list of timestamps for each key.
 
 #include "CAS_Server.h"
 
@@ -44,7 +45,9 @@ bool complete_fin(std::string &key, uint32_t conf_id, std::string &timestamp, Ca
     }else{
         data = *cache.get(con_key);
     }
+    
     // Check if the WRITE can finish
+    
     Timestamp curr_time(timestamp);
     Timestamp saved_time(data[0]);
 
@@ -118,13 +121,23 @@ std::string CAS_Server::put(string &key, uint32_t conf_id, string &val, string &
         if(!fnd){
             if(!val.empty()){
                 
-                //Todo: shahrooz: get placement info from metadata server
                 Reconfig_key_info rki;
                 rki.curr_conf_id = conf_id;
                 rki.curr_placement = nullptr;
                 rki.is_done = false;
                 rki.next_conf_id = -1;
                 rki.next_placement = nullptr;
+                
+                //Todo: shahrooz: get placement info from metadata server
+                Connect c("127.0.0.1", METADATA_SERVER_PORT);
+                if(!c.is_connected()){
+                    return DataTransfer::serialize({"ERROR", "Metadata Server is down"});;
+                }
+                DataTransfer::sendMsg(*c,DataTransfer::serialize({"ask", key, std::to_string(conf_id)});
+                std::string recvd;
+                if(DataTransfer::recvMsg(*c, recvd) == 1){
+                    rki.curr_placement =  DataTransfer::deserializePlacement(recvd);
+                }
                 
                 //Todo: shahrooz: add previous timestamp to the end of the value
                 std::vector<std::string> value{val, CAS_PROTOCOL_NAME, timestamp, rki.get_string(), "PRE"};
@@ -178,6 +191,16 @@ std::string CAS_Server::put_fin(string &key, uint32_t conf_id, string &timestamp
             rki.is_done = false;
             rki.next_conf_id = -1;
             rki.next_placement = nullptr;
+            
+            Connect c("127.0.0.1", METADATA_SERVER_PORT);
+            if(!c.is_connected()){
+                return DataTransfer::serialize({"ERROR", "Metadata Server is down"});;
+            }
+            DataTransfer::sendMsg(*c,DataTransfer::serialize({"ask", key, std::to_string(conf_id)});
+            std::string recvd;
+            if(DataTransfer::recvMsg(*c, recvd) == 1){
+                rki.curr_placement =  DataTransfer::deserializePlacement(recvd);
+            }
 
             //Todo: shahrooz: add previous timestamp to the end of the value
             std::vector<std::string> value{"", CAS_PROTOCOL_NAME, timestamp, rki.get_string(), "FIN"};

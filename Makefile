@@ -10,14 +10,18 @@ obj = $(patsubst src/%.cpp, obj/%.o, $(src)) #obj_t = $(src:src=obj)
 #bj = $(addsuffix .o, $(basename $(filter .cpp .cc, $(src))))
 #src1 = main.o
 #src2 = Data_Server.o
-obj2 = $(filter-out obj/Client.o obj/Controller.o,  $(obj))
-obj1 = $(filter-out obj/Server.o obj/Controller.o, $(obj))
-obj3 = $(filter-out obj/Client.o obj/Server.o, $(obj))
+obj2 = $(filter-out obj/Client.o obj/Controller.o obj/Metadata_Server.o,  $(obj))
+obj1 = $(filter-out obj/Server.o obj/Controller.o obj/Metadata_Server.o, $(obj))
+obj3 = $(filter-out obj/Client.o obj/Server.o obj/Metadata_Server.o, $(obj))
+obj4 = $(filter-out obj/Client.o obj/Server.o obj/Controller.o, $(obj))
 
 .PHONY: all
-all: obj Client Server Controller 
+all: obj Client Server Controller Metadata_Server
 
 LEGOStore: $(obj) 
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+Metadata_Server: $(obj4) 
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 client : obj Client

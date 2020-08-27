@@ -32,9 +32,9 @@ public:
     ABD_Server(const ABD_Server& orig) = delete;
     virtual ~ABD_Server();
 
-    string get_timestamp(string &key, Cache &cache, Persistent &persistent, std::mutex &lock_t);
-    string put(string &key, string &value, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t);
-    string get(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t);
+    string get_timestamp(string &key, uint32_t conf_id, Cache &cache, Persistent &persistent, std::mutex &lock_t);
+    string put(string &key, uint32_t conf_id, string &value, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t);
+    string get(string &key, uint32_t conf_id, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t);
 private:
 
 };

@@ -26,6 +26,39 @@ CAS_Server::CAS_Server() {
 CAS_Server::~CAS_Server() {
 }
 
+// Returns true if success, i.e., timestamp added as the fin timestamp for the key
+bool complete_fin(std::string &key, uint32_t conf_id, std::string &timestamp, Cache &cache, Persistent &persistent){
+
+    std::string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
+    
+    strVec data;
+    bool fnd = cache.exists(con_key);
+    if(!fnd){
+        fnd = persistent.exists(con_key);
+        if(!fnd){
+            cache.put(con_key, {timestamp});
+            persistent.put(con_key, {timestamp});
+            return true;
+        }
+        data = persistent.get(con_key);
+    }else{
+        data = *cache.get(con_key);
+    }
+    // Check if the WRITE can finish
+    Timestamp curr_time(timestamp);
+    Timestamp saved_time(data[0]);
+
+    if( curr_time > saved_time){
+        cache.put(con_key, {timestamp});
+        persistent.put(con_key, {timestamp});
+        DPRINTF(DEBUG_CAS_Server,"Complete fin called with key : %s,  curr_timestsamp : %s , and saved timestsamp is : %s \n",
+                                        key.c_str(), timestamp.c_str(), data[0].c_str());
+        return true;
+    }
+
+    return false;
+}
+
 std::string CAS_Server::get_timestamp(const string &key, uint32_t conf_id, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
     //std::lock_guard<std::mutex> lock(lock_t);
@@ -104,13 +137,13 @@ std::string CAS_Server::put(string &key, uint32_t conf_id, string &val, string &
                 cache.put(con_key, value);
                 persistent.put(con_key, value);
             }
-            return;
+            return DataTransfer::serialize({"OK"});
         }
         DPRINTF(DEBUG_CAS_Server,"TAG found in persistent\n ");
         //TODO:: Need to insert in cache where. otherwise modify being done in next steps maybe invalid
     }
     
-    return DataTransfer::serialize({"OK"});   
+    return DataTransfer::serialize({"OK"});
 }
 
 std::string CAS_Server::put_fin(string &key, uint32_t conf_id, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
@@ -171,7 +204,7 @@ std::string CAS_Server::put_fin(string &key, uint32_t conf_id, string &timestamp
         
     }
     
-    std::vector<std::string>& data_c = (*cache.get(con_key));
+    std::vector<std::string> data_c = (*cache.get(con_key));
     data_c[4] = "FIN";
     cache.put(con_key, data_c);
     persistent.put(con_key, data_c);
@@ -179,38 +212,7 @@ std::string CAS_Server::put_fin(string &key, uint32_t conf_id, string &timestamp
     return DataTransfer::serialize({"OK"});
 }
 
-// Returns true if success, i.e., timestamp added as the fin timestamp for the key
-bool complete_fin(std::string &key, uint32_t conf_id, std::string &timestamp, Cache &cache, Persistent &persistent){
 
-    std::string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
-    
-    strVec data;
-    bool fnd = cache.exists(con_key);
-    if(!fnd){
-        fnd = persistent.exists(con_key);
-        if(!fnd){
-            cache.put(con_key, {timestamp});
-            persistent.put(con_key, {timestamp});
-            return true;
-        }
-        data = persistent.get(con_key);
-    }else{
-        data = *cache.get(con_key);
-    }
-    // Check if the WRITE can finish
-    Timestamp curr_time(timestamp);
-    Timestamp saved_time(data[0]);
-
-    if( curr_time > saved_time){
-        cache.put(con_key, {timestamp});
-        persistent.put(con_key, {timestamp});
-        DPRINTF(DEBUG_CAS_Server,"Complete fin called with key : %s,  curr_timestsamp : %s , and saved timestsamp is : %s \n",
-                                        key.c_str(), timestamp.c_str(), data[0].c_str());
-        return true;
-    }
-
-    return false;
-}
 
 //TOD0:: when fin tag with empty value inserted, how is that handled at server for future requests,
 // as in won't the server respond with emoty values when requested again.
@@ -228,7 +230,7 @@ std::string CAS_Server::get(string &key, uint32_t conf_id, string &timestamp, Ca
             fnd = persistent.exists(con_key);
             if(!fnd){
                     //insert_data(key, "None", timestamp, true, cache, persistent);
-                    complete_fin(key, timestamp, cache, persistent);
+                    complete_fin(key, conf_id, timestamp, cache, persistent);
                     result = {"Failed", "None"};
             }
 
@@ -244,7 +246,7 @@ std::string CAS_Server::get(string &key, uint32_t conf_id, string &timestamp, Ca
 
 //    insert_data(key, std::string(), timestamp, true, cache, persistent);
     
-    std::vector<std::string>& data_c = (*cache.get(con_key));
+    std::vector<std::string> data_c = (*cache.get(con_key));
     data_c[4] = "FIN";
     cache.put(con_key, data_c);
     persistent.put(con_key, data_c);
@@ -288,7 +290,7 @@ void CAS_Server::insert_data(string &key, uint32_t conf_id, const string &val, s
 				persistent.put(key+timestamp, value);
 			}
 			if(label){
-				complete_fin(key, timestamp, cache, persistent);
+				complete_fin(key, conf_id, timestamp, cache, persistent);
 				//cache.put(key, {timestamp});
 				//persistent.put(key, {timestamp});
 			}
@@ -309,7 +311,7 @@ void CAS_Server::insert_data(string &key, uint32_t conf_id, const string &val, s
 		// Take care of case where data not in Cache
 		cache.modify_flag(key+timestamp,_label);
 		persistent.modify_flag(key+timestamp, _label);
-		complete_fin(key, timestamp, cache, persistent); // What is this for??
+		complete_fin(key, conf_id, timestamp, cache, persistent); // What is this for??
 	}
 
 }

@@ -28,6 +28,7 @@ bool DEBUG_ABD_Client = true;
 bool DEBUG_CAS_Server = true;
 bool DEBUG_ABD_Server = true;
 bool DEBUG_RECONFIG_CONTROL = true;
+bool DEBUG_METADATA_SERVER = true;
 #endif
 
 
@@ -285,6 +286,37 @@ Datacenter::~Datacenter(){
     }
 }
 
+Placement::Placement(){
+    m = -1;
+    k = -1;
+    f = -1;
+}
+
+Placement::Placement(const std::string &in){
+    if(in.size() < sizeof(Placement)){
+        DPRINTF(DEBUG_RECONFIG_CONTROL, "BAD FORMAT INPUT\n");
+        m = -1;
+        k = -1;
+        f = -1;
+    }
+    else{
+        for(uint i = 0; i < sizeof(Placement); i++){
+            ((char*)(this))[i] = in[i];
+        }
+    }
+}
+
+std::string Placement::get_string(){
+    std::string ret;
+    if(m != (uint32_t)(-1)){
+        for(uint i = 0; i < sizeof(Placement); i++){
+            ret.push_back(((char*)(this))[i]);
+        }
+    }
+    
+    return ret;
+}
+
 WorkloadConfig::~WorkloadConfig(){
     for(auto &it: grp){
         delete it;
@@ -345,7 +377,7 @@ Properties::~Properties(){
 Reconfig_key_info::Reconfig_key_info(){
     curr_conf_id = -1;
     curr_placement = nullptr;
-    bool is_done = false;
+    is_done = false;
     next_conf_id = -1;
     next_placement = nullptr;
 }

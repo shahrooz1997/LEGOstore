@@ -55,7 +55,7 @@ std::string ABD_Server::get_timestamp(string &key, uint32_t conf_id, Cache &cach
 }
 
 
-std::string ABD_Server::put(string &key, string &value, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
+std::string ABD_Server::put(string &key, uint32_t conf_id, string &value, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
     //std::lock_guard<std::mutex> lock(lock_t);
     DPRINTF(DEBUG_ABD_Server,"put function timestamp %s\n", timestamp.c_str());
@@ -81,7 +81,7 @@ std::string ABD_Server::put(string &key, string &value, string &timestamp, Cache
 }
 
 
-std::string ABD_Server::get(string &key, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
+std::string ABD_Server::get(string &key, uint32_t conf_id, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
     //std::unique_lock<std::mutex> lock(lock_t);
     DPRINTF(DEBUG_ABD_Server,"GET function called !! \n");

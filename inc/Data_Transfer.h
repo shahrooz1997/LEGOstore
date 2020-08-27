@@ -27,10 +27,14 @@ public:
 	static std::string serialize(const strVec &data);
 
 	static std::string serializePrp(const Properties &properties_p);
+        
+        static std::string serializePlacement(const Placement &placement);
 
 	static strVec deserialize(std::string &data);
 
 	static Properties* deserializePrp(std::string &data);
+        
+        static Placement* deserializePlacement(std::string &data);
 
 	static std::string serializeCFG(const Placement &pp);
 

@@ -40,6 +40,7 @@
 #define BACKLOG 1024
 #define CLIENT_PORT 10001
 #define MAX_LINGER_BEFORE_SOCK_CLOSE 50
+#define METADATA_SERVER_PORT "11001"
 
 #define CAS_PROTOCOL_NAME "CAS"
 #define ABD_PROTOCOL_NAME "ABD"
@@ -52,6 +53,7 @@ extern bool DEBUG_ABD_Client;
 extern bool DEBUG_CAS_Server;
 extern bool DEBUG_ABD_Server;
 extern bool DEBUG_RECONFIG_CONTROL;
+extern bool DEBUG_METADATA_SERVER;
 
 //#define LOGGING_ON
 
@@ -98,6 +100,12 @@ struct Placement{ // For ABD, you can use just the first portion of this struct.
     std::vector<uint32_t>   Q4;
 //    std::vector<DC*>        N; // The whole servers participating in this placement.
     uint32_t                f; // The number of failures this placement can tolerate.
+    
+    Placement();
+    Placement(const std::string &in);
+    
+    std::string get_string();
+    
 };
 
 

@@ -194,6 +194,39 @@ std::string DataTransfer::serializePrp(const Properties &properties_p){
 	return str_out;
 }
 
+std::string DataTransfer::serializePlacement(const Placement &placement){
+    
+    packet::Placement p;
+    
+    p.set_protocol(placement.protocol);
+    p.set_m(placement.m);
+    p.set_k(placement.k);
+    p.set_f(placement.f);
+
+    for(auto q : placement.Q1){
+        p.add_q1(q);
+    }
+
+    for(auto q : placement.Q2){
+        p.add_q2(q);
+    }
+
+    for(auto q : placement.Q3){
+        p.add_q3(q);
+    }
+
+    for(auto q : placement.Q4){
+        p.add_q4(q);
+    }
+
+    std::string str_out;
+    if(!p.SerializeToString(&str_out)){
+            throw std::logic_error("Failed to serialize the message ! ");
+    }
+
+    return str_out;
+}
+
 Properties* DataTransfer::deserializePrp(std::string &data){
 
 	Properties *prp = new Properties;
@@ -287,6 +320,34 @@ Properties* DataTransfer::deserializePrp(std::string &data){
 	}
 
 	return prp;
+}
+
+Placement* DataTransfer::deserializePlacement(std::string &data){
+    Placement *p = new Placement;
+    packet::Placement gp;		// Nomenclature: add 'g' in front of gRPC variables
+    if(!gp.ParseFromString(data)){
+            throw std::logic_error("Failed to Parse the input received ! ");
+    }
+
+    p->protocol = gp.protocol();
+    p->m = gp.m();
+    p->k = gp.k();
+    p->f = gp.f();
+
+    for(int m=0; m < gp.q1_size(); m++){
+            p->Q1.push_back(gp.q1(m));
+    }
+    for(int m=0; m < gp.q2_size(); m++){
+            p->Q2.push_back(gp.q2(m));
+    }
+    for(int m=0; m < gp.q3_size(); m++){
+            p->Q3.push_back(gp.q3(m));
+    }
+    for(int m=0; m < gp.q4_size(); m++){
+            p->Q4.push_back(gp.q4(m));
+    }
+    
+    return p;
 }
 
 std::string DataTransfer::serializeCFG(const Placement &pp){

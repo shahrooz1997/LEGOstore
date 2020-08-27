@@ -4,13 +4,13 @@ int DataServer::getSocketDesc(){
     return sockfd;
 }
 
-std::string DataServer::get_timestamp(std::string &key, std::string &curr_class){
+std::string DataServer::get_timestamp(std::string &key, std::string &curr_class, uint32_t conf_id){
 
     std::string result;
     if(curr_class == CAS_PROTOCOL_NAME){
-        result = CAS.get_timestamp(key,cache, persistent, lock);
+        result = CAS.get_timestamp(key, uint32_t conf_id, cache, persistent, lock);
     }else if(curr_class == ABD_PROTOCOL_NAME){
-        result = ABD.get_timestamp(key,cache, persistent, lock);
+        result = ABD.get_timestamp(key, uint32_t conf_id,cache, persistent, lock);
     }
 
     return result;

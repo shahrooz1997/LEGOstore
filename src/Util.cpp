@@ -279,6 +279,18 @@ Datacenter::Datacenter(const Datacenter& orig){
     }
 }
 
+Datacenter::~Datacenter(){
+    for(auto &it:servers){
+        delete it;
+    }
+}
+
+WorkloadConfig::~WorkloadConfig(){
+    for(auto &it: grp){
+        delete it;
+    }
+}
+
 GroupConfig::GroupConfig(){
     object_size = 0;
     num_objects = 0;
@@ -299,6 +311,10 @@ GroupConfig::GroupConfig(const GroupConfig& orig){
     placement_p = new Placement(*(orig.placement_p));
 }
 
+GroupConfig::~GroupConfig(){
+    delete placement_p;
+}
+
 Group::Group(){
     timestamp = -1;
 }
@@ -309,4 +325,112 @@ Group::Group(const Group& orig){
     for(auto gc: orig.grp_config){
         this->grp_config.push_back(new GroupConfig(*(gc)));
     }
+}
+
+Group::~Group(){
+    for(auto &it: grp_config){
+        delete it;
+    }
+}
+
+Properties::~Properties(){
+    for(auto &it:datacenters){
+        delete it;
+    }
+    for(auto &it:groups){
+        delete it;
+    }
+}
+
+Reconfig_key_info::Reconfig_key_info(){
+    curr_conf_id = -1;
+    curr_placement = nullptr;
+    bool is_done = false;
+    next_conf_id = -1;
+    next_placement = nullptr;
+}
+
+Reconfig_key_info::Reconfig_key_info(const std::string &in){
+    uint cc = 0;
+    if(in.size() < 2 * (sizeof(uint32_t) + sizeof(Placement)) + sizeof(bool)){
+        DPRINTF(DEBUG_RECONFIG_CONTROL, "BAD FORMAT INPUT\n");
+    }
+    else{
+        curr_placement = new Placement();
+        next_placement = new Placement();
+        
+        for(uint i = 0; i < sizeof(uint32_t); i++){
+            ((char*)(&curr_conf_id))[i] = in[cc++];
+        }
+        for(uint i = 0; i < sizeof(Placement); i++){
+            ((char*)(curr_placement))[i] = in[cc++];
+        }
+        for(uint i = 0; i < sizeof(bool); i++){
+            ((char*)(&is_done))[i] = in[cc++];
+        }
+        for(uint i = 0; i < sizeof(uint32_t); i++){
+            ((char*)(&next_conf_id))[i] = in[cc++];
+        }
+        for(uint i = 0; i < sizeof(Placement); i++){
+            ((char*)(next_placement))[i] = in[cc++];
+        }
+    }
+}
+
+Reconfig_key_info::~Reconfig_key_info(){
+    delete curr_placement;
+    delete next_placement;
+}
+
+std::string Reconfig_key_info::get_string(){  
+    std::string ret;
+    for(uint i = 0; i < sizeof(uint32_t); i++){
+        ret.push_back(((char*)(&curr_conf_id))[i]);
+    }
+    if(curr_placement != nullptr){
+        for(uint i = 0; i < sizeof(Placement); i++){
+            ret.push_back(((char*)(curr_placement))[i]);
+        }
+    }
+    else{
+        for(uint i = 0; i < sizeof(Placement); i++){
+            ret.push_back('\0');
+        }
+    }
+    for(uint i = 0; i < sizeof(bool); i++){
+        ret.push_back(((char*)(&is_done))[i]);
+    }
+    for(uint i = 0; i < sizeof(uint32_t); i++){
+        ret.push_back(((char*)(&next_conf_id))[i]);
+    }
+    if(next_placement != nullptr){
+        for(uint i = 0; i < sizeof(Placement); i++){
+            ret.push_back(((char*)(next_placement))[i]);
+        }
+    }
+    else{
+        for(uint i = 0; i < sizeof(Placement); i++){
+            ret.push_back('\0');
+        }
+    }
+    
+    return ret;
+}
+
+Data_handler::~Data_handler(){
+    delete reconfig_info;
+}
+
+std::string construct_key(const std::string &key, const std::string &protocol, const uint32_t conf_id, const std::string *timestamp){
+    std::string ret;
+    ret += key;
+    ret += "!";
+    ret += protocol;
+    ret += "!";
+    ret += std::to_string(conf_id);
+    if(timestamp != nullptr){
+        ret += "!";
+        ret += *timestamp;
+    }
+    return ret;
 }

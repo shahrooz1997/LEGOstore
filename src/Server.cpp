@@ -35,9 +35,9 @@ struct rcfgSet{
 std::unordered_map<std::string, rcfgSet*> rcfgKeys;
 
 bool key_match(std::string curr_key){
-    curr_key.erase(curr_key.begin());
-    curr_key.erase(curr_key.begin());
-    curr_key.erase(curr_key.begin());
+//    curr_key.erase(curr_key.begin());
+//    curr_key.erase(curr_key.begin());
+//    curr_key.erase(curr_key.begin());
     if(rcfgKeys.find(curr_key) != rcfgKeys.end()){
             if(rcfgKeys[curr_key]->state != RECONFIG_FINISH)
                     return true;
@@ -46,9 +46,9 @@ bool key_match(std::string curr_key){
 }
 
 int key_add(std::string curr_key){
-    curr_key.erase(curr_key.begin());
-    curr_key.erase(curr_key.begin());
-    curr_key.erase(curr_key.begin());
+//    curr_key.erase(curr_key.begin());
+//    curr_key.erase(curr_key.begin());
+//    curr_key.erase(curr_key.begin());
 
 	if(rcfgKeys.find(curr_key) == rcfgKeys.end()){
 		rcfgKeys[curr_key] = new rcfgSet;
@@ -68,11 +68,11 @@ std::string reconfig_query(DataServer &ds, std::string &curr_key, std::string &c
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", curr_key.c_str());
     reconfig = true;
     if(key_add(curr_key) == 1){
-        std::string key_c = curr_key;
-        key_c.erase(key_c.begin());
-        key_c.erase(key_c.begin());
-        key_c.erase(key_c.begin());
-        rcfgSet *config = rcfgKeys[key_c];
+//        std::string key_c = curr_key;
+//        key_c.erase(key_c.begin());
+//        key_c.erase(key_c.begin());
+//        key_c.erase(key_c.begin());
+        rcfgSet *config = rcfgKeys[curr_key];
         config->state = RECONFIG_QUERY;
         config->ccv.notify_all();
         std::cout << "SSSSS reconfig_query is received." << std::endl;
@@ -86,11 +86,11 @@ std::string reconfig_finalize(DataServer &ds, std::unique_lock<std::mutex> &lck,
 	 					std::string &key, std::string &timestamp, std::string &curr_class){
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
     key_add(key);
-    std::string key_c = key;
-    key_c.erase(key_c.begin());
-    key_c.erase(key_c.begin());
-    key_c.erase(key_c.begin());
-    rcfgSet *config = rcfgKeys[key_c];
+//    std::string key_c = key;
+//    key_c.erase(key_c.begin());
+//    key_c.erase(key_c.begin());
+//    key_c.erase(key_c.begin());
+    rcfgSet *config = rcfgKeys[key];
     while(config->state == RECONFIG_BLOCK){
         config->ccv.wait(lck);
     }
@@ -103,11 +103,11 @@ std::string write_config(DataServer &ds, std::unique_lock<std::mutex> &lck, std:
 					std::string &value, std::string &timestamp, std::string &curr_class){
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
     key_add(key);
-    std::string key_c = key;
-    key_c.erase(key_c.begin());
-    key_c.erase(key_c.begin());
-    key_c.erase(key_c.begin());
-    rcfgSet *config = rcfgKeys[key_c];
+//    std::string key_c = key;
+//    key_c.erase(key_c.begin());
+//    key_c.erase(key_c.begin());
+//    key_c.erase(key_c.begin());
+    rcfgSet *config = rcfgKeys[key];
     while(config->state == RECONFIG_BLOCK){
             config->ccv.wait(lck);
     }
@@ -121,11 +121,11 @@ std::string finish_reconfig(std::unique_lock<std::mutex> &lck, std::string &key,
 								 std::string &timestamp, std::string &cfg){
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
     key_add(key);
-    std::string key_c = key;
-    key_c.erase(key_c.begin());
-    key_c.erase(key_c.begin());
-    key_c.erase(key_c.begin());
-    rcfgSet *config = rcfgKeys[key_c];
+//    std::string key_c = key;
+//    key_c.erase(key_c.begin());
+//    key_c.erase(key_c.begin());
+//    key_c.erase(key_c.begin());
+    rcfgSet *config = rcfgKeys[key];
 //    while(config->state < RECONFIG_WRITE){
 //        config->ccv.wait(lck);
 //    }

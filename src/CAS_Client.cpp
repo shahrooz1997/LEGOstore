@@ -451,7 +451,7 @@ uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
     fprintf(this->log_file, "%s write invoke %s\n", log_buf, value.c_str());
 #endif
     
-    key = std::string("CAS" + key);
+//    key = std::string("CAS" + key);
 
     int retries = this->prop->retry_attempts;
     bool op_status = false;
@@ -651,7 +651,7 @@ uint32_t CAS_Client::get(std::string key, std::string &value){
     fprintf(this->log_file, "%s read invoke nil\n", log_buf);
 #endif
     
-    key = std::string("CAS" + key);
+//    key = std::string("CAS" + key);
 
     value.clear();
 

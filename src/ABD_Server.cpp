@@ -24,7 +24,7 @@ ABD_Server::ABD_Server() {
 ABD_Server::~ABD_Server() {
 }
 
-std::string ABD_Server::get_timestamp(string &key, Cache &cache, Persistent &persistent, std::mutex &lock_t){
+std::string ABD_Server::get_timestamp(string &key, uint32_t conf_id, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
     DPRINTF(DEBUG_ABD_Server, "get_timestamp started and the key is %s\n", key.c_str());
     const std::vector<std::string> *ptr = cache.get(key);

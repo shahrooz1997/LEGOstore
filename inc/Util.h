@@ -84,12 +84,7 @@ typedef struct Datacenter{
     
     Datacenter();
     Datacenter(const Datacenter& orig);
-
-    ~Datacenter(){
-        for(auto &it:servers){
-            delete it;
-        }
-    }
+    ~Datacenter();
 } DC;
 
 
@@ -130,12 +125,7 @@ struct WorkloadConfig{
     uint64_t                    timestamp;
     std::vector<uint32_t>       grp_id;
     std::vector<GroupWorkload*> grp;
-
-	~WorkloadConfig(){
-		for(auto &it: grp){
-			delete it;
-		}
-	}
+    ~WorkloadConfig();
 };
 
 struct GroupConfig{
@@ -150,10 +140,7 @@ struct GroupConfig{
     
     GroupConfig();
     GroupConfig(const GroupConfig& orig);
-
-    ~GroupConfig(){
-            delete placement_p;
-    }
+    ~GroupConfig();
 };
 
 struct Group{
@@ -163,12 +150,7 @@ struct Group{
     
     Group();
     Group(const Group& orig);
-    
-    ~Group(){
-        for(auto &it: grp_config){
-                delete it;
-        }
-    }
+    ~Group();
 };
 
 struct Properties{
@@ -179,15 +161,31 @@ struct Properties{
     uint64_t                start_time;
     std::vector <DC*>       datacenters;
     std::vector <Group*>    groups;
+    ~Properties();
+};
 
-    ~Properties(){
-        for(auto &it:datacenters){
-            delete it;
-        }
-        for(auto &it:groups){
-            delete it;
-        }
-    }
+struct Reconfig_key_info{
+    uint32_t curr_conf_id;
+    Placement *curr_placement;
+    bool is_done;
+    uint32_t next_conf_id;
+    Placement *next_placement;
+    
+    Reconfig_key_info();
+    Reconfig_key_info(const std::string &in);
+    ~Reconfig_key_info();
+    
+    std::string get_string();
+};
+
+class Data_handler{
+    std::string value;
+    std::string protocol;
+    std::string timestamp;
+    Reconfig_key_info *reconfig_info;
+    bool fin;
+    
+    ~Data_handler();
 };
 
 class JSON_Reader {
@@ -199,6 +197,7 @@ private:
 
 };
 
+std::string construct_key(const std::string &key, const std::string &protocol, const uint32_t conf_id, const std::string *timestamp = nullptr);
 
 std::string convert_ip_to_string(uint32_t ip);
 inline unsigned int stoui(const std::string& s)

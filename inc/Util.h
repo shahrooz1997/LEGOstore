@@ -54,6 +54,7 @@ extern bool DEBUG_CAS_Server;
 extern bool DEBUG_ABD_Server;
 extern bool DEBUG_RECONFIG_CONTROL;
 extern bool DEBUG_METADATA_SERVER;
+extern bool DEBUG_UTIL;
 
 //#define LOGGING_ON
 
@@ -103,6 +104,7 @@ struct Placement{ // For ABD, you can use just the first portion of this struct.
     
     Placement();
     Placement(const std::string &in);
+    Placement(const std::string &in, uint32_t &cc);
     
     std::string get_string();
     
@@ -131,6 +133,7 @@ struct GroupWorkload{
 
 struct WorkloadConfig{
     uint64_t                    timestamp;
+    uint32_t                    id;
     std::vector<uint32_t>       grp_id;
     std::vector<GroupWorkload*> grp;
     ~WorkloadConfig();

@@ -7,140 +7,140 @@
 
 //#include <linux/sockios.h>
 //std::atomic<bool> active(true);
-std::atomic<bool> reconfig(false);
-std::mutex rcfglock;
-
-enum rcfg_state{
-	RECONFIG_BLOCK,
-	RECONFIG_QUERY,
-	RECONFIG_FINALIZE,
-	RECONFIG_WRITE,
-	RECONFIG_FINISH
-};
+//std::atomic<bool> reconfig(false);
+//std::mutex rcfglock;
+//
+//enum rcfg_state{
+//	RECONFIG_BLOCK,
+//	RECONFIG_QUERY,
+//	RECONFIG_FINALIZE,
+//	RECONFIG_WRITE,
+//	RECONFIG_FINISH
+//};
 
 //ccv is there to ensure ordering amongst
 // reconfiguration protocol msgs
-struct rcfgSet{
-	std::condition_variable rcv;
-	std::condition_variable ccv;
-	std::string highest_timestamp;
-	uint waiting_threads;
-	std::string new_cfg;
-	rcfg_state state;
-};
+//struct rcfgSet{
+//	std::condition_variable rcv;
+//	std::condition_variable ccv;
+//	std::string highest_timestamp;
+//	uint waiting_threads;
+//	std::string new_cfg;
+//	rcfg_state state;
+//};
 
 //Keys for which client actions are blocked
 //std::unordered_set<std::string> blocked_keys;
 //Maps key to it's reconfiguration meta data
-std::unordered_map<std::string, rcfgSet*> rcfgKeys;
+//std::unordered_map<std::string, rcfgSet*> rcfgKeys;
 
-bool key_match(std::string curr_key){
-//    curr_key.erase(curr_key.begin());
-//    curr_key.erase(curr_key.begin());
-//    curr_key.erase(curr_key.begin());
-    if(rcfgKeys.find(curr_key) != rcfgKeys.end()){
-            if(rcfgKeys[curr_key]->state != RECONFIG_FINISH)
-                    return true;
-    }
-    return false;
-}
+//bool key_match(std::string curr_key){
+////    curr_key.erase(curr_key.begin());
+////    curr_key.erase(curr_key.begin());
+////    curr_key.erase(curr_key.begin());
+//    if(rcfgKeys.find(curr_key) != rcfgKeys.end()){
+//            if(rcfgKeys[curr_key]->state != RECONFIG_FINISH)
+//                    return true;
+//    }
+//    return false;
+//}
 
-int key_add(std::string curr_key){
-//    curr_key.erase(curr_key.begin());
-//    curr_key.erase(curr_key.begin());
-//    curr_key.erase(curr_key.begin());
+//int key_add(std::string curr_key){
+////    curr_key.erase(curr_key.begin());
+////    curr_key.erase(curr_key.begin());
+////    curr_key.erase(curr_key.begin());
+//
+//	if(rcfgKeys.find(curr_key) == rcfgKeys.end()){
+//		rcfgKeys[curr_key] = new rcfgSet;
+//		rcfgKeys[curr_key]->waiting_threads = 0;
+//		rcfgKeys[curr_key]->state = RECONFIG_BLOCK;
+//		return 1;
+//	}else if(rcfgKeys.find(curr_key) != rcfgKeys.end() && rcfgKeys[curr_key]->state == RECONFIG_BLOCK){
+//		return 1;
+//	}else{ 	// Previous reconfig still not complete
+//		std::cout << "Reconfiguration for the same key is already in progresss !!" << std::endl;
+//		//assert(0);
+//		return -1;
+//	}
+//}
 
-	if(rcfgKeys.find(curr_key) == rcfgKeys.end()){
-		rcfgKeys[curr_key] = new rcfgSet;
-		rcfgKeys[curr_key]->waiting_threads = 0;
-		rcfgKeys[curr_key]->state = RECONFIG_BLOCK;
-		return 1;
-	}else if(rcfgKeys.find(curr_key) != rcfgKeys.end() && rcfgKeys[curr_key]->state == RECONFIG_BLOCK){
-		return 1;
-	}else{ 	// Previous reconfig still not complete
-		std::cout << "Reconfiguration for the same key is already in progresss !!" << std::endl;
-		//assert(0);
-		return -1;
-	}
-}
+//std::string reconfig_query(DataServer &ds, std::string &curr_key, std::string &curr_class){
+//    DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", curr_key.c_str());
+//    reconfig = true;
+//    if(key_add(curr_key) == 1){
+////        std::string key_c = curr_key;
+////        key_c.erase(key_c.begin());
+////        key_c.erase(key_c.begin());
+////        key_c.erase(key_c.begin());
+//        rcfgSet *config = rcfgKeys[curr_key];
+//        config->state = RECONFIG_QUERY;
+//        config->ccv.notify_all();
+//        std::cout << "SSSSS reconfig_query is received." << std::endl;
+//        return ds.reconfig_query(curr_key, curr_class);
+//    }else{
+//        return DataTransfer::serialize({"Failed"});
+//    }
+//}
 
-std::string reconfig_query(DataServer &ds, std::string &curr_key, std::string &curr_class){
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", curr_key.c_str());
-    reconfig = true;
-    if(key_add(curr_key) == 1){
-//        std::string key_c = curr_key;
-//        key_c.erase(key_c.begin());
-//        key_c.erase(key_c.begin());
-//        key_c.erase(key_c.begin());
-        rcfgSet *config = rcfgKeys[curr_key];
-        config->state = RECONFIG_QUERY;
-        config->ccv.notify_all();
-        std::cout << "SSSSS reconfig_query is received." << std::endl;
-        return ds.reconfig_query(curr_key, curr_class);
-    }else{
-        return DataTransfer::serialize({"Failed"});
-    }
-}
-
-std::string reconfig_finalize(DataServer &ds, std::unique_lock<std::mutex> &lck,
-	 					std::string &key, std::string &timestamp, std::string &curr_class){
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
-    key_add(key);
-//    std::string key_c = key;
-//    key_c.erase(key_c.begin());
-//    key_c.erase(key_c.begin());
-//    key_c.erase(key_c.begin());
-    rcfgSet *config = rcfgKeys[key];
-    while(config->state == RECONFIG_BLOCK){
-        config->ccv.wait(lck);
-    }
-    // state > RECONFIG_BLOCK // Todo: what is it for here?
-    return ds.reconfig_finalize(key, timestamp, curr_class);
-}
-
-
-std::string write_config(DataServer &ds, std::unique_lock<std::mutex> &lck, std::string &key,
-					std::string &value, std::string &timestamp, std::string &curr_class){
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
-    key_add(key);
-//    std::string key_c = key;
-//    key_c.erase(key_c.begin());
-//    key_c.erase(key_c.begin());
-//    key_c.erase(key_c.begin());
-    rcfgSet *config = rcfgKeys[key];
-    while(config->state == RECONFIG_BLOCK){
-            config->ccv.wait(lck);
-    }
-    config->state = RECONFIG_WRITE;
-    config->ccv.notify_all();
-    return ds.write_config(key, value, timestamp, curr_class);
-
-}
-
-std::string finish_reconfig(std::unique_lock<std::mutex> &lck, std::string &key,
-								 std::string &timestamp, std::string &cfg){
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
-    key_add(key);
-//    std::string key_c = key;
-//    key_c.erase(key_c.begin());
-//    key_c.erase(key_c.begin());
-//    key_c.erase(key_c.begin());
-    rcfgSet *config = rcfgKeys[key];
-//    while(config->state < RECONFIG_WRITE){
+//std::string reconfig_finalize(DataServer &ds, std::unique_lock<std::mutex> &lck,
+//	 					std::string &key, std::string &timestamp, std::string &curr_class){
+//    DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
+//    key_add(key);
+////    std::string key_c = key;
+////    key_c.erase(key_c.begin());
+////    key_c.erase(key_c.begin());
+////    key_c.erase(key_c.begin());
+//    rcfgSet *config = rcfgKeys[key];
+//    while(config->state == RECONFIG_BLOCK){
 //        config->ccv.wait(lck);
 //    }
+//    // state > RECONFIG_BLOCK // Todo: what is it for here?
+//    return ds.reconfig_finalize(key, timestamp, curr_class);
+//}
 
-    config->state = RECONFIG_FINISH;
-    config->highest_timestamp = timestamp;
-    config->new_cfg = cfg;
-    if(rcfgKeys.empty())
-            reconfig = false;
-    config->rcv.notify_all();
-    
-    std::cout << "SSSSS finish_reconfig is received." << std::endl;
-    
-    return DataTransfer::serialize({"OK"});
-}
+
+//std::string write_config(DataServer &ds, std::unique_lock<std::mutex> &lck, std::string &key,
+//					std::string &value, std::string &timestamp, std::string &curr_class){
+//    DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
+//    key_add(key);
+////    std::string key_c = key;
+////    key_c.erase(key_c.begin());
+////    key_c.erase(key_c.begin());
+////    key_c.erase(key_c.begin());
+//    rcfgSet *config = rcfgKeys[key];
+//    while(config->state == RECONFIG_BLOCK){
+//            config->ccv.wait(lck);
+//    }
+//    config->state = RECONFIG_WRITE;
+//    config->ccv.notify_all();
+//    return ds.write_config(key, value, timestamp, curr_class);
+//
+//}
+
+//std::string finish_reconfig(std::unique_lock<std::mutex> &lck, std::string &key,
+//								 std::string &timestamp, std::string &cfg){
+//    DPRINTF(DEBUG_RECONFIG_CONTROL, "started. for key %s\n", key.c_str());
+//    key_add(key);
+////    std::string key_c = key;
+////    key_c.erase(key_c.begin());
+////    key_c.erase(key_c.begin());
+////    key_c.erase(key_c.begin());
+//    rcfgSet *config = rcfgKeys[key];
+////    while(config->state < RECONFIG_WRITE){
+////        config->ccv.wait(lck);
+////    }
+//
+//    config->state = RECONFIG_FINISH;
+//    config->highest_timestamp = timestamp;
+//    config->new_cfg = cfg;
+//    if(rcfgKeys.empty())
+//            reconfig = false;
+//    config->rcv.notify_all();
+//    
+//    std::cout << "SSSSS finish_reconfig is received." << std::endl;
+//    
+//    return DataTransfer::serialize({"OK"});
+//}
 
 void server_connection(int connection, DataServer &dataserver, int portid){
 
@@ -160,60 +160,60 @@ void server_connection(int connection, DataServer &dataserver, int portid){
     strVec data = DataTransfer::deserialize(recvd);
     std::string &method = data[0];
     
-    if(method != "get" && method != "put" && method != "get_timestamp"){
+//    if(method != "get" && method != "put" && method != "get_timestamp"){
         DPRINTF(DEBUG_RECONFIG_CONTROL, "The method %s is called. The key is %s, server port is %u\n",
                     method.c_str(), data[1].c_str(), portid);
-    }
+//    }
     
 
-    std::unique_lock<std::mutex> rlock(rcfglock);
-    if(reconfig.load() && key_match(data[1])){
-        if(method != "write_config" && method != "reconfig_finalize" && method != "finish_reconfig"){
-            
-            DPRINTF(DEBUG_RECONFIG_CONTROL, "method %s is called while reconfiguration is going on"
-                    ". key is %s\n", method.c_str(), data[1].c_str());
-
-            
-            rcfgSet *config = rcfgKeys[data[1]];
-            config->waiting_threads++;
-            //Block the thread
-            while(config->state != RECONFIG_FINISH) {
-                config->rcv.wait(rlock);
-            }
-
-            config->waiting_threads--;
-            //Check which operations to service and which to reject
-            if(data.size() > 3 && Timestamp::compare_timestamp(config->highest_timestamp, data[2])){
-                //if data[2] < highest and operation is not 'get_timestamp', then service the thread
-                // Garbage collect, Reconfig complete
-                
-                DPRINTF(DEBUG_RECONFIG_CONTROL, "method %s was called while reconfiguration was going on"
-                        ". key is %s, reconfiguration is finished and because of the timestamp we fulfilled"
-                        " the operation\n", method.c_str(), data[1].c_str());
-                
-                if(config->waiting_threads == 0){
-                    delete config;
-                    rcfgKeys.erase(data[1]);
-                }
-
-            }else{
-                //Terminate the thread and send new config
-                DPRINTF(DEBUG_RECONFIG_CONTROL, "method %s was called while reconfiguration was going on"
-                        ". key is %s, reconfiguration is finished and because of the timestamp we declined"
-                        " the operation\n", method.c_str(), data[1].c_str());
-                result = DataTransfer::sendMsg(connection, DataTransfer::serialize({"operation_fail", config->new_cfg}));
-                printf("OPERATION FAILED sent out for method: %s key : %s and timestamp:%s ", data[0].c_str(), data[1].c_str(), data[2].c_str());
-                // Garbage collect, Reconfig complete
-                if(config->waiting_threads == 0){
-                    delete config;
-                    rcfgKeys.erase(data[1]);
-                }
-
-                close(connection);
-                return;
-            }
-        }
-    }
+//    std::unique_lock<std::mutex> rlock(rcfglock);
+//    if(reconfig.load() && key_match(data[1])){
+//        if(method != "write_config" && method != "reconfig_finalize" && method != "finish_reconfig"){
+//            
+//            DPRINTF(DEBUG_RECONFIG_CONTROL, "method %s is called while reconfiguration is going on"
+//                    ". key is %s\n", method.c_str(), data[1].c_str());
+//
+//            
+//            rcfgSet *config = rcfgKeys[data[1]];
+//            config->waiting_threads++;
+//            //Block the thread
+//            while(config->state != RECONFIG_FINISH) {
+//                config->rcv.wait(rlock);
+//            }
+//
+//            config->waiting_threads--;
+//            //Check which operations to service and which to reject
+//            if(data.size() > 3 && Timestamp::compare_timestamp(config->highest_timestamp, data[2])){
+//                //if data[2] < highest and operation is not 'get_timestamp', then service the thread
+//                // Garbage collect, Reconfig complete
+//                
+//                DPRINTF(DEBUG_RECONFIG_CONTROL, "method %s was called while reconfiguration was going on"
+//                        ". key is %s, reconfiguration is finished and because of the timestamp we fulfilled"
+//                        " the operation\n", method.c_str(), data[1].c_str());
+//                
+//                if(config->waiting_threads == 0){
+//                    delete config;
+//                    rcfgKeys.erase(data[1]);
+//                }
+//
+//            }else{
+//                //Terminate the thread and send new config
+//                DPRINTF(DEBUG_RECONFIG_CONTROL, "method %s was called while reconfiguration was going on"
+//                        ". key is %s, reconfiguration is finished and because of the timestamp we declined"
+//                        " the operation\n", method.c_str(), data[1].c_str());
+//                result = DataTransfer::sendMsg(connection, DataTransfer::serialize({"operation_fail", config->new_cfg}));
+//                printf("OPERATION FAILED sent out for method: %s key : %s and timestamp:%s ", data[0].c_str(), data[1].c_str(), data[2].c_str());
+//                // Garbage collect, Reconfig complete
+//                if(config->waiting_threads == 0){
+//                    delete config;
+//                    rcfgKeys.erase(data[1]);
+//                }
+//
+//                close(connection);
+//                return;
+//            }
+//        }
+//    }
 
     if(method == "put"){
         DPRINTF(DEBUG_RECONFIG_CONTROL, "The method put is called. The key is %s, ts: %s, value: %s, class: %s, server port is %u\n",
@@ -230,14 +230,14 @@ void server_connection(int connection, DataServer &dataserver, int portid){
         result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2]));
     }else if(method == "put_fin"){
             result = DataTransfer::sendMsg(connection, dataserver.put_fin(data[1], data[2], data[3]));
-    }else if(method == "reconfig_query"){
-            result = DataTransfer::sendMsg(connection, reconfig_query(dataserver, data[1], data[2]));
-    }else if(method == "reconfig_finalize"){
-            result = DataTransfer::sendMsg(connection, reconfig_finalize(dataserver, rlock, data[1], data[2], data[3]));
-    }else if(method == "write_config"){
-            result = DataTransfer::sendMsg(connection, write_config(dataserver, rlock, data[1], data[3], data[2], data[4]));
-    }else if(method == "finish_reconfig"){
-            result = DataTransfer::sendMsg(connection, finish_reconfig(rlock, data[1], data[2], data[3]));
+//    }else if(method == "reconfig_query"){
+//            result = DataTransfer::sendMsg(connection, reconfig_query(dataserver, data[1], data[2]));
+//    }else if(method == "reconfig_finalize"){
+//            result = DataTransfer::sendMsg(connection, reconfig_finalize(dataserver, rlock, data[1], data[2], data[3]));
+//    }else if(method == "write_config"){
+//            result = DataTransfer::sendMsg(connection, write_config(dataserver, rlock, data[1], data[3], data[2], data[4]));
+//    }else if(method == "finish_reconfig"){
+//            result = DataTransfer::sendMsg(connection, finish_reconfig(rlock, data[1], data[2], data[3]));
     }
     else {
             DataTransfer::sendMsg(connection,  DataTransfer::serialize({"MethodNotFound", "Unknown method is called"}));

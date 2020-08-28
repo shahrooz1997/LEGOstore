@@ -145,6 +145,7 @@ int Controller::read_input_workload(std::string &configFile, std::vector<Workloa
 	for( auto &element: j){
 		WorkloadConfig *wkl = new WorkloadConfig;
 		element["timestamp"].get_to(wkl->timestamp);
+                element["id"].get_to(wkl->id);
 		element["grp_id"].get_to(wkl->grp_id);
 		for( auto &it: element["grp_workload"]){
 			GroupWorkload *gwkl = new GroupWorkload;

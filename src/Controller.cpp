@@ -175,7 +175,8 @@ int Controller::generate_client_config(const std::vector<WorkloadConfig*> &input
 	for( auto it: input ){
 		Group *grp = new Group;
 		grp->timestamp = it->timestamp;
-		grp->grp_id = std::move(it->grp_id);
+                grp->id = it->id;
+		grp->grp_id = it->grp_id;
 
 		// Memory allocation has to happen inside function call
 		std::vector<Placement*> placement;

@@ -44,8 +44,9 @@ message GroupConfig{
 
 message Group{
 	uint64 timestamp = 1;
-	repeated uint32 grp_id = 2;
-	repeated GroupConfig grp_config = 3;
+	uint32 id = 2;
+	repeated uint32 grp_id = 3;
+	repeated GroupConfig grp_config = 4;
 }
 
 message properties{
@@ -56,4 +57,10 @@ message properties{
 	uint64 start_time = 5;
 	repeated Datacenter datacenters = 6;
 	repeated Group groups = 7;
+}
+
+message MetaDataServer{
+	bytes status = 1;
+	bytes msg = 2;
+	Placement placement_p = 3;
 }

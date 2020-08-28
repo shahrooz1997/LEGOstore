@@ -23,6 +23,9 @@
 #include <mutex>
 #include "Data_Transfer.h"
 #include <cstdlib>
+#include <utility>
+#include <sstream>
+#include <iostream>
 
 using namespace std;
 
@@ -30,7 +33,7 @@ using namespace std;
  * 
  */
 
-std::map<std::string, Placement> ps;
+std::map<std::string, pair<string, Placement> > key_info; //key -> confid, placement
 std::mutex lock_t;
 
 inline std::string construct_key_metadata(const std::string &key, const std::string &conf_id){
@@ -41,44 +44,115 @@ inline std::string construct_key_metadata(const std::string &key, const std::str
     return ret;
 }
 
+inline std::string construct_key_metadata(const std::string &key, const uint32_t conf_id){
+    return construct_key_metadata(key, to_string(conf_id));
+}
+
+uint32_t get_most_recent_conf_id(const string& key, const string& confid){
+    auto it = key_info.find(construct_key_metadata(key, confid));
+//    uint32_t asked_conf_id = stoul(confid);
+    uint32_t saved_conf_id = stoul(it->second.first);
+    
+    if(saved_conf_id == stoul(confid))
+        return saved_conf_id;
+    
+    while(true){
+        auto it2 = key_info.find(construct_key_metadata(key, saved_conf_id));
+        if(saved_conf_id == stoul(it2->second.first))
+            break;
+        saved_conf_id = stoul(it2->second.first);
+    }
+    
+    return saved_conf_id;
+}
+
+string ask(const string& key, const string& confid){
+    auto it = key_info.find(construct_key_metadata(key, confid));
+    
+    if(it == key_info.end()){ // Not found!
+        return DataTransfer::serializeMDS("ERROR", "key with that conf_id does not exist", nullptr);
+    }
+    
+    uint32_t asked_conf_id = stoul(confid);
+    uint32_t saved_conf_id = stoul(it->second.first);
+    
+    if(asked_conf_id == saved_conf_id){
+        return DataTransfer::serializeMDS("OK", confid, &(it->second.second));
+    }
+    
+    uint32_t most_recent_conf_id = get_most_recent_conf_id(key, confid);
+    pair<string, Placement> &temp2 = key_info[construct_key_metadata(key, most_recent_conf_id)];
+    return DataTransfer::serializeMDS("Updated", temp2.first, &(temp2.second));
+}
+
+string update(const string& key, const string& old_confid, const string& new_confid, Placement* p){
+    auto it = key_info.find(construct_key_metadata(key, old_confid));
+    
+    if(it == key_info.end()){ // Not found!
+        return DataTransfer::serializeMDS("ERROR", "key with that old_confid does not exist", nullptr);
+    }
+    
+    it->second.first = new_confid;
+    
+    key_info[construct_key_metadata(key, new_confid)] = pair<string, Placement>(new_confid, *p);
+    
+    return DataTransfer::serializeMDS("OK", "key updated", nullptr);
+}
+
 void server_connection(int connection, int portid){
 
     std::string recvd;
     int result = DataTransfer::recvMsg(connection,recvd);
     if(result != 1){
-        strVec msg{"failure", "BAD FORMAT MESSAGE RECEIVED"};
-        DataTransfer::sendMsg(connection, DataTransfer::serialize(msg));
+        DataTransfer::sendMsg(connection, DataTransfer::serializeMDS("ERROR", "Error in receiving"));
         close(connection);
         return;
     }
 
-    // if data.size > 3
-    // Data[0] -> method_name
-    // Data[1] -> key
-    // Data[2] -> timestamp
-    strVec data = DataTransfer::deserialize(recvd);
-    std::string &method = data[0]; // Method: ask/update, key, conf_id
+    string status;
+    string msg;
+    
+    Placement *p = DataTransfer::deserializeMDS(recvd, status, msg);
+    std::string &method = status; // Method: ask/update, key, conf_id
     
     
     std::unique_lock<std::mutex> lock(lock_t);
     if(method == "ask"){
-        DPRINTF(DEBUG_METADATA_SERVER, "The method ask is called. The key is %s, conf_id: %s, server port is %u\n",
-                    data[1].c_str(), data[2].c_str(), portid);
-        result = DataTransfer::sendMsg(connection, DataTransfer::serializePlacement(ps[construct_key_metadata(data[1], data[2])]));
+        DPRINTF(DEBUG_METADATA_SERVER, "The method ask is called. The msg is %s, server port is %u\n",
+                    msg.c_str(), portid);
+        std::size_t pos = msg.find("!");
+        if(pos >= msg.size()){
+            std::stringstream pmsg; // thread safe printing
+            pmsg << "BAD FORMAT: " << msg << std::endl;
+            std::cerr << pmsg.str();
+            assert(0);
+        }
+	string key = msg.substr(0, pos);
+	string conf_id = msg.substr(pos + 1);
+        result = DataTransfer::sendMsg(connection, ask(key, conf_id));
     }else if(method == "update"){
-        DPRINTF(DEBUG_METADATA_SERVER, "The method get is called. The key is %s, ts: %s, class: %s, server port is %u\n",
-                    data[1].c_str(), data[2].c_str(), data[3].c_str(), portid);
-        //std::cout << "GET fucntion called for server id "<< portid << std::endl;
+        DPRINTF(DEBUG_METADATA_SERVER, "The method update is called. The msg is %s, server port is %u\n",
+                    msg.c_str(), portid);
+        std::size_t pos = msg.find("!");
+        std::size_t pos2 = msg.find("!", pos + 1);
+        if(pos >= msg.size() || pos2 >= msg.size()){
+            std::stringstream pmsg; // thread safe printing
+            pmsg << "BAD FORMAT: " << msg << std::endl;
+            std::cerr << pmsg.str();
+            assert(0);
+        }
+        string key = msg.substr(0, pos);
+	string old_confid = msg.substr(pos + 1, pos2);
+        string new_confid = msg.substr(pos2 + 1);
         
-        ps[construct_key_metadata(data[1], data[2])] = Placement(data[3]);
-        result = DataTransfer::sendMsg(connection, DataTransfer::serialize({"OK"}));
+        result = DataTransfer::sendMsg(connection, update(key, old_confid, new_confid, p));
     }
     else {
-            DataTransfer::sendMsg(connection,  DataTransfer::serialize({"MethodNotFound", "Unknown method is called"}));
+            DataTransfer::sendMsg(connection,  DataTransfer::serializeMDS("ERROR", "Unknown method is called"));
     }
 
     if(result != 1){
-            DataTransfer::sendMsg(connection,  DataTransfer::serialize({"Failure","Server Response failed"}));
+            DataTransfer::sendMsg(connection,  DataTransfer::serializeMDS("ERROR", "Server Response failed"));
     }
 
     shutdown(connection, SHUT_WR);

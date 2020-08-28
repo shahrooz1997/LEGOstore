@@ -268,6 +268,8 @@ Properties* DataTransfer::deserializePrp(std::string &data){
 		const packet::Group &ggrp = gprp.groups(i);
 
 		grp->timestamp = ggrp.timestamp();
+                
+                grp->id = ggrp.id();
 
 		for(int j=0; j<ggrp.grp_id_size(); j++){
 			grp->grp_id.push_back(ggrp.grp_id(j));
@@ -412,3 +414,89 @@ Placement DataTransfer::deserializeCFG(std::string &data){
 
 	return plc;
 }
+
+std::string DataTransfer::serializeMDS(const std::string &status, const std::string &msg, const Placement *placement){
+    packet::MetaDataServer mds;
+    mds.set_status(status);
+    mds.set_msg(msg);
+    
+    if(placement != nullptr){
+        packet::Placement *placement_p = mds.mutable_placement_p();
+        const Placement& pp = *placement;
+        
+	placement_p->set_protocol(pp.protocol);
+	placement_p->set_m(pp.m);
+	placement_p->set_k(pp.k);
+	placement_p->set_f(pp.f);
+
+	for(auto q : pp.Q1){
+		placement_p->add_q1(q);
+	}
+
+	for(auto q : pp.Q2){
+		placement_p->add_q2(q);
+	}
+
+	for(auto q : pp.Q3){
+		placement_p->add_q3(q);
+	}
+
+	for(auto q : pp.Q4){
+		placement_p->add_q4(q);
+	}
+    }
+    else{
+        packet::Placement *placement_p = mds.mutable_placement_p();
+        
+	placement_p->set_protocol("");
+	placement_p->set_m(0);
+	placement_p->set_k(0);
+	placement_p->set_f(0);
+    }
+
+    
+    std::string str_out;
+    if(!mds.SerializeToString(&str_out)){
+            throw std::logic_error("Failed to serialize the message ! ");
+    }
+    return str_out;
+}
+
+
+Placement* DataTransfer::deserializeMDS(const std::string &data, std::string &status, std::string &msg){
+    Placement *p = nullptr;
+    packet::MetaDataServer mds;		// Nomenclature: add 'g' in front of gRPC variables
+    if(!mds.ParseFromString(data)){
+            throw std::logic_error("Failed to Parse the input received ! ");
+    }
+    
+    status = mds.status();
+    msg = mds.msg();
+    
+    if(status == "update"){
+        p = new Placement;
+        
+        const packet::Placement &gp = mds.placement_p();
+        
+        p->protocol = gp.protocol();
+        p->m = gp.m();
+        p->k = gp.k();
+        p->f = gp.f();
+
+        for(int m=0; m < gp.q1_size(); m++){
+                p->Q1.push_back(gp.q1(m));
+        }
+        for(int m=0; m < gp.q2_size(); m++){
+                p->Q2.push_back(gp.q2(m));
+        }
+        for(int m=0; m < gp.q3_size(); m++){
+                p->Q3.push_back(gp.q3(m));
+        }
+        for(int m=0; m < gp.q4_size(); m++){
+                p->Q4.push_back(gp.q4(m));
+        }    
+    }
+    
+    return p;
+}
+

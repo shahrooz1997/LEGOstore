@@ -39,6 +39,10 @@ public:
 	static std::string serializeCFG(const Placement &pp);
 
 	static Placement deserializeCFG(std::string &data);
+        
+        
+        static std::string serializeMDS(const std::string &status, const std::string &msg, const Placement *placement = nullptr);
+        static Placement* deserializeMDS(const std::string &data, std::string &status, std::string &msg);
 
 };
 

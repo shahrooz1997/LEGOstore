@@ -37,11 +37,13 @@
 #include "Timestamp.h"
 #include <erasurecode.h>
 #include "Data_Transfer.h"
+#include <map>
+#include <utility>
 
 class CAS_Client {
 public:
-    CAS_Client(Properties *prop, uint32_t client_id, Placement &pp);
-    CAS_Client(Properties *prop, uint32_t client_id, Placement &pp, int desc_l);
+    CAS_Client(Properties *prop, uint32_t client_id);
+//    CAS_Client(Properties *prop, uint32_t client_id, int desc_l);
     CAS_Client(const CAS_Client& orig) = delete;
     virtual ~CAS_Client();
 
@@ -49,16 +51,25 @@ public:
     uint32_t get(std::string key, std::string &value);
 
 private:
+    
+    uint32_t                local_datacenter_id;
+    uint32_t                retry_attempts;
+    uint32_t                metadata_server_timeout;
+    uint32_t                timeout_per_request;
+    uint64_t                start_time;
+    std::vector <DC*>       datacenters;
 
     uint32_t id;
-    Properties *prop;
-    Placement p;
+//    Properties *prop;
+//    Placement p;
     int desc;
     int desc_destroy;
     std::string current_class; // "CAS"
+    
+    std::map<std::string, std::pair<uint32_t, Placement> > keys_info; // a map from a key to its conf_id and its placement
 
     uint32_t get_timestamp(std::string *key, Timestamp **timestamp);
-    void update_placement(std::string &new_cfg);
+    int update_placement(std::string &key, uint32_t conf_id = 0); // There must be something on the metadata server with conf_id zero for initialization
 
 
 // Logging

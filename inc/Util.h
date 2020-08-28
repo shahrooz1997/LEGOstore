@@ -40,6 +40,8 @@
 #define BACKLOG 1024
 #define CLIENT_PORT 10001
 #define MAX_LINGER_BEFORE_SOCK_CLOSE 50
+
+#define METADATA_SERVER_IP "127.0.0.1"
 #define METADATA_SERVER_PORT "11001"
 
 #define CAS_PROTOCOL_NAME "CAS"
@@ -156,6 +158,7 @@ struct GroupConfig{
 
 struct Group{
     uint64_t                timestamp;
+    uint32_t                id;
     std::vector<uint32_t>   grp_id;
     std::vector<GroupConfig*>grp_config;
     

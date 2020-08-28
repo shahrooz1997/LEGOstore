@@ -47,7 +47,7 @@ struct TableStruct_serialize_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxillaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[7]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[8]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -64,6 +64,9 @@ extern GroupDefaultTypeInternal _Group_default_instance_;
 class GroupConfig;
 class GroupConfigDefaultTypeInternal;
 extern GroupConfigDefaultTypeInternal _GroupConfig_default_instance_;
+class MetaDataServer;
+class MetaDataServerDefaultTypeInternal;
+extern MetaDataServerDefaultTypeInternal _MetaDataServer_default_instance_;
 class Placement;
 class PlacementDefaultTypeInternal;
 extern PlacementDefaultTypeInternal _Placement_default_instance_;
@@ -81,6 +84,7 @@ PROTOBUF_NAMESPACE_OPEN
 template<> ::packet::Datacenter* Arena::CreateMaybeMessage<::packet::Datacenter>(Arena*);
 template<> ::packet::Group* Arena::CreateMaybeMessage<::packet::Group>(Arena*);
 template<> ::packet::GroupConfig* Arena::CreateMaybeMessage<::packet::GroupConfig>(Arena*);
+template<> ::packet::MetaDataServer* Arena::CreateMaybeMessage<::packet::MetaDataServer>(Arena*);
 template<> ::packet::Placement* Arena::CreateMaybeMessage<::packet::Placement>(Arena*);
 template<> ::packet::Server* Arena::CreateMaybeMessage<::packet::Server>(Arena*);
 template<> ::packet::msg* Arena::CreateMaybeMessage<::packet::msg>(Arena*);
@@ -1181,11 +1185,12 @@ class Group :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kGrpIdFieldNumber = 2,
-    kGrpConfigFieldNumber = 3,
+    kGrpIdFieldNumber = 3,
+    kGrpConfigFieldNumber = 4,
     kTimestampFieldNumber = 1,
+    kIdFieldNumber = 2,
   };
-  // repeated uint32 grp_id = 2;
+  // repeated uint32 grp_id = 3;
   int grp_id_size() const;
   private:
   int _internal_grp_id_size() const;
@@ -1207,7 +1212,7 @@ class Group :
   ::PROTOBUF_NAMESPACE_ID::RepeatedField< ::PROTOBUF_NAMESPACE_ID::uint32 >*
       mutable_grp_id();
 
-  // repeated .packet.GroupConfig grp_config = 3;
+  // repeated .packet.GroupConfig grp_config = 4;
   int grp_config_size() const;
   private:
   int _internal_grp_config_size() const;
@@ -1234,6 +1239,15 @@ class Group :
   void _internal_set_timestamp(::PROTOBUF_NAMESPACE_ID::uint64 value);
   public:
 
+  // uint32 id = 2;
+  void clear_id();
+  ::PROTOBUF_NAMESPACE_ID::uint32 id() const;
+  void set_id(::PROTOBUF_NAMESPACE_ID::uint32 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::uint32 _internal_id() const;
+  void _internal_set_id(::PROTOBUF_NAMESPACE_ID::uint32 value);
+  public:
+
   // @@protoc_insertion_point(class_scope:packet.Group)
  private:
   class _Internal;
@@ -1243,6 +1257,7 @@ class Group :
   mutable std::atomic<int> _grp_id_cached_byte_size_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::packet::GroupConfig > grp_config_;
   ::PROTOBUF_NAMESPACE_ID::uint64 timestamp_;
+  ::PROTOBUF_NAMESPACE_ID::uint32 id_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_serialize_2eproto;
 };
@@ -1455,6 +1470,176 @@ class properties :
   ::PROTOBUF_NAMESPACE_ID::uint32 metadata_server_timeout_;
   ::PROTOBUF_NAMESPACE_ID::uint32 timeout_per_request_;
   ::PROTOBUF_NAMESPACE_ID::uint64 start_time_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_serialize_2eproto;
+};
+// -------------------------------------------------------------------
+
+class MetaDataServer :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:packet.MetaDataServer) */ {
+ public:
+  MetaDataServer();
+  virtual ~MetaDataServer();
+
+  MetaDataServer(const MetaDataServer& from);
+  MetaDataServer(MetaDataServer&& from) noexcept
+    : MetaDataServer() {
+    *this = ::std::move(from);
+  }
+
+  inline MetaDataServer& operator=(const MetaDataServer& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MetaDataServer& operator=(MetaDataServer&& from) noexcept {
+    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const MetaDataServer& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const MetaDataServer* internal_default_instance() {
+    return reinterpret_cast<const MetaDataServer*>(
+               &_MetaDataServer_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    7;
+
+  friend void swap(MetaDataServer& a, MetaDataServer& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(MetaDataServer* other) {
+    if (other == this) return;
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline MetaDataServer* New() const final {
+    return CreateMaybeMessage<MetaDataServer>(nullptr);
+  }
+
+  MetaDataServer* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<MetaDataServer>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const MetaDataServer& from);
+  void MergeFrom(const MetaDataServer& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(MetaDataServer* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "packet.MetaDataServer";
+  }
+  private:
+  inline ::PROTOBUF_NAMESPACE_ID::Arena* GetArenaNoVirtual() const {
+    return nullptr;
+  }
+  inline void* MaybeArenaPtr() const {
+    return nullptr;
+  }
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_serialize_2eproto);
+    return ::descriptor_table_serialize_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kStatusFieldNumber = 1,
+    kMsgFieldNumber = 2,
+    kPlacementPFieldNumber = 3,
+  };
+  // bytes status = 1;
+  void clear_status();
+  const std::string& status() const;
+  void set_status(const std::string& value);
+  void set_status(std::string&& value);
+  void set_status(const char* value);
+  void set_status(const void* value, size_t size);
+  std::string* mutable_status();
+  std::string* release_status();
+  void set_allocated_status(std::string* status);
+  private:
+  const std::string& _internal_status() const;
+  void _internal_set_status(const std::string& value);
+  std::string* _internal_mutable_status();
+  public:
+
+  // bytes msg = 2;
+  void clear_msg();
+  const std::string& msg() const;
+  void set_msg(const std::string& value);
+  void set_msg(std::string&& value);
+  void set_msg(const char* value);
+  void set_msg(const void* value, size_t size);
+  std::string* mutable_msg();
+  std::string* release_msg();
+  void set_allocated_msg(std::string* msg);
+  private:
+  const std::string& _internal_msg() const;
+  void _internal_set_msg(const std::string& value);
+  std::string* _internal_mutable_msg();
+  public:
+
+  // .packet.Placement placement_p = 3;
+  bool has_placement_p() const;
+  private:
+  bool _internal_has_placement_p() const;
+  public:
+  void clear_placement_p();
+  const ::packet::Placement& placement_p() const;
+  ::packet::Placement* release_placement_p();
+  ::packet::Placement* mutable_placement_p();
+  void set_allocated_placement_p(::packet::Placement* placement_p);
+  private:
+  const ::packet::Placement& _internal_placement_p() const;
+  ::packet::Placement* _internal_mutable_placement_p();
+  public:
+
+  // @@protoc_insertion_point(class_scope:packet.MetaDataServer)
+ private:
+  class _Internal;
+
+  ::PROTOBUF_NAMESPACE_ID::internal::InternalMetadataWithArena _internal_metadata_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr status_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr msg_;
+  ::packet::Placement* placement_p_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_serialize_2eproto;
 };
@@ -2411,7 +2596,27 @@ inline void Group::set_timestamp(::PROTOBUF_NAMESPACE_ID::uint64 value) {
   // @@protoc_insertion_point(field_set:packet.Group.timestamp)
 }
 
-// repeated uint32 grp_id = 2;
+// uint32 id = 2;
+inline void Group::clear_id() {
+  id_ = 0u;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint32 Group::_internal_id() const {
+  return id_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint32 Group::id() const {
+  // @@protoc_insertion_point(field_get:packet.Group.id)
+  return _internal_id();
+}
+inline void Group::_internal_set_id(::PROTOBUF_NAMESPACE_ID::uint32 value) {
+  
+  id_ = value;
+}
+inline void Group::set_id(::PROTOBUF_NAMESPACE_ID::uint32 value) {
+  _internal_set_id(value);
+  // @@protoc_insertion_point(field_set:packet.Group.id)
+}
+
+// repeated uint32 grp_id = 3;
 inline int Group::_internal_grp_id_size() const {
   return grp_id_.size();
 }
@@ -2458,7 +2663,7 @@ Group::mutable_grp_id() {
   return _internal_mutable_grp_id();
 }
 
-// repeated .packet.GroupConfig grp_config = 3;
+// repeated .packet.GroupConfig grp_config = 4;
 inline int Group::_internal_grp_config_size() const {
   return grp_config_.size();
 }
@@ -2679,9 +2884,195 @@ properties::groups() const {
   return groups_;
 }
 
+// -------------------------------------------------------------------
+
+// MetaDataServer
+
+// bytes status = 1;
+inline void MetaDataServer::clear_status() {
+  status_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline const std::string& MetaDataServer::status() const {
+  // @@protoc_insertion_point(field_get:packet.MetaDataServer.status)
+  return _internal_status();
+}
+inline void MetaDataServer::set_status(const std::string& value) {
+  _internal_set_status(value);
+  // @@protoc_insertion_point(field_set:packet.MetaDataServer.status)
+}
+inline std::string* MetaDataServer::mutable_status() {
+  // @@protoc_insertion_point(field_mutable:packet.MetaDataServer.status)
+  return _internal_mutable_status();
+}
+inline const std::string& MetaDataServer::_internal_status() const {
+  return status_.GetNoArena();
+}
+inline void MetaDataServer::_internal_set_status(const std::string& value) {
+  
+  status_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value);
+}
+inline void MetaDataServer::set_status(std::string&& value) {
+  
+  status_.SetNoArena(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:packet.MetaDataServer.status)
+}
+inline void MetaDataServer::set_status(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  
+  status_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:packet.MetaDataServer.status)
+}
+inline void MetaDataServer::set_status(const void* value, size_t size) {
+  
+  status_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:packet.MetaDataServer.status)
+}
+inline std::string* MetaDataServer::_internal_mutable_status() {
+  
+  return status_.MutableNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline std::string* MetaDataServer::release_status() {
+  // @@protoc_insertion_point(field_release:packet.MetaDataServer.status)
+  
+  return status_.ReleaseNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline void MetaDataServer::set_allocated_status(std::string* status) {
+  if (status != nullptr) {
+    
+  } else {
+    
+  }
+  status_.SetAllocatedNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), status);
+  // @@protoc_insertion_point(field_set_allocated:packet.MetaDataServer.status)
+}
+
+// bytes msg = 2;
+inline void MetaDataServer::clear_msg() {
+  msg_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline const std::string& MetaDataServer::msg() const {
+  // @@protoc_insertion_point(field_get:packet.MetaDataServer.msg)
+  return _internal_msg();
+}
+inline void MetaDataServer::set_msg(const std::string& value) {
+  _internal_set_msg(value);
+  // @@protoc_insertion_point(field_set:packet.MetaDataServer.msg)
+}
+inline std::string* MetaDataServer::mutable_msg() {
+  // @@protoc_insertion_point(field_mutable:packet.MetaDataServer.msg)
+  return _internal_mutable_msg();
+}
+inline const std::string& MetaDataServer::_internal_msg() const {
+  return msg_.GetNoArena();
+}
+inline void MetaDataServer::_internal_set_msg(const std::string& value) {
+  
+  msg_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value);
+}
+inline void MetaDataServer::set_msg(std::string&& value) {
+  
+  msg_.SetNoArena(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:packet.MetaDataServer.msg)
+}
+inline void MetaDataServer::set_msg(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  
+  msg_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:packet.MetaDataServer.msg)
+}
+inline void MetaDataServer::set_msg(const void* value, size_t size) {
+  
+  msg_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:packet.MetaDataServer.msg)
+}
+inline std::string* MetaDataServer::_internal_mutable_msg() {
+  
+  return msg_.MutableNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline std::string* MetaDataServer::release_msg() {
+  // @@protoc_insertion_point(field_release:packet.MetaDataServer.msg)
+  
+  return msg_.ReleaseNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline void MetaDataServer::set_allocated_msg(std::string* msg) {
+  if (msg != nullptr) {
+    
+  } else {
+    
+  }
+  msg_.SetAllocatedNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), msg);
+  // @@protoc_insertion_point(field_set_allocated:packet.MetaDataServer.msg)
+}
+
+// .packet.Placement placement_p = 3;
+inline bool MetaDataServer::_internal_has_placement_p() const {
+  return this != internal_default_instance() && placement_p_ != nullptr;
+}
+inline bool MetaDataServer::has_placement_p() const {
+  return _internal_has_placement_p();
+}
+inline void MetaDataServer::clear_placement_p() {
+  if (GetArenaNoVirtual() == nullptr && placement_p_ != nullptr) {
+    delete placement_p_;
+  }
+  placement_p_ = nullptr;
+}
+inline const ::packet::Placement& MetaDataServer::_internal_placement_p() const {
+  const ::packet::Placement* p = placement_p_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::packet::Placement*>(
+      &::packet::_Placement_default_instance_);
+}
+inline const ::packet::Placement& MetaDataServer::placement_p() const {
+  // @@protoc_insertion_point(field_get:packet.MetaDataServer.placement_p)
+  return _internal_placement_p();
+}
+inline ::packet::Placement* MetaDataServer::release_placement_p() {
+  // @@protoc_insertion_point(field_release:packet.MetaDataServer.placement_p)
+  
+  ::packet::Placement* temp = placement_p_;
+  placement_p_ = nullptr;
+  return temp;
+}
+inline ::packet::Placement* MetaDataServer::_internal_mutable_placement_p() {
+  
+  if (placement_p_ == nullptr) {
+    auto* p = CreateMaybeMessage<::packet::Placement>(GetArenaNoVirtual());
+    placement_p_ = p;
+  }
+  return placement_p_;
+}
+inline ::packet::Placement* MetaDataServer::mutable_placement_p() {
+  // @@protoc_insertion_point(field_mutable:packet.MetaDataServer.placement_p)
+  return _internal_mutable_placement_p();
+}
+inline void MetaDataServer::set_allocated_placement_p(::packet::Placement* placement_p) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaNoVirtual();
+  if (message_arena == nullptr) {
+    delete placement_p_;
+  }
+  if (placement_p) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena = nullptr;
+    if (message_arena != submessage_arena) {
+      placement_p = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, placement_p, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  placement_p_ = placement_p;
+  // @@protoc_insertion_point(field_set_allocated:packet.MetaDataServer.placement_p)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

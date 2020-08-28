@@ -193,11 +193,11 @@ namespace liberasure{
 //TODO: Ask more servers for timestamp if last attempt didn't work.
 
 // Use this constructor when single threaded code
-CAS_Client::CAS_Client(Properties *prop, uint32_t client_id, Placement &pp) {
+CAS_Client::CAS_Client(Properties *prop, uint32_t client_id) {
     this->current_class = CAS_PROTOCOL_NAME;
     this->id = client_id;
     this->prop = prop;
-    this->p = pp;
+//    this->p = pp;
     this->desc = create_liberasure_instance(&(this->p));
     this->desc_destroy = 1;
     
@@ -218,11 +218,11 @@ CAS_Client::CAS_Client(Properties *prop, uint32_t client_id, Placement &pp) {
     
 }
 
-CAS_Client::CAS_Client(Properties *prop, uint32_t client_id, Placement &pp, int desc_l) {
+CAS_Client::CAS_Client(Properties *prop, uint32_t client_id, int desc_l) {
     this->current_class = CAS_PROTOCOL_NAME;
     this->id = client_id;
     this->prop = prop;
-    this->p = pp;
+//    this->p = pp;
     this->desc = desc_l;
     this->desc_destroy = 0;
     
@@ -256,8 +256,30 @@ CAS_Client::~CAS_Client() {
     DPRINTF(DEBUG_CAS_Client, "cliend with id \"%u\" has been destructed.\n", this->id);
 }
 
-void CAS_Client::update_placement(std::string &new_cfg){
+int CAS_Client::update_placement(std::string &key, uint32_t conf_id = 0){
 
+    
+    Connect c(METADATA_SERVER_IP, METADATA_SERVER_PORT);
+    if(!c.is_connected()){
+        return;
+    }
+    
+    std::string status;
+    std::string msg = key;
+    msg += "!";
+    msg += conf_id;
+    
+    Placement *p = nullptr;
+    
+    DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", msg));
+    std::string recvd;
+    if(DataTransfer::recvMsg(*c, recvd) == 1){
+        msg.clear();
+        p =  DataTransfer::deserializeMDS(recvd, status, msg);
+    }
+    
+    if()
+    
     this->p = DataTransfer::deserializeCFG(new_cfg);
     if(this->desc_destroy){
         destroy_liberasure_instance(this->desc);

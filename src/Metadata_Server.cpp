@@ -82,7 +82,7 @@ string ask(const string& key, const string& confid){
     
     uint32_t most_recent_conf_id = get_most_recent_conf_id(key, confid);
     pair<string, Placement> &temp2 = key_info[construct_key_metadata(key, most_recent_conf_id)];
-    return DataTransfer::serializeMDS("Updated", temp2.first, &(temp2.second));
+    return DataTransfer::serializeMDS("OK", temp2.first, &(temp2.second));
 }
 
 string update(const string& key, const string& old_confid, const string& new_confid, Placement* p){

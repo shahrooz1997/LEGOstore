@@ -11,6 +11,8 @@
 #include "serialize.pb.h"
 #include "Util.h"
 #include <cerrno>
+#include <mutex>
+#include <future>
 
 typedef std::vector<std::string> strVec;
 
@@ -23,6 +25,8 @@ public:
 	static int recvAll(int &sock, void *buf, int data_size);
 
 	static int recvMsg(int sock, std::string &data);
+        
+        static int recvMsg_async(const int sock, std::promise<std::string> &&data_set);
 
 	static std::string serialize(const strVec &data);
 

@@ -112,6 +112,15 @@ int DataTransfer::recvMsg(int sock, std::string &data){
 	return 1;
 }
 
+int DataTransfer::recvMsg_async(const int sock, std::promise<std::string> &&data_set){
+    std::string data_temp;
+    int sock_temp = sock;
+    DataTransfer::recvMsg(sock, data_temp);
+    
+    data_set.set_value(data_temp);
+    return 1;
+}
+
 std::string DataTransfer::serializePrp(const Properties &properties_p){
 
 	packet::properties prp;

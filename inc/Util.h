@@ -203,6 +203,16 @@ class Data_handler{
     ~Data_handler();
 };
 
+struct Request{
+    int sock;
+    std::string function;
+    std::string key;
+    uint32_t conf_id;
+    std::string value;
+    std::string timestamp;
+    std::string protocol;
+};
+
 class JSON_Reader {
 public:
     JSON_Reader();

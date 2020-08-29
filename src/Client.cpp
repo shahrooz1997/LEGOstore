@@ -49,7 +49,7 @@ static inline uint32_t create_threadId(std::string protocol, int &client_id, int
 void initialise_db(Properties *prop, GroupConfig *grpCfg, int grp_id){
     
     if(grpCfg->placement_p->protocol == CAS_PROTOCOL_NAME){
-        CAS_Client client(prop, create_threadId(grpCfg->placement_p->protocol, clientId, grp_id, 0), *grpCfg->placement_p);
+        CAS_Client client(create_threadId(grpCfg->placement_p->protocol, clientId, grp_id, 0), prop->local_datacenter_id, prop->datacenters);
 
     //    cout << "placement_p" << grpCfg->placement_p->Q1.size() << " " << grpCfg->placement_p->Q2.size() << " " << grpCfg->placement_p->Q3.size() << " " << grpCfg->placement_p->Q4.size() << " " << grpCfg->placement_p->protocol << endl;
 
@@ -65,6 +65,9 @@ void initialise_db(Properties *prop, GroupConfig *grpCfg, int grp_id){
 
     //      std::string val(grpCfg->object_size, 'a'+ (grp_id%26));
             std::string val(grpCfg->object_size, 'a');
+            for(uint i = 0; i < grpCfg->object_size; i++){
+                val[i] = key[i % key.size()];
+            }
             pool.emplace_back(&CAS_Client::put, &client, key, val, true);
             std::cout<< "Initialisation of key : " << key << " is done!!" << std::endl;
 
@@ -125,7 +128,7 @@ int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &
     uint32_t threadId = create_threadId(pp->protocol, clientId, grp_id, req_idx);
 
     if(pp->protocol == CAS_PROTOCOL_NAME){
-        CAS_Client clt(cc, threadId, *pp, desc);
+        CAS_Client clt(threadId, cc->local_datacenter_id, cc->datacenters, desc);
         //Scope of this seeding is global
         //So, may lead to same operation sequence on all threads
         srand(threadId);
@@ -224,7 +227,7 @@ int key_req_gen(Properties &prop, int grp_idx, int grp_config_idx, int grp_id, s
 
     // After this call all keys will be initialized
     // This assumes keys and key groups are not added while experiment happening
-//	initialise_db(cc, grpCfg, grp_id);
+    initialise_db(cc, grpCfg, grp_id);
 
     int desc = -1;
     
@@ -281,74 +284,73 @@ int main(int argc, char* argv[]){
     int newSocket = socket_setup(argv[1]);
     std::cout<< "Waiting for connection from Controller." <<std::endl;
     //std::cout<< "Atomic variable is lock free? " << running.is_lock_free() << " : another opinion : " << ATOMIC_BOOL_LOCK_FREE << std::endl;
-//    int sock = accept(newSocket, NULL, 0);
-//	close(newSocket);
+    int sock = accept(newSocket, NULL, 0);
+    close(newSocket);
     
     // ToDo: there is a bug in the number of receiving messages from controller; for now it is resolved with the following variable
-    int number_of_messages = 2;
+//    int number_of_messages = 2;
 
     std::string recv_str;
     try{
-        while(number_of_messages--){ // Try to receive new workloads group from Controller
-            int sock = accept(newSocket, NULL, 0);
-            if(DataTransfer::recvMsg(sock, recv_str) != 1){
-                std::cout<< "Client Config could not be received! " << std::endl;
-                return 1;
-            }
-            close(sock);
-            
-            if(cc != nullptr){
-                delete cc;
-                cc = nullptr;
-            }
-            cc = DataTransfer::deserializePrp(recv_str); // Note: the received property must contain only one group
-            
-            DPRINTF(DEBUG_CAS_Client, "new placement k attr is %u\n", cc->groups[0]->grp_config[0]->placement_p->k)
-
-            time_point<system_clock, millis> startPoint(millis{cc->start_time});
-            time_point<system_clock, millis> timePoint;
-
-            int idx = 0;
-
-            // initialization
-//            cout << "cc->groups[0]->grp_id.size() : " << cc->groups[0]->grp_id.size() << endl;
-            for(uint i = 0; i < cc->groups[0]->grp_id.size(); i++){
-//                cout << "initialise_db called" << endl;
-                initialise_db(cc, cc->groups[0]->grp_config[i], cc->groups[0]->grp_id[i]);
-            }
-
-//            for(auto grp: cc->groups){ // Note: we will remove this for loop in the future.
-            auto grp = cc->groups[0];
-                timePoint = startPoint + millis{grp->timestamp * 1000};
-                std::this_thread::sleep_until(timePoint);
-
-                //TODO:: decide where to specify the distribiution
-                // NOTE:: grp_id size and grp_config size should be equal for Groupxxxx
-                for(uint i=0; i<grp->grp_id.size(); i++){
-                    fflush(stdout);
-                    if(fork() == 0){
-                        cout << "key_req_gen is called for group " << grp->grp_id[i] << endl;
-                        // Note:: Grp_id can be anything, here it is provided by the config file
-                        int rate = key_req_gen(*cc, idx, i, grp->grp_id[i], "poisson");
-                        std::cout << "Rate sent is " << rate  << std::endl;
-                        exit(rate);
-                    }
-                }
-                idx++;
-//            }
-
-            float avg_rate = 0;
-            int ret_val =0;
-            while(wait(&ret_val) >=0){
-                std::cout << "Child temination status " << WIFEXITED(ret_val) << "  Rate receved is " <<  WEXITSTATUS(ret_val) <<
-                            " : " << WIFSIGNALED(ret_val) << " : " << WTERMSIG(ret_val) <<std::endl;
-
-                // TODO:: Modify this - right now accumulates rate for all processes, spread across the length of the experiment
-                avg_rate += WEXITSTATUS(ret_val);
-            }
-
-            std::cout<< "Final avg rate is " << avg_rate << std::endl;
+//        while(number_of_messages--){ // Try to receive new workloads group from Controller
+//        int sock = accept(newSocket, NULL, 0);
+        if(DataTransfer::recvMsg(sock, recv_str) != 1){
+            std::cout<< "Client Config could not be received! " << std::endl;
+            return 1;
         }
+        close(sock);
+
+        if(cc != nullptr){
+            delete cc;
+            cc = nullptr;
+        }
+        cc = DataTransfer::deserializePrp(recv_str); // Note: the received property must contain only one group
+
+//        DPRINTF(DEBUG_CAS_Client, "new placement k attr is %u\n", cc->groups[0]->grp_config[0]->placement_p->k)
+
+        time_point<system_clock, millis> startPoint(millis{cc->start_time});
+        time_point<system_clock, millis> timePoint;
+        
+        // initialization
+//            cout << "cc->groups[0]->grp_id.size() : " << cc->groups[0]->grp_id.size() << endl;
+//        for(uint i = 0; i < cc->groups[0]->grp_id.size(); i++){
+////                cout << "initialise_db called" << endl;
+//            initialise_db(cc, cc->groups[0]->grp_config[i], cc->groups[0]->grp_id[i]);
+//        }
+
+        int idx = 0;
+        for(auto grp: cc->groups){ // Note: we will remove this for loop in the future.
+//        auto grp = cc->groups[0];
+            timePoint = startPoint + millis{grp->timestamp * 1000};
+            std::this_thread::sleep_until(timePoint);
+
+            //TODO:: decide where to specify the distribiution
+            // NOTE:: grp_id size and grp_config size should be equal for Groupxxxx
+            for(uint i=0; i<grp->grp_id.size(); i++){
+                fflush(stdout);
+                if(fork() == 0){
+                    cout << "key_req_gen is called for group " << grp->grp_id[i] << endl;
+                    // Note:: Grp_id can be anything, here it is provided by the config file
+                    int rate = key_req_gen(*cc, idx, i, grp->grp_id[i], "poisson");
+                    std::cout << "Rate sent is " << rate  << std::endl;
+                    exit(rate);
+                }
+            }
+            idx++;
+        }
+
+        float avg_rate = 0;
+        int ret_val =0;
+        while(wait(&ret_val) >=0){
+            std::cout << "Child temination status " << WIFEXITED(ret_val) << "  Rate receved is " <<  WEXITSTATUS(ret_val) <<
+                        " : " << WIFSIGNALED(ret_val) << " : " << WTERMSIG(ret_val) <<std::endl;
+
+            // TODO:: Modify this - right now accumulates rate for all processes, spread across the length of the experiment
+            avg_rate += WEXITSTATUS(ret_val);
+        }
+
+        std::cout<< "Final avg rate is " << avg_rate << std::endl;
+//        } 
     }
     catch(std::logic_error &e){
         std::cout<< "Exception caught! " << e.what() << std::endl;

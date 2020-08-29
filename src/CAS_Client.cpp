@@ -370,7 +370,7 @@ Placement* CAS_Client::get_placement(std::string &key, bool force_update){
         }
     }
     else{
-        assert(update_placement(key, it->second.first) == 0);
+        assert(update_placement(key, 0) == 0);
         return &(this->keys_info[key].second);
     }
 }

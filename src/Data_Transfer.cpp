@@ -114,7 +114,6 @@ int DataTransfer::recvMsg(int sock, std::string &data){
 
 int DataTransfer::recvMsg_async(const int sock, std::promise<std::string> &&data_set){
     std::string data_temp;
-    int sock_temp = sock;
     DataTransfer::recvMsg(sock, data_temp);
     
     data_set.set_value(data_temp);
@@ -482,7 +481,7 @@ Placement* DataTransfer::deserializeMDS(const std::string &data, std::string &st
     status = mds.status();
     msg = mds.msg();
     
-    if(status == "update"){
+    if(!(status == "ERROR" || status == "WARN" || (status == "OK" && msg == "key updated"))){
         p = new Placement;
         
         const packet::Placement &gp = mds.placement_p();

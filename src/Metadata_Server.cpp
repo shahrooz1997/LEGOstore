@@ -67,29 +67,50 @@ uint32_t get_most_recent_conf_id(const string& key, const string& confid){
 }
 
 string ask(const string& key, const string& confid){
+    
+    DPRINTF(DEBUG_METADATA_SERVER, "key: %s, confid: %s\n", key.c_str(), confid.c_str());
+    
+    if(confid == "0"){
+        auto it = key_info.find(construct_key_metadata(key, confid));
+        uint32_t saved_conf_id = stoul(it->second.first);
+        auto it2 = key_info.find(construct_key_metadata(key, saved_conf_id));
+        return DataTransfer::serializeMDS("OK", it->second.first, &(it2->second.second));
+    }
+    
     auto it = key_info.find(construct_key_metadata(key, confid));
     
     if(it == key_info.end()){ // Not found!
         return DataTransfer::serializeMDS("ERROR", "key with that conf_id does not exist", nullptr);
     }
     
-    uint32_t asked_conf_id = stoul(confid);
-    uint32_t saved_conf_id = stoul(it->second.first);
+//    uint32_t asked_conf_id = stoul(confid);
+//    uint32_t saved_conf_id = stoul(it->second.first);
     
-    if(asked_conf_id == saved_conf_id){
-        return DataTransfer::serializeMDS("OK", confid, &(it->second.second));
-    }
+//    if(asked_conf_id == saved_conf_id){
+//        return DataTransfer::serializeMDS("OK", confid, &(it->second.second));
+//    }
     
-    uint32_t most_recent_conf_id = get_most_recent_conf_id(key, confid);
-    pair<string, Placement> &temp2 = key_info[construct_key_metadata(key, most_recent_conf_id)];
-    return DataTransfer::serializeMDS("OK", temp2.first, &(temp2.second));
+//    uint32_t most_recent_conf_id = get_most_recent_conf_id(key, confid);
+//    pair<string, Placement> &temp2 = key_info[construct_key_metadata(key, most_recent_conf_id)];
+//    return DataTransfer::serializeMDS("OK", temp2.first, &(temp2.second));
+    
+    
+    return DataTransfer::serializeMDS("OK", confid, &(it->second.second));
+    
 }
 
 string update(const string& key, const string& old_confid, const string& new_confid, Placement* p){
     auto it = key_info.find(construct_key_metadata(key, old_confid));
     
+    DPRINTF(DEBUG_METADATA_SERVER, "key: %s, old_conf: %s, new_conf: %s\n", key.c_str(), old_confid.c_str(), new_confid.c_str());
+    
     if(it == key_info.end()){ // Not found!
-        return DataTransfer::serializeMDS("ERROR", "key with that old_confid does not exist", nullptr);
+        if(old_confid != new_confid){
+            return DataTransfer::serializeMDS("ERROR", "key does not exist and cannot be initialized", nullptr);
+        }
+        key_info[construct_key_metadata(key, 0)] = std::pair<string, Placement>(old_confid, *p);
+        key_info[construct_key_metadata(key, old_confid)] = std::pair<string, Placement>(new_confid, *p);
+        return DataTransfer::serializeMDS("WARN", "key does not exist, initialization...", nullptr);
     }
     
     it->second.first = new_confid;
@@ -142,7 +163,7 @@ void server_connection(int connection, int portid){
             assert(0);
         }
         string key = msg.substr(0, pos);
-	string old_confid = msg.substr(pos + 1, pos2);
+	string old_confid = msg.substr(pos + 1, pos2 - pos - 1);
         string new_confid = msg.substr(pos2 + 1);
         
         result = DataTransfer::sendMsg(connection, update(key, old_confid, new_confid, p));

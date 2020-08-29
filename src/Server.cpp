@@ -143,6 +143,9 @@
 //}
 
 void server_connection(int connection, DataServer &dataserver, int portid){
+    
+    Request req;
+    req.sock = connection;
 
     std::string recvd;
     int result = DataTransfer::recvMsg(connection,recvd);
@@ -215,21 +218,42 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 //        }
 //    }
 
+    req.function = method;
     if(method == "put"){
         DPRINTF(DEBUG_RECONFIG_CONTROL, "The method put is called. The key is %s, ts: %s, value: %s, class: %s, server port is %u\n",
                     data[1].c_str(), data[2].c_str(), data[3].c_str(), data[4].c_str(), portid);
-        result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[3], data[2], data[4]));
+        req.key = data[1];
+        req.conf_id = stoul(data[5]);
+        req.timestamp = data[2];
+        req.value = data[3];
+        req.protocol = data[4];
+        result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[3], data[2], data[4], stoul(data[5]), req));
     }else if(method == "get"){
         DPRINTF(DEBUG_RECONFIG_CONTROL, "The method get is called. The key is %s, ts: %s, class: %s, server port is %u\n",
                     data[1].c_str(), data[2].c_str(), data[3].c_str(), portid);
         //std::cout << "GET fucntion called for server id "<< portid << std::endl;
-        result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3]));
+        req.key = data[1];
+        req.conf_id = stoul(data[4]);
+        req.timestamp = data[2];
+//        req.value = data[3];
+        req.protocol = data[3];
+        result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3], stoul(data[4]), req));
     }else if(method == "get_timestamp"){
         DPRINTF(DEBUG_RECONFIG_CONTROL, "The method get_timestamp is called. The key is %s, class: %s, server port is %u\n",
                     data[1].c_str(), data[2].c_str(), portid);
-        result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2]));
+        req.key = data[1];
+        req.conf_id = stoul(data[3]);
+//        req.timestamp = data[2];
+//        req.value = data[3];
+        req.protocol = data[2];
+        result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2], stoul(data[3]), req));
     }else if(method == "put_fin"){
-            result = DataTransfer::sendMsg(connection, dataserver.put_fin(data[1], data[2], data[3]));
+        req.key = data[1];
+        req.conf_id = stoul(data[4]);
+        req.timestamp = data[2];
+//        req.value = data[3];
+        req.protocol = data[3];
+        result = DataTransfer::sendMsg(connection, dataserver.put_fin(data[1], data[2], data[3], stoul(data[4]), req));
 //    }else if(method == "reconfig_query"){
 //            result = DataTransfer::sendMsg(connection, reconfig_query(dataserver, data[1], data[2]));
 //    }else if(method == "reconfig_finalize"){

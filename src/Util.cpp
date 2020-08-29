@@ -556,7 +556,6 @@ Placement::Placement(const std::string &in, uint32_t &cc){
 
 std::string Placement::get_string(){
     std::string ret;
-    uint32_t cc = 0;
     uint32_t size, temp;
     
     // Protocol
@@ -697,7 +696,7 @@ Properties::~Properties(){
 Reconfig_key_info::Reconfig_key_info(){
     curr_conf_id = -1;
     curr_placement = nullptr;
-    is_done = false;
+    reconfig_state = 0;
     next_conf_id = -1;
     next_placement = nullptr;
 }

@@ -2,6 +2,9 @@
 #include <typeinfo>
 #include <ratio>
 
+using std::cout;
+using std::endl;
+
 using namespace std::chrono;
 using millis = duration<uint64_t, std::milli>;
 
@@ -164,9 +167,14 @@ int Controller::read_input_workload(std::string &configFile, std::vector<Workloa
 			it["keys"].get_to(gwkl->keys);
 			(wkl->grp).push_back(gwkl);
 		}
+                assert(wkl->grp_id.size() == wkl->grp.size());
+                assert(wkl->id > 0);
 		input.push_back(wkl);
 	}
 	cfg.close();
+        
+        
+        
 	return 0;
 }
 
@@ -222,11 +230,46 @@ int Controller::read_deployment_info(std::string &filePath, std::vector<std::pai
 	return 0;
 }
 
+int Controller::init_metadata_server(){
+    
+//    for(auto grp: cc->groups){
+    auto grp = this->prp.groups[0];
+        for(uint i = 0; i < grp->grp_id.size(); i++){
+            for(uint j = 0; j < grp->grp_config[i]->keys.size(); j++){
+                cout << "one done" << endl;
+                std::string key = grp->grp_config[i]->keys[j];
+                uint32_t conf_id = grp->id;
+                
+                Connect c(METADATA_SERVER_IP, METADATA_SERVER_PORT);
+                if(!c.is_connected()){
+                    std::cout<< "cannot connect to metadata server" << std::endl;
+                    return -1;
+                }
+                DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("update", key + "!" + std::to_string(conf_id) + "!" + std::to_string(conf_id), grp->grp_config[i]->placement_p));
+                std::string recvd;
+                if(DataTransfer::recvMsg(*c, recvd) == 1){
+                    std::string status;
+                    std::string msg;
+                    DataTransfer::deserializeMDS(recvd, status, msg);
+                    if(status != "WARN"){
+                        std::cout<< msg << std::endl;
+                        assert(false);
+                    }
+                    cout << "one done" << endl;
+                }
+            }
+        }
+//    }
+    
+    cout << "one done" << endl;
+    return 0;
+}
+
 // Return 0 on success
 int Controller::init_setup(std::string configFile, std::string filePath){
 
 	std::vector<WorkloadConfig*> inp;
-	if( read_input_workload(configFile, inp) == 1){
+	if(read_input_workload(configFile, inp) == 1){
 		return 1;
 	}
         
@@ -256,42 +299,46 @@ int Controller::init_setup(std::string configFile, std::string filePath){
             return 1;
         }
         
-//	std::string out_str;
+        init_metadata_server();
+        
+        cout << "!!!!!!!!!!" << endl;
+        
+	std::string out_str;
 
-//	try{
-//		auto timePoint = time_point_cast<milliseconds>(system_clock::now());
-//		uint64_t startTime = timePoint.time_since_epoch().count();
-//
-//
-//		std::vector<std::pair<std::string, uint16_t> > addr_info;
-//		if( read_deployment_info(filePath, addr_info) == 1){
-//			return 1;
-//		}
-//
-//		// Send the config to each client in the deployment file
-//		for(uint i = 0; i < addr_info.size(); i++){
-//
-//			//Using datacenter_id as client id for now, can change later
-//			prp.local_datacenter_id = i;
-//			prp.start_time = startTime;
-//			out_str = DataTransfer::serializePrp(prp);
-//			int connection = 0;
-//			if(socket_cnt(connection, addr_info[i].second, addr_info[i].first) == 1){
-//				std::cout << "Connection to Client failed!" << std::endl;
-//				return 1;
-//			}
-//		//	std::cout<< __func__ << " : ip for client" << i << " : " << addr_info[i].second <<"  " <<  addr_info[i].first <<std::endl;
-//			if(DataTransfer::sendMsg(connection, out_str) != 1){
-//				std::cout << "Data Transfer to client " << i << " failed!" << std::endl;
-//				return 1;
-//			}
-//
-//		}
-//	}
-//	catch(std::logic_error &e){
-//		std::cout<< "Exception caught! " << e.what() << std::endl;
-//		return 1;
-//	}
+	try{
+		auto timePoint = time_point_cast<milliseconds>(system_clock::now());
+		uint64_t startTime = timePoint.time_since_epoch().count();
+
+
+		std::vector<std::pair<std::string, uint16_t> > addr_info;
+		if( read_deployment_info(filePath, addr_info) == 1){
+			return 1;
+		}
+
+		// Send the config to each client in the deployment file
+		for(uint i = 0; i < addr_info.size(); i++){
+
+			//Using datacenter_id as client id for now, can change later
+			prp.local_datacenter_id = i;
+			prp.start_time = startTime;
+			out_str = DataTransfer::serializePrp(prp);
+			int connection = 0;
+			if(socket_cnt(connection, addr_info[i].second, addr_info[i].first) == 1){
+				std::cout << "Connection to Client failed!" << std::endl;
+				return 1;
+			}
+		//	std::cout<< __func__ << " : ip for client" << i << " : " << addr_info[i].second <<"  " <<  addr_info[i].first <<std::endl;
+			if(DataTransfer::sendMsg(connection, out_str) != 1){
+				std::cout << "Data Transfer to client " << i << " failed!" << std::endl;
+				return 1;
+			}
+
+		}
+	}
+	catch(std::logic_error &e){
+		std::cout<< "Exception caught! " << e.what() << std::endl;
+		return 1;
+	}
 
 	return 0;
 }
@@ -404,61 +451,101 @@ int main(){
 
     std::unordered_map<std::string, int> open_desc;
     
-    bool init = true;
+//    bool init = true;
 
-    // Note:: this assumes the first group has timestamp at which the experiment starts
-    for(uint32_t grp_i = 0; grp_i < master.prp.groups.size(); grp_i++){
-        
-        Group* grp = master.prp.groups[grp_i];
-
-        timePoint = startPoint + millis{grp->timestamp * 1000};
-        std::this_thread::sleep_until(timePoint);
-        
-        // send the group config to clients
-        if(init)
-            master.send_config_group_to_client(grp_i);
-
-        //TODO:: Add some heuristics on how to sequence the reconf
-        // Do reconfiguration of one grp at a time
-        // Cos they are using a common placement and that's used for liberasure desc
-        for(uint j=0; j< grp->grp_config.size(); j++){
-            std::cout << "Starting the reconfiguration for group id " << grp->grp_id[j] << std::endl;
-            GroupConfig *curr = grp->grp_config[j];
-            GroupConfig *old = nullptr;
-            std::vector<std::thread> pool;
-            
-            //Testing purpose, should be removed
-//            if(curr->keys[0] == "group21"){
-//                continue;
+//    // Note:: this assumes the first group has timestamp at which the experiment starts
+//    for(uint32_t grp_i = 0; grp_i < master.prp.groups.size(); grp_i++){
+//        
+//        Group* grp = master.prp.groups[grp_i];
+//
+//        timePoint = startPoint + millis{grp->timestamp * 1000};
+//        std::this_thread::sleep_until(timePoint);
+//        
+//        // send the group config to clients
+//        if(init)
+//            master.send_config_group_to_client(grp_i);
+//
+//        //TODO:: Add some heuristics on how to sequence the reconf
+//        // Do reconfiguration of one grp at a time
+//        // Cos they are using a common placement and that's used for liberasure desc
+//        for(uint j=0; j< grp->grp_config.size(); j++){
+//            std::cout << "Starting the reconfiguration for group id " << grp->grp_id[j] << std::endl;
+//            GroupConfig *curr = grp->grp_config[j];
+//            GroupConfig *old = nullptr;
+//            std::vector<std::thread> pool;
+//            
+//            //Testing purpose, should be removed
+////            if(curr->keys[0] == "group21"){
+////                continue;
+////            }
+//
+//            // Do the reconfiguration for each key in the group
+//            for(uint i=0; i< curr->keys.size(); i++){
+//                std::string key(curr->keys[i]);
+//                int status = master.config_t.get_metadata_info(key, &old);
+//                std::cout << "the key is " << key << " status is " << status << std::endl;
+//                if(status == 0 && !compare_placement(old->placement_p, curr->placement_p)){
+//                    int old_desc = 0, new_desc = 0;
+//                    update_desc_info(open_desc, old->placement_p, curr->placement_p, old_desc, new_desc);
+//                    std::cout << "Starting the reconfig protocol for key " << key <<std::endl;
+//                    pool.emplace_back(&Reconfig::start_reconfig, &master.config_t, &master.prp, std::ref(*old),
+//                                        std::ref(*curr), key, old_desc, new_desc); // the second argument is this pointer to Reconfig class
+//                }else if(status == 1){// Else NO need for reconfig protocol as this is a new key, just save the info
+//                    master.config_t.update_metadata_info(key, curr);
+//                    std::cout << "No need to reconfig for key " << key << std:: endl;
+//                } // or the placement is same as before
 //            }
+//
+//            //Waiting for all reconfig to finish for this group
+//            for(auto &it: pool){
+//                    it.join();
+//            }
+//        }
+//        
+//        if(!init)
+//            master.send_config_group_to_client(grp_i);
+//        init = false;
+////        break;
+//    }
+    
+    // Note:: this assumes the first group has timestamp at which the experiment starts
+    for(auto grp: master.prp.groups){
 
-            // Do the reconfiguration for each key in the group
-            for(uint i=0; i< curr->keys.size(); i++){
-                std::string key(curr->keys[i]);
-                int status = master.config_t.get_metadata_info(key, &old);
-                std::cout << "the key is " << key << " status is " << status << std::endl;
-                if(status == 0 && !compare_placement(old->placement_p, curr->placement_p)){
-                    int old_desc = 0, new_desc = 0;
-                    update_desc_info(open_desc, old->placement_p, curr->placement_p, old_desc, new_desc);
-                    std::cout << "Starting the reconfig protocol for key " << key <<std::endl;
-                    pool.emplace_back(&Reconfig::start_reconfig, &master.config_t, &master.prp, std::ref(*old),
-                                        std::ref(*curr), key, old_desc, new_desc); // the second argument is this pointer to Reconfig class
-                }else if(status == 1){// Else NO need for reconfig protocol as this is a new key, just save the info
-                    master.config_t.update_metadata_info(key, curr);
-                    std::cout << "No need to reconfig for key " << key << std:: endl;
-                } // or the placement is same as before
+            timePoint = startPoint + millis{grp->timestamp * 1000};
+            std::this_thread::sleep_until(timePoint);
+
+            //TODO:: Add some heuristics on how to sequence the reconf
+            // Do reconfiguration of one grp at a time
+            // Cos they are using a common placement and that's used for liberasure desc
+            for(uint j=0; j< grp->grp_config.size(); j++){
+                    std::cout << "Starting the reconfiguration for group id" << grp->grp_id[j] << std::endl;
+                    GroupConfig *curr = grp->grp_config[j];
+                    GroupConfig *old = nullptr;
+                    std::vector<std::thread> pool;
+
+                    // Do the reconfiguration for each key in the group
+                    for(uint i=0; i< curr->keys.size(); i++){
+                            std::string key(curr->keys[i]);
+                            if(master.config_t.get_metadata_info(key, &old) == 0 && !compare_placement(old->placement_p, curr->placement_p)){
+                                    int old_desc = 0, new_desc = 0;
+                                    update_desc_info(open_desc, old->placement_p, curr->placement_p, old_desc, new_desc);
+                                    std::cout << "Starting the reconfig protocol for key " << key <<std::endl;
+                                    pool.emplace_back(&Reconfig::start_reconfig, &master.config_t, &master.prp, std::ref(*old),
+                                                                                    std::ref(*curr), key, old_desc, new_desc);
+                            }else{// Else NO need for reconfig protocol as this is a new key
+                            // or the placement is same as before
+
+                                    master.config_t.update_metadata_info(key, curr);
+                            }
+                    }
+
+                    //Waiting for all reconfig to finish for this group
+                    for(auto &it: pool){
+                            it.join();
+                    }
+
             }
 
-            //Waiting for all reconfig to finish for this group
-            for(auto &it: pool){
-                    it.join();
-            }
-        }
-        
-        if(!init)
-            master.send_config_group_to_client(grp_i);
-        init = false;
-//        break;
     }
 
     //delete_desc_info(open_desc);

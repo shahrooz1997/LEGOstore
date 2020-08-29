@@ -29,16 +29,6 @@
 
 using std::string;
 
-struct Request{
-    int sock;
-    std::string function;
-    std::string key;
-    uint32_t conf_id;
-    std::string value;
-    std::string timestamp;
-};
-
-
 class CAS_Server {
 public:
     CAS_Server();

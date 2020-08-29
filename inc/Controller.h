@@ -21,6 +21,7 @@ public:
 	int init_setup(std::string configFile, std::string filePath);
 	int read_deployment_info(std::string &filePath, std::vector<std::pair<std::string, uint16_t> > &info);
         int send_config_group_to_client(uint32_t group_number);
+        int init_metadata_server();
 
 	Properties prp;
 	Reconfig config_t;

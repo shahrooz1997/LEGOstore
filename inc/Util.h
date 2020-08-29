@@ -181,7 +181,7 @@ struct Properties{
 struct Reconfig_key_info{
     uint32_t curr_conf_id;
     Placement *curr_placement;
-    bool is_done;
+    int reconfig_state; // 0: never reconfigured, 1: blocked, 2: reconfiguration completed
     std::string timestamp;
     uint32_t next_conf_id;
     Placement *next_placement;

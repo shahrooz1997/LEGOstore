@@ -16,6 +16,10 @@
 // NOTE:: Shahrooz: in the future, we will change the structure to have a link list of timestamp for each key. add pv_timestamp to Data_handler struct and you know the continuation.
 //        Shahrooz: Maybe, it is better to have a list of timestamps for each key.
 
+
+// Todo: update the server code so when they are notified by the metadata server that a reconfiguration has been occurred send back the correct message to the clients
+
+
 #include "CAS_Server.h"
 
 using std::string;
@@ -46,27 +50,57 @@ bool complete_fin(std::string &key, uint32_t conf_id, std::string &timestamp, Ca
         data = *cache.get(con_key);
     }
     
-//    // Check if the WRITE can finish
-//    
-//    Timestamp curr_time(timestamp);
-//    Timestamp saved_time(data[0]);
-//
-//    if( curr_time > saved_time){
-//        cache.put(con_key, {timestamp});
-//        persistent.put(con_key, {timestamp});
-//        DPRINTF(DEBUG_CAS_Server,"Complete fin called with key : %s,  curr_timestsamp : %s , and saved timestsamp is : %s \n",
-//                                        key.c_str(), timestamp.c_str(), data[0].c_str());
-//        return true;
-//    }
-
-//    return false;
-    
     return true;
 }
 
-std::string CAS_Server::get_timestamp(const string &key, uint32_t conf_id, Cache &cache, Persistent &persistent, std::mutex &lock_t){
+int CAS_Server::reconfig_info(const string &key, uint32_t conf_id, string &timestamp, const Request &req, string &msg, string &recon_timestamp, Cache &cache, Persistent &persistent){
+    
+    std::string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id, &timestamp);
+    
+    strVec data;
+    
+    bool fnd = cache.exists(con_key);
+    if(!fnd){
+        fnd = persistent.exists(con_key);
+        if(!fnd){
+            return -1; // You should never get this error code!
+        }
 
-    //std::lock_guard<std::mutex> lock(lock_t);
+        data = persistent.get(con_key);
+    }
+    else{
+        data = (*cache.get(con_key));
+    }
+    
+    Reconfig_key_info rki(data[3]);
+        
+    if(conf_id != rki.curr_conf_id){
+        DPRINTF(DEBUG_CAS_Server, "BAD Request from client to the wrong server\n");
+        return -2;
+    }
+    
+    if(rki.reconfig_state == 0){
+        return 0;
+    }
+    
+    if(rki.reconfig_state == 1){ // block
+//        recon_keys[key].push_back(req);
+        recon_timestamp = rki.timestamp;
+        return 1;
+    }
+    
+    if(rki.reconfig_state == 2){ // Reconfigured
+        recon_timestamp = rki.timestamp;
+        msg = std::to_string(rki.next_conf_id);
+        return 2;
+    }
+    
+    return -3;
+}
+
+std::string CAS_Server::get_timestamp(const string &key, uint32_t conf_id, const Request &req, Cache &cache, Persistent &persistent, std::mutex &lock_t){
+
+    std::lock_guard<std::mutex> lock(lock_t);
     
     std::string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
     
@@ -80,25 +114,46 @@ std::string CAS_Server::get_timestamp(const string &key, uint32_t conf_id, Cache
         DPRINTF(DEBUG_CAS_Server,"cache data checked and data is null\n");
         if(data.empty()){
             result = {"Failed", "None"};
+            return DataTransfer::serialize(result);
         }else{
             DPRINTF(DEBUG_CAS_Server,"Found data in persisten. sending back! data is"\
                     "key:%s   timestamp:%s\n", con_key.c_str(), data[0].c_str() );
-            result = {"OK", data[0]};
         }
-    }else{
-//            DPRINTF(DEBUG_CAS_Server,"cache data checked and data is found\n");
-            data = (*ptr);
-            DPRINTF(DEBUG_CAS_Server,"cache data checked and data is %s\n",data[0].c_str() );
-            result = {"OK", data[0]};
+    }
+    else{
+        data = (*ptr);
+        DPRINTF(DEBUG_CAS_Server,"cache data checked and data is %s\n",data[0].c_str());
     }
 
-    assert(result.empty() != 1);
-    return DataTransfer::serialize(result);
+    // Data is found
+    std::string msg;
+    std::string recon_timestamp;
+    int recon_status = reconfig_info(key, conf_id, data[0], req, msg, recon_timestamp, cache, persistent);
+    
+    if(recon_status == 0){
+        result = {"OK", data[0]};
+        return DataTransfer::serialize(result);
+    }
+    else if(recon_status == 1){
+        recon_keys[key].push_back(req);
+        return "SEND_NOTHING";
+        // Do nothing, it will be taken care of later
+    }
+    else if(recon_status == 2){
+        result = {"operation_fail", msg};
+        return DataTransfer::serialize(result);
+    }
+    else{
+        DPRINTF(DEBUG_CAS_Server,"something bad happened\n");
+        assert(false);
+        result = {"ERROR", "INTERNAL ERROR"};
+        return DataTransfer::serialize(result);
+    }
 }
 
-std::string CAS_Server::put(string &key, uint32_t conf_id, string &val, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
+std::string CAS_Server::put(string &key, uint32_t conf_id, string &val, string &timestamp, const Request &req, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
-//	std::lock_guard<std::mutex> lock(lock_t);
+	std::lock_guard<std::mutex> lock(lock_t);
 //	DPRINTF(DEBUG_CAS_Server,"put function timestamp %s\n", timestamp.c_str());
 //	insert_data(key, conf_id, value, timestamp, false, cache, persistent);
 //	return DataTransfer::serialize({"OK"});
@@ -114,6 +169,8 @@ std::string CAS_Server::put(string &key, uint32_t conf_id, string &val, string &
     // OR tuple is in pre stage
     // chekcing to set FIN flag
     bool fnd = cache.exists(con_key);
+    
+    bool flag = false;
 
     if(!fnd){
         fnd = persistent.exists(con_key);
@@ -125,19 +182,29 @@ std::string CAS_Server::put(string &key, uint32_t conf_id, string &val, string &
                 Reconfig_key_info rki;
                 rki.curr_conf_id = conf_id;
                 rki.curr_placement = nullptr;
-                rki.is_done = false;
+                rki.reconfig_state = 0;
+                rki.timestamp = ""; // Todo: maybe you need to add it into the metadata server
                 rki.next_conf_id = -1;
                 rki.next_placement = nullptr;
                 
                 //Todo: shahrooz: get placement info from metadata server
-                Connect c("127.0.0.1", METADATA_SERVER_PORT);
+                Connect c(METADATA_SERVER_IP, METADATA_SERVER_PORT);
                 if(!c.is_connected()){
                     return DataTransfer::serialize({"ERROR", "Metadata Server is down"});
                 }
-                DataTransfer::sendMsg(*c,DataTransfer::serialize({"ask", key, std::to_string(conf_id)}));
+                DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", key + "!" + std::to_string(conf_id)));
                 std::string recvd;
                 if(DataTransfer::recvMsg(*c, recvd) == 1){
-                    rki.curr_placement =  DataTransfer::deserializePlacement(recvd);
+                    std::string status;
+                    std::string msg;
+                    rki.curr_placement =  DataTransfer::deserializeMDS(recvd, status, msg);
+                    if(status == "OK"){
+                        if(stoul(msg) > conf_id){
+                            rki.reconfig_state = 2;
+                            rki.next_conf_id = stoul(msg);
+                            // Todo: we may need to fill next_placement and timestamp fields too
+                        }
+                    }
                 }
                 
                 //Todo: shahrooz: add previous timestamp to the end of the value
@@ -146,38 +213,65 @@ std::string CAS_Server::put(string &key, uint32_t conf_id, string &val, string &
                 DPRINTF(DEBUG_CAS_Server,"timestamp : %s is being written\n", timestamp.c_str());
                 ///TODO:: optimize and create threads here
                 // For thread, add label check here and then return
-                DPRINTF(DEBUG_CAS_Server,"Adding entries to both cache and persitent\n");
+//                DPRINTF(DEBUG_CAS_Server,"Adding entries to both cache and persitent\n");
                 // Also add fin tag to both
                 cache.put(con_key, value);
                 persistent.put(con_key, value);
+                flag = true;
+//                return DataTransfer::serialize({"OK"}); // Todo: make sure that it is correct to comment out this line
             }
-            return DataTransfer::serialize({"OK"});
+            else{
+                assert(false);
+            }
         }
         DPRINTF(DEBUG_CAS_Server,"TAG found in persistent\n ");
         //TODO:: Need to insert in cache where. otherwise modify being done in next steps maybe invalid
     }
     
-    return DataTransfer::serialize({"OK"});
+    std::string msg;
+    std::string recon_timestamp;
+    int recon_status = reconfig_info(key, conf_id, timestamp, req, msg, recon_timestamp, cache, persistent);
+    if(recon_status == 0){
+        return DataTransfer::serialize({"OK"});
+    }
+    else if(recon_status == 1 && !flag){
+        recon_keys[key].push_back(req);
+        return "SEND_NOTHING";
+        // Do nothing, it will be taken care of later
+    }
+    else if(recon_status == 2){
+        if(recon_timestamp != ""){
+            Timestamp temp(recon_timestamp);
+            Timestamp c_temp(timestamp);
+            if(!(temp > c_temp)){
+                return DataTransfer::serialize({"OK"});
+            }
+            else{
+                return DataTransfer::serialize({"operation_fail", msg});
+            }
+        }
+        else{
+            return DataTransfer::serialize({"operation_fail", msg});
+        }
+    }
+    else{
+        DPRINTF(DEBUG_CAS_Server,"something bad happened\n");
+        assert(false);
+        return DataTransfer::serialize({"ERROR", "INTERNAL ERROR"});
+    }
 }
 
-std::string CAS_Server::put_fin(string &key, uint32_t conf_id, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
+std::string CAS_Server::put_fin(string &key, uint32_t conf_id, string &timestamp, const Request &req, Cache &cache, Persistent &persistent, std::mutex &lock_t){
 
-    //std::lock_guard<std::mutex> lock(lock_t);
-//  DPRINTF(DEBUG_CAS_Server,"Calling put_fin fucntion timestamp:%s\n", timestamp.c_str());
-//  insert_data(key, conf_id, std::string(), timestamp, true, cache, persistent);
-//  return DataTransfer::serialize({"OK"});
-        
+    std::lock_guard<std::mutex> lock(lock_t);
+
     std::string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id, &timestamp);
-//        int _label = label? 1:0;
 
-    //TODO:: ALready in FIN, so no way that we need to store naything , cos no way values
-    // can come now in a msg right???
-    //TODO:: should I add it to cache on write, from persistent
-    //If not found, that means either tuple not present
-    // OR tuple is in pre stage
-    // chekcing to set FIN flag
     bool fnd = cache.exists(con_key);
 
+    bool flag = false;
+    strVec data;
+    
     if(!fnd){
         fnd = persistent.exists(con_key);
 
@@ -185,22 +279,32 @@ std::string CAS_Server::put_fin(string &key, uint32_t conf_id, string &timestamp
         if(!fnd){
 //            DPRINTF(DEBUG_CAS_Server,"WARNING: put_fin received but the key doesn't exist!\n");
             
-            //Todo: shahrooz: get placement info from metadata server
             Reconfig_key_info rki;
             rki.curr_conf_id = conf_id;
             rki.curr_placement = nullptr;
-            rki.is_done = false;
+            rki.reconfig_state = 0;
+            rki.timestamp = ""; // Todo: maybe you need to add it into the metadata server
             rki.next_conf_id = -1;
             rki.next_placement = nullptr;
-            
-            Connect c("127.0.0.1", METADATA_SERVER_PORT);
+
+            //Todo: shahrooz: get placement info from metadata server
+            Connect c(METADATA_SERVER_IP, METADATA_SERVER_PORT);
             if(!c.is_connected()){
-                return DataTransfer::serialize({"ERROR", "Metadata Server is down"});;
+                return DataTransfer::serialize({"ERROR", "Metadata Server is down"});
             }
-            DataTransfer::sendMsg(*c,DataTransfer::serialize({"ask", key, std::to_string(conf_id)}));
+            DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", key + "!" + std::to_string(conf_id)));
             std::string recvd;
             if(DataTransfer::recvMsg(*c, recvd) == 1){
-                rki.curr_placement =  DataTransfer::deserializePlacement(recvd);
+                std::string status;
+                std::string msg;
+                rki.curr_placement =  DataTransfer::deserializeMDS(recvd, status, msg);
+                if(status == "OK"){
+                    if(stoul(msg) > conf_id){
+                        rki.reconfig_state = 2;
+                        rki.next_conf_id = stoul(msg);
+                        // Todo: we may need to fill next_placement and timestamp fields too
+                    }
+                }
             }
 
             //Todo: shahrooz: add previous timestamp to the end of the value
@@ -209,66 +313,113 @@ std::string CAS_Server::put_fin(string &key, uint32_t conf_id, string &timestamp
             DPRINTF(DEBUG_CAS_Server,"timestamp : %s is being written\n", timestamp.c_str());
             ///TODO:: optimize and create threads here
             // For thread, add label check here and then return
-            DPRINTF(DEBUG_CAS_Server,"Adding entries to both cache and persitent\n");
+//            DPRINTF(DEBUG_CAS_Server,"Adding entries to both cache and persitent\n");
             // Also add fin tag to both
             cache.put(con_key, value);
             persistent.put(con_key, value);
             complete_fin(key, conf_id, timestamp, cache, persistent);
-            return DataTransfer::serialize({"OK"});
+            flag = true;
+//            return DataTransfer::serialize({"OK"});
         }
-        DPRINTF(DEBUG_CAS_Server,"TAG found in persistent\n ");
-        //TODO:: Need to insert in cache where. otherwise modify being done in next steps maybe invalid
+        else{
+            DPRINTF(DEBUG_CAS_Server,"TAG found in persistent\n ");
+            //TODO:: Need to insert in cache where. otherwise modify being done in next steps maybe invalid
+            data = persistent.get(con_key);
+        }
         
-        strVec data = persistent.get(con_key);
+    }
+    else{
+        data = (*cache.get(con_key));
+    }
+    
+    std::string msg;
+    std::string recon_timestamp;
+    int recon_status = reconfig_info(key, conf_id, timestamp, req, msg, recon_timestamp, cache, persistent);
+    if(recon_status == 0){
         data[4] = "FIN";
         cache.put(con_key, data);
         persistent.put(con_key, data);
         complete_fin(key, conf_id, timestamp, cache, persistent);
         return DataTransfer::serialize({"OK"});
-        
     }
-    
-    std::vector<std::string> data_c = (*cache.get(con_key));
-    data_c[4] = "FIN";
-    cache.put(con_key, data_c);
-    persistent.put(con_key, data_c);
-    complete_fin(key, conf_id, timestamp, cache, persistent);
-    return DataTransfer::serialize({"OK"});
+    else if(recon_status == 1 && !flag){
+        recon_keys[key].push_back(req);
+        return "SEND_NOTHING";
+        // Do nothing, it will be taken care of later
+    }
+    else if(recon_status == 2){
+        if(recon_timestamp != ""){
+            Timestamp temp(recon_timestamp);
+            Timestamp c_temp(timestamp);
+            if(!(temp > c_temp)){
+                data[4] = "FIN";
+                cache.put(con_key, data);
+                persistent.put(con_key, data);
+                complete_fin(key, conf_id, timestamp, cache, persistent);
+                return DataTransfer::serialize({"OK"});
+            }
+            else{
+                return DataTransfer::serialize({"operation_fail", msg});
+            }
+        }
+        else{
+            return DataTransfer::serialize({"operation_fail", msg});
+        }
+    }
+    else{
+        DPRINTF(DEBUG_CAS_Server,"something bad happened\n");
+        assert(false);
+        return DataTransfer::serialize({"ERROR", "INTERNAL ERROR"});
+    }
 }
 
 
 
 //TOD0:: when fin tag with empty value inserted, how is that handled at server for future requests,
 // as in won't the server respond with emoty values when requested again.
-std::string CAS_Server::get(string &key, uint32_t conf_id, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t){
-
+std::string CAS_Server::get(string &key, uint32_t conf_id, string &timestamp, const Request &req, Cache &cache, Persistent &persistent, std::mutex &lock_t){
+    std::lock_guard<std::mutex> lock(lock_t);
     
     std::string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id, &timestamp);
     
     //std::unique_lock<std::mutex> lock(lock_t);
     DPRINTF(DEBUG_CAS_Server,"GET function called !! \n");
     strVec result;
+    
+    strVec data;
+    bool flag = false;
 
     bool fnd = cache.exists(con_key);
     if(!fnd){
         fnd = persistent.exists(con_key);
         if(!fnd){
-                //insert_data(key, "None", timestamp, true, cache, persistent);
+            
             Reconfig_key_info rki;
             rki.curr_conf_id = conf_id;
             rki.curr_placement = nullptr;
-            rki.is_done = false;
+            rki.reconfig_state = 0;
+            rki.timestamp = ""; // Todo: maybe you need to add it into the metadata server
             rki.next_conf_id = -1;
             rki.next_placement = nullptr;
 
-            Connect c("127.0.0.1", METADATA_SERVER_PORT);
+            //Todo: shahrooz: get placement info from metadata server
+            Connect c(METADATA_SERVER_IP, METADATA_SERVER_PORT);
             if(!c.is_connected()){
-                return DataTransfer::serialize({"ERROR", "Metadata Server is down"});;
+                return DataTransfer::serialize({"ERROR", "Metadata Server is down"});
             }
-            DataTransfer::sendMsg(*c,DataTransfer::serialize({"ask", key, std::to_string(conf_id)}));
+            DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", key + "!" + std::to_string(conf_id)));
             std::string recvd;
             if(DataTransfer::recvMsg(*c, recvd) == 1){
-                rki.curr_placement =  DataTransfer::deserializePlacement(recvd);
+                std::string status;
+                std::string msg;
+                rki.curr_placement =  DataTransfer::deserializeMDS(recvd, status, msg);
+                if(status == "OK"){
+                    if(stoul(msg) > conf_id){
+                        rki.reconfig_state = 2;
+                        rki.next_conf_id = stoul(msg);
+                        // Todo: we may need to fill next_placement and timestamp fields too
+                    }
+                }
             }
 
             //Todo: shahrooz: add previous timestamp to the end of the value
@@ -282,101 +433,68 @@ std::string CAS_Server::get(string &key, uint32_t conf_id, string &timestamp, Ca
             cache.put(con_key, value);
             persistent.put(con_key, value);
             complete_fin(key, conf_id, timestamp, cache, persistent);
+            flag = true;
 //                return DataTransfer::serialize({"OK"});
-            return DataTransfer::serialize({"Failed", "None"});
+//            return DataTransfer::serialize({"Failed", "None"});
         }
-
-        strVec data = persistent.get(con_key);
-
+        else{
+            data = persistent.get(con_key);
+        }
+    }
+    else{
+        data = (*cache.get(con_key));
+        DPRINTF(DEBUG_CAS_Server," GET value found in Cache \n");
+    }
+    
+    std::string msg;
+    std::string recon_timestamp;
+    int recon_status = reconfig_info(key, conf_id, timestamp, req, msg, recon_timestamp, cache, persistent);
+    if(recon_status == 0){
         data[4] = "FIN";
         cache.put(con_key, data);
         persistent.put(con_key, data);
         complete_fin(key, conf_id, timestamp, cache, persistent);
 
         if(data[0] != ""){
-//            result = {"OK", data[0]};
             return DataTransfer::serialize({"OK", data[0]});
         }
         else{
             return DataTransfer::serialize({"Failed", "None"});
         }
     }
+    else if(recon_status == 1 && !flag){
+        recon_keys[key].push_back(req);
+        return "SEND_NOTHING";
+        // Do nothing, it will be taken care of later
+    }
+    else if(recon_status == 2){
+        if(recon_timestamp != ""){
+            Timestamp temp(recon_timestamp);
+            Timestamp c_temp(timestamp);
+            if(!(temp > c_temp)){
+                data[4] = "FIN";
+                cache.put(con_key, data);
+                persistent.put(con_key, data);
+                complete_fin(key, conf_id, timestamp, cache, persistent);
 
-//    insert_data(key, std::string(), timestamp, true, cache, persistent);
-    
-    std::vector<std::string> data_c = (*cache.get(con_key));
-    data_c[4] = "FIN";
-    cache.put(con_key, data_c);
-    persistent.put(con_key, data_c);
-    complete_fin(key, conf_id, timestamp, cache, persistent);
-    
-    DPRINTF(DEBUG_CAS_Server," GET value found in Cache \n");
-//    result = {"OK", data_c[0]};
-    if(data_c[0] != ""){
-//        result = {"OK", data[0]};
-        return DataTransfer::serialize({"OK", data_c[0]});
+                if(data[0] != ""){
+                    return DataTransfer::serialize({"OK", data[0]});
+                }
+                else{
+                    return DataTransfer::serialize({"Failed", "None"});
+                }
+            }
+            else{
+                return DataTransfer::serialize({"operation_fail", msg});
+            }
+        }
+        else{
+            return DataTransfer::serialize({"operation_fail", msg});
+        }
     }
     else{
-        return DataTransfer::serialize({"Failed", "None"});
+        DPRINTF(DEBUG_CAS_Server,"something bad happened\n");
+        assert(false);
+        return DataTransfer::serialize({"ERROR", "INTERNAL ERROR"});
     }
-
-    assert(result.empty() != 1);
-    return DataTransfer::serialize(result);
-}
-
-
-//Add client ID
-void CAS_Server::insert_data(string &key, uint32_t conf_id, const string &val, string &timestamp, bool label, Cache &cache, Persistent &persistent){
-
-	int _label = label? 1:0;
-
-	//TODO:: ALready in FIN, so no way that we need to store naything , cos no way values
-	// can come now in a msg right???
-	//TODO:: should I add it to cache on write, from persistent
-	//If not found, that means either tuple not present
-	// OR tuple is in pre stage
-	// chekcing to set FIN flag
-//	bool fnd = cache.exists(key+timestamp);
-
-//	if(!fnd){
-//		fnd = persistent.exists(key+timestamp);
-
-		// If Tag not seen before, add the tuple
-//		if(!fnd){
-			if(!val.empty()){
-				std::vector<string> value{val, std::to_string(_label)};
-
-				DPRINTF(DEBUG_CAS_Server,"timestamp : %s is being written\n", timestamp.c_str());
-				///TODO:: optimize and create threads here
-				// For thread, add label check here and then return
-				DPRINTF(DEBUG_CAS_Server,"Adding entries to both cache and persitent\n");
-				// Also add fin tag to both
-				cache.put(key+timestamp, value);
-				persistent.put(key+timestamp, value);
-			}
-			if(label){
-				complete_fin(key, conf_id, timestamp, cache, persistent);
-				//cache.put(key, {timestamp});
-				//persistent.put(key, {timestamp});
-			}
-			return;
-//		}
-		DPRINTF(DEBUG_CAS_Server,"TAG found in persistent\n ");
-		//TODO:: Need to insert in cache where. otherwise modify being done in next steps maybe invalid
-//	}
-
-	//TODO:: Before fin, check the key if you can infact finish the write and check python code for same.
-	if(label){
-		// TODO:: check if not found, does LAbel update make sense??
-		DPRINTF(DEBUG_CAS_Server,"ADDING the FIN tag to key %s timestamp:%s\n", key.c_str(), timestamp.c_str());
-		//cache.put(key, {timestamp});
-		//persistent.put(key, {timestamp});
-		//std::cout<<"put_fin value read back is" <<  persistent.get(key)[0] << std::endl;
-		// Use modify function, cos don't want to overwrite value with NULL
-		// Take care of case where data not in Cache
-		cache.modify_flag(key+timestamp,_label);
-		persistent.modify_flag(key+timestamp, _label);
-		complete_fin(key, conf_id, timestamp, cache, persistent); // What is this for??
-	}
-
 }

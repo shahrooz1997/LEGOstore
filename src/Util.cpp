@@ -727,14 +727,14 @@ Reconfig_key_info::Reconfig_key_info(const std::string &in){
         this->curr_placement = nullptr;
     }
     
-    if(cc + sizeof(bool) > in.size()){
+    if(cc + sizeof(int) > in.size()){
         DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
     }
-    for(uint32_t i = 0; i < sizeof(bool) && cc < in.size(); i++){
-        ((char*)(&(this->is_done)))[i] = in[cc++];
+    for(uint32_t i = 0; i < sizeof(int) && cc < in.size(); i++){
+        ((char*)(&(this->reconfig_state)))[i] = in[cc++];
     }
     
-    if(is_done){
+    if(reconfig_state != 0){
         if(cc + sizeof(uint32_t) > in.size()){
             DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
         }
@@ -782,11 +782,11 @@ std::string Reconfig_key_info::get_string(){
         }
     }
     
-    for(uint i = 0; i < sizeof(bool); i++){
-        ret.push_back(((char*)(&is_done))[i]);
+    for(uint i = 0; i < sizeof(int); i++){
+        ret.push_back(((char*)(&reconfig_state))[i]);
     }
     
-    if(is_done){
+    if(reconfig_state != 0){
         // Timestamp
         uint32_t size = this->timestamp.size();
         for(uint32_t i = 0; i < sizeof(uint32_t); i++){

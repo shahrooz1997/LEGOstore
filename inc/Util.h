@@ -105,10 +105,10 @@ struct Placement{ // For ABD, you can use just the first portion of this struct.
     uint32_t                f; // The number of failures this placement can tolerate.
     
     Placement();
-    Placement(const std::string &in);
-    Placement(const std::string &in, uint32_t &cc);
+//    Placement(const std::string &in);
+//    Placement(const std::string &in, uint32_t &cc);
     
-    std::string get_string();
+//    std::string get_string();
     
 };
 

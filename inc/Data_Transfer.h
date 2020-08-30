@@ -38,7 +38,7 @@ public:
 
 	static Properties* deserializePrp(std::string &data);
         
-        static Placement* deserializePlacement(std::string &data);
+        static Placement* deserializePlacement(const std::string &data);
 
 	static std::string serializeCFG(const Placement &pp);
 

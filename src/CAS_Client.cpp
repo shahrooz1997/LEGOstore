@@ -323,55 +323,64 @@ int CAS_Client::update_placement(std::string &key, uint32_t conf_id){
         DPRINTF(DEBUG_CAS_Client, "fut.wait_for(span) == std::future_status::ready && fut.get() == 1 NOT true\n");
     }
     
-//    if(DataTransfer::recvMsg(*c, recvd) == 1){
-//        msg.clear();
-//        p =  DataTransfer::deserializeMDS(recvd, status, msg);
-//    }
-    
-    if(status == "OK" && msg != std::to_string(conf_id)){
-        
+    assert(status == "OK");
+    auto it = keys_info.find(key);
+    if(it == keys_info.end()){
         keys_info[key] = std::pair<uint32_t, Placement>(stoul(msg), *p);
-        ret =  0;
         if(this->desc_destroy){
             if(this->desc != -1)
                 destroy_liberasure_instance(this->desc);
             this->desc = create_liberasure_instance(p);
         }
-    }
-    else if(status == "OK" && msg == std::to_string(conf_id)){
-        ret =  0;
+        ret = 0;
     }
     else{
-        DPRINTF(DEBUG_CAS_Client, "msg is %s\n", msg.c_str());
-        ret = -1;
+        uint32_t saved_conf_id = it->second.first;
+        if(status == "OK" && std::to_string(saved_conf_id) != std::to_string(conf_id)){
+
+            keys_info[key] = std::pair<uint32_t, Placement>(stoul(msg), *p);
+            ret =  0;
+            if(this->desc_destroy){
+                if(this->desc != -1)
+                    destroy_liberasure_instance(this->desc);
+                this->desc = create_liberasure_instance(p);
+            }
+        }
+        else{
+            DPRINTF(DEBUG_CAS_Client, "msg is %s\n", msg.c_str());
+            ret = -1;
+        }
+
+        if(ret == 0 && this->desc == -1){
+            this->desc = create_liberasure_instance(p);
+        }
+
+        // Todo::: Maybe causes problem
+        delete p;
+        p = nullptr;
+
+        return ret;
     }
-    
-    if(ret == 0 && this->desc == -1){
-        this->desc = create_liberasure_instance(p);
-    }
-    
-    // Todo::: Maybe causes problem
-    delete p;
-    p = nullptr;
     
     return ret;
 }
 
-Placement* CAS_Client::get_placement(std::string &key, bool force_update){
-    auto it = this->keys_info.find(key);
+Placement* CAS_Client::get_placement(std::string &key, bool force_update, uint32_t conf_id){
     
-    if(it != this->keys_info.end()){
-        if(force_update){
-            assert(update_placement(key, it->second.first) == 0);
+    if(force_update){
+        assert(update_placement(key, conf_id) == 0);
+        auto it = this->keys_info.find(key);
+        return &(it->second.second);
+    }
+    else{
+        auto it = this->keys_info.find(key);
+        if(it != this->keys_info.end()){
             return &(it->second.second);
         }
         else{
-            return &(it->second.second);
+            assert(update_placement(key, 0) == 0);
+            return &(this->keys_info[key].second);
         }
-    }
-    else{
-        assert(update_placement(key, 0) == 0);
-        return &(this->keys_info[key].second);
     }
 }
 
@@ -444,7 +453,7 @@ int CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
             op_status = 0;   // For get_timestamp, even if one response Received operation is success
         }else if(data[0] == "operation_fail"){
             DPRINTF(DEBUG_CAS_Client, "operation_fail received for key : %s\n", key->c_str());
-            *p = get_placement(*key, true);
+            *p = get_placement(*key, true, stoul(data[1]));
             assert(*p != nullptr);
             op_status = -2; // reconfiguration happened on the key
             return S_RECFG;
@@ -495,7 +504,7 @@ int CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
                 counter++;
             }else if(data[0] == "operation_fail"){
                 DPRINTF(DEBUG_CAS_Client, "operation_fail received for key : %s\n", key->c_str());
-                *p = get_placement(*key, true);
+                *p = get_placement(*key, true, stoul(data[1]));
                 assert(*p != nullptr);
                 op_status = -2; // reconfiguration happened on the key
                 return S_RECFG;
@@ -545,7 +554,7 @@ void _put(std::promise<strVec> &&prm, std::string key, std::string value, Timest
     data.push_back(std::to_string(conf_id));
 
     if((value).empty()){
-	       printf("WARNING!!! SENDING EMPTY STRING TO SERVER\n");
+	printf("WARNING!!! SENDING EMPTY STRING TO SERVER\n");
     }
     DataTransfer::sendMsg(sock,DataTransfer::serialize(data));
 
@@ -634,6 +643,10 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
 
     DPRINTF(DEBUG_CAS_Client, "The value to be stored is %s \n", value.c_str());
 
+    if(this->desc == -1){
+        DPRINTF(DEBUG_CAS_Client, "liberasure instance is not initialized.\n");
+        return GENERAL_ERASURE_ERROR;
+    }
     std::thread encoder(liberasure::encode, &value, &chunks, &null_args, this->desc);
     //encode(&value, &chunks, &null_args, this->desc);
 
@@ -692,7 +705,7 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
         std::thread(_put, std::move(prm), key, *chunks[i], *timestamp,
                             datacenters[*it]->servers[0], this->current_class, this->keys_info[key].first).detach();
 
-        DPRINTF(DEBUG_CAS_Client, "Issue Q2 request to key: %s and timestamp: %s  chunk_size :%lu  chunks: ", key.c_str(), timestamp->get_string().c_str(), chunks[i]->size());
+        DPRINTF(DEBUG_CAS_Client, "Issue _put request to key: %s and timestamp: %s and conf_id: %u and chunk_size :%lu \n", key.c_str(), timestamp->get_string().c_str(), this->keys_info[key].first, chunks[i]->size());
         // for (auto& el : *chunks[i])
         //      printf("%02hhx", el);
         // std::cout << '\n';
@@ -711,12 +724,12 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
         strVec data = it.get();
 
         if(data[0] == "OK"){
-
+            DPRINTF(DEBUG_CAS_Client, "OK received for key : %s\n", key.c_str());
         }
         else if(data[0] == "operation_fail"){
             delete timestamp;
             DPRINTF(DEBUG_CAS_Client, "operation_fail received for key : %s\n", key.c_str());
-            p = get_placement(key, true);
+            p = get_placement(key, true, stoul(data[1]));
             assert(p != nullptr);
             op_status = -2; // reconfiguration happened on the key
             free_chunks(chunks);
@@ -748,7 +761,7 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
             responses.emplace_back(prm.get_future());
             std::thread(_put, std::move(prm), key, *chunks[i], *timestamp,
                             datacenters[*it]->servers[0], this->current_class, this->keys_info[key].first).detach();
-            DPRINTF(DEBUG_CAS_Client, "Issue Q2 request to key: %s and timestamp: %s  chunk_size :%lu  chunks: ", key.c_str(), timestamp->get_string().c_str(), chunks[i]->size());
+            DPRINTF(DEBUG_CAS_Client, "Issue _put request to key: %s and timestamp: %s and conf_id: %u and chunk_size :%lu \n", key.c_str(), timestamp->get_string().c_str(), this->keys_info[key].first, chunks[i]->size());
             i++;
         }
         
@@ -770,7 +783,7 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
             }
             else if(data[0] == "operation_fail"){
                 DPRINTF(DEBUG_CAS_Client, "operation_fail received for key : %s\n", key.c_str());
-                p = get_placement(key, true);
+                p = get_placement(key, true, stoul(data[1]));
                 assert(p != nullptr);
                 op_status = -2; // reconfiguration happened on the key
                 free_chunks(chunks);
@@ -829,7 +842,7 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
         else if(data[0] == "operation_fail"){
             delete timestamp;
             DPRINTF(DEBUG_CAS_Client, "operation_fail received for key : %s\n", key.c_str());
-            p = get_placement(key, true);
+            p = get_placement(key, true, stoul(data[1]));
             assert(p != nullptr);
             op_status = -2; // reconfiguration happened on the key
             free_chunks(chunks);
@@ -882,7 +895,7 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
             else if(data[0] == "operation_fail"){
                 delete timestamp;
                 DPRINTF(DEBUG_CAS_Client, "operation_fail received for key : %s\n", key.c_str());
-                p = get_placement(key, true);
+                p = get_placement(key, true, stoul(data[1]));
                 assert(p != nullptr);
                 op_status = -2; // reconfiguration happened on the key
                 free_chunks(chunks);
@@ -1016,7 +1029,7 @@ int CAS_Client::get(std::string key, std::string &value){
         }else if(data[0] == "operation_fail"){
             delete timestamp;
             DPRINTF(DEBUG_CAS_Client, "operation_fail received for key : %s\n", key.c_str());
-            p = get_placement(key, true);
+            p = get_placement(key, true, stoul(data[1]));
             assert(p != nullptr);
             op_status = -2; // reconfiguration happened on the key
             free_chunks(chunks);
@@ -1069,7 +1082,7 @@ int CAS_Client::get(std::string key, std::string &value){
             }else if(data[0] == "operation_fail"){
                 delete timestamp;
                 DPRINTF(DEBUG_CAS_Client, "operation_fail received for key : %s\n", key.c_str());
-                p = get_placement(key, true);
+                p = get_placement(key, true, stoul(data[1]));
                 assert(p != nullptr);
                 op_status = -2; // reconfiguration happened on the key
                 free_chunks(chunks);

@@ -151,7 +151,11 @@ int run_session(uint32_t obj_size, double read_ratio, std::vector<std::string> &
 //                cout << "get done on key: " << keys[key_idx] << " with value " << read_value << endl;
                 fflush(stdout);
             }else{
-                std::string val(obj_size, 'a');
+//                std::string val(obj_size, 'a');
+                std::string val = std::to_string(cnt);
+                for(uint i = 0; i < obj_size - std::to_string(cnt).size(); i++){
+                    val.push_back(keys[key_idx][i % keys[key_idx].size()]);
+                }
                 result = clt.put(keys[key_idx], val, false);
                 DPRINTF(DEBUG_CAS_Client, "put done on key: %s with value: %s\n", keys[key_idx].c_str(), val.c_str());
 //                cout << "put done on key: " << keys[key_idx] << endl;

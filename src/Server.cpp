@@ -164,8 +164,8 @@ void server_connection(int connection, DataServer &dataserver, int portid){
     std::string &method = data[0];
     
 //    if(method != "get" && method != "put" && method != "get_timestamp"){
-        DPRINTF(DEBUG_RECONFIG_CONTROL, "The method %s is called. The key is %s, server port is %u\n",
-                    method.c_str(), data[1].c_str(), portid);
+//        DPRINTF(DEBUG_RECONFIG_CONTROL, "The method %s is called. The key is %s, server port is %u\n",
+//                    method.c_str(), data[1].c_str(), portid);
 //    }
     
 
@@ -279,13 +279,13 @@ void server_connection(int connection, DataServer &dataserver, int portid){
 void runServer(std::string &db_name, std::string &socket_port){
 
 	DataServer *ds = new DataServer(db_name, socket_setup(socket_port));
+        int portid = stoi(socket_port);
+        std::cout<<"Alive port "<<portid<< std::endl;
 	while(1){
-		int portid = stoi(socket_port);
-		std::cout<<"Alive port "<<portid<< std::endl;
 		int new_sock = accept(ds->getSocketDesc(), NULL, 0);
+                std::cout<<"Received Request!!1  PORT:" <<portid<<std::endl;
 		std::thread cThread([&ds, new_sock, portid](){ server_connection(new_sock, *ds, portid);});
 		cThread.detach();
-		std::cout<<"Received Request!!1  PORT:" <<portid<<std::endl;
 	}
 
 }

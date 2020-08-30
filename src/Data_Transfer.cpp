@@ -90,26 +90,28 @@ strVec DataTransfer::deserialize(std::string &data){
 //Returns 1 on SUCCESS
 int DataTransfer::recvMsg(int sock, std::string &data){
 
-	uint32_t _size = 0;
-	int result;
+    uint32_t _size = 0;
+    int result;
 
-	result = recvAll(sock, &_size, sizeof(_size));
-	if(result == 1){
+    result = recvAll(sock, &_size, sizeof(_size));
+    if(result == 1){
+        
+        
 
-		_size = ntohl(_size);
-		if(_size > 0){
-			data.resize(_size);
-			result = recvAll(sock, const_cast<char *>(data.c_str()), _size);
-			if(result != 1){
-				data.clear();
-				std::cout<<"Clearing the result due to error" << std::endl;
-				return result;
-			}
-		}
-	}
+            _size = ntohl(_size);
+            if(_size > 0){
+                    data.resize(_size);
+                    result = recvAll(sock, const_cast<char *>(data.c_str()), _size);
+                    if(result != 1){
+                            data.clear();
+                            std::cout<<"Clearing the result due to error" << std::endl;
+                            return result;
+                    }
+            }
+    }
 
-	assert(!data.empty());
-	return 1;
+    assert(!data.empty());
+    return 1;
 }
 
 int DataTransfer::recvMsg_async(const int sock, std::promise<std::string> &&data_set){
@@ -332,7 +334,7 @@ Properties* DataTransfer::deserializePrp(std::string &data){
 	return prp;
 }
 
-Placement* DataTransfer::deserializePlacement(std::string &data){
+Placement* DataTransfer::deserializePlacement(const std::string &data){
     Placement *p = new Placement;
     packet::Placement gp;		// Nomenclature: add 'g' in front of gRPC variables
     if(!gp.ParseFromString(data)){

@@ -13,6 +13,7 @@
 
   // for open/close pair
 #include "Util.h"
+#include "Data_Transfer.h"
 #include <cstring>
 #include <arpa/inet.h>
 #include <inttypes.h>
@@ -336,305 +337,305 @@ Placement::Placement(){
     f = -1;
 }
 
-Placement::Placement(const std::string &in){
-    uint32_t cc = 0;
-    uint32_t size, temp;
-    
-    // Protocol
-    size = 0;
-    if(cc + sizeof(uint32_t) > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&size))[i] = in[cc++];
-    }
-    if(cc + size > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-        protocol.push_back(in[cc++]);
-    }
-    
-    
-    // Q1
-    size = 0;
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&size))[i] = in[cc++];
-    }
-    if(cc + sizeof(uint32_t) * size > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-        temp = 0;
-        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
-            ((char*)(&temp))[j] = in[cc++];
-        }
-        Q1.push_back(temp);
-    }
-    
-    // Q2
-    size = 0;
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&size))[i] = in[cc++];
-    }
-    if(cc + sizeof(uint32_t) * size > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-        temp = 0;
-        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
-            ((char*)(&temp))[j] = in[cc++];
-        }
-        Q2.push_back(temp);
-    }
-    
-    // m
-    if(cc + sizeof(uint32_t) > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&(this->m)))[i] = in[cc++];
-    }
-    
-    // k
-    if(cc + sizeof(uint32_t) > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&(this->k)))[i] = in[cc++];
-    }
-    
-    // Q3
-    size = 0;
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&size))[i] = in[cc++];
-    }
-    if(cc + sizeof(uint32_t) * size > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-        temp = 0;
-        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
-            ((char*)(&temp))[j] = in[cc++];
-        }
-        Q3.push_back(temp);
-    }
-    
-    // Q4
-    size = 0;
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&size))[i] = in[cc++];
-    }
-    if(cc + sizeof(uint32_t) * size > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-        temp = 0;
-        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
-            ((char*)(&temp))[j] = in[cc++];
-        }
-        Q4.push_back(temp);
-    }
-    
-    // f
-    if(cc + sizeof(uint32_t) > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&(this->f)))[i] = in[cc++];
-    }
-}
-
-Placement::Placement(const std::string &in, uint32_t &cc){
+//Placement::Placement(const std::string &in){
 //    uint32_t cc = 0;
-    uint32_t size, temp;
-    
-    // Protocol
-    size = 0;
-    if(cc + sizeof(uint32_t) > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&size))[i] = in[cc++];
-    }
-    if(cc + size > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-        protocol.push_back(in[cc++]);
-    }
-    
-    
-    // Q1
-    size = 0;
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&size))[i] = in[cc++];
-    }
-    if(cc + sizeof(uint32_t) * size > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-        temp = 0;
-        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
-            ((char*)(&temp))[j] = in[cc++];
-        }
-        Q1.push_back(temp);
-    }
-    
-    // Q2
-    size = 0;
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&size))[i] = in[cc++];
-    }
-    if(cc + sizeof(uint32_t) * size > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-        temp = 0;
-        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
-            ((char*)(&temp))[j] = in[cc++];
-        }
-        Q2.push_back(temp);
-    }
-    
-    // m
-    if(cc + sizeof(uint32_t) > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&(this->m)))[i] = in[cc++];
-    }
-    
-    // k
-    if(cc + sizeof(uint32_t) > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&(this->k)))[i] = in[cc++];
-    }
-    
-    // Q3
-    size = 0;
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&size))[i] = in[cc++];
-    }
-    if(cc + sizeof(uint32_t) * size > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-        temp = 0;
-        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
-            ((char*)(&temp))[j] = in[cc++];
-        }
-        Q3.push_back(temp);
-    }
-    
-    // Q4
-    size = 0;
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&size))[i] = in[cc++];
-    }
-    if(cc + sizeof(uint32_t) * size > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-        temp = 0;
-        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
-            ((char*)(&temp))[j] = in[cc++];
-        }
-        Q4.push_back(temp);
-    }
-    
-    // f
-    if(cc + sizeof(uint32_t) > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&(this->f)))[i] = in[cc++];
-    }
-}
-
-std::string Placement::get_string(){
-    std::string ret;
-    uint32_t size, temp;
-    
-    // Protocol
-    size = this->protocol.size();
-    for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-        ret.push_back(((char*)(&size))[i]);
-    }
-    for(uint32_t i = 0; i < size; i++){
-        ret.push_back(this->protocol[i]);
-    }
-    
-    // Q1
-    size = this->Q1.size();
-    for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-        ret.push_back(((char*)(&size))[i]);
-    }
-    for(uint32_t i = 0; i < size; i++){
-        temp = this->Q1[i];
-        for(uint32_t j = 0; j < sizeof(uint32_t); j++){
-            ret.push_back(((char*)(&temp))[j]);
-        }
-    }
-    
-    // Q2
-    size = this->Q2.size();
-    for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-        ret.push_back(((char*)(&size))[i]);
-    }
-    for(uint32_t i = 0; i < size; i++){
-        temp = this->Q2[i];
-        for(uint32_t j = 0; j < sizeof(uint32_t); j++){
-            ret.push_back(((char*)(&temp))[j]);
-        }
-    }
-    
-    // m
-    temp = m;
-    for(uint32_t j = 0; j < sizeof(uint32_t); j++){
-        ret.push_back(((char*)(&temp))[j]);
-    }
-    
-    // k
-    temp = k;
-    for(uint32_t j = 0; j < sizeof(uint32_t); j++){
-        ret.push_back(((char*)(&temp))[j]);
-    }
-    
-    // Q3
-    size = this->Q3.size();
-    for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-        ret.push_back(((char*)(&size))[i]);
-    }
-    for(uint32_t i = 0; i < size; i++){
-        temp = this->Q3[i];
-        for(uint32_t j = 0; j < sizeof(uint32_t); j++){
-            ret.push_back(((char*)(&temp))[j]);
-        }
-    }
-    
-    // Q4
-    size = this->Q4.size();
-    for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-        ret.push_back(((char*)(&size))[i]);
-    }
-    for(uint32_t i = 0; i < size; i++){
-        temp = this->Q4[i];
-        for(uint32_t j = 0; j < sizeof(uint32_t); j++){
-            ret.push_back(((char*)(&temp))[j]);
-        }
-    }
-    
-    // f
-    temp = f;
-    for(uint32_t j = 0; j < sizeof(uint32_t); j++){
-        ret.push_back(((char*)(&temp))[j]);
-    }
-    
-    return ret;
-}
+//    uint32_t size, temp;
+//    
+//    // Protocol
+//    size = 0;
+//    if(cc + sizeof(uint32_t) > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&size))[i] = in[cc++];
+//    }
+//    if(cc + size > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
+//        protocol.push_back(in[cc++]);
+//    }
+//    
+//    
+//    // Q1
+//    size = 0;
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&size))[i] = in[cc++];
+//    }
+//    if(cc + sizeof(uint32_t) * size > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
+//        temp = 0;
+//        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
+//            ((char*)(&temp))[j] = in[cc++];
+//        }
+//        Q1.push_back(temp);
+//    }
+//    
+//    // Q2
+//    size = 0;
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&size))[i] = in[cc++];
+//    }
+//    if(cc + sizeof(uint32_t) * size > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
+//        temp = 0;
+//        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
+//            ((char*)(&temp))[j] = in[cc++];
+//        }
+//        Q2.push_back(temp);
+//    }
+//    
+//    // m
+//    if(cc + sizeof(uint32_t) > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&(this->m)))[i] = in[cc++];
+//    }
+//    
+//    // k
+//    if(cc + sizeof(uint32_t) > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&(this->k)))[i] = in[cc++];
+//    }
+//    
+//    // Q3
+//    size = 0;
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&size))[i] = in[cc++];
+//    }
+//    if(cc + sizeof(uint32_t) * size > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
+//        temp = 0;
+//        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
+//            ((char*)(&temp))[j] = in[cc++];
+//        }
+//        Q3.push_back(temp);
+//    }
+//    
+//    // Q4
+//    size = 0;
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&size))[i] = in[cc++];
+//    }
+//    if(cc + sizeof(uint32_t) * size > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
+//        temp = 0;
+//        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
+//            ((char*)(&temp))[j] = in[cc++];
+//        }
+//        Q4.push_back(temp);
+//    }
+//    
+//    // f
+//    if(cc + sizeof(uint32_t) > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&(this->f)))[i] = in[cc++];
+//    }
+//}
+//
+//Placement::Placement(const std::string &in, uint32_t &cc){
+////    uint32_t cc = 0;
+//    uint32_t size, temp;
+//    
+//    // Protocol
+//    size = 0;
+//    if(cc + sizeof(uint32_t) > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&size))[i] = in[cc++];
+//    }
+//    if(cc + size > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
+//        protocol.push_back(in[cc++]);
+//    }
+//    
+//    
+//    // Q1
+//    size = 0;
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&size))[i] = in[cc++];
+//    }
+//    if(cc + sizeof(uint32_t) * size > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
+//        temp = 0;
+//        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
+//            ((char*)(&temp))[j] = in[cc++];
+//        }
+//        Q1.push_back(temp);
+//    }
+//    
+//    // Q2
+//    size = 0;
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&size))[i] = in[cc++];
+//    }
+//    if(cc + sizeof(uint32_t) * size > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
+//        temp = 0;
+//        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
+//            ((char*)(&temp))[j] = in[cc++];
+//        }
+//        Q2.push_back(temp);
+//    }
+//    
+//    // m
+//    if(cc + sizeof(uint32_t) > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&(this->m)))[i] = in[cc++];
+//    }
+//    
+//    // k
+//    if(cc + sizeof(uint32_t) > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&(this->k)))[i] = in[cc++];
+//    }
+//    
+//    // Q3
+//    size = 0;
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&size))[i] = in[cc++];
+//    }
+//    if(cc + sizeof(uint32_t) * size > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
+//        temp = 0;
+//        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
+//            ((char*)(&temp))[j] = in[cc++];
+//        }
+//        Q3.push_back(temp);
+//    }
+//    
+//    // Q4
+//    size = 0;
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&size))[i] = in[cc++];
+//    }
+//    if(cc + sizeof(uint32_t) * size > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
+//        temp = 0;
+//        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
+//            ((char*)(&temp))[j] = in[cc++];
+//        }
+//        Q4.push_back(temp);
+//    }
+//    
+//    // f
+//    if(cc + sizeof(uint32_t) > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&(this->f)))[i] = in[cc++];
+//    }
+//}
+//
+//std::string Placement::get_string(){
+//    std::string ret;
+//    uint32_t size, temp;
+//    
+//    // Protocol
+//    size = this->protocol.size();
+//    for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+//        ret.push_back(((char*)(&size))[i]);
+//    }
+//    for(uint32_t i = 0; i < size; i++){
+//        ret.push_back(this->protocol[i]);
+//    }
+//    
+//    // Q1
+//    size = this->Q1.size();
+//    for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+//        ret.push_back(((char*)(&size))[i]);
+//    }
+//    for(uint32_t i = 0; i < size; i++){
+//        temp = this->Q1[i];
+//        for(uint32_t j = 0; j < sizeof(uint32_t); j++){
+//            ret.push_back(((char*)(&temp))[j]);
+//        }
+//    }
+//    
+//    // Q2
+//    size = this->Q2.size();
+//    for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+//        ret.push_back(((char*)(&size))[i]);
+//    }
+//    for(uint32_t i = 0; i < size; i++){
+//        temp = this->Q2[i];
+//        for(uint32_t j = 0; j < sizeof(uint32_t); j++){
+//            ret.push_back(((char*)(&temp))[j]);
+//        }
+//    }
+//    
+//    // m
+//    temp = m;
+//    for(uint32_t j = 0; j < sizeof(uint32_t); j++){
+//        ret.push_back(((char*)(&temp))[j]);
+//    }
+//    
+//    // k
+//    temp = k;
+//    for(uint32_t j = 0; j < sizeof(uint32_t); j++){
+//        ret.push_back(((char*)(&temp))[j]);
+//    }
+//    
+//    // Q3
+//    size = this->Q3.size();
+//    for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+//        ret.push_back(((char*)(&size))[i]);
+//    }
+//    for(uint32_t i = 0; i < size; i++){
+//        temp = this->Q3[i];
+//        for(uint32_t j = 0; j < sizeof(uint32_t); j++){
+//            ret.push_back(((char*)(&temp))[j]);
+//        }
+//    }
+//    
+//    // Q4
+//    size = this->Q4.size();
+//    for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+//        ret.push_back(((char*)(&size))[i]);
+//    }
+//    for(uint32_t i = 0; i < size; i++){
+//        temp = this->Q4[i];
+//        for(uint32_t j = 0; j < sizeof(uint32_t); j++){
+//            ret.push_back(((char*)(&temp))[j]);
+//        }
+//    }
+//    
+//    // f
+//    temp = f;
+//    for(uint32_t j = 0; j < sizeof(uint32_t); j++){
+//        ret.push_back(((char*)(&temp))[j]);
+//    }
+//    
+//    return ret;
+//}
 
 WorkloadConfig::~WorkloadConfig(){
     for(auto &it: grp){
@@ -704,6 +705,8 @@ Reconfig_key_info::Reconfig_key_info(){
 Reconfig_key_info::Reconfig_key_info(const std::string &in){
     uint32_t cc = 0;
     
+//    DPRINTF(DEBUG_UTIL, "111111\n");
+    
     if(cc + sizeof(uint32_t) > in.size()){
         DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
     }
@@ -711,20 +714,29 @@ Reconfig_key_info::Reconfig_key_info(const std::string &in){
         ((char*)(&(this->curr_conf_id)))[i] = in[cc++];
     }
     
+    DPRINTF(DEBUG_UTIL, "curr_conf_id is %u\n", curr_conf_id);
+    
+//    DPRINTF(DEBUG_UTIL, "22222\n");
+    
     // current placement
-    uint32_t cc_t = cc, temp = 0;
-    if(cc_t + sizeof(uint32_t) > in.size()){
+    uint32_t temp = 0;
+    if(cc + sizeof(uint32_t) > in.size()){
         DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
     }
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc_t < in.size(); i++){
-        ((char*)(&(temp)))[i] = in[cc_t++];
+    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+        ((char*)(&(temp)))[i] = in[cc++];
     }
+    DPRINTF(DEBUG_UTIL, "size for curr_placement is %u\n", temp);
+    
     if(temp != 0){
-        this->curr_placement = new Placement(in, cc);
+        this->curr_placement = DataTransfer::deserializePlacement(in.substr(cc, temp));
+        cc += temp;
     }
     else{
         this->curr_placement = nullptr;
     }
+    
+    DPRINTF(DEBUG_UTIL, "33333\n");
     
     if(cc + sizeof(int) > in.size()){
         DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
@@ -732,8 +744,30 @@ Reconfig_key_info::Reconfig_key_info(const std::string &in){
     for(uint32_t i = 0; i < sizeof(int) && cc < in.size(); i++){
         ((char*)(&(this->reconfig_state)))[i] = in[cc++];
     }
+    DPRINTF(DEBUG_UTIL, "reconfig_state is %u\n", reconfig_state);
+    
+//    DPRINTF(DEBUG_UTIL, "444444\n");
     
     if(reconfig_state != 0){
+        
+//        DPRINTF(DEBUG_UTIL, "DOOMED\n");
+        
+        // timestamp
+        temp = 0;
+        if(cc + sizeof(uint32_t) > in.size()){
+            DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+        }
+        for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+            ((char*)(&(temp)))[i] = in[cc++];
+        }
+        if(temp != 0){
+            this->timestamp.push_back(in[cc++]);
+        }
+        else{
+            this->timestamp = "";
+        }
+        
+        
         if(cc + sizeof(uint32_t) > in.size()){
             DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
         }
@@ -742,28 +776,34 @@ Reconfig_key_info::Reconfig_key_info(const std::string &in){
         }
 
         // next placement
-        cc_t = cc;
         temp = 0;
-        if(cc_t + sizeof(uint32_t) > in.size()){
+        if(cc + sizeof(uint32_t) > in.size()){
             DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
         }
-        for(uint32_t i = 0; i < sizeof(uint32_t) && cc_t < in.size(); i++){
-            ((char*)(&(temp)))[i] = in[cc_t++];
+        for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+            ((char*)(&(temp)))[i] = in[cc++];
         }
         if(temp != 0){
-            this->next_placement = new Placement(in, cc);
+            this->curr_placement = DataTransfer::deserializePlacement(in.substr(cc, temp));
+            cc += temp;
         }
         else{
             this->next_placement = nullptr;
         }
     }
+    else{
+        this->next_placement = nullptr;
+    }
     
-//    }
+    DPRINTF(DEBUG_UTIL, "55555\n");
+    
 }
 
 Reconfig_key_info::~Reconfig_key_info(){
-    delete curr_placement;
-    delete next_placement;
+    if(curr_placement != nullptr)
+        delete curr_placement;
+    if(next_placement != nullptr)
+        delete next_placement;
 }
 
 std::string Reconfig_key_info::get_string(){  
@@ -772,18 +812,28 @@ std::string Reconfig_key_info::get_string(){
         ret.push_back(((char*)(&curr_conf_id))[i]);
     }
     
+    uint32_t size;
     if(this->curr_placement != nullptr){
-        ret += this->curr_placement->get_string();
+        std::string pl_s = DataTransfer::serializePlacement(*(this->curr_placement));
+        size = pl_s.size();
+        for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+            ret.push_back(((char*)(&size))[i]);
+        }
+        ret += pl_s;
+//        DPRINTF(DEBUG_UTIL, "curr_placement size is %u\n", size);
     }
     else{
+        size = 0;
         for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-            ret.push_back(0);
+            ret.push_back(((char*)(&size))[i]);
         }
     }
     
     for(uint i = 0; i < sizeof(int); i++){
         ret.push_back(((char*)(&reconfig_state))[i]);
     }
+    
+//    DPRINTF(DEBUG_UTIL, "reconfig_state is %u\n", reconfig_state);
     
     if(reconfig_state != 0){
         // Timestamp
@@ -800,11 +850,17 @@ std::string Reconfig_key_info::get_string(){
         }
         
         if(this->next_placement != nullptr){
-            ret += this->next_placement->get_string();
+            std::string pl_s = DataTransfer::serializePlacement(*(this->next_placement));
+            size = pl_s.size();
+            for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+                ret.push_back(((char*)(&size))[i]);
+            }
+            ret += pl_s;
         }
         else{
+            size = 0;
             for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-                ret.push_back(0);
+                ret.push_back(((char*)(&size))[i]);
             }
         }
     }

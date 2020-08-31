@@ -25,6 +25,7 @@ bool DEBUG_CAS_Server = true;
 bool DEBUG_ABD_Server = true;
 bool DEBUG_RECONFIG_CONTROL = true;
 #else
+bool DEBUG_CLIENT_NODE = true;
 bool DEBUG_CAS_Client = true;
 bool DEBUG_ABD_Client = true;
 bool DEBUG_CAS_Server = true;
@@ -883,5 +884,57 @@ std::string construct_key(const std::string &key, const std::string &protocol, c
         ret += "!";
         ret += *timestamp;
     }
+    return ret;
+}
+
+int request_placement(std::string &key, uint32_t conf_id, std::string &status,
+        std::string &msg, Placement* &p, uint32_t retry_attempts, uint32_t metadata_server_timeout){
+    int ret = 0;
+    
+    Connect c(METADATA_SERVER_IP, METADATA_SERVER_PORT);
+    if(!c.is_connected()){
+        DPRINTF(DEBUG_CLIENT_NODE, "connection error\n");
+        return -1;
+    }
+    
+//    std::string status;
+    msg = key;
+    msg += "!";
+    msg += std::to_string(conf_id);
+    
+    p = nullptr;
+    
+    
+//    DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", msg));
+    std::string recvd;
+    uint32_t RAs = retry_attempts;
+    std::chrono::milliseconds span(metadata_server_timeout);
+    
+    bool flag = false;
+    while(RAs--){
+        std::promise<std::string> data_set;
+        std::future<std::string> data_set_fut = data_set.get_future();
+        DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", msg));
+        std::future<int> fut = std::async(std::launch::async, DataTransfer::recvMsg_async, *c, std::move(data_set));
+        
+        
+        if(data_set_fut.wait_for(span) == std::future_status::ready){
+            if(fut.get() == 1){
+                flag = true;
+                recvd = data_set_fut.get();
+                break;
+            }
+        }
+    }
+    
+    if(flag){
+        msg.clear();
+        p =  DataTransfer::deserializeMDS(recvd, status, msg);
+    }
+    else{
+        ret = -2;
+        DPRINTF(DEBUG_CLIENT_NODE, "fut.wait_for(span) == std::future_status::ready && fut.get() == 1 NOT true\n");
+    }
+    
     return ret;
 }

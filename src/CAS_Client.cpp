@@ -198,44 +198,50 @@ namespace liberasure{
 //TODO: Ask more servers for timestamp if last attempt didn't work.
 
 // Use this constructor when single threaded code
-CAS_Client::CAS_Client(uint32_t client_id, uint32_t local_datacenter_id, std::vector <DC*> &datacenters) {
+//CAS_Client::CAS_Client(uint32_t client_id, uint32_t local_datacenter_id, std::vector <DC*> &datacenters, std::map<std::string, std::pair<uint32_t, Placement> > *keys_info) {
+//    
+//    assert(keys_info != nullptr);
+//    
+//    this->local_datacenter_id = local_datacenter_id;
+//    retry_attempts = 1;
+//    metadata_server_timeout = 10000;
+//    timeout_per_request = 10000;
+//    this->keys_info = keys_info;
+//    
+//    // Todo: what is this???
+//    start_time = 0;
+//    
+//    this->datacenters = datacenters;
+//    
+//    this->current_class = CAS_PROTOCOL_NAME;
+//    this->id = client_id;
+//    this->desc = -1;
+//    this->desc_destroy = 1;
+//    
+//#ifdef LOGGING_ON
+//    char name[20];
+//    name[0] = 'l';
+//    name[1] = 'o';
+//    name[2] = 'g';
+//    name[3] = 's';
+//    name[4] = '/';
+//
+//    sprintf(&name[5], "%u.txt", client_id);
+//    this->log_file = fopen(name, "w");
+//#endif
+//    
+//}
+
+CAS_Client::CAS_Client(uint32_t client_id, uint32_t local_datacenter_id, std::vector <DC*> &datacenters, int *desc_l, std::map<std::string, std::pair<uint32_t, Placement> > *keys_info) {
+    
+    assert(keys_info != nullptr);
+    assert(desc_l != nullptr);
     
     this->local_datacenter_id = local_datacenter_id;
     retry_attempts = 1;
     metadata_server_timeout = 10000;
     timeout_per_request = 10000;
-    
-    
-    // Todo: what is this???
-    start_time = 0;
-    
-    this->datacenters = datacenters;
-    
-    this->current_class = CAS_PROTOCOL_NAME;
-    this->id = client_id;
-    this->desc = -1;
-    this->desc_destroy = 1;
-    
-#ifdef LOGGING_ON
-    char name[20];
-    name[0] = 'l';
-    name[1] = 'o';
-    name[2] = 'g';
-    name[3] = 's';
-    name[4] = '/';
-
-    sprintf(&name[5], "%u.txt", client_id);
-    this->log_file = fopen(name, "w");
-#endif
-    
-}
-
-CAS_Client::CAS_Client(uint32_t client_id, uint32_t local_datacenter_id, std::vector <DC*> &datacenters, int desc_l) {
-    
-    this->local_datacenter_id = local_datacenter_id;
-    retry_attempts = 1;
-    metadata_server_timeout = 10000;
-    timeout_per_request = 10000;
+    this->keys_info = keys_info;
     
     
     // Todo: what is this???
@@ -246,7 +252,7 @@ CAS_Client::CAS_Client(uint32_t client_id, uint32_t local_datacenter_id, std::ve
     this->current_class = CAS_PROTOCOL_NAME;
     this->id = client_id;
     this->desc = desc_l;
-    this->desc_destroy = 0;
+    this->desc_destroy = 1;
 
 #ifdef LOGGING_ON
     char name[20];
@@ -270,8 +276,8 @@ CAS_Client::~CAS_Client() {
 #endif
     
     if(this->desc_destroy){
-        if(this->desc != -1)
-            destroy_liberasure_instance(this->desc);
+        if((*(this->desc)) != -1)
+            destroy_liberasure_instance((*(this->desc)));
     }
     DPRINTF(DEBUG_CAS_Client, "cliend with id \"%u\" has been destructed.\n", this->id);
 }
@@ -324,13 +330,13 @@ int CAS_Client::update_placement(std::string &key, uint32_t conf_id){
     }
     
     assert(status == "OK");
-    auto it = keys_info.find(key);
-    if(it == keys_info.end()){
-        keys_info[key] = std::pair<uint32_t, Placement>(stoul(msg), *p);
+    auto it = keys_info->find(key);
+    if(it == keys_info->end()){
+        (*keys_info)[key] = std::pair<uint32_t, Placement>(stoul(msg), *p);
         if(this->desc_destroy){
-            if(this->desc != -1)
-                destroy_liberasure_instance(this->desc);
-            this->desc = create_liberasure_instance(p);
+            if((*(this->desc)) != -1)
+                destroy_liberasure_instance((*(this->desc)));
+            (*(this->desc)) = create_liberasure_instance(p);
         }
         ret = 0;
     }
@@ -338,12 +344,12 @@ int CAS_Client::update_placement(std::string &key, uint32_t conf_id){
         uint32_t saved_conf_id = it->second.first;
         if(status == "OK" && std::to_string(saved_conf_id) != std::to_string(conf_id)){
 
-            keys_info[key] = std::pair<uint32_t, Placement>(stoul(msg), *p);
+            (*keys_info)[key] = std::pair<uint32_t, Placement>(stoul(msg), *p);
             ret =  0;
             if(this->desc_destroy){
-                if(this->desc != -1)
-                    destroy_liberasure_instance(this->desc);
-                this->desc = create_liberasure_instance(p);
+                if((*(this->desc)) != -1)
+                    destroy_liberasure_instance((*(this->desc)));
+                (*(this->desc)) = create_liberasure_instance(p);
             }
         }
         else{
@@ -351,8 +357,8 @@ int CAS_Client::update_placement(std::string &key, uint32_t conf_id){
             ret = -1;
         }
 
-        if(ret == 0 && this->desc == -1){
-            this->desc = create_liberasure_instance(p);
+        if(ret == 0 && (*(this->desc)) == -1){
+            (*(this->desc)) = create_liberasure_instance(p);
         }
 
         // Todo::: Maybe causes problem
@@ -369,17 +375,17 @@ Placement* CAS_Client::get_placement(std::string &key, bool force_update, uint32
     
     if(force_update){
         assert(update_placement(key, conf_id) == 0);
-        auto it = this->keys_info.find(key);
+        auto it = this->keys_info->find(key);
         return &(it->second.second);
     }
     else{
-        auto it = this->keys_info.find(key);
-        if(it != this->keys_info.end()){
+        auto it = this->keys_info->find(key);
+        if(it != this->keys_info->end()){
             return &(it->second.second);
         }
         else{
             assert(update_placement(key, 0) == 0);
-            return &(this->keys_info[key].second);
+            return &((*(this->keys_info))[key].second);
         }
     }
 }
@@ -433,7 +439,7 @@ int CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
         std::thread(_get_timestamp, std::move(prm), *key,
-                        datacenters[*it]->servers[0], this->current_class, this->keys_info[*key].first).detach();
+                        datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[*key].first).detach();
     }
     
     std::chrono::system_clock::time_point end = std::chrono::system_clock::now() + std::chrono::milliseconds(this->timeout_per_request);
@@ -479,7 +485,7 @@ int CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
             std::promise<strVec> prm;
             responses.emplace_back(prm.get_future());
             std::thread(_get_timestamp, std::move(prm), *key,
-                            datacenters[*it]->servers[0], this->current_class, this->keys_info[*key].first).detach();
+                            datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[*key].first).detach();
         }
 
         std::chrono::system_clock::time_point end = std::chrono::system_clock::now() + std::chrono::milliseconds(this->timeout_per_request);
@@ -643,11 +649,11 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
 
     DPRINTF(DEBUG_CAS_Client, "The value to be stored is %s \n", value.c_str());
 
-    if(this->desc == -1){
+    if((*(this->desc)) == -1){
         DPRINTF(DEBUG_CAS_Client, "liberasure instance is not initialized.\n");
         return GENERAL_ERASURE_ERROR;
     }
-    std::thread encoder(liberasure::encode, &value, &chunks, &null_args, this->desc);
+    std::thread encoder(liberasure::encode, &value, &chunks, &null_args, (*(this->desc)));
     //encode(&value, &chunks, &null_args, this->desc);
 
     Timestamp *timestamp = nullptr;
@@ -703,9 +709,9 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
         std::thread(_put, std::move(prm), key, *chunks[i], *timestamp,
-                            datacenters[*it]->servers[0], this->current_class, this->keys_info[key].first).detach();
+                            datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
 
-        DPRINTF(DEBUG_CAS_Client, "Issue _put request to key: %s and timestamp: %s and conf_id: %u and chunk_size :%lu \n", key.c_str(), timestamp->get_string().c_str(), this->keys_info[key].first, chunks[i]->size());
+        DPRINTF(DEBUG_CAS_Client, "Issue _put request to key: %s and timestamp: %s and conf_id: %u and chunk_size :%lu \n", key.c_str(), timestamp->get_string().c_str(), (*(this->keys_info))[key].first, chunks[i]->size());
         // for (auto& el : *chunks[i])
         //      printf("%02hhx", el);
         // std::cout << '\n';
@@ -760,8 +766,8 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
             std::promise<strVec> prm;
             responses.emplace_back(prm.get_future());
             std::thread(_put, std::move(prm), key, *chunks[i], *timestamp,
-                            datacenters[*it]->servers[0], this->current_class, this->keys_info[key].first).detach();
-            DPRINTF(DEBUG_CAS_Client, "Issue _put request to key: %s and timestamp: %s and conf_id: %u and chunk_size :%lu \n", key.c_str(), timestamp->get_string().c_str(), this->keys_info[key].first, chunks[i]->size());
+                            datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
+            DPRINTF(DEBUG_CAS_Client, "Issue _put request to key: %s and timestamp: %s and conf_id: %u and chunk_size :%lu \n", key.c_str(), timestamp->get_string().c_str(), (*(this->keys_info))[key].first, chunks[i]->size());
             i++;
         }
         
@@ -821,7 +827,7 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
         std::thread(_put_fin, std::move(prm), key, *timestamp,
-                        datacenters[*it]->servers[0], this->current_class, this->keys_info[key].first).detach();
+                        datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
         DPRINTF(DEBUG_CAS_Client, "Issue Q3 request to key: %s \n", key.c_str());
     }
     
@@ -872,7 +878,7 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
             std::promise<strVec> prm;
             responses.emplace_back(prm.get_future());
             std::thread(_put_fin, std::move(prm), key, *timestamp,
-                            datacenters[*it]->servers[0], this->current_class, this->keys_info[key].first).detach();
+                            datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
             DPRINTF(DEBUG_CAS_Client, "Issue Q3 request to key: %s \n", key.c_str());
         }
         
@@ -1008,7 +1014,7 @@ int CAS_Client::get(std::string key, std::string &value){
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
         std::thread(_get, std::move(prm), key, *timestamp,
-                datacenters[*it]->servers[0], this->current_class, this->keys_info[key].first).detach();
+                datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
 
         DPRINTF(DEBUG_CAS_Client, "Issue Q4 request for key :%s \n", key.c_str());
     }
@@ -1059,7 +1065,7 @@ int CAS_Client::get(std::string key, std::string &value){
             std::promise<strVec> prm;
             responses.emplace_back(prm.get_future());
             std::thread(_get, std::move(prm), key, *timestamp,
-                    datacenters[*it]->servers[0], this->current_class, this->keys_info[key].first).detach();
+                    datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
 
             DPRINTF(DEBUG_CAS_Client, "Issue Q4 request for key :%s \n", key.c_str());
         }
@@ -1141,7 +1147,7 @@ int CAS_Client::get(std::string key, std::string &value){
 //    }
 //    printf("%s", bbuf);
 
-    liberasure::decode(&value, &chunks, &null_args, this->desc);
+    liberasure::decode(&value, &chunks, &null_args, (*(this->desc)));
     
     free_chunks(chunks);
 

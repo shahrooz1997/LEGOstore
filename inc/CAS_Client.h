@@ -44,8 +44,8 @@
 
 class CAS_Client {
 public:
-    CAS_Client(uint32_t client_id, uint32_t local_datacenter_id, std::vector <DC*> &datacenters);
-    CAS_Client(uint32_t client_id, uint32_t local_datacenter_id, std::vector <DC*> &datacenters, int desc_l);
+//    CAS_Client(uint32_t client_id, uint32_t local_datacenter_id, std::vector <DC*> &datacenters, std::map<std::string, std::pair<uint32_t, Placement> > *keys_info);
+    CAS_Client(uint32_t client_id, uint32_t local_datacenter_id, std::vector <DC*> &datacenters, int *desc_l, std::map<std::string, std::pair<uint32_t, Placement> > *keys_info);
     CAS_Client(const CAS_Client& orig) = delete;
     virtual ~CAS_Client();
 
@@ -64,11 +64,11 @@ private:
     uint32_t id;
 //    Properties *prop;
 //    Placement p;
-    int desc;
+    int *desc;
     int desc_destroy;
     std::string current_class; // "CAS"
     
-    std::map<std::string, std::pair<uint32_t, Placement> > keys_info; // a map from a key to its conf_id and its placement
+    std::map<std::string, std::pair<uint32_t, Placement> > *keys_info; // a map from a key to its conf_id and its placement
 
     int get_timestamp(std::string *key, Timestamp **timestamp, Placement **p);
     int update_placement(std::string &key, uint32_t conf_id = 0); // There must be something on the metadata server with conf_id zero for initialization

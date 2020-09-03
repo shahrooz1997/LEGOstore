@@ -31,7 +31,7 @@ using std::string;
 
 class CAS_Server {
 public:
-    CAS_Server();
+    CAS_Server(std::map<std::string, std::vector<Request> > *recon_keys);
     CAS_Server(const CAS_Server& orig) = delete;
     virtual ~CAS_Server();
     string get_timestamp(const string &key, uint32_t conf_id, const Request &req, Cache &cache, Persistent &persistent, std::mutex &lock_t);
@@ -45,7 +45,7 @@ public:
 private:
     int reconfig_info(const string &key, uint32_t conf_id, string &timestamp, const Request &req, string &msg, string &recon_timestamp, Cache &cache, Persistent &persistent);
     
-    std::map<std::string, std::vector<Request> > recon_keys;
+    std::map<std::string, std::vector<Request> > *recon_keys;
 };
 
 #endif /* CAS_Server_H */

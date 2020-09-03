@@ -16,8 +16,7 @@ class DataServer{
 public:
 	// TODO:: removed the null value of socket, directly intializing class variable
 
-	DataServer(std::string directory, int sock)
-		: sockfd(sock),cache(500000000), persistent(directory){}
+	DataServer(std::string directory, int sock);
 
 	int getSocketDesc();
 	std::string get_timestamp(std::string &key, std::string &curr_class, uint32_t conf_id, const Request& req);
@@ -36,6 +35,8 @@ private:
 	Persistent persistent;
 	CAS_Server CAS;
 	ABD_Server ABD;
+        
+        std::map<std::string, std::vector<Request> > recon_keys; // To maintain blocked requests
 };
 
 #endif

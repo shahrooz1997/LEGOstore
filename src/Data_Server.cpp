@@ -1,5 +1,9 @@
 #include "Data_Server.h"
 
+DataServer::DataServer(std::string directory, int sock): sockfd(sock), cache(500000000),
+        persistent(directory), CAS(&recon_keys), ABD(&recon_keys){
+}
+
 int DataServer::getSocketDesc(){
     return sockfd;
 }

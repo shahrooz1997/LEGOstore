@@ -24,7 +24,8 @@
 
 using std::string;
 
-CAS_Server::CAS_Server() {
+CAS_Server::CAS_Server(std::map<std::string, std::vector<Request> > *recon_keys) {
+    this->recon_keys = recon_keys;
 }
 
 
@@ -203,7 +204,7 @@ std::string CAS_Server::get_timestamp(const string &key, uint32_t conf_id, const
         return DataTransfer::serialize(result);
     }
     else if(recon_status == 1){ // Todo: implement a mechanism to take care of blocked operations
-        recon_keys[key].push_back(req);
+        (*recon_keys)[key].push_back(req);
         return "SEND_NOTHING";
         // Todo: Do nothing, it will be taken care of later
     }
@@ -312,7 +313,7 @@ std::string CAS_Server::put(string &key, uint32_t conf_id, string &val, string &
         return DataTransfer::serialize({"OK"});
     }
     else if(recon_status == 1 && !flag){
-        recon_keys[key].push_back(req);
+        (*recon_keys)[key].push_back(req);
         return DataTransfer::serialize({"SEND_NOTHING"});;
         // Do nothing, it will be taken care of later
     }
@@ -431,7 +432,7 @@ std::string CAS_Server::put_fin(string &key, uint32_t conf_id, string &timestamp
         return DataTransfer::serialize({"OK"});
     }
     else if(recon_status == 1 && !flag){
-        recon_keys[key].push_back(req);
+        (*recon_keys)[key].push_back(req);
         return "SEND_NOTHING";
         // Do nothing, it will be taken care of later
     }
@@ -552,7 +553,7 @@ std::string CAS_Server::get(string &key, uint32_t conf_id, string &timestamp, co
         }
     }
     else if(recon_status == 1 && !flag){
-        recon_keys[key].push_back(req);
+        (*recon_keys)[key].push_back(req);
         return "SEND_NOTHING";
         // Do nothing, it will be taken care of later
     }

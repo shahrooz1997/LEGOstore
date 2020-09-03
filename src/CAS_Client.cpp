@@ -705,7 +705,6 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
             DPRINTF(DEBUG_CAS_Client, "OK received for key : %s\n", key.c_str());
         }
         else if(data[0] == "operation_fail"){
-            delete timestamp;
             DPRINTF(DEBUG_CAS_Client, "operation_fail received for key : %s\n", key.c_str());
             p = get_placement(key, true, stoul(data[1]));
             assert(p != nullptr);
@@ -715,7 +714,6 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
             return S_RECFG;
         }
         else{
-            delete timestamp;
             DPRINTF(DEBUG_CAS_Client, "Bad message received from server for key : %s\n", key.c_str());
             free_chunks(chunks);
             delete timestamp;

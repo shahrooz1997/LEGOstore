@@ -28,7 +28,7 @@ using std::string;
 
 class ABD_Server {
 public:
-    ABD_Server();
+    ABD_Server(std::map<std::string, std::vector<Request> > *recon_keys);
     ABD_Server(const ABD_Server& orig) = delete;
     virtual ~ABD_Server();
 
@@ -36,7 +36,9 @@ public:
     string put(string &key, uint32_t conf_id, string &value, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t);
     string get(string &key, uint32_t conf_id, string &timestamp, Cache &cache, Persistent &persistent, std::mutex &lock_t);
 private:
-
+    int reconfig_info(const string &key, uint32_t conf_id, string &timestamp, const Request &req, string &msg, string &recon_timestamp, Cache &cache, Persistent &persistent);
+    
+    std::map<std::string, std::vector<Request> > *recon_keys;
 };
 
 #endif /* ABD_Server_H */

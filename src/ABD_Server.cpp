@@ -18,7 +18,7 @@ using std::string;
 // Data Storage Format
 // key -> (value, timestamp)
 
-ABD_Server::ABD_Server() {
+ABD_Server::ABD_Server(std::map<std::string, std::vector<Request> > *recon_keys): recon_keys(recon_keys) {
 }
 
 ABD_Server::~ABD_Server() {

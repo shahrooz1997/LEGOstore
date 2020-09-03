@@ -28,7 +28,7 @@
 
 class ABD_Client {
 public:
-    ABD_Client(Properties *prop, uint32_t client_id, Placement &pp);
+    ABD_Client(uint32_t client_id, uint32_t local_datacenter_id, std::vector <DC*> &datacenters, std::map<std::string, std::pair<uint32_t, Placement> > *keys_info);
 //    ABD_Client(Properties &prop, uint32_t client_id);
     ABD_Client(const ABD_Client& orig) = delete;
     virtual ~ABD_Client();
@@ -40,15 +40,25 @@ public:
     
 private:
     
+    uint32_t                local_datacenter_id;
+    uint32_t                retry_attempts;
+    uint32_t                metadata_server_timeout;
+    uint32_t                timeout_per_request;
+    uint64_t                start_time;
+    std::vector <DC*>       datacenters; // Should not be deleted in Client destructor
+    
     uint32_t id;
-    Properties *prop;
-    Placement p;
     std::string current_class; // "ABD"
     
 //    uint32_t operation_id;
+   
+    std::map<std::string, std::pair<uint32_t, Placement> > *keys_info; // a map from a key to its conf_id and its placement
 
-    uint32_t get_timestamp(std::string *key, Timestamp **timestamp, std::string &value);
-    void update_placement(std::string &new_cfg);
+    int get_timestamp(std::string *key, Timestamp **timestamp, std::string &value, Placement **p);
+    int update_placement(std::string &key, uint32_t conf_id = 0); // There must be something on the metadata server with conf_id zero for initialization
+    
+    Placement* get_placement(std::string &key, bool force_update = false, uint32_t conf_id = 0);
+
 
     // Logging
 #ifdef LOGGING_ON

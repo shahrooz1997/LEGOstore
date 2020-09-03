@@ -1,6 +1,7 @@
 #include "Controller.h"
 #include <typeinfo>
 #include <ratio>
+#include <vector>
 
 using std::cout;
 using std::endl;
@@ -47,14 +48,11 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Plac
             // CAS
             test->protocol = CAS_PROTOCOL_NAME;
             test->k = 2;
-            test->Q1.insert(begin(test->Q1), {0,1,2,3});
-            test->Q2.insert(begin(test->Q2), {0,1,2,3,4});
-            test->Q3.insert(begin(test->Q3), {2,3,4});
-            test->Q4.insert(begin(test->Q4), {2,3});
-            std::unordered_set<uint32_t> Q2_Q3;
-            Q2_Q3.insert(test->Q2.begin(), test->Q2.end());
-            Q2_Q3.insert(test->Q3.begin(), test->Q3.end());
-            test->m = Q2_Q3.size(); // Note: it must be the size of Q2 U Q3 for reconfiguration to work
+            test->Q1.insert(begin(test->Q1), {3,4,5,6});
+            test->Q2.insert(begin(test->Q2), {2,3,4,5,6});
+            test->Q3.insert(begin(test->Q3), {1,2,3,4});
+            test->Q4.insert(begin(test->Q4), {0,1,2,3,4,5});
+            test->m = std::max(test->Q2.size(), test->Q3.size());
             
             // ABD
 //            test->protocol = ABD_PROTOCOL_NAME;
@@ -77,7 +75,7 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Plac
 
         placement.push_back(test);
     }
-    temp +=1;
+//    temp +=1;
     return 0;
 }
 

@@ -32,8 +32,8 @@ public:
     static uint32_t max_timestamp3(std::vector<Timestamp>& v);
 
     static bool compare_timestamp(std::string left, std::string right);
-    friend bool operator> (Timestamp &lhs, Timestamp &rhs);
-    friend bool operator== (Timestamp &lhs, Timestamp &rhs);
+    friend bool operator> (const Timestamp &lhs, const Timestamp &rhs);
+    friend bool operator== (const Timestamp &lhs, const Timestamp &rhs);
 
 private: 
 	uint32_t time;

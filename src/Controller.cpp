@@ -46,22 +46,22 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Plac
             test->Q4.clear();
         }else{
             // CAS
-            test->protocol = CAS_PROTOCOL_NAME;
-            test->k = 2;
-            test->Q1.insert(begin(test->Q1), {3,4,5,6});
-            test->Q2.insert(begin(test->Q2), {2,3,4,5,6});
-            test->Q3.insert(begin(test->Q3), {1,2,3,4});
-            test->Q4.insert(begin(test->Q4), {0,1,2,3,4,5});
-            test->m = std::max(test->Q2.size(), test->Q3.size());
+//            test->protocol = CAS_PROTOCOL_NAME;
+//            test->k = 2;
+//            test->Q1.insert(begin(test->Q1), {3,4,5,6});
+//            test->Q2.insert(begin(test->Q2), {2,3,4,5,6});
+//            test->Q3.insert(begin(test->Q3), {1,2,3,4});
+//            test->Q4.insert(begin(test->Q4), {0,1,2,3,4,5});
+//            test->m = std::max(test->Q2.size(), test->Q3.size());
             
             // ABD
-//            test->protocol = ABD_PROTOCOL_NAME;
-//            test->m = 5;
-//            test->k = 0;
-//            test->Q1.insert(begin(test->Q1), {0, 1, 2});
-//            test->Q2.insert(begin(test->Q2), {0, 2, 3, 4});
-//            test->Q3.clear();
-//            test->Q4.clear();
+            test->protocol = ABD_PROTOCOL_NAME;
+            test->m = 5;
+            test->k = 0;
+            test->Q1.insert(begin(test->Q1), {0,1,2,3,4,5,6});
+            test->Q2.insert(begin(test->Q2), {3});
+            test->Q3.clear();
+            test->Q4.clear();
         }
 
         // SHAHROOZ: We need the servers participating to accomplish one protocol and number of failures we can tolerate for doing reconfiguration

@@ -232,15 +232,31 @@ void server_connection(int connection, DataServer &dataserver, int portid){
         req.protocol = data[4];
         result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[3], data[2], data[4], stoul(data[5]), req));
     }else if(method == "get"){
-        DPRINTF(DEBUG_RECONFIG_CONTROL, "The method get is called. The key is %s, ts: %s, class: %s, server port is %u\n",
+        if(data[3] == CAS_PROTOCOL_NAME){
+            DPRINTF(DEBUG_RECONFIG_CONTROL, "The method get is called. The key is %s, ts: %s, class: %s, server port is %u\n",
                     data[1].c_str(), data[2].c_str(), data[3].c_str(), portid);
-        //std::cout << "GET fucntion called for server id "<< portid << std::endl;
-        req.key = data[1];
-        req.conf_id = stoul(data[4]);
-        req.timestamp = data[2];
-//        req.value = data[3];
-        req.protocol = data[3];
-        result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3], stoul(data[4]), req));
+            //std::cout << "GET fucntion called for server id "<< portid << std::endl;
+            req.key = data[1];
+            req.conf_id = stoul(data[4]);
+            req.timestamp = data[2];
+    //        req.value = data[3];
+            req.protocol = data[3];
+            result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3], stoul(data[4]), req));
+        }
+        else{
+            DPRINTF(DEBUG_RECONFIG_CONTROL, "The method get is called. The key is %s, class: %s, server port is %u\n",
+                    data[1].c_str(), data[2].c_str(), portid);
+            //std::cout << "GET fucntion called for server id "<< portid << std::endl;
+            req.key = data[1];
+            req.conf_id = stoul(data[3]);
+            req.timestamp = "";
+    //        req.value = data[3];
+            req.protocol = data[2];
+            std::string tt;
+            result = DataTransfer::sendMsg(connection, dataserver.get(data[1], tt, data[2], stoul(data[3]), req));
+        }
+        
+        
     }else if(method == "get_timestamp"){
         DPRINTF(DEBUG_RECONFIG_CONTROL, "The method get_timestamp is called. The key is %s, class: %s, server port is %u\n",
                     data[1].c_str(), data[2].c_str(), portid);

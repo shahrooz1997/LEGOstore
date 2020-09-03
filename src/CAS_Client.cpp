@@ -298,7 +298,7 @@ int CAS_Client::update_placement(std::string &key, uint32_t conf_id){
     auto it = keys_info->find(key);
     if(it == keys_info->end()){
         (*keys_info)[key] = std::pair<uint32_t, Placement>(stoul(msg), *p);
-        if(this->desc_destroy){
+        if(p->protocol == CAS_PROTOCOL_NAME){
             if((*(this->desc)) != -1)
                 destroy_liberasure_instance((*(this->desc)));
             (*(this->desc)) = create_liberasure_instance(p);
@@ -311,7 +311,7 @@ int CAS_Client::update_placement(std::string &key, uint32_t conf_id){
 
             (*keys_info)[key] = std::pair<uint32_t, Placement>(stoul(msg), *p);
             ret =  0;
-            if(this->desc_destroy){
+            if(p->protocol == CAS_PROTOCOL_NAME){
                 if((*(this->desc)) != -1)
                     destroy_liberasure_instance((*(this->desc)));
                 (*(this->desc)) = create_liberasure_instance(p);
@@ -1025,9 +1025,9 @@ int CAS_Client::get(std::string key, std::string &value){
 //            return -8;
         }
         
-        if(uninitialized_key){
-            break;
-        }
+//        if(uninitialized_key){
+//            break;
+//        }
     }
     
     uint32_t counter;
@@ -1062,8 +1062,16 @@ int CAS_Client::get(std::string key, std::string &value){
 
             strVec data = it.get();
             if(data[0] == "OK"){
-                chunks.push_back(new std::string(data[1]));
-                counter++;
+                if(data[1] == "Ack"){
+                    counter++;
+                }
+                else if(data[1] == "init"){
+                    uninitialized_key = true;
+                }
+                else{
+                    chunks.push_back(new std::string(data[1]));
+                    counter++;
+                }
             }else if(data[0] == "operation_fail"){
                 delete timestamp;
                 DPRINTF(DEBUG_CAS_Client, "operation_fail received for key : %s\n", key.c_str());
@@ -1075,7 +1083,8 @@ int CAS_Client::get(std::string key, std::string &value){
                 return S_RECFG;
             }
             else{ // Todo: it is possible and fine that a server in Q4 doesn't have the chunk.
-                counter++;
+//                counter++;
+                assert(false);
 //                op_status = -8; // Bad message received from server
 //                DPRINTF(DEBUG_CAS_Client, "Bad message received from server received for key : %s\n", key.c_str());
 //                free_chunks(chunks);
@@ -1130,7 +1139,7 @@ int CAS_Client::get(std::string key, std::string &value){
         liberasure::decode(&value, &chunks, &null_args, (*(this->desc)));
     }
     else{
-        value = "Uninitiliazed";
+        value = "__Uninitiliazed";
     }
     
     free_chunks(chunks);

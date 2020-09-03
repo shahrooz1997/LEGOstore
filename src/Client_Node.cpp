@@ -18,7 +18,7 @@ Client_Node::Client_Node(uint32_t client_id, uint32_t local_datacenter_id, std::
     this->desc = -1;
     
     cas = new CAS_Client(client_id, local_datacenter_id, datacenters, &(this->desc), &keys_info);
-    abd = nullptr; // Todo: you need to update abd client as well
+    abd = new ABD_Client(client_id, local_datacenter_id, datacenters, &(this->desc), &keys_info); // Todo: you need to update abd client as well
 }
 
 //Client_Node::Client_Node(uint32_t client_id, uint32_t local_datacenter_id, std::vector <DC*> &datacenters, int desc_l){

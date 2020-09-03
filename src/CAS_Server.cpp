@@ -33,7 +33,7 @@ CAS_Server::~CAS_Server() {
 }
 
 // Returns true if success, i.e., timestamp added as the fin timestamp for the key
-bool complete_fin(const std::string &key, const uint32_t conf_id, const std::string &timestamp, Cache &cache, Persistent &persistent){
+static bool complete_fin(const std::string &key, const uint32_t conf_id, const std::string &timestamp, Cache &cache, Persistent &persistent){
     DPRINTF(DEBUG_CAS_Server, "started.\n");
     std::string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
     
@@ -114,7 +114,7 @@ int CAS_Server::reconfig_info(const string &key, uint32_t conf_id, string &times
     return ret;
 }
 
-int init_key(const string &key, const uint32_t conf_id, Cache &cache, Persistent &persistent){
+static int init_key(const string &key, const uint32_t conf_id, Cache &cache, Persistent &persistent){
     
     DPRINTF(DEBUG_CAS_Server, "started.\n");
     

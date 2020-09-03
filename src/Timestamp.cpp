@@ -108,14 +108,14 @@ Timestamp::~Timestamp(){
 
 }
 
-bool operator > (Timestamp &lhs, Timestamp &rhs){
+bool operator > (const Timestamp &lhs, const Timestamp &rhs){
     if(lhs.time > rhs.time || (lhs.time == rhs.time && lhs.client_id < rhs.client_id)){
         return true;
     }
     return false;
 }
 
-bool operator== (Timestamp &lhs, Timestamp &rhs){
+bool operator== (const Timestamp &lhs, const Timestamp &rhs){
     if(lhs.time == rhs.time && lhs.client_id == rhs.client_id){
         return true;
     }

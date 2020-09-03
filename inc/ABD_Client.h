@@ -28,13 +28,13 @@
 
 class ABD_Client {
 public:
-    ABD_Client(uint32_t client_id, uint32_t local_datacenter_id, std::vector <DC*> &datacenters, std::map<std::string, std::pair<uint32_t, Placement> > *keys_info);
+    ABD_Client(uint32_t client_id, uint32_t local_datacenter_id, std::vector <DC*> &datacenters, int *desc_l, std::map<std::string, std::pair<uint32_t, Placement> > *keys_info);
 //    ABD_Client(Properties &prop, uint32_t client_id);
     ABD_Client(const ABD_Client& orig) = delete;
     virtual ~ABD_Client();
     
-    uint32_t put(std::string key, std::string value, bool insert = false);
-    uint32_t get(std::string key, std::string &value);
+    int put(std::string key, std::string value, bool insert = false);
+    int get(std::string key, std::string &value);
     
 //    uint32_t get_operation_id();
     
@@ -50,11 +50,13 @@ private:
     uint32_t id;
     std::string current_class; // "ABD"
     
+     int *desc;
+    
 //    uint32_t operation_id;
    
     std::map<std::string, std::pair<uint32_t, Placement> > *keys_info; // a map from a key to its conf_id and its placement
 
-    int get_timestamp(std::string *key, Timestamp **timestamp, std::string &value, Placement **p);
+    int get_timestamp(std::string *key, Timestamp **timestamp, Placement **p);
     int update_placement(std::string &key, uint32_t conf_id = 0); // There must be something on the metadata server with conf_id zero for initialization
     
     Placement* get_placement(std::string &key, bool force_update = false, uint32_t conf_id = 0);

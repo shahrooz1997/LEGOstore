@@ -14,7 +14,7 @@ std::string DataServer::get_timestamp(std::string &key, std::string &curr_class,
     if(curr_class == CAS_PROTOCOL_NAME){
         result = CAS.get_timestamp(key, conf_id, req, cache, persistent, lock);
     }else if(curr_class == ABD_PROTOCOL_NAME){
-        result = ABD.get_timestamp(key, conf_id, cache, persistent, lock);
+        result = ABD.get_timestamp(key, conf_id, req, cache, persistent, lock);
     }
 
     return result;
@@ -82,7 +82,7 @@ std::string DataServer::put(std::string &key, std::string &value, std::string &t
 //        printf("%s", bbuf);
         result = CAS.put(key, conf_id, value, timestamp, req, cache, persistent, lock);
     }else if(curr_class == ABD_PROTOCOL_NAME){
-        result = ABD.put(key, conf_id, value, timestamp, cache, persistent, lock);
+        result = ABD.put(key, conf_id, value, timestamp, req, cache, persistent, lock);
     }
     return result;
 }
@@ -103,7 +103,7 @@ std::string DataServer::get(std::string &key, std::string &timestamp, std::strin
     if(curr_class == CAS_PROTOCOL_NAME){
         result = CAS.get(key, conf_id, timestamp, req, cache, persistent, lock);
     }else if(curr_class == ABD_PROTOCOL_NAME){
-        result = ABD.get(key, conf_id, timestamp, cache, persistent, lock);
+        result = ABD.get(key, conf_id, timestamp, req, cache, persistent, lock);
     }
     return result;
 }

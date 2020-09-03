@@ -906,6 +906,8 @@ int request_placement(std::string &key, uint32_t conf_id, std::string &status,
         std::string &msg, Placement* &p, uint32_t retry_attempts, uint32_t metadata_server_timeout){
     int ret = 0;
     
+//    DPRINTF(DEBUG_CLIENT_NODE, "metadata_server_timeout is %u\n", metadata_server_timeout);
+    
     Connect c(METADATA_SERVER_IP, METADATA_SERVER_PORT);
     if(!c.is_connected()){
         DPRINTF(DEBUG_CLIENT_NODE, "connection error\n");
@@ -932,12 +934,22 @@ int request_placement(std::string &key, uint32_t conf_id, std::string &status,
         DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", msg));
         std::future<int> fut = std::async(std::launch::async, DataTransfer::recvMsg_async, *c, std::move(data_set));
         
-        if(data_set_fut.wait_for(span) == std::future_status::ready){
-            if(fut.get() == 1){
-                flag = true;
-                recvd = data_set_fut.get();
-                break;
+        if(data_set_fut.valid()){
+//            DPRINTF(DEBUG_CLIENT_NODE, "data_set_fut is valid\n");
+            std::future_status aaa = data_set_fut.wait_for(span);
+            if(aaa == std::future_status::ready){
+                int ret = fut.get();
+//                DPRINTF(DEBUG_CLIENT_NODE, "Future ret value is %d\n", ret);
+                if(ret == 1){
+                    flag = true;
+                    recvd = data_set_fut.get();
+                    break;
+                }
             }
+//            DPRINTF(DEBUG_CLIENT_NODE, "aaaa is %d and to is %d\n", aaa, std::future_status::timeout);
+        }
+        else{
+            DPRINTF(DEBUG_CLIENT_NODE, "data_set_fut is not valid\n");
         }
     }
     
@@ -947,7 +959,7 @@ int request_placement(std::string &key, uint32_t conf_id, std::string &status,
     }
     else{
         ret = -2;
-        DPRINTF(DEBUG_CLIENT_NODE, "fut.wait_for(span) == std::future_status::ready && fut.get() == 1 NOT true\n");
+        DPRINTF(DEBUG_CLIENT_NODE, "Metadata server timeout for request: %s\n", msg.c_str());
     }
     
     return ret;

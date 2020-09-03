@@ -340,6 +340,13 @@ int key_req_gen(int grp_idx, int grp_config_idx, int grp_id, std::string dist_pr
     for(long i=0; i<numReqs; i++){
         fflush(stdout);
         if(fork() == 0){
+            
+            close(1);
+            int pid = getpid();
+            std::stringstream filename;
+            filename << "client_" << pid << "_output.txt";
+            fopen(filename.str().c_str(), "w");
+            
             int cnt = run_session2(grpCfg->object_size, grpCfg->read_ratio, grpCfg->duration, grpCfg->keys, dist_process, grp_id, i);
             exit(cnt);
         }

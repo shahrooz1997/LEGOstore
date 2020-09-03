@@ -40,7 +40,7 @@ int Client_Node::update_placement(std::string &key, uint32_t conf_id){
     
 //    DPRINTF(DEBUG_CAS_Client, "calling request_placement....\n");
     
-    int ret = request_placement(key, conf_id, status, msg, p, DEFAULT_RET_ATTEMPTS, DEFAULT_RET_ATTEMPTS);
+    int ret = request_placement(key, conf_id, status, msg, p, DEFAULT_RET_ATTEMPTS, DEFAULT_METASER_TO);
     
 //    DPRINTF(DEBUG_CAS_Client, "returning request_placement....\n");
     

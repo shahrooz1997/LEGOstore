@@ -116,10 +116,19 @@ int DataTransfer::recvMsg(int sock, std::string &data){
 
 int DataTransfer::recvMsg_async(const int sock, std::promise<std::string> &&data_set){
     std::string data_temp;
-    DataTransfer::recvMsg(sock, data_temp);
+    int result = DataTransfer::recvMsg(sock, data_temp);
     
-    data_set.set_value(data_temp);
-    return 1;
+    if(result == 1){
+        DPRINTF(DEBUG_UTIL, "result is 1\n");
+        data_set.set_value(data_temp);
+    }
+    else{
+        DPRINTF(DEBUG_UTIL, "ERROR: result is %d\n", result);
+        data_temp = "ERROR";
+        data_set.set_value(data_temp);
+    }
+    
+    return result;
 }
 
 std::string DataTransfer::serializePrp(const Properties &properties_p){

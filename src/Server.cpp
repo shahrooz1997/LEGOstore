@@ -4,6 +4,9 @@
 #include "Data_Transfer.h"
 #include <sys/ioctl.h>
 #include <unordered_set>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 //#include <linux/sockios.h>
 //std::atomic<bool> active(true);
@@ -309,7 +312,13 @@ int main(int argc, char **argv){
 
 	for(uint i=0; i< socket_port.size(); i++){
 		if(fork() == 0){
-			runServer(db_list[i], socket_port[i]);
+                    
+                    close(1);
+                    int pid = getpid();
+                    std::stringstream filename;
+                    filename << "server_" << pid << "_output.txt";
+                    fopen(filename.str().c_str(), "w");
+                    runServer(db_list[i], socket_port[i]);
 		}
 	}
 

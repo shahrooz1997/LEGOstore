@@ -238,8 +238,8 @@ CAS_Client::CAS_Client(uint32_t client_id, uint32_t local_datacenter_id, std::ve
     assert(desc_l != nullptr);
     
     this->local_datacenter_id = local_datacenter_id;
-    retry_attempts = 1;
-    metadata_server_timeout = 10000;
+    retry_attempts = DEFAULT_RET_ATTEMPTS;
+    metadata_server_timeout = DEFAULT_METASER_TO;
     timeout_per_request = 10000;
     this->keys_info = keys_info;
     
@@ -285,51 +285,16 @@ CAS_Client::~CAS_Client() {
 int CAS_Client::update_placement(std::string &key, uint32_t conf_id){
     int ret = 0;
     
-    Connect c(METADATA_SERVER_IP, METADATA_SERVER_PORT);
-    if(!c.is_connected()){
-        DPRINTF(DEBUG_CAS_Client, "connection error\n");
-        return -1;
-    }
+    std::string status, msg;
+    Placement* p;
     
-    std::string status;
-    std::string msg = key;
-    msg += "!";
-    msg += std::to_string(conf_id);
+//    DPRINTF(DEBUG_CAS_Client, "calling request_placement....\n");
     
-    Placement *p = nullptr;
-    
-    
-//    DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", msg));
-    std::string recvd;
-    uint32_t RAs = this->retry_attempts;
-    std::chrono::milliseconds span(this->metadata_server_timeout);
-    
-    bool flag = false;
-    while(RAs--){
-        std::promise<std::string> data_set;
-        std::future<std::string> data_set_fut = data_set.get_future();
-        DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", msg));
-        std::future<int> fut = std::async(std::launch::async, DataTransfer::recvMsg_async, *c, std::move(data_set));
-        
-        
-        if(data_set_fut.wait_for(span) == std::future_status::ready){
-            if(fut.get() == 1){
-                flag = true;
-                recvd = data_set_fut.get();
-                break;
-            }
-        }
-    }
-    
-    if(flag){
-        msg.clear();
-        p =  DataTransfer::deserializeMDS(recvd, status, msg);
-    }
-    else{
-        DPRINTF(DEBUG_CAS_Client, "fut.wait_for(span) == std::future_status::ready && fut.get() == 1 NOT true\n");
-    }
-    
+    ret = request_placement(key, conf_id, status, msg, p, this->retry_attempts, this->metadata_server_timeout);
+
+    assert(ret == 0);
     assert(status == "OK");
+    
     auto it = keys_info->find(key);
     if(it == keys_info->end()){
         (*keys_info)[key] = std::pair<uint32_t, Placement>(stoul(msg), *p);
@@ -462,8 +427,12 @@ int CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
             *p = get_placement(*key, true, stoul(data[1]));
             assert(*p != nullptr);
             op_status = -2; // reconfiguration happened on the key
+            *timestamp = nullptr;
             return S_RECFG;
             //break;
+        }
+        else{
+            assert(false);
         }
         //else : The server returned "Failed", that means the entry was not found
         // We ignore the response in that case.
@@ -517,7 +486,8 @@ int CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
                 //break;
             }
             else{
-                counter++;
+//                counter++;
+                assert(false);
             }
             //else : The server returned "Failed", that means the entry was not found
             // We ignore the response in that case.
@@ -531,9 +501,11 @@ int CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
 
     if(op_status == 0){
         *timestamp = new Timestamp(Timestamp::max_timestamp2(tss));
-        DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
+        
+        DPRINTF(DEBUG_CAS_Client, "finished successfully. Max timestamp received is %s\n", (*timestamp)->get_string().c_str());
     }else{
         DPRINTF(DEBUG_CAS_Client, "Operation Failed.\n");
+        assert(false);
         return S_FAIL;
     }
 
@@ -970,6 +942,8 @@ void _get(std::promise<strVec> &&prm, std::string key, Timestamp timestamp,
 int CAS_Client::get(std::string key, std::string &value){
     
     DPRINTF(DEBUG_CAS_Client, "started.\n");
+    
+    bool uninitialized_key = false;
 
 #ifdef LOGGING_ON
     gettimeofday (&log_tv, NULL);
@@ -984,25 +958,20 @@ int CAS_Client::get(std::string key, std::string &value){
     int op_status = 0;    // 0: Success, -1: timeout, -2: operation_fail(reconfiguration)
 
     Timestamp *timestamp = nullptr;
-    Timestamp *tmp = nullptr;
+//    Timestamp *tmp = nullptr;
     int status = S_OK;
     std::vector<std::future<strVec> > responses;
 
-    status = this->get_timestamp(&key, &tmp, &p);
-
-    if(tmp != nullptr){
-        timestamp = new Timestamp(tmp->increase_timestamp(this->id));
-        delete tmp;
+    status = this->get_timestamp(&key, &timestamp, &p);
+    
+    if(status == S_RECFG){
+        op_status = -2;
+        return S_RECFG;
     }
 
     if(timestamp == nullptr){
-
-        if(status == S_RECFG){
-            op_status = -2;
-            return S_RECFG;
-        }
-
         DPRINTF(DEBUG_CAS_Client, "get_timestamp operation failed key %s \n", key.c_str());
+        assert(false);
     }
 
     
@@ -1031,7 +1000,15 @@ int CAS_Client::get(std::string key, std::string &value){
         strVec data = it.get();
         
         if(data[0] == "OK"){
-            chunks.push_back(new std::string(data[1]));
+            if(data[1] == "Ack"){
+                
+            }
+            else if(data[1] == "init"){
+                uninitialized_key = true;
+            }
+            else{
+                chunks.push_back(new std::string(data[1]));
+            }
         }else if(data[0] == "operation_fail"){
             delete timestamp;
             DPRINTF(DEBUG_CAS_Client, "operation_fail received for key : %s\n", key.c_str());
@@ -1048,6 +1025,10 @@ int CAS_Client::get(std::string key, std::string &value){
 //            free_chunks(chunks);
 //            delete timestamp;
 //            return -8;
+        }
+        
+        if(uninitialized_key){
+            break;
         }
     }
     
@@ -1114,40 +1095,45 @@ int CAS_Client::get(std::string key, std::string &value){
     responses.clear();
     delete timestamp;
     
-    if(chunks.size() < p->k){
-        free_chunks(chunks);
-        delete timestamp;
-        op_status = -9;
-        DPRINTF(DEBUG_CAS_Client, "chunks.size() < p->k key : %s\n", key.c_str());
-    }
-    
-    if(op_status != 0){
-        DPRINTF(DEBUG_CAS_Client, "get operation failed for key : %s\n", key.c_str());
-        free_chunks(chunks);
-        return -10;
-    }
-    
-    // Decode only if above operation success
-    struct ec_args null_args;
-    null_args.k = p->k;
-    null_args.m = p->m - p->k;
-    null_args.w = 16; // ToDo: what must it be?
-    null_args.ct = CHKSUM_NONE;
+    if(!uninitialized_key){
+        if(chunks.size() < p->k){
+            free_chunks(chunks);
+            delete timestamp;
+            op_status = -9;
+            DPRINTF(DEBUG_CAS_Client, "chunks.size() < p->k key : %s\n", key.c_str());
+        }
 
-//    char bbuf[1024*128];
-//    int bbuf_i = 0;
-//    bbuf_i += sprintf(bbuf + bbuf_i, "%s-get function value is %s\n", key.c_str(), value.c_str());
-//    for(uint t = 0; t < chunks.size(); t++){
-//        bbuf_i += sprintf(bbuf + bbuf_i, "%s-chunk[%d] = ", key.c_str(), t);
-//        for(uint tt = 0; tt < chunks[t]->size(); tt++){
-//            bbuf_i += sprintf(bbuf + bbuf_i, "%02X", chunks[t]->at(tt) & 0xff);
-////                printf("%02X", chunks[t]->at(tt));
-//        }
-//        bbuf_i += sprintf(bbuf + bbuf_i, "\n");
-//    }
-//    printf("%s", bbuf);
+        if(op_status != 0){
+            DPRINTF(DEBUG_CAS_Client, "get operation failed for key : %s\n", key.c_str());
+            free_chunks(chunks);
+            return -10;
+        }
 
-    liberasure::decode(&value, &chunks, &null_args, (*(this->desc)));
+        // Decode only if above operation success
+        struct ec_args null_args;
+        null_args.k = p->k;
+        null_args.m = p->m - p->k;
+        null_args.w = 16; // ToDo: what must it be?
+        null_args.ct = CHKSUM_NONE;
+
+    //    char bbuf[1024*128];
+    //    int bbuf_i = 0;
+    //    bbuf_i += sprintf(bbuf + bbuf_i, "%s-get function value is %s\n", key.c_str(), value.c_str());
+    //    for(uint t = 0; t < chunks.size(); t++){
+    //        bbuf_i += sprintf(bbuf + bbuf_i, "%s-chunk[%d] = ", key.c_str(), t);
+    //        for(uint tt = 0; tt < chunks[t]->size(); tt++){
+    //            bbuf_i += sprintf(bbuf + bbuf_i, "%02X", chunks[t]->at(tt) & 0xff);
+    ////                printf("%02X", chunks[t]->at(tt));
+    //        }
+    //        bbuf_i += sprintf(bbuf + bbuf_i, "\n");
+    //    }
+    //    printf("%s", bbuf);
+
+        liberasure::decode(&value, &chunks, &null_args, (*(this->desc)));
+    }
+    else{
+        value = "Uninitiliazed";
+    }
     
     free_chunks(chunks);
 

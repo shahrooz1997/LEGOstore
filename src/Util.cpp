@@ -699,6 +699,7 @@ Reconfig_key_info::Reconfig_key_info(){
     curr_conf_id = -1;
     curr_placement = nullptr;
     reconfig_state = 0;
+    timestamp = "";
     next_conf_id = -1;
     next_placement = nullptr;
 }
@@ -715,7 +716,7 @@ Reconfig_key_info::Reconfig_key_info(const std::string &in){
         ((char*)(&(this->curr_conf_id)))[i] = in[cc++];
     }
     
-    DPRINTF(DEBUG_UTIL, "curr_conf_id is %u\n", curr_conf_id);
+//    DPRINTF(DEBUG_UTIL, "curr_conf_id is %u\n", curr_conf_id);
     
 //    DPRINTF(DEBUG_UTIL, "22222\n");
     
@@ -727,7 +728,7 @@ Reconfig_key_info::Reconfig_key_info(const std::string &in){
     for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
         ((char*)(&(temp)))[i] = in[cc++];
     }
-    DPRINTF(DEBUG_UTIL, "size for curr_placement is %u\n", temp);
+//    DPRINTF(DEBUG_UTIL, "size for curr_placement is %u\n", temp);
     
     if(temp != 0){
         this->curr_placement = DataTransfer::deserializePlacement(in.substr(cc, temp));
@@ -737,7 +738,7 @@ Reconfig_key_info::Reconfig_key_info(const std::string &in){
         this->curr_placement = nullptr;
     }
     
-    DPRINTF(DEBUG_UTIL, "33333\n");
+//    DPRINTF(DEBUG_UTIL, "33333\n");
     
     if(cc + sizeof(int) > in.size()){
         DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
@@ -745,7 +746,7 @@ Reconfig_key_info::Reconfig_key_info(const std::string &in){
     for(uint32_t i = 0; i < sizeof(int) && cc < in.size(); i++){
         ((char*)(&(this->reconfig_state)))[i] = in[cc++];
     }
-    DPRINTF(DEBUG_UTIL, "reconfig_state is %u\n", reconfig_state);
+//    DPRINTF(DEBUG_UTIL, "reconfig_state is %u\n", reconfig_state);
     
 //    DPRINTF(DEBUG_UTIL, "444444\n");
     
@@ -762,7 +763,9 @@ Reconfig_key_info::Reconfig_key_info(const std::string &in){
             ((char*)(&(temp)))[i] = in[cc++];
         }
         if(temp != 0){
-            this->timestamp.push_back(in[cc++]);
+            for(uint32_t i = 0; i < temp && cc < in.size(); i++){
+                this->timestamp.push_back(in[cc++]);
+            }
         }
         else{
             this->timestamp = "";
@@ -796,15 +799,19 @@ Reconfig_key_info::Reconfig_key_info(const std::string &in){
         this->next_placement = nullptr;
     }
     
-    DPRINTF(DEBUG_UTIL, "55555\n");
+//    DPRINTF(DEBUG_UTIL, "55555\n");
     
 }
 
 Reconfig_key_info::~Reconfig_key_info(){
-    if(curr_placement != nullptr)
+    if(curr_placement != nullptr){
         delete curr_placement;
-    if(next_placement != nullptr)
+        curr_placement = nullptr;
+    }
+    if(next_placement != nullptr){
         delete next_placement;
+        next_placement = nullptr;
+    }
 }
 
 std::string Reconfig_key_info::get_string(){  
@@ -873,17 +880,25 @@ Data_handler::~Data_handler(){
     delete reconfig_info;
 }
 
-std::string construct_key(const std::string &key, const std::string &protocol, const uint32_t conf_id, const std::string *timestamp){
+std::string construct_key(const std::string &key, const std::string &protocol, const uint32_t conf_id, const std::string &timestamp){
     std::string ret;
     ret += key;
     ret += "!";
     ret += protocol;
     ret += "!";
     ret += std::to_string(conf_id);
-    if(timestamp != nullptr){
-        ret += "!";
-        ret += *timestamp;
-    }
+    ret += "!";
+    ret += timestamp;
+    return ret;
+}
+
+std::string construct_key(const std::string &key, const std::string &protocol, const uint32_t conf_id){
+    std::string ret;
+    ret += key;
+    ret += "!";
+    ret += protocol;
+    ret += "!";
+    ret += std::to_string(conf_id);
     return ret;
 }
 
@@ -916,7 +931,6 @@ int request_placement(std::string &key, uint32_t conf_id, std::string &status,
         std::future<std::string> data_set_fut = data_set.get_future();
         DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", msg));
         std::future<int> fut = std::async(std::launch::async, DataTransfer::recvMsg_async, *c, std::move(data_set));
-        
         
         if(data_set_fut.wait_for(span) == std::future_status::ready){
             if(fut.get() == 1){

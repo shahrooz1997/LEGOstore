@@ -21,7 +21,7 @@
                     "object_size": 30,
                     "metadata_size": 1e-09,
                     "num_objects": 10001,
-                    "arrival_rate": 1,
+                    "arrival_rate": 5,
                     "read_ratio": 0.7,
                     "write_ratio": 0.3,
                     "SLO_read": 1000,

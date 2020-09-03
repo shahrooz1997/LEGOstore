@@ -224,7 +224,9 @@ private:
 
 };
 
-std::string construct_key(const std::string &key, const std::string &protocol, const uint32_t conf_id, const std::string *timestamp = nullptr);
+std::string construct_key(const std::string &key, const std::string &protocol, const uint32_t conf_id, const std::string &timestamp);
+
+std::string construct_key(const std::string &key, const std::string &protocol, const uint32_t conf_id);
 
 std::string convert_ip_to_string(uint32_t ip);
 inline unsigned int stoui(const std::string& s)

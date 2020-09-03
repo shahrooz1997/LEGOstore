@@ -62,4 +62,5 @@ clean:
 
 cleandb:
 	rm -rf db*.temp
+	rm -rf server_*_output.txt
 

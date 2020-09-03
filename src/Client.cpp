@@ -167,7 +167,7 @@ int run_session2(uint32_t obj_size, double read_ratio, uint64_t duration, std::v
     srand(threadId);
     
     auto timePoint = time_point_cast<milliseconds>(system_clock::now());
-    timePoint += millis{duration* 1000};
+    timePoint += millis{duration * 1000};
 //    std::this_thread::sleep_until(timePoint);
     
     time_point<system_clock, millis> tp = time_point_cast<milliseconds>(system_clock::now());
@@ -376,8 +376,8 @@ int key_req_gen(int grp_idx, int grp_config_idx, int grp_id, std::string dist_pr
     std::cout<<"Average arrival Rate : " << avg << std::endl;
 
     if(avg < numReqs){
-            fprintf(stderr, "WARNING!! The average arrival rate for group :%d and group_config :%d is\
-                                                    less than required : %d / %ld", grp_idx, grp_config_idx, avg, numReqs);
+            fprintf(stderr, "WARNING!! The average arrival rate for group :%d and group_config :%d is"\
+                                                    " less than required : %d / %ld\n", grp_idx, grp_config_idx, avg, numReqs);
     }
     return avg;
 }

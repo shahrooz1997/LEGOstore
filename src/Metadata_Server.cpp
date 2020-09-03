@@ -27,6 +27,9 @@
 #include <sstream>
 #include <iostream>
 
+// Todo: add the timestamp that the reconfiguration happened on to the confid part of the pair. confid!timestamp
+//       the server may or may not need it. We will see.
+
 using namespace std;
 
 /*

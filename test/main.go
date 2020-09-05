@@ -107,14 +107,17 @@ func scanFiles(path string, info os.FileInfo, err error) error {
     if(err != nil){
         return err
     }
-
+    hiddenFile, _ := regexp.Compile(`^[.].*`)
     if info.IsDir() {
         if info.Name() != rootDir {
             fmt.Println("Skipping the Directory found in the path ", path)
             return filepath.SkipDir
         }
     }else{
-        fileList = append(fileList, path)
+        if !hiddenFile.MatchString(info.Name()){
+            fileList = append(fileList, path)
+        }
+        
     }
     return nil
 }
@@ -132,8 +135,8 @@ func readLogFile(filepath string) ([]Operation, error){
     reader := bufio.NewReader(file)
 
     // LOG FORMAT
-    // ClientID, GET, Key, Value_read, call_time, return_time
-    // ClientID, PUT, Key, Value_written, call_time, return_time
+    // ClientID, get, Key, Value_read, call_time, return_time
+    // ClientID, put, Key, Value_written, call_time, return_time
     getOperation, _ := regexp.Compile(`.*, get,.*,.*,.*,.*`)
     putOperation, _ := regexp.Compile(`.*, put,.*,.*,.*,.*`)
 

@@ -22,7 +22,7 @@ class Timestamp {
 public:
     Timestamp(uint32_t client_id, uint32_t time = 1);
     Timestamp(const Timestamp &t); // Copy constructor
-    Timestamp(std::string &str);
+    Timestamp(const std::string &str);
     std::string get_string();
     Timestamp increase_timestamp(const uint32_t client_id);
     virtual ~Timestamp();

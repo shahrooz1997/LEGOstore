@@ -16,14 +16,173 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <regex>
+#include <vector>
 
 
 template <typename T>
-void set_intersection(Placement *p, std::unordered_set<T> &res){
+static void set_intersection(Placement *p, std::unordered_set<T> &res){
     res.insert(p->Q1.begin(), p->Q1.end());
     res.insert(p->Q2.begin(), p->Q2.end());
     res.insert(p->Q3.begin(), p->Q3.end());
     res.insert(p->Q4.begin(), p->Q4.end());
+}
+
+namespace CAS_thread_helper{
+    void _get_timestamp(std::promise<strVec> &&prm, std::string key, Server *server,
+                        std::string current_class, uint32_t conf_id){
+
+        DPRINTF(DEBUG_CAS_Client, "started.\n");
+
+        strVec data;
+
+        Connect c(server->ip, server->port);
+        if(!c.is_connected()){
+            prm.set_value(std::move(data));
+            return;
+        }
+
+        data.push_back("get_timestamp");
+        data.push_back(key);
+        data.push_back(current_class);
+        data.push_back(std::to_string(conf_id));
+        DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
+
+        data.clear();
+        std::string recvd;
+
+        // If the socket recv itself fails, then 'promise' value will not be made available
+        if(DataTransfer::recvMsg(*c, recvd) == 1){
+            data =  DataTransfer::deserialize(recvd);
+            prm.set_value(std::move(data));
+        }
+        else{
+            data.clear();
+            prm.set_value(std::move(data));
+        }
+
+        return;
+    }
+    
+    void _put(std::promise<strVec> &&prm, std::string key, std::string value, Timestamp timestamp,
+                        Server *server, std::string current_class, uint32_t conf_id){
+
+        DPRINTF(DEBUG_CAS_Client, "started.\n");
+        
+        strVec data;
+
+        Connect c(server->ip, server->port);
+        if(!c.is_connected()){
+            prm.set_value(std::move(data));
+            return;
+        }
+
+        data.push_back("put");
+        data.push_back(key);
+        data.push_back(timestamp.get_string());
+        data.push_back(value);
+        data.push_back(current_class);
+        data.push_back(std::to_string(conf_id));
+
+        if((value).empty()){
+            printf("WARNING!!! SENDING EMPTY STRING TO SERVER\n");
+        }
+        DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
+
+        data.clear();
+        std::string recvd;
+
+
+        // If the socket recv itself fails, then 'promise' value will not be made available
+        if(DataTransfer::recvMsg(*c, recvd) == 1){
+            data =  DataTransfer::deserialize(recvd);
+            prm.set_value(std::move(data));
+        }
+        else{
+            data.clear();
+            prm.set_value(std::move(data));
+        }
+
+        DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %u\n", server->port);
+
+        return;
+    }
+    
+    void _put_fin(std::promise<strVec> &&prm, std::string key, Timestamp timestamp,
+                        Server *server, std::string current_class, uint32_t conf_id){
+
+        DPRINTF(DEBUG_CAS_Client, "started.\n");
+
+        strVec data;
+
+        Connect c(server->ip, server->port);
+        if(!c.is_connected()){
+            prm.set_value(std::move(data));
+            return;
+        }
+
+        data.push_back("put_fin");
+        data.push_back(key);
+        data.push_back(timestamp.get_string());
+        data.push_back(current_class);
+        data.push_back(std::to_string(conf_id));
+        DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
+
+        data.clear();
+        std::string recvd;
+
+        // If the socket recv itself fails, then 'promise' value will not be made available
+        if(DataTransfer::recvMsg(*c, recvd) == 1){
+            data =  DataTransfer::deserialize(recvd);
+            prm.set_value(std::move(data));
+        }
+        else{
+            data.clear();
+            prm.set_value(std::move(data));
+        }
+        
+        DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %u\n", server->port);
+
+        return;
+    }
+
+    
+    void _get(std::promise<strVec> &&prm, std::string key, Timestamp timestamp,
+                    Server *server, std::string current_class, uint32_t conf_id){
+
+        DPRINTF(DEBUG_CAS_Client, "started.\n");
+
+        strVec data;
+
+        Connect c(server->ip, server->port);
+        if(!c.is_connected()){
+            prm.set_value(std::move(data));
+            return;
+        }
+
+        data.push_back("get");
+        data.push_back(key);
+        data.push_back(timestamp.get_string());
+        data.push_back(current_class);
+        data.push_back(std::to_string(conf_id));
+        DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
+
+        data.clear();
+        std::string recvd;
+
+        // If the socket recv itself fails, then 'promise' value will not be made available
+        if(DataTransfer::recvMsg(*c, recvd) == 1){
+            data =  DataTransfer::deserialize(recvd);
+            prm.set_value(std::move(data));
+        }
+        else{
+            data.clear();
+            prm.set_value(std::move(data));
+        }
+
+        DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
+
+        return;
+    }
 }
 
 namespace liberasure{
@@ -64,6 +223,18 @@ namespace liberasure{
             assert(frag != NULL);
             chunks->push_back(new std::string(frag, encoded_fragment_len));
         }
+        
+//        for(int i = 0; i < args->m; i++){
+//            char *frag = encoded_parity[i];
+//            assert(frag != NULL);
+//            chunks->push_back(new std::string(frag, encoded_fragment_len));
+//        }
+//        
+//        for(int i = 0; i < args->k; i++){
+//            char *frag = encoded_data[i];
+//            assert(frag != NULL);
+//            chunks->push_back(new std::string(frag, encoded_fragment_len));
+//        }
 
         rc = liberasurecode_encode_cleanup(desc, encoded_data, encoded_parity);
         assert(rc == 0);
@@ -96,6 +267,7 @@ namespace liberasure{
             }
             *ptr++ = data[i];
             num_frags++;
+//            DPRINTF(DEBUG_CAS_Client, "num_frags is %d.\n", num_frags);
         }
         //add parity frags
         for (i = 0; i < args->m; i++) {
@@ -105,8 +277,10 @@ namespace liberasure{
             }
             *ptr++ = parity[i];
             num_frags++;
+//            DPRINTF(DEBUG_CAS_Client, "1111num_frags is %d.\n", num_frags);
         }
     out:
+//        DPRINTF(DEBUG_CAS_Client, "2222num_frags is %d.\n", num_frags);
         return num_frags;
     }
 
@@ -124,14 +298,18 @@ namespace liberasure{
         int num_avail_frags = 0;
 
         for(int i = 0; i < args->k; i++){
-            encoded_data[i] = new char[chunks->at(0)->size()];
+            encoded_data[i] = new char[chunks->at(i)->size()];
         }
 
         for(int i = 0; i < args->m; i++){
             encoded_parity[i] = nullptr;
         }
 
-        DPRINTF(DEBUG_CAS_Client, "The chunk size DECODE is %lu\n", chunks->at(0)->size());
+//        DPRINTF(DEBUG_CAS_Client, "number of available chunks %lu\n", chunks->size());
+//        for(int i = 0; i < chunks->size(); i++){
+//            DPRINTF(DEBUG_CAS_Client, "chunk addr %p\n", chunks->at(i));
+//        }
+//        DPRINTF(DEBUG_CAS_Client, "The chunk size DECODE is %lu\n", chunks->at(0)->size());
 
         //desc = liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, args);
 
@@ -144,21 +322,27 @@ namespace liberasure{
         } else
             assert(desc > 0);
 
-        for(i = 0; i < args->k + args->m; i++){
-            if(i < args->k){
-                for(uint j = 0; j < chunks->at(0)->size(); j++){
-                    encoded_data[i][j] = chunks->at(i)->at(j);
-                }
+//        for(i = 0; i < args->k + args->m; i++){
+//            if(i < args->k){
+//                for(uint j = 0; j < chunks->at(0)->size(); j++){
+//                    encoded_data[i][j] = chunks->at(i)->at(j);
+//                }
+//            }
+//        }
+
+        for(i = 0; i < args->k; i++){
+            for(uint j = 0; j < chunks->at(i)->size(); j++){
+                encoded_data[i][j] = chunks->at(i)->at(j);
             }
         }
-
+        
         int *skip = new int[args->k + args->m];
-        for(int i = 0; i < args->k + args->m; i++){
-            skip[i] = 1;
-        }
-
         for(int i = 0; i < args->k; i++){
             skip[i] = 0;
+        }
+
+        for(int i = args->k; i < args->k + args->m; i++){
+            skip[i] = 1;
         }
 
         num_avail_frags = create_frags_array(&avail_frags, encoded_data,
@@ -168,7 +352,7 @@ namespace liberasure{
                                    chunks->at(0)->size(), 1,
                                    &decoded_data, &decoded_data_len);
         if(rc != 0)
-        printf("rc is %d.\n", rc);
+            DPRINTF(DEBUG_CAS_Client, "rc is %d.\n", rc);
         
         assert(0 == rc);
 
@@ -194,43 +378,6 @@ namespace liberasure{
     }
 
 }
-
-//TODO: Ask more servers for timestamp if last attempt didn't work.
-
-// Use this constructor when single threaded code
-//CAS_Client::CAS_Client(uint32_t client_id, uint32_t local_datacenter_id, std::vector <DC*> &datacenters, std::map<std::string, std::pair<uint32_t, Placement> > *keys_info) {
-//    
-//    assert(keys_info != nullptr);
-//    
-//    this->local_datacenter_id = local_datacenter_id;
-//    retry_attempts = 1;
-//    metadata_server_timeout = 10000;
-//    timeout_per_request = 10000;
-//    this->keys_info = keys_info;
-//    
-//    // Todo: what is this???
-//    start_time = 0;
-//    
-//    this->datacenters = datacenters;
-//    
-//    this->current_class = CAS_PROTOCOL_NAME;
-//    this->id = client_id;
-//    this->desc = -1;
-//    this->desc_destroy = 1;
-//    
-//#ifdef LOGGING_ON
-//    char name[20];
-//    name[0] = 'l';
-//    name[1] = 'o';
-//    name[2] = 'g';
-//    name[3] = 's';
-//    name[4] = '/';
-//
-//    sprintf(&name[5], "%u.txt", client_id);
-//    this->log_file = fopen(name, "w");
-//#endif
-//    
-//}
 
 CAS_Client::CAS_Client(uint32_t client_id, uint32_t local_datacenter_id, std::vector <DC*> &datacenters, int *desc_l, std::map<std::string, std::pair<uint32_t, Placement> > *keys_info) {
     
@@ -268,7 +415,6 @@ CAS_Client::CAS_Client(uint32_t client_id, uint32_t local_datacenter_id, std::ve
 
 }
 
-
 CAS_Client::~CAS_Client() {
     
 #ifdef LOGGING_ON
@@ -280,6 +426,14 @@ CAS_Client::~CAS_Client() {
             destroy_liberasure_instance((*(this->desc)));
     }
     DPRINTF(DEBUG_CAS_Client, "cliend with id \"%u\" has been destructed.\n", this->id);
+}
+
+void static inline free_chunks(std::vector<std::string*> &chunks){
+
+    for(uint i = 0; i < chunks.size(); i++){
+        delete chunks[i];
+    }
+    chunks.clear();
 }
 
 int CAS_Client::update_placement(std::string &key, uint32_t conf_id){
@@ -336,7 +490,7 @@ int CAS_Client::update_placement(std::string &key, uint32_t conf_id){
     return ret;
 }
 
-Placement* CAS_Client::get_placement(std::string &key, bool force_update, uint32_t conf_id){
+Placement* CAS_Client::get_placement(std::string &key, bool force_update, uint32_t conf_id){ // Todo: a bug here is not to check that the requested confid is the same as key_info has.
     
     if(force_update){
         assert(update_placement(key, conf_id) == 0);
@@ -353,35 +507,6 @@ Placement* CAS_Client::get_placement(std::string &key, bool force_update, uint32
             return &((*(this->keys_info))[key].second);
         }
     }
-}
-
-void _get_timestamp(std::promise<strVec> &&prm, std::string key, Server *server,
-                    std::string current_class, uint32_t conf_id){
-
-    DPRINTF(DEBUG_CAS_Client, "started.\n");
-
-    Connect c(server->ip, server->port);
-    if(!c.is_connected()){
-        return;
-    }
-
-    strVec data;
-    data.push_back("get_timestamp");
-    data.push_back(key);
-    data.push_back(current_class);
-    data.push_back(std::to_string(conf_id));
-    DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
-
-    data.clear();
-    std::string recvd;
-
-    // If the socket recv itself fails, then 'promise' value will not be made available
-    if(DataTransfer::recvMsg(*c, recvd) == 1){
-        data =  DataTransfer::deserialize(recvd);
-        prm.set_value(std::move(data));
-    }
-
-    return;
 }
 
 int CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement **p){
@@ -403,7 +528,7 @@ int CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
 
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
-        std::thread(_get_timestamp, std::move(prm), *key,
+        std::thread(CAS_thread_helper::_get_timestamp, std::move(prm), *key,
                         datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[*key].first).detach();
     }
     
@@ -416,6 +541,11 @@ int CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
         }
         
         strVec data = it.get();
+        
+        if(data.size() == 0){
+            op_status = -1; // You should access all the server.
+            break;
+        }
         
         if(data[0] == "OK"){
             tss.emplace_back(data[1]);
@@ -439,7 +569,8 @@ int CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
         // The servers can return Failed for timestamp, which is acceptable
     }
     
-    uint32_t counter;
+    uint32_t counter = ~((uint32_t)0);
+    uint32_t num_fail_servers = 0;
     std::unordered_set<uint32_t> servers;
 
     set_intersection(*p, servers);
@@ -449,11 +580,13 @@ int CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
         responses.clear(); // ignore responses to old requests
         tss.clear();
         counter = 0;
+        num_fail_servers = 0;
+//        op_status = 0;
         for(auto it = servers.begin(); it != servers.end(); it++){ // request to all servers
 
             std::promise<strVec> prm;
             responses.emplace_back(prm.get_future());
-            std::thread(_get_timestamp, std::move(prm), *key,
+            std::thread(CAS_thread_helper::_get_timestamp, std::move(prm), *key,
                             datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[*key].first).detach();
         }
 
@@ -470,6 +603,17 @@ int CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
             }
 
             strVec data = it.get();
+            
+            if(data.size() == 0){
+                num_fail_servers++;
+                if(num_fail_servers > (*p)->f){
+                    op_status = -100; // You should access all the server.
+                    break;
+                }
+                else{
+                    continue;
+                }
+            }
 
             if(data[0] == "OK"){
                 tss.emplace_back(data[1]);
@@ -482,6 +626,7 @@ int CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
                 *p = get_placement(*key, true, stoul(data[1]));
                 assert(*p != nullptr);
                 op_status = -2; // reconfiguration happened on the key
+                timestamp = nullptr;
                 return S_RECFG;
                 //break;
             }
@@ -498,101 +643,24 @@ int CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
             
         }
     }
+    
+//    if(counter < (*p)->Q1.size()){
+//        op_status = -100;
+//        DPRINTF(DEBUG_CAS_Client, "More than f servers did not respond.\n");
+//    }
 
     if(op_status == 0){
         *timestamp = new Timestamp(Timestamp::max_timestamp2(tss));
         
         DPRINTF(DEBUG_CAS_Client, "finished successfully. Max timestamp received is %s\n", (*timestamp)->get_string().c_str());
     }else{
-        DPRINTF(DEBUG_CAS_Client, "Operation Failed.\n");
+        DPRINTF(DEBUG_CAS_Client, "Operation Failed. op_status is %d\n", op_status);
         assert(false);
         return S_FAIL;
     }
 
-    return S_OK;
+    return op_status;
 }
-
-void _put(std::promise<strVec> &&prm, std::string key, std::string value, Timestamp timestamp,
-                    Server *server, std::string current_class, uint32_t conf_id){
-
-    DPRINTF(DEBUG_CAS_Client, "started.\n");
-
-    int sock = 0;
-    if(client_cnt(sock, server) == S_FAIL){
-        return;
-    }
-
-    strVec data;
-    data.push_back("put");
-
-    data.push_back(key);
-    data.push_back(timestamp.get_string());
-    data.push_back(value);
-    data.push_back(current_class);
-    data.push_back(std::to_string(conf_id));
-
-    if((value).empty()){
-	printf("WARNING!!! SENDING EMPTY STRING TO SERVER\n");
-    }
-    DataTransfer::sendMsg(sock,DataTransfer::serialize(data));
-
-    data.clear();
-    std::string recvd;
-
-
-    // If the socket recv itself fails, then 'promise' value will not be made available
-    if(DataTransfer::recvMsg(sock, recvd) == 1){
-        data =  DataTransfer::deserialize(recvd);
-        prm.set_value(std::move(data));
-    }
-
-    DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %u\n", server->port);
-    close(sock);
-
-    return;
-}
-
-void _put_fin(std::promise<strVec> &&prm, std::string key, Timestamp timestamp,
-                    Server *server, std::string current_class, uint32_t conf_id){
-
-    DPRINTF(DEBUG_CAS_Client, "started.\n");
-
-    int sock = 0;
-    if(client_cnt(sock, server) == S_FAIL){
-        return;
-    }
-
-    strVec data;
-    data.push_back("put_fin");
-    data.push_back(key);
-    data.push_back(timestamp.get_string());
-    data.push_back(current_class);
-    data.push_back(std::to_string(conf_id));
-    DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
-
-    data.clear();
-    std::string recvd;
-
-    // If the socket recv itself fails, then 'promise' value will not be made available
-    if(DataTransfer::recvMsg(sock, recvd) == 1){
-        data =  DataTransfer::deserialize(recvd);
-        prm.set_value(std::move(data));
-    }
-
-    DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %u\n", server->port);
-    close(sock);
-
-    return;
-}
-
-void static inline free_chunks(std::vector<std::string*> &chunks){
-
-    for(uint i = 0; i < chunks.size(); i++){
-        delete chunks[i];
-    }
-    chunks.clear();
-}
-
 
 int CAS_Client::put(std::string key, std::string value, bool insert){
 
@@ -615,7 +683,7 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
     std::vector <std::string*> chunks;
     struct ec_args null_args;
     null_args.k = p->k;
-    null_args.m = p->m - p->k;
+    null_args.m = p->m - p->k; // m here is the number of parity chunks
     null_args.w = 16;
     null_args.ct = CHKSUM_NONE;
 
@@ -661,7 +729,7 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
     }
     
     // prewrite
-    int i = 0;
+//    int i = 0;
 //    char bbuf[1024*128];
 //    int bbuf_i = 0;
 //    bbuf_i += sprintf(bbuf + bbuf_i, "%s-main value is %s\n", key.c_str(), value.c_str());
@@ -680,14 +748,14 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
     for(auto it = p->Q2.begin(); it != p->Q2.end(); it++){
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
-        std::thread(_put, std::move(prm), key, *chunks[i], *timestamp,
+        std::thread(CAS_thread_helper::_put, std::move(prm), key, *chunks[*it], *timestamp,
                             datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
 
-        DPRINTF(DEBUG_CAS_Client, "Issue _put request to key: %s and timestamp: %s and conf_id: %u and chunk_size :%lu \n", key.c_str(), timestamp->get_string().c_str(), (*(this->keys_info))[key].first, chunks[i]->size());
+        DPRINTF(DEBUG_CAS_Client, "Issue _put request to key: %s and timestamp: %s and conf_id: %u and chunk_size :%lu \n", key.c_str(), timestamp->get_string().c_str(), (*(this->keys_info))[key].first, chunks[*it]->size());
         // for (auto& el : *chunks[i])
         //      printf("%02hhx", el);
         // std::cout << '\n';
-        i++;
+//        i++;
     }
     
     std::chrono::system_clock::time_point end = std::chrono::system_clock::now() + std::chrono::milliseconds(this->timeout_per_request);
@@ -700,6 +768,11 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
         }
         
         strVec data = it.get();
+        
+        if(data.size() == 0){
+            op_status = -1; // You should access all the server.
+            break;
+        }
 
         if(data[0] == "OK"){
             DPRINTF(DEBUG_CAS_Client, "OK received for key : %s\n", key.c_str());
@@ -710,35 +783,43 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
             assert(p != nullptr);
             op_status = -2; // reconfiguration happened on the key
             free_chunks(chunks);
-            delete timestamp;
+            if(timestamp != nullptr){
+                delete timestamp;
+                timestamp = nullptr;
+            }
             return S_RECFG;
         }
         else{
             DPRINTF(DEBUG_CAS_Client, "Bad message received from server for key : %s\n", key.c_str());
             free_chunks(chunks);
-            delete timestamp;
+            if(timestamp != nullptr){
+                delete timestamp;
+                timestamp = nullptr;
+            }
             return -3; // Bad message received from server
         }
     }
     
-    uint32_t counter;
+    uint32_t counter = ~((uint32_t)0);
+    uint32_t num_fail_servers;
     std::unordered_set<uint32_t> servers;
 
     set_intersection(p, servers);
     
     while(op_status == -1 && RAs--){
-        
+        DPRINTF(DEBUG_CAS_Client, "the whole number of servers: %lu\n", servers.size());
         responses.clear(); // ignore responses to old requests
         counter = 0;
-        i = 0;
+        num_fail_servers = 0;
+        op_status = 0;
         for(auto it = servers.begin(); it != servers.end(); it++){ // request to all servers
 
             std::promise<strVec> prm;
             responses.emplace_back(prm.get_future());
-            std::thread(_put, std::move(prm), key, *chunks[i], *timestamp,
+            std::thread(CAS_thread_helper::_put, std::move(prm), key, *chunks[*it], *timestamp,
                             datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
-            DPRINTF(DEBUG_CAS_Client, "Issue _put request to key: %s and timestamp: %s and conf_id: %u and chunk_size :%lu \n", key.c_str(), timestamp->get_string().c_str(), (*(this->keys_info))[key].first, chunks[i]->size());
-            i++;
+            DPRINTF(DEBUG_CAS_Client, "Issue _put request to key: %s and timestamp: %s and conf_id: %u and chunk_size :%lu \n", key.c_str(), timestamp->get_string().c_str(), (*(this->keys_info))[key].first, chunks[*it]->size());
+//            i++;
         }
         
         std::chrono::system_clock::time_point end = std::chrono::system_clock::now() + std::chrono::milliseconds(this->timeout_per_request);
@@ -753,6 +834,17 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
             }
 
             strVec data = it.get();
+            
+            if(data.size() == 0){
+                num_fail_servers++;
+                if(num_fail_servers > p->f){
+                    op_status = -100;
+                    break;
+                }
+                else{
+                    continue;
+                }
+            }
 
             if(data[0] == "OK"){
                 counter++;
@@ -763,13 +855,19 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
                 assert(p != nullptr);
                 op_status = -2; // reconfiguration happened on the key
                 free_chunks(chunks);
-                delete timestamp;
+                if(timestamp != nullptr){
+                    delete timestamp;
+                    timestamp = nullptr;
+                }
                 return S_RECFG;
             }
             else{
                 DPRINTF(DEBUG_CAS_Client, "Bad message received from server for key : %s\n", key.c_str());
                 free_chunks(chunks);
-                delete timestamp;
+                if(timestamp != nullptr){
+                    delete timestamp;
+                    timestamp = nullptr;
+                }
                 return -3; // Bad message received from server
             }
             
@@ -779,12 +877,19 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
             }
         }
     }
+    
+//    if(counter < p->Q2.size()){
+//        op_status = -100;
+//    }
 
     responses.clear();
     free_chunks(chunks);
     if(op_status != 0){
-        DPRINTF(DEBUG_CAS_Client, "pre_write could not succeed\n");
-        delete timestamp;
+        DPRINTF(DEBUG_CAS_Client, "pre_write could not succeed. op_status is %d\n", op_status);
+        if(timestamp != nullptr){
+            delete timestamp;
+            timestamp = nullptr;
+        }
         return -4; // pre_write could not succeed.
     }
     
@@ -796,7 +901,7 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
     for(auto it = p->Q3.begin(); it != p->Q3.end(); it++){
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
-        std::thread(_put_fin, std::move(prm), key, *timestamp,
+        std::thread(CAS_thread_helper::_put_fin, std::move(prm), key, *timestamp,
                         datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
         DPRINTF(DEBUG_CAS_Client, "Issue Q3 request to key: %s \n", key.c_str());
     }
@@ -812,30 +917,40 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
         
         strVec data = it.get();
         
+        if(data.size() == 0){
+            op_status = -1; // You should access all the server.
+            break;
+        }
+        
         if(data[0] == "OK"){
 
         }
         else if(data[0] == "operation_fail"){
-            delete timestamp;
+            if(timestamp != nullptr){
+                delete timestamp;
+                timestamp = nullptr;
+            }
             DPRINTF(DEBUG_CAS_Client, "operation_fail received for key : %s\n", key.c_str());
             p = get_placement(key, true, stoul(data[1]));
             assert(p != nullptr);
             op_status = -2; // reconfiguration happened on the key
             free_chunks(chunks);
-            delete timestamp;
             return S_RECFG;
         }
         else{
             op_status = -5; // Bad message received from server
             DPRINTF(DEBUG_CAS_Client, "Bad message received from server received for key : %s\n", key.c_str());
             free_chunks(chunks);
-            delete timestamp;
+            if(timestamp != nullptr){
+                delete timestamp;
+                timestamp = nullptr;
+            }
             return -5;
         }
         
     }
     
-//    uint32_t counter;
+    counter = ~((uint32_t)0);
 //    std::unordered_set<uint32_t> servers;
 
 //    set_intersection(p, servers);
@@ -844,10 +959,12 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
         
         responses.clear(); // ignore responses to old requests
         counter = 0;
+        num_fail_servers = 0;
+        op_status = 0;
         for(auto it = servers.begin(); it != servers.end(); it++){ // request to all servers
             std::promise<strVec> prm;
             responses.emplace_back(prm.get_future());
-            std::thread(_put_fin, std::move(prm), key, *timestamp,
+            std::thread(CAS_thread_helper::_put_fin, std::move(prm), key, *timestamp,
                             datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
             DPRINTF(DEBUG_CAS_Client, "Issue Q3 request to key: %s \n", key.c_str());
         }
@@ -865,24 +982,40 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
 
             strVec data = it.get();
             
+            if(data.size() == 0){
+                num_fail_servers++;
+                if(num_fail_servers > p->f){
+                    op_status = -100;
+                    break;
+                }
+                else{
+                    continue;
+                }
+            }
+            
             if(data[0] == "OK"){
                 counter++;
             }
             else if(data[0] == "operation_fail"){
-                delete timestamp;
+                if(timestamp != nullptr){
+                    delete timestamp;
+                    timestamp = nullptr;
+                }
                 DPRINTF(DEBUG_CAS_Client, "operation_fail received for key : %s\n", key.c_str());
                 p = get_placement(key, true, stoul(data[1]));
                 assert(p != nullptr);
                 op_status = -2; // reconfiguration happened on the key
                 free_chunks(chunks);
-                delete timestamp;
                 return S_RECFG;
             }
             else{
                 op_status = -5; // Bad message received from server
                 DPRINTF(DEBUG_CAS_Client, "Bad message received from server received for key : %s\n", key.c_str());
                 free_chunks(chunks);
-                delete timestamp;
+                if(timestamp != nullptr){
+                    delete timestamp;
+                    timestamp = nullptr;
+                }
                 return -5;
             }
             
@@ -892,49 +1025,20 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
             }
         }
     }
+    
+//    if(counter < p->Q3.size()){
+//        op_status = -100;
+//    }
 
     responses.clear();
     delete timestamp;
     if(op_status != 0){
-        DPRINTF(DEBUG_CAS_Client, "Fin_write could not succeed\n");
+        DPRINTF(DEBUG_CAS_Client, "Fin_write could not succeed. op_status is %d\n", op_status);
 //        delete timestamp;
         return -6; // Fin_write could not succeed.
     }
     
     return op_status;
-}
-
-void _get(std::promise<strVec> &&prm, std::string key, Timestamp timestamp,
-            Server *server, std::string current_class, uint32_t conf_id){
-
-    DPRINTF(DEBUG_CAS_Client, "started.\n");
-
-    int sock = 0;
-    if(client_cnt(sock, server) == S_FAIL){
-        return;
-    }
-
-    strVec data;
-    data.push_back("get");
-    data.push_back(key);
-    data.push_back(timestamp.get_string());
-    data.push_back(current_class);
-    data.push_back(std::to_string(conf_id));
-    DataTransfer::sendMsg(sock, DataTransfer::serialize(data));
-
-    data.clear();
-    std::string recvd;
-
-    // If the socket recv itself fails, then 'promise' value will not be made available
-    if(DataTransfer::recvMsg(sock, recvd) == 1){
-        data =  DataTransfer::deserialize(recvd);
-        prm.set_value(std::move(data));
-    }
-
-    close(sock);
-    DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
-
-    return;
 }
 
 int CAS_Client::get(std::string key, std::string &value){
@@ -980,7 +1084,7 @@ int CAS_Client::get(std::string key, std::string &value){
     for(auto it = p->Q4.begin(); it != p->Q4.end(); it++){
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
-        std::thread(_get, std::move(prm), key, *timestamp,
+        std::thread(CAS_thread_helper::_get, std::move(prm), key, *timestamp,
                 datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
 
         DPRINTF(DEBUG_CAS_Client, "Issue Q4 request for key :%s \n", key.c_str());
@@ -997,6 +1101,11 @@ int CAS_Client::get(std::string key, std::string &value){
         
         strVec data = it.get();
         
+        if(data.size() == 0){
+            op_status = -1; // You should access all the server.
+            break;
+        }
+        
         if(data[0] == "OK"){
             if(data[1] == "Ack"){
                 
@@ -1008,16 +1117,20 @@ int CAS_Client::get(std::string key, std::string &value){
                 chunks.push_back(new std::string(data[1]));
             }
         }else if(data[0] == "operation_fail"){
-            delete timestamp;
+            if(timestamp != nullptr){
+                delete timestamp;
+                timestamp = nullptr;
+            }
             DPRINTF(DEBUG_CAS_Client, "operation_fail received for key : %s\n", key.c_str());
             p = get_placement(key, true, stoul(data[1]));
             assert(p != nullptr);
             op_status = -2; // reconfiguration happened on the key
             free_chunks(chunks);
-            delete timestamp;
             return S_RECFG;
         }
-        else{// Todo: it is possible and fine that a server in Q4 doesn't have the chunk.
+        else{
+            assert(false);
+            // Todo: it is possible and fine that a server in Q4 doesn't have the chunk.
 //            op_status = -8; // Bad message received from server
 //            DPRINTF(DEBUG_CAS_Client, "Bad message received from server received for key : %s\n", key.c_str());
 //            free_chunks(chunks);
@@ -1030,7 +1143,8 @@ int CAS_Client::get(std::string key, std::string &value){
 //        }
     }
     
-    uint32_t counter;
+    uint32_t counter = ~((uint32_t)0);
+    uint32_t num_fail_servers;
     std::unordered_set<uint32_t> servers;
 
     set_intersection(p, servers);
@@ -1040,10 +1154,13 @@ int CAS_Client::get(std::string key, std::string &value){
         responses.clear(); // ignore responses to old requests
         counter = 0;
         free_chunks(chunks);
+        op_status = 0;
+        uninitialized_key = false;
+        num_fail_servers = 0;
         for(auto it = servers.begin(); it != servers.end(); it++){ // request to all servers
             std::promise<strVec> prm;
             responses.emplace_back(prm.get_future());
-            std::thread(_get, std::move(prm), key, *timestamp,
+            std::thread(CAS_thread_helper::_get, std::move(prm), key, *timestamp,
                     datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
 
             DPRINTF(DEBUG_CAS_Client, "Issue Q4 request for key :%s \n", key.c_str());
@@ -1057,29 +1174,50 @@ int CAS_Client::get(std::string key, std::string &value){
             if(it.wait_until(end) == std::future_status::timeout){
                 // Access all the servers and wait for Q1.size() of them.
                 op_status = -1; // You should access all the server.
+                std::cerr << "AAAAAA" << std::endl;
                 break;
             }
 
             strVec data = it.get();
+            
+            if(data.size() == 0){
+                num_fail_servers++;
+                if(num_fail_servers > p->f){
+                    op_status = -100;
+                    break;
+                }
+                else{
+                    continue;
+                }
+            }
+            
             if(data[0] == "OK"){
+                counter++;
                 if(data[1] == "Ack"){
-                    counter++;
                 }
                 else if(data[1] == "init"){
                     uninitialized_key = true;
                 }
                 else{
                     chunks.push_back(new std::string(data[1]));
-                    counter++;
+                    
+//                    printf("aaaaaaaaaaaa: ");
+//                    for(int i = 0; i < data[1].size(); i++){
+//                        printf("%c", data[1][i]);
+//                    }
+//                    printf("\n");
+                    
                 }
             }else if(data[0] == "operation_fail"){
-                delete timestamp;
+                if(timestamp != nullptr){
+                    delete timestamp;
+                    timestamp = nullptr;
+                }
                 DPRINTF(DEBUG_CAS_Client, "operation_fail received for key : %s\n", key.c_str());
                 p = get_placement(key, true, stoul(data[1]));
                 assert(p != nullptr);
                 op_status = -2; // reconfiguration happened on the key
                 free_chunks(chunks);
-                delete timestamp;
                 return S_RECFG;
             }
             else{ // Todo: it is possible and fine that a server in Q4 doesn't have the chunk.
@@ -1092,26 +1230,36 @@ int CAS_Client::get(std::string key, std::string &value){
 //                return -8;
             }
             
-            if(counter >= p->Q4.size() && chunks.size() > p->k){
+            if(counter >= p->Q4.size() && chunks.size() >= p->k){
                 op_status = 0;
                 break;
             }
         }
     }
+    
+//    if(!(counter >= p->Q4.size() && chunks.size() >= p->k)){
+//        op_status = -100;
+//    }
 
     responses.clear();
-    delete timestamp;
+    if(timestamp != nullptr){
+        delete timestamp;
+        timestamp = nullptr;
+    }
     
     if(!uninitialized_key){
         if(chunks.size() < p->k){
             free_chunks(chunks);
-            delete timestamp;
+            if(timestamp != nullptr){
+                delete timestamp;
+                timestamp = nullptr;
+            }
             op_status = -9;
             DPRINTF(DEBUG_CAS_Client, "chunks.size() < p->k key : %s\n", key.c_str());
         }
 
         if(op_status != 0){
-            DPRINTF(DEBUG_CAS_Client, "get operation failed for key : %s\n", key.c_str());
+            DPRINTF(DEBUG_CAS_Client, "get operation failed for key: %s op_status is %d\n", key.c_str(), op_status);
             free_chunks(chunks);
             return -10;
         }
@@ -1139,7 +1287,14 @@ int CAS_Client::get(std::string key, std::string &value){
         liberasure::decode(&value, &chunks, &null_args, (*(this->desc)));
     }
     else{
-        value = "__Uninitiliazed";
+        if(op_status != 0){
+            DPRINTF(DEBUG_CAS_Client, "get operation failed for key: %s op_status is %d\n", key.c_str(), op_status);
+            free_chunks(chunks);
+            return -10;
+        }
+        else{
+            value = "__Uninitiliazed";
+        }
     }
     
     free_chunks(chunks);

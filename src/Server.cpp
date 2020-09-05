@@ -153,6 +153,8 @@ void server_connection(int connection, DataServer &dataserver, int portid){
     std::string recvd;
     int result = DataTransfer::recvMsg(connection,recvd);
     if(result != 1){
+        DPRINTF(DEBUG_RECONFIG_CONTROL, "problem receiving data from the client, result is %d\n", result);
+        fflush(stdout);
         strVec msg{"failure","No data Found"};
         DataTransfer::sendMsg(connection, DataTransfer::serialize(msg));
         close(connection);
@@ -327,15 +329,18 @@ int main(int argc, char **argv){
 
 
 	for(uint i=0; i< socket_port.size(); i++){
-		if(fork() == 0){
-                    
-                    close(1);
-                    int pid = getpid();
-                    std::stringstream filename;
-                    filename << "server_" << pid << "_output.txt";
-                    fopen(filename.str().c_str(), "w");
-                    runServer(db_list[i], socket_port[i]);
-		}
+//            if(socket_port[i] == "10001"/* || socket_port[i] == "10006"*/){
+//                continue;
+//            }
+            if(fork() == 0){
+
+                close(1);
+                int pid = getpid();
+                std::stringstream filename;
+                filename << "server_" << pid << "_output.txt";
+                fopen(filename.str().c_str(), "w");
+                runServer(db_list[i], socket_port[i]);
+            }
 	}
 
 	std::string ch;

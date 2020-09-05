@@ -99,8 +99,8 @@ struct Placement{ // For ABD, you can use just the first portion of this struct.
     std::string             protocol;
     std::vector<uint32_t>   Q1;
     std::vector<uint32_t>   Q2;
-    uint32_t                m;
-    uint32_t                k;
+    uint32_t                m; // Total number of servers
+    uint32_t                k; // The number of chunks necessary for decoding data
     std::vector<uint32_t>   Q3;
     std::vector<uint32_t>   Q4;
 //    std::vector<DC*>        N; // The whole servers participating in this placement.

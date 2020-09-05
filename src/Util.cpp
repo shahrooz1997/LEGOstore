@@ -294,7 +294,7 @@ void Connect::print_error(std::string const &m){
     std::stringstream msg; // Make it thread safe
     msg << "ip=" << this->ip << ", port=" << this->port << ": ERROR SOCKET CONNECTION, ";
     msg << m << std::endl;
-    std::cerr << msg.str();
+    std::cout << msg.str();
 }
 
 Server::Server(){

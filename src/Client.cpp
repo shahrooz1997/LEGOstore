@@ -183,6 +183,10 @@ int run_session2(uint32_t obj_size, double read_ratio, uint64_t duration, std::v
         
         if(reqType == 1){
             result = clt.get(keys[key_idx],read_value);
+            if(result != 0){
+//                DPRINTF(DEBUG_CAS_Client, "clt.get on key %s, result is %d\n", keys[key_idx].c_str(), result);
+                assert(false);
+            }
             DPRINTF(DEBUG_CAS_Client, "get done on key: %s with value: %s\n", keys[key_idx].c_str(), read_value.c_str());
             fflush(stdout);
         }else{
@@ -194,6 +198,10 @@ int run_session2(uint32_t obj_size, double read_ratio, uint64_t duration, std::v
                 val.push_back(keys[key_idx][i % keys[key_idx].size()]);
             }
             result = clt.put(keys[key_idx], val, false);
+            if(result != 0){
+                DPRINTF(DEBUG_CAS_Client, "clt.put on key %s, result is %d\n", keys[key_idx].c_str(), result);
+                assert(false);
+            }
             DPRINTF(DEBUG_CAS_Client, "put done on key: %s with value: %s\n", keys[key_idx].c_str(), val.c_str());
             fflush(stdout);
         }

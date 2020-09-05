@@ -1,6 +1,6 @@
 #include "Data_Server.h"
 
-DataServer::DataServer(std::string directory, int sock): sockfd(sock), cache(500000000),
+DataServer::DataServer(std::string directory, int sock): sockfd(sock), cache(1000000000),
         persistent(directory), CAS(&recon_keys), ABD(&recon_keys){
 }
 

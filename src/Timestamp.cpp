@@ -24,7 +24,7 @@ Timestamp::Timestamp(const Timestamp &t){
     this->client_id = t.client_id;
 }
 
-Timestamp::Timestamp(std::string &str){
+Timestamp::Timestamp(const std::string &str){
 	std::size_t dash_pos = str.find("-");
         if(dash_pos >= str.size()){
             std::stringstream msg; // thread safe printing

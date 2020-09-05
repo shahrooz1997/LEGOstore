@@ -11,6 +11,13 @@ using millis = duration<uint64_t, std::milli>;
 
 static std::vector<std::pair<std::string, uint16_t> > addr_info;
 
+template <typename T>
+static void set_intersection(Placement *p, std::unordered_set<T> &res){
+    res.insert(p->Q1.begin(), p->Q1.end());
+    res.insert(p->Q2.begin(), p->Q2.end());
+    res.insert(p->Q3.begin(), p->Q3.end());
+    res.insert(p->Q4.begin(), p->Q4.end());
+}
 
 //Input : A vector of key groups
 // Returns the placement for each key group
@@ -36,7 +43,7 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Plac
 //            Q2_Q3.insert(test->Q3.begin(), test->Q3.end());
 //            test->m = Q2_Q3.size(); // Note: it must be the size of Q2 U Q3 for reconfiguration to work
             
-            // ABD
+            // ABD HARD NO F
             test->protocol = ABD_PROTOCOL_NAME;
             test->m = 5;
             test->k = 0;
@@ -44,24 +51,67 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Plac
             test->Q2.insert(begin(test->Q2), {0, 1, 2});
             test->Q3.clear();
             test->Q4.clear();
+            test->f = 0;
         }else{
+            
+            //No failures
             // CAS
 //            test->protocol = CAS_PROTOCOL_NAME;
-//            test->k = 2;
+//            test->k = 4;
 //            test->Q1.insert(begin(test->Q1), {3,4,5,6});
 //            test->Q2.insert(begin(test->Q2), {2,3,4,5,6});
 //            test->Q3.insert(begin(test->Q3), {1,2,3,4});
 //            test->Q4.insert(begin(test->Q4), {0,1,2,3,4,5});
 //            test->m = std::max(test->Q2.size(), test->Q3.size());
+//            test->f = 0;
             
             // ABD
-            test->protocol = ABD_PROTOCOL_NAME;
-            test->m = 5;
-            test->k = 0;
-            test->Q1.insert(begin(test->Q1), {0,1,2,3,4,5,6});
-            test->Q2.insert(begin(test->Q2), {3});
-            test->Q3.clear();
-            test->Q4.clear();
+//            test->protocol = ABD_PROTOCOL_NAME;
+//            test->m = 5;
+//            test->k = 0;
+//            test->Q1.insert(begin(test->Q1), {0,1,2,3,4,5,6});
+//            test->Q2.insert(begin(test->Q2), {3});
+//            test->Q3.clear();
+//            test->Q4.clear();
+//            test->f = 0;
+            
+            
+            // Failures
+//            test->protocol = CAS_PROTOCOL_NAME;
+//            test->k = 4;
+//            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
+//            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
+//            test->Q3.insert(begin(test->Q3), {4,5,6});
+//            test->Q4.insert(begin(test->Q4), {2,3,4,5,6});
+//            std::unordered_set<uint32_t> servers;
+//            set_intersection(test, servers);
+//            test->m = servers.size(); //std::max(test->Q2.size(), test->Q3.size());
+//            test->f = 1;
+            
+            // HARD
+            test->protocol = CAS_PROTOCOL_NAME;
+            test->k = 4;
+            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
+            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
+            test->Q3.insert(begin(test->Q3), {4,5,6,7,8});
+            test->Q4.insert(begin(test->Q4), {2,3,4,5,6,7,8});
+            std::unordered_set<uint32_t> servers;
+            set_intersection(test, servers);
+            test->m = servers.size(); //std::max(test->Q2.size(), test->Q3.size());
+            test->f = 2;
+            
+//            test->protocol = CAS_PROTOCOL_NAME;
+//            test->k = 1;
+//            test->Q1.insert(begin(test->Q1), {1,2});
+//            test->Q2.insert(begin(test->Q2), {0,1});
+//            test->Q3.insert(begin(test->Q3), {0,1});
+//            test->Q4.insert(begin(test->Q4), {1,2});
+//            std::unordered_set<uint32_t> servers;
+//            set_intersection(test, servers);
+//            test->m = servers.size(); //std::max(test->Q2.size(), test->Q3.size());
+//            test->f = 1;
+            
+            
         }
 
         // SHAHROOZ: We need the servers participating to accomplish one protocol and number of failures we can tolerate for doing reconfiguration
@@ -71,7 +121,7 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*> &gworkload, std::vector<Plac
         // test->N.push_back(dcs[2]);
         // test->N.push_back(dcs[3]);
         // test->N.push_back(dcs[4]);
-        test->f = 0; // TODO: we need to implement failure support.
+//        test->f = 0; // TODO: we need to implement failure support.
 
         placement.push_back(test);
     }
@@ -254,6 +304,10 @@ int Controller::init_metadata_server(){
                         assert(false);
                     }
                     cout << "one done" << endl;
+                }
+                else{
+                    DPRINTF(DEBUG_RECONFIG_CONTROL, "Error in receiving msg from Metadata Server\n");
+                    return -1;
                 }
             }
         }

@@ -18,7 +18,7 @@ using std::string;
 // Data Storage Format
 // key -> (value, timestamp)
 
-Reconfig_key_info* create_rki(const std::string &key, const uint32_t conf_id){
+static Reconfig_key_info* create_rki(const std::string &key, const uint32_t conf_id){
     Reconfig_key_info* ret = new Reconfig_key_info;
     ret->curr_conf_id = conf_id;
     ret->curr_placement = nullptr;
@@ -77,10 +77,14 @@ static int init_key(const string &key, const uint32_t conf_id, Cache &cache, Per
     std::string con_key = construct_key(key, ABD_PROTOCOL_NAME, conf_id);
 
     Reconfig_key_info* rki = create_rki(key, conf_id);
+    if(rki == nullptr){
+        return -1;
+    }
 
     std::vector<std::string> value{"init", ABD_PROTOCOL_NAME, timestamp, rki->get_string(), "FIN"};
     
-    delete rki;
+    if(rki != nullptr)
+        delete rki;
 
     cache.put(con_key, value);
     persistent.put(con_key, value);

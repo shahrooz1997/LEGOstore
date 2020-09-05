@@ -24,6 +24,51 @@
 
 using std::string;
 
+static Reconfig_key_info* create_rki(const std::string &key, const uint32_t conf_id){
+    Reconfig_key_info* ret = new Reconfig_key_info;
+    ret->curr_conf_id = conf_id;
+    ret->curr_placement = nullptr;
+    ret->reconfig_state = 0;
+    ret->timestamp = ""; // Todo: maybe you need to add it into the metadata server
+    ret->next_conf_id = -1;
+    ret->next_placement = nullptr;
+
+    //Todo: shahrooz: get placement info from metadata server
+    Connect c(METADATA_SERVER_IP, METADATA_SERVER_PORT);
+    if(!c.is_connected()){
+        DPRINTF(DEBUG_CAS_Server, "Metadata Server is down.\n");
+        delete ret;
+        ret = nullptr;
+        return ret;
+    }
+    DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", key + "!" + std::to_string(conf_id)));
+    std::string recvd;
+    if(DataTransfer::recvMsg(*c, recvd) == 1){
+        std::string status;
+        std::string msg;
+        ret->curr_placement =  DataTransfer::deserializeMDS(recvd, status, msg);
+        if(status != "OK"){
+//            if(stoul(msg) > conf_id){
+//                rki.reconfig_state = 2;
+//                rki.next_conf_id = stoul(msg);
+//                // Todo: we may need to fill next_placement and timestamp fields too
+//            }
+            delete ret;
+            ret = nullptr;
+            DPRINTF(DEBUG_CAS_Server, "Metadata Server ERROR: msg is %s.\n", msg.c_str());
+        }
+        
+    }
+    else{
+        DPRINTF(DEBUG_CAS_Server, "Error in receiving msg from Metadata Server\n");
+        delete ret;
+        ret = nullptr;
+    }
+    
+    return ret;
+}
+
+
 CAS_Server::CAS_Server(std::map<std::string, std::vector<Request> > *recon_keys) {
     this->recon_keys = recon_keys;
 }
@@ -37,22 +82,28 @@ static bool complete_fin(const std::string &key, const uint32_t conf_id, const s
     DPRINTF(DEBUG_CAS_Server, "started.\n");
     std::string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
     
-//    strVec data;
-//    bool fnd = cache.exists(con_key);
-//    if(!fnd){
-//        fnd = persistent.exists(con_key);
-//        if(!fnd){
-//            cache.put(con_key, {timestamp, "nb"}); // nb: not-blocked, b: blocked
-//            persistent.put(con_key, {timestamp, "nb"}); // nb: not-blocked, b: blocked
-//            return true;
-//        }
-//        data = persistent.get(con_key);
-//    }else{
-//        data = *cache.get(con_key);
-//    }
+    strVec data;
+    bool fnd = cache.exists(con_key);
+    if(!fnd){
+        fnd = persistent.exists(con_key);
+        if(!fnd){
+            cache.put(con_key, {timestamp, "nb"}); // nb: not-blocked, b: blocked
+            persistent.put(con_key, {timestamp, "nb"}); // nb: not-blocked, b: blocked
+            return true;
+        }
+        data = persistent.get(con_key);
+    }else{
+        data = *cache.get(con_key);
+    }
     
-    cache.put(con_key, {timestamp, "nb"}); // nb: not-blocked, b: blocked
-    persistent.put(con_key, {timestamp, "nb"}); // nb: not-blocked, b: blocked
+    std::string saved_timestamp = data[0];
+    
+    if(Timestamp(timestamp) > Timestamp(saved_timestamp)){
+        cache.put(con_key, {timestamp, "nb"}); // nb: not-blocked, b: blocked
+        persistent.put(con_key, {timestamp, "nb"}); // nb: not-blocked, b: blocked
+    }
+    
+    DPRINTF(DEBUG_CAS_Server, "finished.\n");
     
     return true;
 }
@@ -124,42 +175,22 @@ static int init_key(const string &key, const uint32_t conf_id, Cache &cache, Per
     std::string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
     std::string con_key2 = construct_key(key, CAS_PROTOCOL_NAME, conf_id, timestamp);
 
-    Reconfig_key_info rki;
-    rki.curr_conf_id = conf_id;
-    rki.curr_placement = nullptr;
-    rki.reconfig_state = 0;
-    rki.timestamp = ""; // Todo: maybe you need to add it into the metadata server
-    rki.next_conf_id = -1;
-    rki.next_placement = nullptr;
-
-    //Todo: shahrooz: get placement info from metadata server
-    Connect c(METADATA_SERVER_IP, METADATA_SERVER_PORT);
-    if(!c.is_connected()){
-        DPRINTF(DEBUG_CAS_Server, "Metadata Server is down.\n");
+    Reconfig_key_info* rki = create_rki(key, conf_id);
+    if(rki == nullptr){
         return -1;
     }
-    DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", key + "!" + std::to_string(conf_id)));
-    std::string recvd;
-    if(DataTransfer::recvMsg(*c, recvd) == 1){
-        std::string status;
-        std::string msg;
-        rki.curr_placement =  DataTransfer::deserializeMDS(recvd, status, msg);
-        if(status != "OK"){
-//            if(stoul(msg) > conf_id){
-//                rki.reconfig_state = 2;
-//                rki.next_conf_id = stoul(msg);
-//                // Todo: we may need to fill next_placement and timestamp fields too
-//            }
-            DPRINTF(DEBUG_CAS_Server, "Metadata Server ERROR: msg is %s.\n", msg.c_str());
-        }
-    }
 
-    std::vector<std::string> value{"init", CAS_PROTOCOL_NAME, timestamp, rki.get_string(), "FIN"};
+    std::vector<std::string> value{"init", CAS_PROTOCOL_NAME, timestamp, rki->get_string(), "FIN"};
+    
+    if(rki != nullptr){
+        delete rki;
+    }
 
     cache.put(con_key2, value);
     persistent.put(con_key2, value);
     complete_fin(key, conf_id, timestamp, cache, persistent);
     
+    DPRINTF(DEBUG_CAS_Server, "finished with return value %d.\n", ret);
     return ret;
 }
 
@@ -181,8 +212,13 @@ std::string CAS_Server::get_timestamp(const string &key, uint32_t conf_id, const
 //            result = {"Failed", "None"}; // This is not a failure. We should init the key and sent the least possible timestamp for the key
             // We should initialize the uninitialized key.
             DPRINTF(DEBUG_CAS_Server,"WARN: Key %s with confid %d was not found! Initializing...\n", key.c_str(), conf_id);
-            init_key(key, conf_id, cache, persistent);
-            result = {"OK", "0-0"};
+            if(init_key(key, conf_id, cache, persistent) != 0){
+                result = {"ERROR", "INTERNAL ERROR"};
+            }
+            else{
+                result = {"OK", "0-0"};
+            }
+            DPRINTF(DEBUG_CAS_Server, "finished.\n");
             return DataTransfer::serialize(result);
         }else{
             DPRINTF(DEBUG_CAS_Server,"Found data in persisten. sending back! data is"\
@@ -201,6 +237,7 @@ std::string CAS_Server::get_timestamp(const string &key, uint32_t conf_id, const
     
     if(recon_status == 0){
         result = {"OK", data[0]};
+        DPRINTF(DEBUG_CAS_Server, "finished.\n");
         return DataTransfer::serialize(result);
     }
     else if(recon_status == 1){ // Todo: implement a mechanism to take care of blocked operations
@@ -250,37 +287,17 @@ std::string CAS_Server::put(string &key, uint32_t conf_id, string &val, string &
         if(!fnd){
             if(!val.empty()){
                 
-                Reconfig_key_info rki;
-                rki.curr_conf_id = conf_id;
-                rki.curr_placement = nullptr;
-                rki.reconfig_state = 0;
-                rki.timestamp = ""; // Todo: maybe you need to add it into the metadata server
-                rki.next_conf_id = -1;
-                rki.next_placement = nullptr;
-                
-                //Todo: shahrooz: get placement info from metadata server
-                Connect c(METADATA_SERVER_IP, METADATA_SERVER_PORT);
-                if(!c.is_connected()){
-                    return DataTransfer::serialize({"ERROR", "Metadata Server is down"});
-                }
-                DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", key + "!" + std::to_string(conf_id)));
-                std::string recvd;
-                if(DataTransfer::recvMsg(*c, recvd) == 1){
-                    std::string status;
-                    std::string msg;
-                    rki.curr_placement =  DataTransfer::deserializeMDS(recvd, status, msg);
-                    if(status != "OK"){
-//                        if(stoul(msg) > conf_id){
-//                            rki.reconfig_state = 2;
-//                            rki.next_conf_id = stoul(msg);
-//                            // Todo: we may need to fill next_placement and timestamp fields too
-//                        }
-                        DPRINTF(DEBUG_CAS_Server, "Metadata Server ERROR: msg is %s.\n", msg.c_str());
-                    }
+                Reconfig_key_info* rki = create_rki(key, conf_id);
+                if(rki == nullptr){
+                    return {"ERROR", "INTERNAL ERROR"};
                 }
                 
                 //Todo: shahrooz: add previous timestamp to the end of the value
-                std::vector<std::string> value{val, CAS_PROTOCOL_NAME, timestamp, rki.get_string(), "PRE"};
+                std::vector<std::string> value{val, CAS_PROTOCOL_NAME, timestamp, rki->get_string(), "PRE"};
+                
+                if(rki != nullptr){
+                    delete rki;
+                }
 
                 DPRINTF(DEBUG_CAS_Server,"put new con_key which is %s\n", con_key.c_str());
                 ///TODO:: optimize and create threads here
@@ -290,6 +307,7 @@ std::string CAS_Server::put(string &key, uint32_t conf_id, string &val, string &
                 cache.put(con_key, value);
                 persistent.put(con_key, value);
                 flag = true;
+                DPRINTF(DEBUG_CAS_Server, "finished.\n");
                 return DataTransfer::serialize({"OK"}); // Todo: make sure that it is correct to comment out this line
             }
             else{
@@ -310,6 +328,7 @@ std::string CAS_Server::put(string &key, uint32_t conf_id, string &val, string &
     int recon_status = reconfig_info(key, conf_id, timestamp, req, msg, recon_timestamp, cache, persistent);
     DPRINTF(DEBUG_CAS_Server,"recon_status is %d\n", recon_status);
     if(recon_status == 0){
+        DPRINTF(DEBUG_CAS_Server, "finished.\n");
         return DataTransfer::serialize({"OK"});
     }
     else if(recon_status == 1 && !flag){
@@ -365,37 +384,16 @@ std::string CAS_Server::put_fin(string &key, uint32_t conf_id, string &timestamp
 //            DPRINTF(DEBUG_CAS_Server,"3333333.\n");
 //            DPRINTF(DEBUG_CAS_Server,"WARNING: put_fin received but the key doesn't exist!\n");
             
-            Reconfig_key_info rki;
-            rki.curr_conf_id = conf_id;
-            rki.curr_placement = nullptr;
-            rki.reconfig_state = 0;
-            rki.timestamp = ""; // Todo: maybe you need to add it into the metadata server
-            rki.next_conf_id = -1;
-            rki.next_placement = nullptr;
-
-            //Todo: shahrooz: get placement info from metadata server
-            Connect c(METADATA_SERVER_IP, METADATA_SERVER_PORT);
-            if(!c.is_connected()){
-                return DataTransfer::serialize({"ERROR", "Metadata Server is down"});
+            Reconfig_key_info* rki = create_rki(key, conf_id);
+            if(rki == nullptr){
+                return {"ERROR", "INTERNAL ERROR"};
             }
-            DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", key + "!" + std::to_string(conf_id)));
-            std::string recvd;
-            if(DataTransfer::recvMsg(*c, recvd) == 1){
-                std::string status;
-                std::string msg;
-                rki.curr_placement =  DataTransfer::deserializeMDS(recvd, status, msg);
-                if(status != "OK"){
-//                    if(stoul(msg) > conf_id){
-//                        rki.reconfig_state = 2;
-//                        rki.next_conf_id = stoul(msg);
-//                        // Todo: we may need to fill next_placement and timestamp fields too
-//                    }
-                    DPRINTF(DEBUG_CAS_Server, "Metadata Server ERROR: msg is %s.\n", msg.c_str());
-                }
-            }
-
+            
             //Todo: shahrooz: add previous timestamp to the end of the value
-            std::vector<std::string> value{"", CAS_PROTOCOL_NAME, timestamp, rki.get_string(), "FIN"};
+            std::vector<std::string> value{"", CAS_PROTOCOL_NAME, timestamp, rki->get_string(), "FIN"};
+            
+            if(rki != nullptr)
+                delete rki;
 
             DPRINTF(DEBUG_CAS_Server,"timestamp : %s is being written\n", timestamp.c_str());
             ///TODO:: optimize and create threads here
@@ -406,6 +404,8 @@ std::string CAS_Server::put_fin(string &key, uint32_t conf_id, string &timestamp
             persistent.put(con_key, value);
             complete_fin(key, conf_id, timestamp, cache, persistent);
             flag = true;
+            DPRINTF(DEBUG_CAS_Server, "finished.\n");
+            fflush(stdout);
             return DataTransfer::serialize({"OK"});
         }
         else{
@@ -425,10 +425,13 @@ std::string CAS_Server::put_fin(string &key, uint32_t conf_id, string &timestamp
     int recon_status = reconfig_info(key, conf_id, timestamp, req, msg, recon_timestamp, cache, persistent);
     DPRINTF(DEBUG_CAS_Server,"recon_status is %d\n", recon_status);
     if(recon_status == 0){
+        DPRINTF(DEBUG_CAS_Server, "Writing FIN.\n");
         data[4] = "FIN";
         cache.put(con_key, data);
         persistent.put(con_key, data);
         complete_fin(key, conf_id, timestamp, cache, persistent);
+        DPRINTF(DEBUG_CAS_Server, "finished.\n");
+        fflush(stdout);
         return DataTransfer::serialize({"OK"});
     }
     else if(recon_status == 1 && !flag){
@@ -468,11 +471,11 @@ std::string CAS_Server::put_fin(string &key, uint32_t conf_id, string &timestamp
 // as in won't the server respond with emoty values when requested again.
 std::string CAS_Server::get(string &key, uint32_t conf_id, string &timestamp, const Request &req, Cache &cache, Persistent &persistent, std::mutex &lock_t){
     std::lock_guard<std::mutex> lock(lock_t);
+    DPRINTF(DEBUG_CAS_Server, "started.\n");
     
     std::string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id, timestamp);
     
     //std::unique_lock<std::mutex> lock(lock_t);
-    DPRINTF(DEBUG_CAS_Server,"GET function called !! \n");
     strVec result;
     
     strVec data;
@@ -483,37 +486,17 @@ std::string CAS_Server::get(string &key, uint32_t conf_id, string &timestamp, co
         fnd = persistent.exists(con_key);
         if(!fnd){
             
-            Reconfig_key_info rki;
-            rki.curr_conf_id = conf_id;
-            rki.curr_placement = nullptr;
-            rki.reconfig_state = 0;
-            rki.timestamp = ""; // Todo: maybe you need to add it into the metadata server
-            rki.next_conf_id = -1;
-            rki.next_placement = nullptr;
-
-            //Todo: shahrooz: get placement info from metadata server
-            Connect c(METADATA_SERVER_IP, METADATA_SERVER_PORT);
-            if(!c.is_connected()){
-                return DataTransfer::serialize({"ERROR", "Metadata Server is down"});
+            Reconfig_key_info* rki = create_rki(key, conf_id);
+            if(rki == nullptr){
+                return {"ERROR", "INTERNAL ERROR"};
             }
-            DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", key + "!" + std::to_string(conf_id)));
-            std::string recvd;
-            if(DataTransfer::recvMsg(*c, recvd) == 1){
-                std::string status;
-                std::string msg;
-                rki.curr_placement =  DataTransfer::deserializeMDS(recvd, status, msg);
-                if(status != "OK"){
-//                    if(stoul(msg) > conf_id){
-//                        rki.reconfig_state = 2;
-//                        rki.next_conf_id = stoul(msg);
-//                        // Todo: we may need to fill next_placement and timestamp fields too
-//                    }
-                    DPRINTF(DEBUG_CAS_Server, "Metadata Server ERROR: msg is %s.\n", msg.c_str());
-                }
-            }
-
+            
             //Todo: shahrooz: add previous timestamp to the end of the value
-            std::vector<std::string> value{"", CAS_PROTOCOL_NAME, timestamp, rki.get_string(), "FIN"};
+            std::vector<std::string> value{"", CAS_PROTOCOL_NAME, timestamp, rki->get_string(), "FIN"};
+            
+            if(rki != nullptr){
+                delete rki;
+            }
 
             DPRINTF(DEBUG_CAS_Server,"timestamp : %s is being written\n", timestamp.c_str());
             ///TODO:: optimize and create threads here
@@ -524,6 +507,7 @@ std::string CAS_Server::get(string &key, uint32_t conf_id, string &timestamp, co
             persistent.put(con_key, value);
             complete_fin(key, conf_id, timestamp, cache, persistent);
             flag = true;
+            DPRINTF(DEBUG_CAS_Server, "finished.\n");
             return DataTransfer::serialize({"OK", "Ack"});
 //            return DataTransfer::serialize({"Failed", "None"});
         }
@@ -540,11 +524,15 @@ std::string CAS_Server::get(string &key, uint32_t conf_id, string &timestamp, co
     std::string recon_timestamp;
     int recon_status = reconfig_info(key, conf_id, timestamp, req, msg, recon_timestamp, cache, persistent);
     if(recon_status == 0){
+        DPRINTF(DEBUG_CAS_Server, "Writing FIN1.\n");
         data[4] = "FIN";
+        DPRINTF(DEBUG_CAS_Server, "Writing FIN2.\n");
+        
         cache.put(con_key, data);
         persistent.put(con_key, data);
         complete_fin(key, conf_id, timestamp, cache, persistent);
-
+        DPRINTF(DEBUG_CAS_Server, "finished.\n");
+        fflush(stdout);
         if(data[0] != ""){
             return DataTransfer::serialize({"OK", data[0]});
         }

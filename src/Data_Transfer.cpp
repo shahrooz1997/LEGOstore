@@ -48,25 +48,25 @@ int DataTransfer::sendMsg(int sock, const std::string &out_str){
 
 int DataTransfer::recvAll(int &sock, void *buf, int data_size){
 
-	char *iter = static_cast<char *>(buf);
-	int bytes_read = 0;
+    char *iter = static_cast<char *>(buf);
+    int bytes_read = 0;
 
-	if(data_size > 0){
-		if( (bytes_read = recv(sock, iter, data_size, 0)) < 1){
-			if(bytes_read == -1){
-				perror("recvALL -> recv err");
-			}else if(bytes_read == 0){
-				fprintf(stderr, "Recvall Failed : Connection disconnected."
-								"The error msg is %s \n ", std::strerror(errno));
-			}
-			return bytes_read;
-		}
+    if(data_size > 0){
+        if((bytes_read = recv(sock, iter, data_size, 0)) < 1){
+            if(bytes_read == -1){
+                perror("recvALL -> recv err");
+            }else if(bytes_read == 0){
+                fprintf(stderr, "Recvall Failed : Connection disconnected."
+                                                " The error msg is %s \n ", std::strerror(errno));
+            }
+            return bytes_read;
+        }
 
-		iter += bytes_read;
-		data_size -= bytes_read;
-	}
+        iter += bytes_read;
+        data_size -= bytes_read;
+    }
 
-	return 1;
+    return 1;
 }
 
 strVec DataTransfer::deserialize(std::string &data){
@@ -105,12 +105,17 @@ int DataTransfer::recvMsg(int sock, std::string &data){
                     if(result != 1){
                             data.clear();
                             std::cout<<"Clearing the result due to error" << std::endl;
+//                            assert(false);
                             return result;
                     }
             }
     }
 
-    assert(!data.empty());
+//    assert(!data.empty());
+    if(data.empty()){
+        return -2;
+    }
+    
     return 1;
 }
 
@@ -119,7 +124,7 @@ int DataTransfer::recvMsg_async(const int sock, std::promise<std::string> &&data
     int result = DataTransfer::recvMsg(sock, data_temp);
     
     if(result == 1){
-        DPRINTF(DEBUG_UTIL, "result is 1\n");
+//        DPRINTF(DEBUG_UTIL, "result is 1\n");
         data_set.set_value(data_temp);
     }
     else{

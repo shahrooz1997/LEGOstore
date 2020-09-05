@@ -20,7 +20,7 @@
 #include <sys/time.h>
 
 template <typename T>
-void set_intersection(Placement *p, std::unordered_set<T> &res){
+static void set_intersection(Placement *p, std::unordered_set<T> &res){
     res.insert(p->Q1.begin(), p->Q1.end());
     res.insert(p->Q2.begin(), p->Q2.end());
 }

@@ -1,0 +1,4 @@
+1, put, "hello", "yess", 1, 5
+2, get, "hello", "yess", 2, 4
+3, put, "hello", "nooo", 1, 5
+4, get, "hello", "nooo", 1, 6

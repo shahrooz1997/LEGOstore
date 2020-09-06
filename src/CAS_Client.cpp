@@ -428,6 +428,10 @@ CAS_Client::~CAS_Client() {
     DPRINTF(DEBUG_CAS_Client, "cliend with id \"%u\" has been destructed.\n", this->id);
 }
 
+uint32_t CAS_Client::get_id(){
+    return this->id;
+}
+
 void static inline free_chunks(std::vector<std::string*> &chunks){
 
     for(uint i = 0; i < chunks.size(); i++){

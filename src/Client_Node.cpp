@@ -93,3 +93,7 @@ int Client_Node::get(std::string key, std::string &value){
         return this->abd->get(key, value);
     }
 }
+
+uint32_t Client_Node::get_id(){
+    return this->cas->get_id();
+}

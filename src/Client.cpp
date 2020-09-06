@@ -8,6 +8,7 @@
 #include "CAS_Client.h"
 #include "ABD_Client.h"
 #include "Client_Node.h"
+#include <chrono>
 
 using std::cout;
 using std::endl;
@@ -153,6 +154,19 @@ static inline int next_event(std::string &dist_process){
 	return 0;
 }
 
+enum Op{
+    get = 0,
+    put
+};
+
+int log(FILE* file, uint32_t ClientID, Op op, const std::string key, const std::string value, uint64_t call_time, uint64_t return_time){
+    assert(file != 0);
+    
+    fprintf(file, "%u, %s, %s, %s, %lu, %lu\n", ClientID, op == Op::get ? "get" : "put", key.c_str(), value.c_str(), call_time, return_time);
+    
+    return 0;
+}
+
 int run_session2(uint32_t obj_size, double read_ratio, uint64_t duration, std::vector<std::string> &keys, std::string &dist_process, int grp_id, int req_idx){
     int cnt = 0; 		// Count the number of requests
     int reqType = 0;    // 1 for GET, 2 for PUT
@@ -172,6 +186,13 @@ int run_session2(uint32_t obj_size, double read_ratio, uint64_t duration, std::v
     
     time_point<system_clock, millis> tp = time_point_cast<milliseconds>(system_clock::now());
     
+    // logging
+//    auto now = std::chrono::system_clock::now();
+//    auto now_ns = std::chrono::time_point_cast<std::chrono::nanoseconds>(now);
+    std::string log_filename = "logfile_";
+    log_filename += std::to_string(clt.get_id()) + ".txt";
+    FILE* file = fopen(log_filename.c_str(), "w");
+    
     while(system_clock::now() < timePoint){
         cnt += 1;
         double random_ratio = (double)(rand() % 100) / 100.00;
@@ -182,11 +203,15 @@ int run_session2(uint32_t obj_size, double read_ratio, uint64_t duration, std::v
         key_idx = rand()%(keys.size());
         
         if(reqType == 1){
+//            auto epoch = now_ns.time_since_epoch();
+            auto epoch = time_point_cast<nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
             result = clt.get(keys[key_idx],read_value);
             if(result != 0){
 //                DPRINTF(DEBUG_CAS_Client, "clt.get on key %s, result is %d\n", keys[key_idx].c_str(), result);
                 assert(false);
             }
+            auto epoch2 = time_point_cast<nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+            log(file, clt.get_id(), Op::get, keys[key_idx], read_value, epoch, epoch2);
             DPRINTF(DEBUG_CAS_Client, "get done on key: %s with value: %s\n", keys[key_idx].c_str(), read_value.c_str());
             fflush(stdout);
         }else{
@@ -197,11 +222,14 @@ int run_session2(uint32_t obj_size, double read_ratio, uint64_t duration, std::v
             for(uint i = 0; i < obj_size - std::to_string(cnt).size(); i++){
                 val.push_back(keys[key_idx][i % keys[key_idx].size()]);
             }
+            auto epoch = time_point_cast<nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
             result = clt.put(keys[key_idx], val, false);
             if(result != 0){
                 DPRINTF(DEBUG_CAS_Client, "clt.put on key %s, result is %d\n", keys[key_idx].c_str(), result);
                 assert(false);
             }
+            auto epoch2 = time_point_cast<nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+            log(file, clt.get_id(), Op::put, keys[key_idx], val, epoch, epoch2);
             DPRINTF(DEBUG_CAS_Client, "put done on key: %s with value: %s\n", keys[key_idx].c_str(), val.c_str());
             fflush(stdout);
         }
@@ -214,6 +242,8 @@ int run_session2(uint32_t obj_size, double read_ratio, uint64_t duration, std::v
         tp += millis{next_event(dist_process)};
         std::this_thread::sleep_until(tp);
     }
+    
+    fclose(file);
     
 //    destroy_liberasure_instance(desc);
     

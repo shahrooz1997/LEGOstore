@@ -64,4 +64,5 @@ cleandb:
 	rm -rf db*.temp
 	rm -rf server_*_output.txt
 	rm -rf client_*_output.txt
+	rm -rf logfile_*.txt
 

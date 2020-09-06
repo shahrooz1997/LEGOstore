@@ -51,6 +51,9 @@ public:
 
     int put(std::string key, std::string value, bool insert = false);
     int get(std::string key, std::string &value);
+    
+    // getters
+    uint32_t get_id();
 
 private:
     

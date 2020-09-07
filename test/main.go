@@ -66,7 +66,7 @@ var kvModel = Model{
 	Init: func() interface{} {
 		// note: we are modeling a single key's value here;
 		// we're partitioning by key, so this is okay
-		return ""
+		return "__Uninitiliazed"
 	},
 	Step: func(state, input, output interface{}) (bool, interface{}) {
 		inp := input.(kvInput)
@@ -137,8 +137,8 @@ func readLogFile(filepath string) ([]Operation, error){
     // LOG FORMAT
     // ClientID, get, Key, Value_read, call_time, return_time
     // ClientID, put, Key, Value_written, call_time, return_time
-    getOperation, _ := regexp.Compile(`.*,get,.*,.*,.*,.*`)
-    putOperation, _ := regexp.Compile(`.*,put,.*,.*,.*,.*`)
+    getOperation, _ := regexp.Compile(`.*,(\s)*get(\s)*,.*,.*,.*,.*`)
+    putOperation, _ := regexp.Compile(`.*,(\s)*put(\s)*,.*,.*,.*,.*`)
 
     for{
         lineData, isPrefix, err := reader.ReadLine()

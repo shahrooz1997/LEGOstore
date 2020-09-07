@@ -435,7 +435,7 @@ uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
     int retries = this->prop->retry_attempts;
     bool op_status = false;
 
-    int64_t op_start = (time_point_cast<milliseconds>(system_clock::now())).time_since_epoch().count();
+    int64_t op_start = (time_point_cast<microseconds>(system_clock::now())).time_since_epoch().count();
     //uint64_t startTime = timePoint.time_since_epoch().count();
 
     while(!op_status && retries--){
@@ -570,7 +570,8 @@ uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
 
     }
 
-    int64_t op_end = std::max( (time_point_cast<milliseconds>(system_clock::now())).time_since_epoch().count(), op_start +1);
+    //int64_t op_end = std::max( (time_point_cast<milliseconds>(system_clock::now())).time_since_epoch().count(), op_start +1);
+    int64_t op_end = (time_point_cast<microseconds>(system_clock::now())).time_since_epoch().count();
 
     this->logfile << this->id << "," << "put," << key << "," << value << ","
                 << op_start << "," << op_end << "\n";
@@ -621,7 +622,7 @@ uint32_t CAS_Client::get(std::string key, std::string &value){
 
     value.clear();
 
-    int64_t op_start = (time_point_cast<milliseconds>(system_clock::now())).time_since_epoch().count();
+    int64_t op_start = (time_point_cast<microseconds>(system_clock::now())).time_since_epoch().count();
 
     int retries = this->prop->retry_attempts;
     bool op_status = false;
@@ -705,7 +706,8 @@ uint32_t CAS_Client::get(std::string key, std::string &value){
         free_chunks(chunks);
     }
 
-    int64_t op_end = std::max( (time_point_cast<milliseconds>(system_clock::now())).time_since_epoch().count(), op_start +1);
+    //int64_t op_end = std::max( (time_point_cast<microseconds>(system_clock::now())).time_since_epoch().count(), op_start +1);
+    int64_t op_end = (time_point_cast<microseconds>(system_clock::now())).time_since_epoch().count();
 
 
     this->logfile << this->id << "," << "get," << key << "," << value << ","

@@ -292,7 +292,7 @@ static inline void delete_desc_info(std::unordered_map<std::string, int> &open_d
 int main(){
 
 	Controller master(2, 120, 120, "./config/scripts/local_config.json");
-	master.init_setup("./config/input_workload.json" , "config/deployment.txt");
+	master.init_setup("./config/input_workload_test1.json" , "config/deployment.txt");
 
 	//startPoint already includes the timestamp of first group
 	// The for loop assumes the startPoint to not include any offset at all

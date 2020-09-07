@@ -25,6 +25,8 @@ struct timeval tv_cas;
 struct tm *tm22_cas;
 
 //TODO: Ask more servers for timestamp if last attempt didn't work.
+using namespace std::chrono;
+std::string logfilepath = "test/log_files/log_1/";
 
 // Use this constructor when single threaded code
 CAS_Client::CAS_Client(Properties *prop, uint32_t client_id, Placement &pp) {
@@ -34,6 +36,9 @@ CAS_Client::CAS_Client(Properties *prop, uint32_t client_id, Placement &pp) {
     this->p = pp;
     this->desc = create_liberasure_instance(&(this->p));
     this->desc_destroy = 1;
+
+    std::string filename = logfilepath + std::to_string(client_id);
+    this->logfile.open(filename + std::string(".log"), std::ios_base::app | std::ios_base::out );
 }
 
 CAS_Client::CAS_Client(Properties *prop, uint32_t client_id, Placement &pp, int desc_l) {
@@ -44,6 +49,8 @@ CAS_Client::CAS_Client(Properties *prop, uint32_t client_id, Placement &pp, int 
     this->desc = desc_l;
     this->desc_destroy = 0;
 
+    std::string filename = logfilepath + std::to_string(client_id);
+    this->logfile.open(filename + std::string(".log"), std::ios_base::app | std::ios_base::out );
     // char name[20];
     // this->operation_id = 0;
     // name[0] = 'l';
@@ -63,6 +70,8 @@ CAS_Client::~CAS_Client() {
     if(this->desc_destroy){
         destroy_liberasure_instance(this->desc);
     }
+    this->logfile << std::flush;
+    this->logfile.close();
     DPRINTF(DEBUG_CAS_Client, "cliend with id \"%u\" has been destructed.\n", this->id);
 }
 
@@ -426,6 +435,9 @@ uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
     int retries = this->prop->retry_attempts;
     bool op_status = false;
 
+    int64_t op_start = (time_point_cast<milliseconds>(system_clock::now())).time_since_epoch().count();
+    //uint64_t startTime = timePoint.time_since_epoch().count();
+
     while(!op_status && retries--){
 
         std::vector <std::string*> chunks;
@@ -558,6 +570,11 @@ uint32_t CAS_Client::put(std::string key, std::string value, bool insert){
 
     }
 
+    int64_t op_end = std::max( (time_point_cast<milliseconds>(system_clock::now())).time_since_epoch().count(), op_start +1);
+
+    this->logfile << this->id << "," << "put," << key << "," << value << ","
+                << op_start << "," << op_end << "\n";
+
     return op_status? S_OK : S_FAIL;
 }
 
@@ -603,6 +620,8 @@ uint32_t CAS_Client::get(std::string key, std::string &value){
 
 
     value.clear();
+
+    int64_t op_start = (time_point_cast<milliseconds>(system_clock::now())).time_since_epoch().count();
 
     int retries = this->prop->retry_attempts;
     bool op_status = false;
@@ -685,5 +704,12 @@ uint32_t CAS_Client::get(std::string key, std::string &value){
 
         free_chunks(chunks);
     }
+
+    int64_t op_end = std::max( (time_point_cast<milliseconds>(system_clock::now())).time_since_epoch().count(), op_start +1);
+
+
+    this->logfile << this->id << "," << "get," << key << "," << value << ","
+                << op_start << "," << op_end << "\n";
+
     return op_status? S_OK: S_FAIL;
 }

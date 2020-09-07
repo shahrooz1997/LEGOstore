@@ -34,6 +34,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <fstream>
 #include "Timestamp.h"
 #include <erasurecode.h>
 #include "Data_Transfer.h"
@@ -56,6 +57,9 @@ private:
     int desc;
     int desc_destroy;
     std::string current_class; // "CAS"
+
+    //Log FILE
+    std::ofstream logfile;
 
     uint32_t get_timestamp(std::string *key, Timestamp **timestamp);
     void update_placement(std::string &new_cfg);

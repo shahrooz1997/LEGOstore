@@ -189,7 +189,7 @@ int run_session2(uint32_t obj_size, double read_ratio, uint64_t duration, std::v
     // logging
 //    auto now = std::chrono::system_clock::now();
 //    auto now_ns = std::chrono::time_point_cast<std::chrono::nanoseconds>(now);
-    std::string log_filename = "logfile_";
+    std::string log_filename = "logs/logfile_";
     log_filename += std::to_string(clt.get_id()) + ".txt";
     FILE* file = fopen(log_filename.c_str(), "w");
     
@@ -216,9 +216,9 @@ int run_session2(uint32_t obj_size, double read_ratio, uint64_t duration, std::v
             fflush(stdout);
         }else{
             std::string val = std::to_string(cnt);
-            val += "-";
+//            val += "-";
             val += std::to_string(threadId);
-            val += ":";
+//            val += ":";
             for(uint i = 0; i < obj_size - std::to_string(cnt).size(); i++){
                 val.push_back(keys[key_idx][i % keys[key_idx].size()]);
             }

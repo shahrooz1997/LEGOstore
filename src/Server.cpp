@@ -329,9 +329,9 @@ int main(int argc, char **argv){
 
 
 	for(uint i=0; i< socket_port.size(); i++){
-//            if(socket_port[i] == "10001" || socket_port[i] == "10006"){
-//                continue;
-//            }
+            if(socket_port[i] == "10001" || socket_port[i] == "10006"){
+                continue;
+            }
             if(fork() == 0){
 
                 close(1);

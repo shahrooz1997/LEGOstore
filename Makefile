@@ -65,4 +65,6 @@ cleandb:
 	rm -rf server_*_output.txt
 	rm -rf client_*_output.txt
 	rm -rf logfile_*.txt
+	rm -rf logs/*
+	rm -rf knossos
 

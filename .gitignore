@@ -10,3 +10,5 @@ Controller
 Server
 Metadata_Server
 *.txt
+logs/*
+knossos

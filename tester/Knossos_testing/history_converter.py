@@ -68,7 +68,7 @@ def add_operation_in_the_right_place(op):
 
 
 # diraddr = input()
-diraddr = "../logs/"
+diraddr = "../../logs/"
 
 
 

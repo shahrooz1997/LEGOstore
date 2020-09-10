@@ -31,12 +31,14 @@ namespace ABD_thread_helper{
 
         DPRINTF(DEBUG_ABD_Client, "started.\n");
 
+        strVec data;
+        
         Connect c(server->ip, server->port);
         if(!c.is_connected()){
+            prm.set_value(std::move(data));
             return;
         }
 
-        strVec data;
         data.push_back("get_timestamp");
         data.push_back(key);
         data.push_back(current_class);
@@ -51,6 +53,10 @@ namespace ABD_thread_helper{
             data =  DataTransfer::deserialize(recvd);
             prm.set_value(std::move(data));
         }
+        else{
+            data.clear();
+            prm.set_value(std::move(data));
+        }
         
         DPRINTF(DEBUG_ABD_Client, "finished.\n");
 
@@ -62,12 +68,15 @@ namespace ABD_thread_helper{
 
         DPRINTF(DEBUG_ABD_Client, "started.\n");
 
+        
+        strVec data;
+        
         Connect c(server->ip, server->port);
         if(!c.is_connected()){
+            prm.set_value(std::move(data));
             return;
         }
 
-        strVec data;
         data.push_back("put");
         data.push_back(key);
         data.push_back(timestamp.get_string());
@@ -76,7 +85,7 @@ namespace ABD_thread_helper{
         data.push_back(std::to_string(conf_id));
 
         if((value).empty()){
-                   printf("WARNING!!! SENDING EMPTY STRING TO SERVER\n");
+            DPRINTF(DEBUG_CAS_Client, "WARNING!!! SENDING EMPTY STRING TO SERVER.\n");
         }
         DataTransfer::sendMsg(*c,DataTransfer::serialize(data));
 
@@ -87,6 +96,10 @@ namespace ABD_thread_helper{
         // If the socket recv itself fails, then 'promise' value will not be made available
         if(DataTransfer::recvMsg(*c, recvd) == 1){
             data =  DataTransfer::deserialize(recvd);
+            prm.set_value(std::move(data));
+        }
+        else{
+            data.clear();
             prm.set_value(std::move(data));
         }
 
@@ -100,12 +113,14 @@ namespace ABD_thread_helper{
 
         DPRINTF(DEBUG_ABD_Client, "started.\n");
 
+        strVec data;
+
         Connect c(server->ip, server->port);
         if(!c.is_connected()){
+            prm.set_value(std::move(data));
             return;
         }
-
-        strVec data;
+        
         data.push_back("get");
         data.push_back(key);
         data.push_back(current_class);
@@ -118,6 +133,10 @@ namespace ABD_thread_helper{
         // If the socket recv itself fails, then 'promise' value will not be made available
         if(DataTransfer::recvMsg(*c, recvd) == 1){
             data =  DataTransfer::deserialize(recvd);
+            prm.set_value(std::move(data));
+        }
+        else{
+            data.clear();
             prm.set_value(std::move(data));
         }
         
@@ -263,7 +282,7 @@ int ABD_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
         std::thread(ABD_thread_helper::_get_timestamp, std::move(prm), *key,
-                            datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[*key].first).detach();
+                        datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[*key].first).detach();
     }
     
     std::chrono::system_clock::time_point end = std::chrono::system_clock::now() + std::chrono::milliseconds(this->timeout_per_request);
@@ -275,6 +294,11 @@ int ABD_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
         }
         
         strVec data = it.get();
+        
+        if(data.size() == 0){
+            op_status = -1; // You should access all the server.
+            break;
+        }
         
         if(data[0] == "OK"){
             tss.emplace_back(data[1]);
@@ -298,7 +322,8 @@ int ABD_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
         // The servers can return Failed for timestamp, which is acceptable
     }
     
-    uint32_t counter;
+    uint32_t counter = ~((uint32_t)0);
+    uint32_t num_fail_servers = 0;
     std::unordered_set<uint32_t> servers;
 
     set_intersection(*p, servers);
@@ -308,6 +333,7 @@ int ABD_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
         responses.clear(); // ignore responses to old requests
         tss.clear();
         counter = 0;
+        num_fail_servers = 0;
         for(auto it = servers.begin(); it != servers.end(); it++){ // request to all servers
 
             std::promise<strVec> prm;
@@ -329,6 +355,17 @@ int ABD_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
             }
 
             strVec data = it.get();
+            
+            if(data.size() == 0){
+                num_fail_servers++;
+                if(num_fail_servers > (*p)->f){
+                    op_status = -100; // You should access all the server.
+                    break;
+                }
+                else{
+                    continue;
+                }
+            }
 
             if(data[0] == "OK"){
                 tss.emplace_back(data[1]);
@@ -341,6 +378,7 @@ int ABD_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
                 *p = get_placement(*key, true, stoul(data[1]));
                 assert(*p != nullptr);
                 op_status = -2; // reconfiguration happened on the key
+                *timestamp = nullptr;
                 return S_RECFG;
                 //break;
             }
@@ -363,12 +401,12 @@ int ABD_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
         
         DPRINTF(DEBUG_ABD_Client, "finished successfully. Max timestamp received is %s\n", (*timestamp)->get_string().c_str());
     }else{
-        DPRINTF(DEBUG_ABD_Client, "Operation Failed.\n");
+        DPRINTF(DEBUG_CAS_Client, "Operation Failed. op_status is %d\n", op_status);
         assert(false);
         return S_FAIL;
     }
 
-    return S_OK;
+    return op_status;
     
     
     ////////////////////
@@ -429,8 +467,8 @@ int ABD_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
 //        DPRINTF(DEBUG_ABD_Client, "Operation Failed.\n");
 //        return S_FAIL;
 //    }
-
-    return S_OK;
+//
+//    return S_OK;
 }
 
 int ABD_Client::put(std::string key, std::string value, bool insert){
@@ -490,7 +528,7 @@ int ABD_Client::put(std::string key, std::string value, bool insert){
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
         std::thread(ABD_thread_helper::_put, std::move(prm), key, value, *timestamp,
-                                datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
+                            datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
 
         DPRINTF(DEBUG_ABD_Client, "Issue _put request to key: %s and timestamp: %s and conf_id: %u and value_size :%lu \n", key.c_str(), timestamp->get_string().c_str(), (*(this->keys_info))[key].first, value.size());
     }
@@ -506,6 +544,10 @@ int ABD_Client::put(std::string key, std::string value, bool insert){
         
         strVec data = it.get();
         
+        if(data.size() == 0){
+            op_status = -1; // You should access all the server.
+            break;
+        }
 
         if(data[0] == "OK"){
             DPRINTF(DEBUG_ABD_Client, "OK received for key : %s\n", key.c_str());
@@ -531,7 +573,8 @@ int ABD_Client::put(std::string key, std::string value, bool insert){
         }
     }
     
-    uint32_t counter;
+    uint32_t counter = ~((uint32_t)0);
+    uint32_t num_fail_servers;
     std::unordered_set<uint32_t> servers;
 
     set_intersection(p, servers);
@@ -540,12 +583,14 @@ int ABD_Client::put(std::string key, std::string value, bool insert){
         
         responses.clear(); // ignore responses to old requests
         counter = 0;
+        num_fail_servers = 0;
+        op_status = 0;
         for(auto it = servers.begin(); it != servers.end(); it++){ // request to all servers
 
             std::promise<strVec> prm;
             responses.emplace_back(prm.get_future());
             std::thread(ABD_thread_helper::_put, std::move(prm), key, value, *timestamp,
-                                datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
+                            datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
             DPRINTF(DEBUG_ABD_Client, "Issue _put request to key: %s and timestamp: %s and conf_id: %u and value_size :%lu \n", key.c_str(), timestamp->get_string().c_str(), (*(this->keys_info))[key].first, value.size());
         }
         
@@ -561,6 +606,17 @@ int ABD_Client::put(std::string key, std::string value, bool insert){
             }
 
             strVec data = it.get();
+            
+            if(data.size() == 0){
+                num_fail_servers++;
+                if(num_fail_servers > p->f){
+                    op_status = -100;
+                    break;
+                }
+                else{
+                    continue;
+                }
+            }
 
             if(data[0] == "OK"){
                 counter++;
@@ -635,13 +691,14 @@ int ABD_Client::get(std::string key, std::string &value){
     
     responses.clear();
     tss.clear();
+    vs.clear();
     RAs--;
     for(auto it = p->Q1.begin();it != p->Q1.end(); it++){
 
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
         std::thread(ABD_thread_helper::_get, std::move(prm), key,
-                            datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
+                        datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
     }
     
     std::chrono::system_clock::time_point end = std::chrono::system_clock::now() + std::chrono::milliseconds(this->timeout_per_request);
@@ -653,6 +710,11 @@ int ABD_Client::get(std::string key, std::string &value){
         }
         
         strVec data = it.get();
+        
+        if(data.size() == 0){
+            op_status = -1; // You should access all the server.
+            break;
+        }
         
         if(data[0] == "OK"){
             tss.emplace_back(data[1]);
@@ -676,7 +738,8 @@ int ABD_Client::get(std::string key, std::string &value){
         // The servers can return Failed for timestamp, which is acceptable
     }
     
-    uint32_t counter;
+    uint32_t counter = ~((uint32_t)0);
+    uint32_t num_fail_servers = 0;
     std::unordered_set<uint32_t> servers;
 
     set_intersection(p, servers);
@@ -687,6 +750,7 @@ int ABD_Client::get(std::string key, std::string &value){
         tss.clear();
         vs.clear();
         counter = 0;
+        num_fail_servers = 0;
         for(auto it = servers.begin(); it != servers.end(); it++){ // request to all servers
 
             std::promise<strVec> prm;
@@ -708,6 +772,17 @@ int ABD_Client::get(std::string key, std::string &value){
             }
 
             strVec data = it.get();
+            
+            if(data.size() == 0){
+                num_fail_servers++;
+                if(num_fail_servers > (p)->f){
+                    op_status = -100; // You should access all the server.
+                    break;
+                }
+                else{
+                    continue;
+                }
+            }
 
             if(data[0] == "OK"){
                 tss.emplace_back(data[1]);
@@ -754,7 +829,7 @@ int ABD_Client::get(std::string key, std::string &value){
         std::promise<strVec> prm;
         responses.emplace_back(prm.get_future());
         std::thread(ABD_thread_helper::_put, std::move(prm), key, vs[idx], tss[idx],
-                                datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
+                            datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
 
         DPRINTF(DEBUG_ABD_Client, "Issue _put request to key: %s and timestamp: %s and conf_id: %u and chunk_size :%lu \n", key.c_str(), tss[idx].get_string().c_str(), (*(this->keys_info))[key].first, vs[idx].size());
     }
@@ -770,6 +845,10 @@ int ABD_Client::get(std::string key, std::string &value){
         
         strVec data = it.get();
         
+        if(data.size() == 0){
+            op_status = -1; // You should access all the server.
+            break;
+        }
 
         if(data[0] == "OK"){
             DPRINTF(DEBUG_ABD_Client, "OK received for key : %s\n", key.c_str());
@@ -792,16 +871,22 @@ int ABD_Client::get(std::string key, std::string &value){
 
 //    set_intersection(p, servers);
     
+    counter = ~((uint32_t)0);
+//    uint32_t num_fail_servers;
+    
     while(op_status == -1 && RAs--){
         
         responses.clear(); // ignore responses to old requests
         counter = 0;
+        num_fail_servers = 0;
+        op_status = 0;
+        
         for(auto it = servers.begin(); it != servers.end(); it++){ // request to all servers
 
             std::promise<strVec> prm;
             responses.emplace_back(prm.get_future());
             std::thread(ABD_thread_helper::_put, std::move(prm), key, vs[idx], tss[idx],
-                                datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
+                            datacenters[*it]->servers[0], this->current_class, (*(this->keys_info))[key].first).detach();
             DPRINTF(DEBUG_ABD_Client, "Issue _put request to key: %s and timestamp: %s and conf_id: %u and value_size :%lu \n", key.c_str(), tss[idx].get_string().c_str(), (*(this->keys_info))[key].first, vs[idx].size());
         }
         
@@ -817,6 +902,17 @@ int ABD_Client::get(std::string key, std::string &value){
             }
 
             strVec data = it.get();
+            
+            if(data.size() == 0){
+                num_fail_servers++;
+                if(num_fail_servers > p->f){
+                    op_status = -100;
+                    break;
+                }
+                else{
+                    continue;
+                }
+            }
 
             if(data[0] == "OK"){
                 counter++;

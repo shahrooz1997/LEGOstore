@@ -21,12 +21,12 @@
                     "object_size": 30,
                     "metadata_size": 1e-09,
                     "num_objects": 10001,
-                    "arrival_rate": 10,
+                    "arrival_rate": 30,
                     "read_ratio": 0.6,
                     "write_ratio": 0.4,
                     "SLO_read": 1000,
                     "SLO_write": 1000,
-                    "duration": 10,
+                    "duration": 6,
                     "time_to_decode": 0.00028,
                     "keys" : ["222221"]
                 }

@@ -59,6 +59,8 @@ namespace CAS_thread_helper{
             data.clear();
             prm.set_value(std::move(data));
         }
+        
+        DPRINTF(DEBUG_ABD_Client, "finished.\n");
 
         return;
     }
@@ -84,7 +86,7 @@ namespace CAS_thread_helper{
         data.push_back(std::to_string(conf_id));
 
         if((value).empty()){
-            printf("WARNING!!! SENDING EMPTY STRING TO SERVER\n");
+            DPRINTF(DEBUG_CAS_Client, "WARNING!!! SENDING EMPTY STRING TO SERVER.\n");
         }
         DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
 
@@ -630,7 +632,7 @@ int CAS_Client::get_timestamp(std::string *key, Timestamp **timestamp, Placement
                 *p = get_placement(*key, true, stoul(data[1]));
                 assert(*p != nullptr);
                 op_status = -2; // reconfiguration happened on the key
-                timestamp = nullptr;
+                *timestamp = nullptr;
                 return S_RECFG;
                 //break;
             }
@@ -714,6 +716,7 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
         if(tmp != nullptr){
             timestamp = new Timestamp(tmp->increase_timestamp(this->id));
             delete tmp;
+            tmp = nullptr;
         }
     }
 
@@ -811,11 +814,12 @@ int CAS_Client::put(std::string key, std::string value, bool insert){
     set_intersection(p, servers);
     
     while(op_status == -1 && RAs--){
-        DPRINTF(DEBUG_CAS_Client, "the whole number of servers: %lu\n", servers.size());
+//        DPRINTF(DEBUG_CAS_Client, "the whole number of servers: %lu\n", servers.size());
         responses.clear(); // ignore responses to old requests
         counter = 0;
         num_fail_servers = 0;
         op_status = 0;
+        
         for(auto it = servers.begin(); it != servers.end(); it++){ // request to all servers
 
             std::promise<strVec> prm;

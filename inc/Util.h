@@ -296,8 +296,11 @@ inline int destroy_liberasure_instance(int desc){
 	return 0;
 }
 
-int request_placement(std::string &key, uint32_t conf_id, std::string &status,
-        std::string &msg, Placement* &p, uint32_t retry_attempts, uint32_t metadata_server_timeout);
+int request_placement(const std::string &key, const uint32_t conf_id, std::string &status,
+                        std::string &msg, Placement* &p, uint32_t retry_attempts, uint32_t metadata_server_timeout);
+
+int ask_metadata(const std::string &key, const uint32_t conf_id, uint32_t& requested_conf_id, uint32_t& new_conf_id,
+                    std::string& timestamp, Placement* &p, uint32_t retry_attempts, uint32_t metadata_server_timeout);
 
 
 #endif /* UTIL_H */

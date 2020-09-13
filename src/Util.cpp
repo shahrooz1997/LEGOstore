@@ -902,7 +902,7 @@ std::string construct_key(const std::string &key, const std::string &protocol, c
     return ret;
 }
 
-int request_placement(std::string &key, uint32_t conf_id, std::string &status,
+int request_placement(const std::string &key, const uint32_t conf_id, std::string &status,
         std::string &msg, Placement* &p, uint32_t retry_attempts, uint32_t metadata_server_timeout){
     int ret = 0;
     
@@ -964,3 +964,33 @@ int request_placement(std::string &key, uint32_t conf_id, std::string &status,
     
     return ret;
 }
+
+int ask_metadata(const std::string &key, const uint32_t conf_id, uint32_t& requested_conf_id, uint32_t& new_conf_id,
+                    std::string& timestamp, Placement* &p, uint32_t retry_attempts, uint32_t metadata_server_timeout){
+    int ret = 0;
+
+    std::string status, msg;
+//    Placement* p;
+
+//    DPRINTF(DEBUG_CAS_Client, "calling request_placement....\n");
+
+    ret = request_placement(key, conf_id, status, msg, p, retry_attempts, metadata_server_timeout);
+
+    assert(ret == 0);
+    assert(status == "OK");
+
+    std::size_t pos = msg.find("!");
+    std::size_t pos2 = msg.find("!", pos + 1);
+    if(pos >= msg.size() || pos2 >= msg.size()){
+        std::stringstream pmsg; // thread safe printing
+        pmsg << "BAD FORMAT: " << msg << std::endl;
+        std::cerr << pmsg.str();
+        assert(0);
+    }
+    requested_conf_id = stoul(msg.substr(0, pos));
+    new_conf_id = stoul(msg.substr(pos + 1, pos2 - pos - 1));
+    timestamp = msg.substr(pos2 + 1);
+
+    return ret;
+}
+

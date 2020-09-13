@@ -442,56 +442,66 @@ void static inline free_chunks(std::vector<std::string*> &chunks){
     chunks.clear();
 }
 
-int CAS_Client::update_placement(std::string &key, uint32_t conf_id){
+int CAS_Client::update_placement(const std::string &key, const uint32_t conf_id){
     int ret = 0;
-    
-    std::string status, msg;
+
+    uint32_t requested_conf_id;
+    uint32_t new_conf_id; // Not usefull for client
+    std::string timestamp; // Not usefull for client
     Placement* p;
-    
-//    DPRINTF(DEBUG_CAS_Client, "calling request_placement....\n");
-    
-    ret = request_placement(key, conf_id, status, msg, p, this->retry_attempts, this->metadata_server_timeout);
+
+    ret = ask_metadata(key, conf_id, requested_conf_id, new_conf_id, timestamp, p, this->retry_attempts, this->metadata_server_timeout);
 
     assert(ret == 0);
-    assert(status == "OK");
-    
-    auto it = keys_info->find(key);
-    if(it == keys_info->end()){
-        (*keys_info)[key] = std::pair<uint32_t, Placement>(stoul(msg), *p);
-        if(p->protocol == CAS_PROTOCOL_NAME){
-            if((*(this->desc)) != -1)
-                destroy_liberasure_instance((*(this->desc)));
-            (*(this->desc)) = create_liberasure_instance(p);
-        }
-        ret = 0;
+
+    (*keys_info)[key] = std::pair<uint32_t, Placement>(requested_conf_id, *p);
+    if(p->protocol == CAS_PROTOCOL_NAME){
+        if((*(this->desc)) != -1)
+            destroy_liberasure_instance((*(this->desc)));
+        (*(this->desc)) = create_liberasure_instance(p);
     }
-    else{
-        uint32_t saved_conf_id = it->second.first;
-        if(status == "OK" && std::to_string(saved_conf_id) != std::to_string(conf_id)){
+    ret = 0;
 
-            (*keys_info)[key] = std::pair<uint32_t, Placement>(stoul(msg), *p);
-            ret =  0;
-            if(p->protocol == CAS_PROTOCOL_NAME){
-                if((*(this->desc)) != -1)
-                    destroy_liberasure_instance((*(this->desc)));
-                (*(this->desc)) = create_liberasure_instance(p);
-            }
-        }
-        else{
-            DPRINTF(DEBUG_CAS_Client, "msg is %s\n", msg.c_str());
-            ret = -1;
-        }
+    delete p;
+    p = nullptr;
 
-        if(ret == 0 && (*(this->desc)) == -1){
-            (*(this->desc)) = create_liberasure_instance(p);
-        }
-
-        // Todo::: Maybe causes problem
-        delete p;
-        p = nullptr;
-
-        return ret;
-    }
+//    auto it = keys_info->find(key);
+//    if(it == keys_info->end()){
+//        (*keys_info)[key] = std::pair<uint32_t, Placement>(requested_conf_id, *p);
+//        if(p->protocol == CAS_PROTOCOL_NAME){
+//            if((*(this->desc)) != -1)
+//                destroy_liberasure_instance((*(this->desc)));
+//            (*(this->desc)) = create_liberasure_instance(p);
+//        }
+//        ret = 0;
+//    }
+//    else{
+//        uint32_t saved_conf_id = it->second.first;
+//        if(status == "OK" && std::to_string(saved_conf_id) != std::to_string(conf_id)){
+//
+//            (*keys_info)[key] = std::pair<uint32_t, Placement>(requested_conf_id, *p);
+//            ret =  0;
+//            if(p->protocol == CAS_PROTOCOL_NAME){
+//                if((*(this->desc)) != -1)
+//                    destroy_liberasure_instance((*(this->desc)));
+//                (*(this->desc)) = create_liberasure_instance(p);
+//            }
+//        }
+//        else{
+//            DPRINTF(DEBUG_CAS_Client, "msg is %s\n", msg.c_str());
+//            ret = -1;
+//        }
+//
+//        if(ret == 0 && (*(this->desc)) == -1){
+//            (*(this->desc)) = create_liberasure_instance(p);
+//        }
+//
+//        // Todo::: Maybe causes problem
+//        delete p;
+//        p = nullptr;
+//
+//        return ret;
+//    }
     
     return ret;
 }

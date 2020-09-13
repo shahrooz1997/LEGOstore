@@ -57,7 +57,7 @@ private:
     std::map<std::string, std::pair<uint32_t, Placement> > *keys_info; // a map from a key to its conf_id and its placement
 
     int get_timestamp(std::string *key, Timestamp **timestamp, Placement **p);
-    int update_placement(std::string &key, uint32_t conf_id = 0); // There must be something on the metadata server with conf_id zero for initialization
+    int update_placement(const std::string &key, const uint32_t conf_id = 0); // There must be something on the metadata server with conf_id zero for initialization
     
     Placement* get_placement(std::string &key, bool force_update = false, uint32_t conf_id = 0);
 

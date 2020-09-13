@@ -58,7 +58,7 @@ ABD: obj src/ABD.cpp
 cleanall: clean cleandb
 
 clean:
-	rm -rf obj Client Server Controller LEGOStore
+	rm -rf obj Client Server Controller LEGOStore Metadata_Server
 
 cleandb:
 	rm -rf db*.temp

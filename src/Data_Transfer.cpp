@@ -1,4 +1,5 @@
 #include "Data_Transfer.h"
+#include <cstring>
 
 
 int DataTransfer::sendAll(int &sock, const void *data, int data_size){

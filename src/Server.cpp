@@ -313,6 +313,8 @@ void runServer(std::string &db_name, std::string &socket_port){
 
 int main(int argc, char **argv){
 
+//    std::cout << "AAAAAAAAAAA" << std::endl;
+
 	std::vector<std::string> socket_port;
 	std::vector<std::string> db_list;
 

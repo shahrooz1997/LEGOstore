@@ -11,7 +11,7 @@
  * Created on January 18, 2020, 5:18 PM
  */
 
-  // for open/close pair
+// for open/close pair
 #include "Util.h"
 #include "Data_Transfer.h"
 #include <cstring>
@@ -36,25 +36,27 @@ bool DEBUG_UTIL = true;
 #endif
 
 
-JSON_Reader::JSON_Reader() {
+JSON_Reader::JSON_Reader(){
 }
 
-JSON_Reader::~JSON_Reader() {
+JSON_Reader::~JSON_Reader(){
 }
 
 void print_time(){
     auto timenow = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     std::cout << ctime(&timenow) << std::endl;
-
+    
 }
+
 std::string convert_ip_to_string(uint32_t ip){
     ip = htonl(ip);
-    unsigned char *p = (unsigned char*)(&ip);
+    unsigned char* p = (unsigned char*)(&ip);
     std::string ret;
     for(int i = 0; i < 4; i++){
         ret += std::to_string(*(p++));
-        if(i != 3)
+        if(i != 3){
             ret += '.';
+        }
     }
     return ret;
 }
@@ -62,53 +64,54 @@ std::string convert_ip_to_string(uint32_t ip){
 // Used for creating server sockets
 // Returns the socket FD after creation, binding and listening
 // nullptr in IP implies the use of local IP
-int socket_setup(const std::string &port, const std::string *IP){
-
-	struct addrinfo hint, *res, *ptr;
-	int status = 0, enable = 1;
-	int socketfd;
-	memset(&hint, 0, sizeof(hint));
-	hint.ai_family = AF_INET;
-	hint.ai_socktype = SOCK_STREAM;
-
-	if(IP == nullptr){
-		hint.ai_flags = AI_PASSIVE;
-		status = getaddrinfo(NULL, port.c_str(), &hint, &res);
-	}else{
-		status = getaddrinfo((*IP).c_str(), port.c_str(), &hint, &res);
-	}
-
-	if(status != 0){
-		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
-		assert(0);
-	}
-
-	// Loop through all the options, unless one succeeds
-	for( ptr = res; res != NULL ; ptr = ptr->ai_next){
-
-		if((socketfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol)) == -1){
-			perror("server -> socket");
-			continue;
-		}
-
-		if( setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1){
-			perror("server -> set socket options");
-			continue;
-		}
-
-            // enable = 0;
-            // uint size_enable = sizeof(enable);
-            // getsockopt(socketfd, SOL_SOCKET, SO_RCVBUF, &enable, &size_enable);
-            // printf(" Size of the receive buffer is %u\n", enable);
-            //
-            //
-            // enable = 212992;
-            // if( setsockopt(socketfd, SOL_SOCKET, SO_RCVBUF, &enable, sizeof(enable)) == -1){
-    		// 	perror("server -> set socket options");
-    		// 	continue;
-    		// }
-
-
+int socket_setup(const std::string& port, const std::string* IP){
+    
+    struct addrinfo hint, * res, * ptr;
+    int status = 0, enable = 1;
+    int socketfd;
+    memset(&hint, 0, sizeof(hint));
+    hint.ai_family = AF_INET;
+    hint.ai_socktype = SOCK_STREAM;
+    
+    if(IP == nullptr){
+        hint.ai_flags = AI_PASSIVE;
+        status = getaddrinfo(NULL, port.c_str(), &hint, &res);
+    }
+    else{
+        status = getaddrinfo((*IP).c_str(), port.c_str(), &hint, &res);
+    }
+    
+    if(status != 0){
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
+        assert(0);
+    }
+    
+    // Loop through all the options, unless one succeeds
+    for(ptr = res; res != NULL; ptr = ptr->ai_next){
+        
+        if((socketfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol)) == -1){
+            perror("server -> socket");
+            continue;
+        }
+        
+        if(setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1){
+            perror("server -> set socket options");
+            continue;
+        }
+        
+        // enable = 0;
+        // uint size_enable = sizeof(enable);
+        // getsockopt(socketfd, SOL_SOCKET, SO_RCVBUF, &enable, &size_enable);
+        // printf(" Size of the receive buffer is %u\n", enable);
+        //
+        //
+        // enable = 212992;
+        // if( setsockopt(socketfd, SOL_SOCKET, SO_RCVBUF, &enable, sizeof(enable)) == -1){
+        // 	perror("server -> set socket options");
+        // 	continue;
+        // }
+        
+        
         // struct linger sock_linger;
         // sock_linger.l_onoff = 1;
         // sock_linger.l_linger = MAX_LINGER_BEFORE_SOCK_CLOSE;
@@ -116,34 +119,34 @@ int socket_setup(const std::string &port, const std::string *IP){
         //     perror("server -> set socket options");
         //     continue;
         // }
-
-		if( bind(socketfd, ptr->ai_addr, ptr->ai_addrlen) == -1){
-			close(socketfd);
-			perror("server -> bind");
-			continue;
-		}
-
-		break;
-	}
-
-	freeaddrinfo(res);
-
-	if(ptr == NULL){
-		fprintf(stderr, "Socket failed to bind\n");
-		assert(0);
-	}
-
-	if( listen(socketfd, BACKLOG) == -1){
-		perror("server -> listen");
-		assert(0);
-	}
-
-	return socketfd;
+        
+        if(bind(socketfd, ptr->ai_addr, ptr->ai_addrlen) == -1){
+            close(socketfd);
+            perror("server -> bind");
+            continue;
+        }
+        
+        break;
+    }
+    
+    freeaddrinfo(res);
+    
+    if(ptr == NULL){
+        fprintf(stderr, "Socket failed to bind\n");
+        assert(0);
+    }
+    
+    if(listen(socketfd, BACKLOG) == -1){
+        perror("server -> listen");
+        assert(0);
+    }
+    
+    return socketfd;
 }
 
 //Returns 0 on success
-int socket_cnt(int &sock, uint16_t port, const std::string &IP){
-
+int socket_cnt(int& sock, uint16_t port, const std::string& IP){
+    
     struct sockaddr_in serv_addr;
     if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
         perror("\n Socket creation error \n");
@@ -153,23 +156,23 @@ int socket_cnt(int &sock, uint16_t port, const std::string &IP){
     serv_addr.sin_port = htons(port);
     std::string ip_str = IP;
     //std::string ip_str = convert_ip_to_string(server->ip);
-
+    
     if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
         perror("\nInvalid address/ Address not supported \n");
         return 1;
     }
-
-    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
+    
+    if(connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
         perror("\nConnection Failed \n");
         return 1;
     }
-
+    
     return 0;
 }
 
 //Returns 0 on success
-int client_cnt(int &sock, Server *server){
-
+int client_cnt(int& sock, Server* server){
+    
     struct sockaddr_in serv_addr;
     if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
         printf("\n Socket creation error \n");
@@ -178,24 +181,23 @@ int client_cnt(int &sock, Server *server){
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(server->port);
     std::string ip_str = server->ip;
-
+    
     if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
         printf("\nInvalid address/ Address not supported \n");
         return S_FAIL;
     }
-
-    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
+    
+    if(connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
         printf("\nConnection Failed \n");
         return S_FAIL;
     }
-
+    
     return S_OK;
 }
 
 
-Connect::Connect(const std::string& ip, const uint16_t port): ip(ip), port(port),
-                    sock(0), connected(false){
-
+Connect::Connect(const std::string& ip, const uint16_t port) : ip(ip), port(port), sock(0), connected(false){
+    
     struct sockaddr_in serv_addr;
     if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
         print_error("Socket creation error");
@@ -204,12 +206,12 @@ Connect::Connect(const std::string& ip, const uint16_t port): ip(ip), port(port)
         serv_addr.sin_family = AF_INET;
         serv_addr.sin_port = htons(port);
         std::string ip_str = ip;
-
+        
         if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
             print_error("Invalid address/ Address not supported");
         }
         else{
-            if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
+            if(connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
                 print_error("Connection Failed");
             }
             else{
@@ -219,45 +221,44 @@ Connect::Connect(const std::string& ip, const uint16_t port): ip(ip), port(port)
     }
 }
 
-Connect::Connect(const std::string& ip, const std::string& port): ip(ip),
-                    sock(0), connected(false){
+Connect::Connect(const std::string& ip, const std::string& port) : ip(ip), sock(0), connected(false){
     
     // Convert string to uint16_t
+    connected = false;
     bool correct = true;
-    char *end;
+    char* end;
     errno = 0;
     intmax_t val = strtoimax(port.c_str(), &end, 10);
-    if (errno == ERANGE || val < 0 || val > UINT16_MAX || end == port.c_str() || *end != '\0')
-      correct = false;
-    
-    if(correct)
-        this->port = (uint16_t) val;
-    else{
-        print_error("BAD FORMAT INPUT PORT, defualt port " METADATA_SERVER_PORT " is used.");
-        intmax_t val = strtoimax(METADATA_SERVER_PORT, &end, 10);
-        this->port = (uint16_t) val;
+    if(errno == ERANGE || val < 0 || val > UINT16_MAX || end == port.c_str() || *end != '\0'){
+        correct = false;
     }
     
-    struct sockaddr_in serv_addr;
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        print_error("Socket creation error");
-    }
-    else{
-        serv_addr.sin_family = AF_INET;
-        serv_addr.sin_port = htons(this->port);
-        std::string ip_str = ip;
-
-        if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
-            print_error("Invalid address/ Address not supported");
+    if(correct){
+        this->port = (uint16_t)val;
+        struct sockaddr_in serv_addr;
+        if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+            print_error("Socket creation error");
         }
         else{
-            if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
-                print_error("Connection Failed");
+            serv_addr.sin_family = AF_INET;
+            serv_addr.sin_port = htons(this->port);
+            std::string ip_str = ip;
+        
+            if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
+                print_error("Invalid address/ Address not supported");
             }
             else{
-                connected = true;
+                if(connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
+                    print_error("Connection Failed");
+                }
+                else{
+                    connected = true;
+                }
             }
         }
+    }
+    else{
+        print_error("BAD FORMAT INPUT PORT, Cannot connect. ");
     }
 }
 
@@ -278,8 +279,9 @@ bool Connect::is_connected(){
 }
 
 int Connect::operator*(){
-    if(is_connected())
+    if(is_connected()){
         return this->sock;
+    }
     else{
         print_error("Trying to get the fd of a socket which is not connected.");
         return -1;
@@ -290,7 +292,7 @@ void Connect::close(){
     ::close(sock);
 }
 
-void Connect::print_error(std::string const &m){
+void Connect::print_error(std::string const& m){
     std::stringstream msg; // Make it thread safe
     msg << "ip=" << this->ip << ", port=" << this->port << ": ERROR SOCKET CONNECTION, ";
     msg << m << std::endl;
@@ -303,7 +305,7 @@ Server::Server(){
     this->datacenter = nullptr;
 }
 
-Server::Server(const Server &orig){
+Server::Server(const Server& orig){
     this->id = orig.id;
     this->ip = orig.ip;
     this->port = orig.port;
@@ -327,7 +329,7 @@ Datacenter::Datacenter(const Datacenter& orig){
 }
 
 Datacenter::~Datacenter(){
-    for(auto &it:servers){
+    for(auto& it:servers){
         delete it;
     }
 }
@@ -639,7 +641,7 @@ Placement::Placement(){
 //}
 
 WorkloadConfig::~WorkloadConfig(){
-    for(auto &it: grp){
+    for(auto& it: grp){
         delete it;
     }
 }
@@ -681,16 +683,16 @@ Group::Group(const Group& orig){
 }
 
 Group::~Group(){
-    for(auto &it: grp_config){
+    for(auto& it: grp_config){
         delete it;
     }
 }
 
 Properties::~Properties(){
-    for(auto &it:datacenters){
+    for(auto& it:datacenters){
         delete it;
     }
-    for(auto &it:groups){
+    for(auto& it:groups){
         delete it;
     }
 }
@@ -704,9 +706,9 @@ Reconfig_key_info::Reconfig_key_info(){
     next_placement = nullptr;
 }
 
-Reconfig_key_info::Reconfig_key_info(const std::string &in){
+Reconfig_key_info::Reconfig_key_info(const std::string& in){
     uint32_t cc = 0;
-    
+
 //    DPRINTF(DEBUG_UTIL, "111111\n");
     
     if(cc + sizeof(uint32_t) > in.size()){
@@ -715,9 +717,9 @@ Reconfig_key_info::Reconfig_key_info(const std::string &in){
     for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
         ((char*)(&(this->curr_conf_id)))[i] = in[cc++];
     }
-    
+
 //    DPRINTF(DEBUG_UTIL, "curr_conf_id is %u\n", curr_conf_id);
-    
+
 //    DPRINTF(DEBUG_UTIL, "22222\n");
     
     // current placement
@@ -737,7 +739,7 @@ Reconfig_key_info::Reconfig_key_info(const std::string &in){
     else{
         this->curr_placement = nullptr;
     }
-    
+
 //    DPRINTF(DEBUG_UTIL, "33333\n");
     
     if(cc + sizeof(int) > in.size()){
@@ -747,11 +749,11 @@ Reconfig_key_info::Reconfig_key_info(const std::string &in){
         ((char*)(&(this->reconfig_state)))[i] = in[cc++];
     }
 //    DPRINTF(DEBUG_UTIL, "reconfig_state is %u\n", reconfig_state);
-    
+
 //    DPRINTF(DEBUG_UTIL, "444444\n");
     
     if(reconfig_state != 0){
-        
+
 //        DPRINTF(DEBUG_UTIL, "DOOMED\n");
         
         // timestamp
@@ -778,7 +780,7 @@ Reconfig_key_info::Reconfig_key_info(const std::string &in){
         for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
             ((char*)(&(this->next_conf_id)))[i] = in[cc++];
         }
-
+        
         // next placement
         temp = 0;
         if(cc + sizeof(uint32_t) > in.size()){
@@ -798,7 +800,7 @@ Reconfig_key_info::Reconfig_key_info(const std::string &in){
     else{
         this->next_placement = nullptr;
     }
-    
+
 //    DPRINTF(DEBUG_UTIL, "55555\n");
     
 }
@@ -814,7 +816,7 @@ Reconfig_key_info::~Reconfig_key_info(){
     }
 }
 
-std::string Reconfig_key_info::get_string(){  
+std::string Reconfig_key_info::get_string(){
     std::string ret;
     for(uint i = 0; i < sizeof(uint32_t); i++){
         ret.push_back(((char*)(&curr_conf_id))[i]);
@@ -840,7 +842,7 @@ std::string Reconfig_key_info::get_string(){
     for(uint i = 0; i < sizeof(int); i++){
         ret.push_back(((char*)(&reconfig_state))[i]);
     }
-    
+
 //    DPRINTF(DEBUG_UTIL, "reconfig_state is %u\n", reconfig_state);
     
     if(reconfig_state != 0){
@@ -852,7 +854,7 @@ std::string Reconfig_key_info::get_string(){
         for(uint32_t i = 0; i < size; i++){
             ret.push_back(this->timestamp[i]);
         }
-
+        
         for(uint i = 0; i < sizeof(uint32_t); i++){
             ret.push_back(((char*)(&next_conf_id))[i]);
         }
@@ -880,7 +882,8 @@ Data_handler::~Data_handler(){
     delete reconfig_info;
 }
 
-std::string construct_key(const std::string &key, const std::string &protocol, const uint32_t conf_id, const std::string &timestamp){
+std::string construct_key(const std::string& key, const std::string& protocol, const uint32_t conf_id,
+        const std::string& timestamp){
     std::string ret;
     ret += key;
     ret += "!";
@@ -892,7 +895,7 @@ std::string construct_key(const std::string &key, const std::string &protocol, c
     return ret;
 }
 
-std::string construct_key(const std::string &key, const std::string &protocol, const uint32_t conf_id){
+std::string construct_key(const std::string& key, const std::string& protocol, const uint32_t conf_id){
     std::string ret;
     ret += key;
     ret += "!";
@@ -902,26 +905,29 @@ std::string construct_key(const std::string &key, const std::string &protocol, c
     return ret;
 }
 
-int request_placement(const std::string &key, const uint32_t conf_id, std::string &status,
-        std::string &msg, Placement* &p, uint32_t retry_attempts, uint32_t metadata_server_timeout){
+int request_placement(const std::string& metadata_server_ip, const std::string& metadata_server_port,
+        const std::string& key, const uint32_t conf_id, std::string& status, std::string& msg, Placement*& p,
+        uint32_t retry_attempts, uint32_t metadata_server_timeout){
+    
+    DPRINTF(DEBUG_CLIENT_NODE, "started\n");
     int ret = 0;
-    
-//    DPRINTF(DEBUG_CLIENT_NODE, "metadata_server_timeout is %u\n", metadata_server_timeout);
-    
-    Connect c(METADATA_SERVER_IP, METADATA_SERVER_PORT);
+
+    DPRINTF(DEBUG_CLIENT_NODE, "metadata_server_ip port is %s %s\n", metadata_server_ip.c_str(), metadata_server_port.c_str());
+    fflush(stdout);
+    Connect c(metadata_server_ip, metadata_server_port);
     if(!c.is_connected()){
         DPRINTF(DEBUG_CLIENT_NODE, "connection error\n");
         return -1;
     }
-    
+
 //    std::string status;
     msg = key;
     msg += "!";
     msg += std::to_string(conf_id);
     
     p = nullptr;
-    
-    
+
+
 //    DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", msg));
     std::string recvd;
     uint32_t RAs = retry_attempts;
@@ -929,9 +935,9 @@ int request_placement(const std::string &key, const uint32_t conf_id, std::strin
     
     bool flag = false;
     while(RAs--){
-        std::promise<std::string> data_set;
-        std::future<std::string> data_set_fut = data_set.get_future();
-        DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", msg));
+        std::promise <std::string> data_set;
+        std::future <std::string> data_set_fut = data_set.get_future();
+        DataTransfer::sendMsg(*c, DataTransfer::serializeMDS("ask", msg));
         std::future<int> fut = std::async(std::launch::async, DataTransfer::recvMsg_async, *c, std::move(data_set));
         
         if(data_set_fut.valid()){
@@ -955,7 +961,7 @@ int request_placement(const std::string &key, const uint32_t conf_id, std::strin
     
     if(flag){
         msg.clear();
-        p =  DataTransfer::deserializeMDS(recvd, status, msg);
+        p = DataTransfer::deserializeMDS(recvd, status, msg);
     }
     else{
         ret = -2;
@@ -965,20 +971,22 @@ int request_placement(const std::string &key, const uint32_t conf_id, std::strin
     return ret;
 }
 
-int ask_metadata(const std::string &key, const uint32_t conf_id, uint32_t& requested_conf_id, uint32_t& new_conf_id,
-                    std::string& timestamp, Placement* &p, uint32_t retry_attempts, uint32_t metadata_server_timeout){
+int ask_metadata(const std::string& metadata_server_ip, const std::string& metadata_server_port,
+        const std::string& key, const uint32_t conf_id, uint32_t& requested_conf_id, uint32_t& new_conf_id,
+        std::string& timestamp, Placement*& p, uint32_t retry_attempts, uint32_t metadata_server_timeout){
     int ret = 0;
-
+    
     std::string status, msg;
 //    Placement* p;
 
 //    DPRINTF(DEBUG_CAS_Client, "calling request_placement....\n");
-
-    ret = request_placement(key, conf_id, status, msg, p, retry_attempts, metadata_server_timeout);
-
+    
+    ret = request_placement(metadata_server_ip, metadata_server_port, key, conf_id, status, msg, p, retry_attempts,
+            metadata_server_timeout);
+    
     assert(ret == 0);
     assert(status == "OK");
-
+    
     std::size_t pos = msg.find("!");
     std::size_t pos2 = msg.find("!", pos + 1);
     if(pos >= msg.size() || pos2 >= msg.size()){
@@ -990,7 +998,16 @@ int ask_metadata(const std::string &key, const uint32_t conf_id, uint32_t& reque
     requested_conf_id = stoul(msg.substr(0, pos));
     new_conf_id = stoul(msg.substr(pos + 1, pos2 - pos - 1));
     timestamp = msg.substr(pos2 + 1);
-
+    
     return ret;
 }
 
+template<typename T>
+void set_intersection(const Placement& p, std::unordered_set <T>& res){
+    res.insert(p.Q1.begin(), p.Q1.end());
+    res.insert(p.Q2.begin(), p.Q2.end());
+    res.insert(p.Q3.begin(), p.Q3.end());
+    res.insert(p.Q4.begin(), p.Q4.end());
+}
+
+template void set_intersection(const Placement& p, std::unordered_set <unsigned int>& res);

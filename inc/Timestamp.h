@@ -18,26 +18,34 @@
 #include <stdint.h>
 #include <assert.h>
 
-class Timestamp {
+class Timestamp{
 public:
     Timestamp(uint32_t client_id, uint32_t time = 1);
-    Timestamp(const Timestamp &t); // Copy constructor
-    Timestamp(const std::string &str);
+    
+    Timestamp(const Timestamp& t); // Copy constructor
+    Timestamp(const std::string& str);
+    
     std::string get_string();
+    
     Timestamp increase_timestamp(const uint32_t client_id);
+    
     virtual ~Timestamp();
-
+    
     static Timestamp& max_timestamp(std::vector<Timestamp*>& v);
-    static Timestamp& max_timestamp2(std::vector<Timestamp>& v);
-    static uint32_t max_timestamp3(std::vector<Timestamp>& v);
-
+    
+    static Timestamp& max_timestamp2(std::vector <Timestamp>& v);
+    
+    static uint32_t max_timestamp3(std::vector <Timestamp>& v);
+    
     static bool compare_timestamp(std::string left, std::string right);
-    friend bool operator> (const Timestamp &lhs, const Timestamp &rhs);
-    friend bool operator== (const Timestamp &lhs, const Timestamp &rhs);
+    
+    friend bool operator>(const Timestamp& lhs, const Timestamp& rhs);
+    
+    friend bool operator==(const Timestamp& lhs, const Timestamp& rhs);
 
-private: 
-	uint32_t time;
-	uint32_t client_id;
+private:
+    uint32_t time;
+    uint32_t client_id;
 };
 
 

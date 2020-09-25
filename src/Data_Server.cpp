@@ -1,22 +1,27 @@
 #include "Data_Server.h"
 
-DataServer::DataServer(std::string directory, int sock): sockfd(sock), cache(1000000000),
-        persistent(directory), CAS(&recon_keys), ABD(&recon_keys){
+DataServer::DataServer(std::string directory, int sock, std::string metadata_server_ip,
+        std::string metadata_server_port) : sockfd(sock), cache(1000000000), persistent(directory),
+        CAS(&recon_keys, &metadata_server_ip, &metadata_server_port),
+        ABD(&recon_keys, &metadata_server_ip, &metadata_server_port){
+    this->metadata_server_port = metadata_server_port;
+    this->metadata_server_ip = metadata_server_ip;
 }
 
 int DataServer::getSocketDesc(){
     return sockfd;
 }
 
-std::string DataServer::get_timestamp(std::string &key, std::string &curr_class, uint32_t conf_id, const Request& req){
-
+std::string DataServer::get_timestamp(std::string& key, std::string& curr_class, uint32_t conf_id, const Request& req){
+    
     std::string result;
     if(curr_class == CAS_PROTOCOL_NAME){
         result = CAS.get_timestamp(key, conf_id, req, cache, persistent, lock);
-    }else if(curr_class == ABD_PROTOCOL_NAME){
+    }
+    else if(curr_class == ABD_PROTOCOL_NAME){
         result = ABD.get_timestamp(key, conf_id, req, cache, persistent, lock);
     }
-
+    
     return result;
 }
 
@@ -66,9 +71,13 @@ std::string DataServer::get_timestamp(std::string &key, std::string &curr_class,
 //    return result;
 //}
 
-std::string DataServer::put(std::string &key, std::string &value, std::string &timestamp, std::string &curr_class, uint32_t conf_id, const Request& req){
+std::string
+DataServer::put(std::string& key, std::string& value, std::string& timestamp, std::string& curr_class, uint32_t conf_id,
+        const Request& req){
     std::string result;
     if(curr_class == CAS_PROTOCOL_NAME){
+        DPRINTF(DEBUG_CAS_Client, "ddddd\n");
+        fflush(stdout);
 //        char bbuf[1024*128];
 //        int bbuf_i = 0;
 ////        for(int t = 0; t < chunks.size(); t++){
@@ -81,13 +90,15 @@ std::string DataServer::put(std::string &key, std::string &value, std::string &t
 ////        }
 //        printf("%s", bbuf);
         result = CAS.put(key, conf_id, value, timestamp, req, cache, persistent, lock);
-    }else if(curr_class == ABD_PROTOCOL_NAME){
+    }
+    else if(curr_class == ABD_PROTOCOL_NAME){
         result = ABD.put(key, conf_id, value, timestamp, req, cache, persistent, lock);
     }
     return result;
 }
 
-std::string DataServer::put_fin(std::string &key, std::string &timestamp, std::string &curr_class, uint32_t conf_id, const Request& req){
+std::string DataServer::put_fin(std::string& key, std::string& timestamp, std::string& curr_class, uint32_t conf_id,
+        const Request& req){
     std::string result;
     if(curr_class == CAS_PROTOCOL_NAME){
         result = CAS.put_fin(key, conf_id, timestamp, req, cache, persistent, lock);
@@ -98,11 +109,13 @@ std::string DataServer::put_fin(std::string &key, std::string &timestamp, std::s
     return result;
 }
 
-std::string DataServer::get(std::string &key, std::string &timestamp, std::string &curr_class, uint32_t conf_id, const Request& req){
+std::string DataServer::get(std::string& key, std::string& timestamp, std::string& curr_class, uint32_t conf_id,
+        const Request& req){
     std::string result;
     if(curr_class == CAS_PROTOCOL_NAME){
         result = CAS.get(key, conf_id, timestamp, req, cache, persistent, lock);
-    }else if(curr_class == ABD_PROTOCOL_NAME){
+    }
+    else if(curr_class == ABD_PROTOCOL_NAME){
         result = ABD.get(key, conf_id, timestamp, req, cache, persistent, lock);
     }
     return result;

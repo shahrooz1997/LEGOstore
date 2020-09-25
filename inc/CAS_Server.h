@@ -29,23 +29,39 @@
 
 using std::string;
 
-class CAS_Server {
+class CAS_Server{
 public:
-    CAS_Server(std::map<std::string, std::vector<Request> > *recon_keys);
+    CAS_Server(std::map <std::string, std::vector<Request>>* recon_keys, std::string* metadata_server_ip,
+            std::string* metadata_server_port);
+    
     CAS_Server(const CAS_Server& orig) = delete;
+    
     virtual ~CAS_Server();
-    string get_timestamp(const string &key, uint32_t conf_id, const Request &req, Cache &cache, Persistent &persistent, std::mutex &lock_t);
-
-    string put(string &key, uint32_t conf_id, string &value, string &timestamp, const Request &req, Cache &cache, Persistent &persistent, std::mutex &lock_t);
-
-    string put_fin(string &key, uint32_t conf_id, string &timestamp, const Request &req, Cache &cache, Persistent &persistent, std::mutex &lock_t);
-
-    string get(string &key, uint32_t conf_id, string &timestamp, const Request &req, Cache &cache, Persistent &persistent, std::mutex &lock_t);
+    
+    string get_timestamp(const string& key, uint32_t conf_id, const Request& req, Cache& cache, Persistent& persistent,
+            std::mutex& lock_t);
+    
+    string put(string& key, uint32_t conf_id, string& value, string& timestamp, const Request& req, Cache& cache,
+            Persistent& persistent, std::mutex& lock_t);
+    
+    string
+    put_fin(string& key, uint32_t conf_id, string& timestamp, const Request& req, Cache& cache, Persistent& persistent,
+            std::mutex& lock_t);
+    
+    string
+    get(string& key, uint32_t conf_id, string& timestamp, const Request& req, Cache& cache, Persistent& persistent,
+            std::mutex& lock_t);
 
 private:
-    int reconfig_info(const string &key, uint32_t conf_id, string &timestamp, const Request &req, string &msg, string &recon_timestamp, Cache &cache, Persistent &persistent);
+    Reconfig_key_info* create_rki(const std::string& key, const uint32_t conf_id);
+    int init_key(const string& key, const uint32_t conf_id, Cache& cache, Persistent& persistent);
     
-    std::map<std::string, std::vector<Request> > *recon_keys;
+    int reconfig_info(const string& key, uint32_t conf_id, string& timestamp, const Request& req, string& msg,
+            string& recon_timestamp, Cache& cache, Persistent& persistent);
+    
+    std::map <std::string, std::vector<Request>>* recon_keys;
+    std::string* metadata_server_ip;
+    std::string* metadata_server_port;
 };
 
 #endif /* CAS_Server_H */

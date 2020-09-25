@@ -9,11 +9,12 @@ obj = $(patsubst src/%.cpp, obj/%.o, $(src)) #obj_t = $(src:src=obj)
 #obj2 = $(patsubst src/%.cc, obj/%.o, $(filter %.cc, $(src))) #obj_t = $(src:src=obj)
 #bj = $(addsuffix .o, $(basename $(filter .cpp .cc, $(src))))
 #src1 = main.o
+
 #src2 = Data_Server.o
-obj2 = $(filter-out obj/Client.o obj/Controller.o obj/Metadata_Server.o,  $(obj))
+obj2 = $(filter-out obj/Client_driver.o obj/Controller.o obj/Metadata_Server.o,  $(obj))
 obj1 = $(filter-out obj/Server.o obj/Controller.o obj/Metadata_Server.o, $(obj))
-obj3 = $(filter-out obj/Client.o obj/Server.o obj/Metadata_Server.o, $(obj))
-obj4 = $(filter-out obj/Client.o obj/Server.o obj/Controller.o, $(obj))
+obj3 = $(filter-out obj/Client_driver.o obj/Server.o obj/Metadata_Server.o, $(obj))
+obj4 = $(filter-out obj/Client_driver.o obj/Server.o obj/Controller.o, $(obj))
 
 .PHONY: all
 all: obj Client Server Controller Metadata_Server
@@ -62,8 +63,8 @@ clean:
 
 cleandb:
 	rm -rf db*.temp
-	rm -rf server_*_output.txt
-	rm -rf client_*_output.txt
+	rm -rf server*_output.txt
+	rm -rf client*_output.txt
 	rm -rf logfile_*.txt
 	rm -rf logs/*
 	rm -rf knossos

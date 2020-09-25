@@ -11,89 +11,130 @@
  * Created on August 30, 2020, 5:37 AM
  */
 
-#include "Client_Node.h"
+#include "../inc/Client_Node.h"
 
-Client_Node::Client_Node(uint32_t client_id, uint32_t local_datacenter_id, std::vector <DC*> &datacenters){
+Client_Node::Client_Node(uint32_t id, uint32_t local_datacenter_id, uint32_t retry_attempts,
+        uint32_t metadata_server_timeout, uint32_t timeout_per_request, std::vector<DC*>& datacenters){
     
     this->desc = -1;
     
-    cas = new CAS_Client(client_id, local_datacenter_id, datacenters, &(this->desc), &keys_info);
-    abd = new ABD_Client(client_id, local_datacenter_id, datacenters, &(this->desc), &keys_info); // Todo: you need to update abd client as well
+    cas = new CAS_Client(id, local_datacenter_id, retry_attempts, metadata_server_timeout, timeout_per_request,
+            datacenters, &(this->desc), this);
+    abd = new ABD_Client(id, local_datacenter_id, retry_attempts, metadata_server_timeout, timeout_per_request,
+            datacenters, this);
 }
 
-//Client_Node::Client_Node(uint32_t client_id, uint32_t local_datacenter_id, std::vector <DC*> &datacenters, int desc_l){
-//    cas = new CAS_Client(client_id, local_datacenter_id, datacenters, desc_l, &keys_info);
-//    abd = nullptr; // Todo: you need to update abd client as well
-//}
-
-
-Client_Node::~Client_Node() {
-    if(abd != nullptr)
+Client_Node::~Client_Node(){
+    if(abd != nullptr){
         delete abd;
-    if(cas != nullptr)
+    }
+    if(cas != nullptr){
         delete cas;
+    }
 }
 
-int Client_Node::update_placement(std::string &key, uint32_t conf_id){
-    std::string status, msg;
+const uint32_t& Client_Node::get_id() const{
+    if(abd != nullptr){
+        return abd->get_id();
+    }
+    if(cas != nullptr){
+        return cas->get_id();
+    }
+    static uint32_t ret = -1;
+    return ret;
+}
+
+int Client_Node::update_placement(const std::string& key, const uint32_t conf_id){
+    
+    int ret = 0;
+    
+    uint32_t requested_conf_id;
+    uint32_t new_conf_id; // Not usefull for client
+    std::string timestamp; // Not usefull for client
     Placement* p;
     
-//    DPRINTF(DEBUG_CAS_Client, "calling request_placement....\n");
-    
-    int ret = request_placement(key, conf_id, status, msg, p, DEFAULT_RET_ATTEMPTS, DEFAULT_METASER_TO);
-    
-//    DPRINTF(DEBUG_CAS_Client, "returning request_placement....\n");
+    ret = ask_metadata(this->cas->get_metadata_server_ip(), this->cas->get_metadata_server_port(), key,
+            conf_id, requested_conf_id, new_conf_id, timestamp, p, this->cas->get_retry_attempts(),
+            this->cas->get_metadata_server_timeout());
     
     assert(ret == 0);
-    assert(status == "OK");
     
-    
-    // Key is not found.
-    keys_info[key] = std::pair<uint32_t, Placement>(stoul(msg), *p);
+    keys_info[key] = std::pair<uint32_t, Placement>(requested_conf_id, *p);
     if(p->protocol == CAS_PROTOCOL_NAME){
-        if(this->desc != -1)
-            destroy_liberasure_instance(this->desc);
-        this->desc = create_liberasure_instance(p);
+        if(((this->desc)) != -1){
+            destroy_liberasure_instance(((this->desc)));
+        }
+        ((this->desc)) = create_liberasure_instance(p);
+        DPRINTF(DEBUG_CAS_Client, "desc is %d\n", desc);
+        fflush(stdout);
     }
+    ret = 0;
     
-    if(p != nullptr){
-        delete p;
-        p = nullptr;
-    }
+    delete p;
+    p = nullptr;
     
     DPRINTF(DEBUG_CAS_Client, "finished\n");
     return ret;
 }
 
-int Client_Node::put(std::string key, std::string value, bool insert){
-    auto it = this->keys_info.find(key);
-    if(it == this->keys_info.end()){
-        assert(update_placement(key, 0) == 0);
-    }
+const Placement& Client_Node::get_placement(const std::string& key, const bool force_update, const uint32_t conf_id){
+    uint64_t le_init = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
     
-    if(this->keys_info[key].second.protocol == CAS_PROTOCOL_NAME){
-        return this->cas->put(key, value, insert);
+    if(force_update){
+        assert(update_placement(key, conf_id) == 0);
+        auto it = this->keys_info.find(key);
+        DPRINTF(DEBUG_CAS_Client, "latencies: %lu\n", time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+        return it->second.second;
     }
     else{
-        return this->abd->put(key, value, insert);
+        auto it = this->keys_info.find(key);
+        if(it != this->keys_info.end()){
+//            if(it->second.first < conf_id){
+            DPRINTF(DEBUG_CAS_Client, "latencies: %lu\n", time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+            return it->second.second;
+//            }
+//            else{
+//                assert(update_placement(key, conf_id) == 0);
+//                return this->keys_info[key].second;
+//            }
+        }
+        else{
+            assert(update_placement(key, conf_id) == 0);
+            DPRINTF(DEBUG_CAS_Client, "latencies: %lu\n", time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+            return this->keys_info[key].second;
+        }
+    }
+    
+}
+
+const uint32_t& Client_Node::get_conf_id(const std::string& key){
+    auto it = this->keys_info.find(key);
+    if(it != this->keys_info.end()){
+        return it->second.first;
+    }
+    else{
+        assert(update_placement(key, 0) == 0);
+        return this->keys_info[key].first;
+    }
+}
+
+int Client_Node::put(const std::string& key, const std::string& value){
+    const Placement& p = get_placement(key);
+    if(p.protocol == CAS_PROTOCOL_NAME){
+        return this->cas->put(key, value);
+    }
+    else{
+        return this->abd->put(key, value);
     }
 }
 
 
-int Client_Node::get(std::string key, std::string &value){
-    auto it = this->keys_info.find(key);
-    if(it == this->keys_info.end()){
-        assert(update_placement(key, 0) == 0);
-    }
-    
-    if(this->keys_info[key].second.protocol == CAS_PROTOCOL_NAME){
+int Client_Node::get(const std::string& key, std::string& value){
+    const Placement& p = get_placement(key);
+    if(p.protocol == CAS_PROTOCOL_NAME){
         return this->cas->get(key, value);
     }
     else{
         return this->abd->get(key, value);
     }
-}
-
-uint32_t Client_Node::get_id(){
-    return this->cas->get_id();
 }

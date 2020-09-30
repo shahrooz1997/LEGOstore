@@ -6,4 +6,4 @@ data/*
 data_*
 myping
 pairwise_latencies/latencies*
-
+setup_config.json

@@ -942,7 +942,7 @@ void _get_pairwise_latency(int i){
 
     machines[i].copy_to("./myping");
     string command = "./myping ";
-    command += to_string(i) + " ";
+    command += to_string(i + 1) + " ";
     for(int j = 0; j < machines.size(); j++){
         command += machines[j].get_external_ip() + " ";
     }
@@ -1069,8 +1069,8 @@ int main(){
 
     // config_machines(false);
 
-    // cout << "Ready to run server" << endl;
-    vector<int> running_servers = {0,1,2,3,6,7,8};
+    cout << "Ready to run server" << endl;
+    vector<int> running_servers = {0,1,2,3,4,5,6,7,8};
     thread(execute_server, running_servers).detach();
     thread(execute_metadata_server, running_servers).detach();
 
@@ -1081,9 +1081,9 @@ int main(){
 
     stop_server(running_servers);
 
-    retrieve_data("ABD_2F");
+    retrieve_data("CAS_NOF");
 
-    // manual_execute_command(running_servers, "sudo apt-get install psmisc");
+    // manual_execute_command(running_servers, "rm -f myping");
 
 
 	return 0;

@@ -1,18 +1,21 @@
 #include "Data_Transfer.h"
 #include <cstring>
 
-int DataTransfer::sendAll(int& sock, const void* data, int data_size){
+int DataTransfer::sendAll(int sock, const void* data, int data_size){
     
     const char* iter = static_cast<const char*>(data);
     int bytes_sent = 0;
-    
+
     while(data_size > 0){
-        if((bytes_sent = send(sock, iter, data_size, 0)) == -1){
-            perror("sendAll -> send");
-            //assert(0);
-            return -1;
+        if((bytes_sent = send(sock, iter, data_size, 0)) < 1){
+            if(bytes_sent == -1){
+                DPRINTF(DEBUG_CAS_Client, "WARN: error in host socket.\n");
+            }
+            else if(bytes_sent == 0){
+                DPRINTF(DEBUG_CAS_Client, "WARN: error in remote socket.\n");
+            }
+            return bytes_sent;
         }
-        
         data_size -= bytes_sent;
         iter += bytes_sent;
     }
@@ -36,34 +39,32 @@ std::string DataTransfer::serialize(const strVec& data){
 //sends it across the socket
 // Return 1 on SUCCESS
 int DataTransfer::sendMsg(int sock, const std::string& out_str){
+
     assert(!out_str.empty());
     uint32_t _size = htonl(out_str.size());
+
     int result = sendAll(sock, &_size, sizeof(_size));
     if(result == 1){
         result = sendAll(sock, out_str.c_str(), out_str.size());
     }
-    
     return result;
 }
 
-int DataTransfer::recvAll(int& sock, void* buf, int data_size){
+int DataTransfer::recvAll(int sock, void* buf, int data_size){
     
     char* iter = static_cast<char*>(buf);
     int bytes_read = 0;
     
-    
     while(data_size > 0){
         if((bytes_read = recv(sock, iter, data_size, 0)) < 1){
             if(bytes_read == -1){
-                perror("recvALL -> recv err");
+                DPRINTF(DEBUG_CAS_Client, "WARN: error in host socket.\n");
             }
             else if(bytes_read == 0){
-                fprintf(stderr, "Recvall Failed : Connection disconnected."
-                                " The error msg is %s \n ", std::strerror(errno));
+                DPRINTF(DEBUG_CAS_Client, "WARN: error in remote socket.\n");
             }
             return bytes_read;
         }
-    
         iter += bytes_read;
         data_size -= bytes_read;
     }
@@ -94,25 +95,19 @@ int DataTransfer::recvMsg(int sock, std::string& data){
     
     uint32_t _size = 0;
     int result;
-    
     result = recvAll(sock, &_size, sizeof(_size));
     if(result == 1){
-        
-        
         _size = ntohl(_size);
         if(_size > 0){
             data.resize(_size);
             result = recvAll(sock, const_cast<char*>(data.c_str()), _size);
             if(result != 1){
                 data.clear();
-                std::cout << "Clearing the result due to error" << std::endl;
-//                            assert(false);
                 return result;
             }
         }
     }
 
-//    assert(!data.empty());
     if(data.empty()){
         return -2;
     }

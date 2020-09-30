@@ -86,14 +86,14 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
             
             
             //ABD2 failure 2
-            test->protocol = ABD_PROTOCOL_NAME;
-            test->m = 9;
-            test->k = 0;
-            test->Q1.insert(begin(test->Q1), {0, 1, 2, 3, 4});
-            test->Q2.insert(begin(test->Q2), {4, 5, 6, 7, 8});
-            test->Q3.clear();
-            test->Q4.clear();
-            test->f = 2;
+//            test->protocol = ABD_PROTOCOL_NAME;
+//            test->m = 9;
+//            test->k = 0;
+//            test->Q1.insert(begin(test->Q1), {0, 1, 2, 3, 4});
+//            test->Q2.insert(begin(test->Q2), {4, 5, 6, 7, 8});
+//            test->Q3.clear();
+//            test->Q4.clear();
+//            test->f = 2;
             
             // Failures
 //            test->protocol = CAS_PROTOCOL_NAME;
@@ -108,16 +108,16 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
 //            test->f = 1;
             
             // HARD
-//            test->protocol = CAS_PROTOCOL_NAME;
-//            test->k = 4;
-//            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
-//            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
-//            test->Q3.insert(begin(test->Q3), {4,5,6,7,8});
-//            test->Q4.insert(begin(test->Q4), {2,3,4,5,6,7,8});
-//            std::unordered_set<uint32_t> servers;
-//            set_intersection(*test, servers);
-//            test->m = servers.size(); //std::max(test->Q2.size(), test->Q3.size());
-//            test->f = 2;
+            test->protocol = CAS_PROTOCOL_NAME;
+            test->k = 4;
+            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
+            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
+            test->Q3.insert(begin(test->Q3), {4,5,6,7,8});
+            test->Q4.insert(begin(test->Q4), {2,3,4,5,6,7,8});
+            std::unordered_set<uint32_t> servers;
+            set_intersection(*test, servers);
+            test->m = servers.size(); //std::max(test->Q2.size(), test->Q3.size());
+            test->f = 2;
 
 //            test->protocol = CAS_PROTOCOL_NAME;
 //            test->k = 1;
@@ -294,8 +294,8 @@ int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t gr
     command += std::to_string(gc->read_ratio)+ " ";
     command += std::to_string(gc->duration)+ " ";
     command += std::to_string(gc->keys.size());
-    
-    
+
+
     std::vector<std::string> args = {"ssh", "-o", "StrictHostKeyChecking no", "-t", prp.datacenters[datacenter_id]->servers[0]->ip, command};
     std::string output;
     int status = execute("/usr/bin/ssh", args, output);
@@ -478,7 +478,6 @@ int Controller::init_metadata_server(){
     auto grp = this->prp.groups[0]; // Todo: now we only support one configuration (No reconfiguration)
     for(uint i = 0; i < grp->grp_id.size(); i++){
         for(uint j = 0; j < grp->grp_config[i]->keys.size(); j++){
-//            cout << "one done" << endl;
             std::string key = grp->grp_config[i]->keys[j];
             uint32_t conf_id = grp->id;
             
@@ -487,13 +486,15 @@ int Controller::init_metadata_server(){
                 if(!c.is_connected()){
                     std::cout << "Warn: cannot connect to metadata server" << std::endl;
                     continue;
-//                    return -1;
                 }
+                fflush(stdout);
                 DataTransfer::sendMsg(*c, DataTransfer::serializeMDS("update",
                         key + "!" + std::to_string(conf_id) + "!" + std::to_string(conf_id) + "!" + "NULL",
                         grp->grp_config[i]->placement_p));
+                fflush(stdout);
                 std::string recvd;
                 if(DataTransfer::recvMsg(*c, recvd) == 1){
+                    fflush(stdout);
                     std::string status;
                     std::string msg;
                     DataTransfer::deserializeMDS(recvd, status, msg);
@@ -501,6 +502,7 @@ int Controller::init_metadata_server(){
                         std::cout << msg << std::endl;
                         assert(false);
                     }
+//                    c.unlock();
                     cout << "metadata_server " << prp.datacenters[k]->metadata_server_ip << " initialized." << endl;
                 }
                 else{
@@ -759,6 +761,8 @@ int main(){
     }
     
     //delete_desc_info(open_desc);
+
+    Connect::close_all();
     return 0;
 }
 

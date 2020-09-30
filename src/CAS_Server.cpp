@@ -44,6 +44,7 @@ Reconfig_key_info* CAS_Server::create_rki(const std::string& key, const uint32_t
     DataTransfer::sendMsg(*c, DataTransfer::serializeMDS("ask", key + "!" + std::to_string(conf_id)));
     std::string recvd;
     if(DataTransfer::recvMsg(*c, recvd) == 1){
+//        DPRINTF(DEBUG_CAS_Server, "loed test rki\n");
         std::string status;
         std::string msg;
         ret->curr_placement = DataTransfer::deserializeMDS(recvd, status, msg);
@@ -60,7 +61,7 @@ Reconfig_key_info* CAS_Server::create_rki(const std::string& key, const uint32_t
         
     }
     else{
-        DPRINTF(DEBUG_CAS_Server, "Error in receiving msg from Metadata Server\n");
+//        DPRINTF(DEBUG_CAS_Server, "loed Error in receiving msg from Metadata Server\n");
         delete ret;
         ret = nullptr;
     }
@@ -297,7 +298,7 @@ CAS_Server::put(string& key, uint32_t conf_id, string& val, string& timestamp, c
         // If Tag not seen before, add the tuple
         if(!fnd){
             if(!val.empty()){
-                
+
                 Reconfig_key_info* rki = create_rki(key, conf_id);
                 if(rki == nullptr){
                     return {"ERROR", "INTERNAL ERROR"};

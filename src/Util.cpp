@@ -13,10 +13,12 @@
 
 // for open/close pair
 #include "Util.h"
+#include "../inc/Util.h"
 #include "Data_Transfer.h"
 #include <cstring>
 #include <arpa/inet.h>
 #include <inttypes.h>
+#include <netinet/tcp.h>
 
 #ifdef DEVELOPMENT
 bool DEBUG_CAS_Client = true;
@@ -145,125 +147,196 @@ int socket_setup(const std::string& port, const std::string* IP){
 }
 
 //Returns 0 on success
-int socket_cnt(int& sock, uint16_t port, const std::string& IP){
-    
-    struct sockaddr_in serv_addr;
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        perror("\n Socket creation error \n");
-        return 1;
-    }
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(port);
-    std::string ip_str = IP;
-    //std::string ip_str = convert_ip_to_string(server->ip);
-    
-    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
-        perror("\nInvalid address/ Address not supported \n");
-        return 1;
-    }
-    
-    if(connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
-        perror("\nConnection Failed \n");
-        return 1;
-    }
-    
-    return 0;
-}
+//int socket_cnt(int& sock, uint16_t port, const std::string& IP){
+//
+//    struct sockaddr_in serv_addr;
+//    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+//        perror("\n Socket creation error \n");
+//        return 1;
+//    }
+//    serv_addr.sin_family = AF_INET;
+//    serv_addr.sin_port = htons(port);
+//    std::string ip_str = IP;
+//    //std::string ip_str = convert_ip_to_string(server->ip);
+//
+//    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
+//        perror("\nInvalid address/ Address not supported \n");
+//        return 1;
+//    }
+//
+//    if(connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
+//        perror("\nConnection Failed \n");
+//        return 1;
+//    }
+//
+//    return 0;
+//}
 
 //Returns 0 on success
-int client_cnt(int& sock, Server* server){
-    
-    struct sockaddr_in serv_addr;
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        printf("\n Socket creation error \n");
-        return S_FAIL;
-    }
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(server->port);
-    std::string ip_str = server->ip;
-    
-    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
-        printf("\nInvalid address/ Address not supported \n");
-        return S_FAIL;
-    }
-    
-    if(connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
-        printf("\nConnection Failed \n");
-        return S_FAIL;
-    }
-    
-    return S_OK;
-}
+//int client_cnt(int& sock, Server* server){
+//
+//    struct sockaddr_in serv_addr;
+//    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+//        printf("\n Socket creation error \n");
+//        return S_FAIL;
+//    }
+//    serv_addr.sin_family = AF_INET;
+//    serv_addr.sin_port = htons(server->port);
+//    std::string ip_str = server->ip;
+//
+//    if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
+//        printf("\nInvalid address/ Address not supported \n");
+//        return S_FAIL;
+//    }
+//
+//    if(connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
+//        printf("\nConnection Failed \n");
+//        return S_FAIL;
+//    }
+//
+//    return S_OK;
+//}
 
+std::map<std::string, int> Connect::socks;
+std::map<std::string, std::mutex> Connect::socks_lock;
+std::map<std::string, bool> Connect::is_sock_lock;
 
 Connect::Connect(const std::string& ip, const uint16_t port) : ip(ip), port(port), sock(0), connected(false){
     
-    struct sockaddr_in serv_addr;
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        print_error("Socket creation error");
-    }
-    else{
-        serv_addr.sin_family = AF_INET;
-        serv_addr.sin_port = htons(port);
-        std::string ip_str = ip;
-        
-        if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
-            print_error("Invalid address/ Address not supported");
-        }
-        else{
-            if(connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
-                print_error("Connection Failed");
-            }
-            else{
-                connected = true;
-            }
-        }
-    }
-}
-
-Connect::Connect(const std::string& ip, const std::string& port) : ip(ip), sock(0), connected(false){
-    
-    // Convert string to uint16_t
-    connected = false;
-    bool correct = true;
-    char* end;
-    errno = 0;
-    intmax_t val = strtoimax(port.c_str(), &end, 10);
-    if(errno == ERANGE || val < 0 || val > UINT16_MAX || end == port.c_str() || *end != '\0'){
-        correct = false;
-    }
-    
-    if(correct){
-        this->port = (uint16_t)val;
+    std::string ip_port = ip + "!" + std::to_string(port);
+//    DPRINTF(DEBUG_UTIL, "tloed: IP: %s Port: %d\n", ip.c_str(), port);
+    this->socks_lock[ip_port].lock();
+//    DPRINTF(DEBUG_UTIL, "loed: IP: %s Port: %d\n", ip.c_str(), port);
+    is_sock_lock[ip_port] = true;
+    if(this->socks.find(ip_port) == this->socks.end()){
+        bool error = false;
         struct sockaddr_in serv_addr;
         if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
             print_error("Socket creation error");
+            error = true;
         }
-        else{
+    
+        if(!error){
+            int yes = 1;
+            int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*) &yes, sizeof(int));
+            if(result < 0){
+                print_error("setsockopt error");
+                error = true;
+            }
+        }
+    
+        if(!error){
             serv_addr.sin_family = AF_INET;
             serv_addr.sin_port = htons(this->port);
             std::string ip_str = ip;
         
             if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
                 print_error("Invalid address/ Address not supported");
+                error = true;
             }
-            else{
-                if(connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
-                    print_error("Connection Failed");
-                }
-                else{
-                    connected = true;
-                }
+        }
+    
+        if(!error){
+            if(connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
+                print_error("Connection Failed");
+                error = true;
             }
+        }
+    
+        if(!error){
+            this->socks[ip_port] = this->sock;
+            connected = true;
         }
     }
     else{
-        print_error("BAD FORMAT INPUT PORT, Cannot connect. ");
+        this->sock = this->socks[ip_port];
+        this->connected = true;
+    }
+}
+
+Connect::Connect(const std::string& ip, const std::string& port) : ip(ip), sock(0), connected(false){
+    
+    std::string ip_port = ip + "!" + port;
+//    DPRINTF(DEBUG_UTIL, "tloed: IP: %s Port: %s\n", ip.c_str(), port.c_str());
+    this->socks_lock[ip_port].lock();
+//    DPRINTF(DEBUG_UTIL, "loed: IP: %s Port: %s\n", ip.c_str(), port.c_str());
+    is_sock_lock[ip_port] = true;
+    if(this->socks.find(ip_port) == this->socks.end()){
+        // Convert string to uint16_t
+        connected = false;
+        bool error = false;
+        char* end;
+        errno = 0;
+        intmax_t val = strtoimax(port.c_str(), &end, 10);
+        if(errno == ERANGE || val < 0 || val > UINT16_MAX || end == port.c_str() || *end != '\0'){
+            error = true;
+        }
+//        DPRINTF(DEBUG_UTIL, "loed: Port: %d\n", (uint16_t)val);
+    
+        struct sockaddr_in serv_addr;
+    
+        if(!error){
+            this->port = (uint16_t)val;
+            if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+                print_error("Socket creation error");
+                error = true;
+            }
+        }
+    
+        if(!error){
+            int yes = 1;
+            int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*)&yes, sizeof(int));
+            if(result < 0){
+                print_error("setsockopt error");
+                error = true;
+            }
+        }
+    
+        if(!error){
+            serv_addr.sin_family = AF_INET;
+            serv_addr.sin_port = htons(this->port);
+            std::string ip_str = ip;
+        
+            if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
+                print_error("Invalid address/ Address not supported");
+                error = true;
+            }
+        }
+    
+        if(!error){
+            if(connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
+                print_error("Connection Failed");
+                error = true;
+            }
+        }
+    
+        if(!error){
+            this->socks[ip_port] = this->sock;
+            connected = true;
+        }
+    }
+    else{
+        char* end;
+        intmax_t val = strtoimax(port.c_str(), &end, 10);
+        this->port = (uint16_t)val;
+        this->sock = this->socks[ip_port];
+        this->connected = true;
     }
 }
 
 Connect::~Connect(){
-    ::close(sock);
+//    ::close(sock);
+//    DPRINTF(DEBUG_UTIL, "loed: destructor called. IP: %s Port: %d\n", ip.c_str(), port);
+    this->unlock();
+}
+
+void Connect::unlock(){
+    std::string ip_port = this->ip + "!" + std::to_string(port);
+    if(this->is_sock_lock[ip_port]) {
+        this->is_sock_lock[ip_port] = false;
+//        DPRINTF(DEBUG_UTIL, "unloed: IP: %s Port: %d\n", ip.c_str(), port);
+        this->socks_lock[ip_port].unlock();
+    }
 }
 
 std::string Connect::get_ip(){
@@ -288,8 +361,14 @@ int Connect::operator*(){
     }
 }
 
-void Connect::close(){
-    ::close(sock);
+//void Connect::close(){
+//    ::close(sock);
+//}
+
+void Connect::close_all(){
+    for(auto it = socks.begin(); it != socks.end(); it++){
+        ::close(it->second);
+    }
 }
 
 void Connect::print_error(std::string const& m){
@@ -958,6 +1037,8 @@ int request_placement(const std::string& metadata_server_ip, const std::string& 
             DPRINTF(DEBUG_CLIENT_NODE, "data_set_fut is not valid\n");
         }
     }
+
+//    c.unlock();
     
     if(flag){
         msg.clear();

@@ -30,6 +30,9 @@
 #include <erasurecode.h>
 #include <unordered_set>
 #include <chrono>
+#include <map>
+#include <mutex>
+
 using namespace std::chrono;
 
 // Define error values
@@ -265,9 +268,9 @@ inline uint16_t stous(const std::string& s){
 
 int socket_setup(const std::string& port, const std::string* IP = nullptr);
 
-int socket_cnt(int& sock, uint16_t port, const std::string& IP = "0.0.0.0");
+//int socket_cnt(int& sock, uint16_t port, const std::string& IP = "0.0.0.0");
 
-int client_cnt(int& sock, Server* server);
+//int client_cnt(int& sock, Server* server);
 
 // Todo: use this connection throughout the project
 // socket connect upgrade
@@ -292,11 +295,19 @@ public:
     
     void close();
 
+    void unlock();
+
+    static void close_all();
+
 private:
     std::string ip;
     uint16_t port;
     int sock;
     bool connected;
+    
+    static std::map<std::string, int> socks;
+    static std::map<std::string, std::mutex> socks_lock;
+    static std::map<std::string, bool> is_sock_lock;
     
     void print_error(std::string const& m); // thread safe print
 };

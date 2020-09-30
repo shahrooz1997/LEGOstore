@@ -26,6 +26,12 @@
 #include <utility>
 #include <sstream>
 #include <iostream>
+#include <netinet/tcp.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 // Todo: add the timestamp that the reconfiguration happened on to the confid part of the pair. confid!timestamp
 //       the server may or may not need it. We will see.
@@ -134,18 +140,10 @@ update(const string& key, const string& old_confid, const string& new_confid, co
     return DataTransfer::serializeMDS("OK", "key updated", nullptr);
 }
 
-void server_connection(int connection, int portid){
-    
-    std::string recvd;
-    int result = DataTransfer::recvMsg(connection, recvd);
-    if(result != 1){
-        DataTransfer::sendMsg(connection, DataTransfer::serializeMDS("ERROR", "Error in receiving"));
-        close(connection);
-        return;
-    }
-    
+void message_handler(int connection, int portid, std::string& recvd){
     string status;
     string msg;
+    int result =1;
     
     Placement* p = DataTransfer::deserializeMDS(recvd, status, msg);
     std::string& method = status; // Method: ask/update, key, conf_id
@@ -193,9 +191,34 @@ void server_connection(int connection, int portid){
         DataTransfer::sendMsg(connection, DataTransfer::serializeMDS("ERROR", "Server Response failed"));
     }
     
-    shutdown(connection, SHUT_WR);
-    close(connection);
-    fflush(stdout);
+//    shutdown(connection, SHUT_WR);
+}
+
+void server_connection(int connection, int portid){
+
+//    int n = 1;
+//    int result = setsockopt(connection, SOL_SOCKET, SO_NOSIGPIPE, &n, sizeof(n));
+//    if(result < 0){
+//        assert(false);
+//    }
+
+    int yes = 1;
+    int result = setsockopt(connection, IPPROTO_TCP, TCP_NODELAY, (char*) &yes, sizeof(int));
+    if(result < 0){
+        assert(false);
+    }
+
+    while(true){
+        std::string recvd;
+        int result = DataTransfer::recvMsg(connection, recvd);
+        if(result != 1){
+//            DataTransfer::sendMsg(connection, DataTransfer::serializeMDS("ERROR", "Error in receiving"));
+            close(connection);
+            DPRINTF(DEBUG_METADATA_SERVER, "one connection closed.\n");
+            return;
+        }
+        message_handler(connection, portid, recvd);
+    }
 }
 
 void runServer(const std::string& socket_port, const std::string& socket_ip){
@@ -214,6 +237,8 @@ void runServer(const std::string& socket_port, const std::string& socket_ip){
 }
 
 int main(int argc, char** argv){
+
+    signal(SIGPIPE, SIG_IGN);
 
 //    std::cout << "AAAA" << std::endl;
     if(argc != 3){

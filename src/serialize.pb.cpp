@@ -61,7 +61,6 @@ static void InitDefaultsscc_info_Datacenter_serialize_2eproto() {
     new (ptr) ::packet::Datacenter();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::packet::Datacenter::InitAsDefaultInstance();
 }
 
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_Datacenter_serialize_2eproto =
@@ -76,7 +75,6 @@ static void InitDefaultsscc_info_Group_serialize_2eproto() {
     new (ptr) ::packet::Group();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::packet::Group::InitAsDefaultInstance();
 }
 
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_Group_serialize_2eproto =
@@ -91,7 +89,6 @@ static void InitDefaultsscc_info_GroupConfig_serialize_2eproto() {
     new (ptr) ::packet::GroupConfig();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::packet::GroupConfig::InitAsDefaultInstance();
 }
 
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_GroupConfig_serialize_2eproto =
@@ -106,7 +103,6 @@ static void InitDefaultsscc_info_MetaDataServer_serialize_2eproto() {
     new (ptr) ::packet::MetaDataServer();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::packet::MetaDataServer::InitAsDefaultInstance();
 }
 
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_MetaDataServer_serialize_2eproto =
@@ -121,7 +117,6 @@ static void InitDefaultsscc_info_Placement_serialize_2eproto() {
     new (ptr) ::packet::Placement();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::packet::Placement::InitAsDefaultInstance();
 }
 
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Placement_serialize_2eproto =
@@ -135,7 +130,6 @@ static void InitDefaultsscc_info_Server_serialize_2eproto() {
     new (ptr) ::packet::Server();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::packet::Server::InitAsDefaultInstance();
 }
 
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Server_serialize_2eproto =
@@ -149,7 +143,6 @@ static void InitDefaultsscc_info_msg_serialize_2eproto() {
     new (ptr) ::packet::msg();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::packet::msg::InitAsDefaultInstance();
 }
 
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_msg_serialize_2eproto =
@@ -163,7 +156,6 @@ static void InitDefaultsscc_info_properties_serialize_2eproto() {
     new (ptr) ::packet::properties();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::packet::properties::InitAsDefaultInstance();
 }
 
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_properties_serialize_2eproto =
@@ -316,36 +308,34 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_ser
   &scc_info_properties_serialize_2eproto.base,
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_serialize_2eproto_once;
-static bool descriptor_table_serialize_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_serialize_2eproto = {
-  &descriptor_table_serialize_2eproto_initialized, descriptor_table_protodef_serialize_2eproto, "serialize.proto", 931,
+  false, false, descriptor_table_protodef_serialize_2eproto, "serialize.proto", 931,
   &descriptor_table_serialize_2eproto_once, descriptor_table_serialize_2eproto_sccs, descriptor_table_serialize_2eproto_deps, 8, 0,
   schemas, file_default_instances, TableStruct_serialize_2eproto::offsets,
   file_level_metadata_serialize_2eproto, 8, file_level_enum_descriptors_serialize_2eproto, file_level_service_descriptors_serialize_2eproto,
 };
 
 // Force running AddDescriptors() at dynamic initialization time.
-static bool dynamic_init_dummy_serialize_2eproto = (  ::PROTOBUF_NAMESPACE_ID::internal::AddDescriptors(&descriptor_table_serialize_2eproto), true);
+static bool dynamic_init_dummy_serialize_2eproto = (static_cast<void>(::PROTOBUF_NAMESPACE_ID::internal::AddDescriptors(&descriptor_table_serialize_2eproto)), true);
 namespace packet {
 
 // ===================================================================
 
-void msg::InitAsDefaultInstance() {
-}
 class msg::_Internal {
  public:
 };
 
-msg::msg()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+msg::msg(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena),
+  value_(arena) {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:packet.msg)
+  RegisterArenaDtor(arena);
+  // @@protoc_insertion_point(arena_constructor:packet.msg)
 }
 msg::msg(const msg& from)
   : ::PROTOBUF_NAMESPACE_ID::Message(),
-      _internal_metadata_(nullptr),
       value_(from.value_) {
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   // @@protoc_insertion_point(copy_constructor:packet.msg)
 }
 
@@ -356,11 +346,19 @@ void msg::SharedCtor() {
 msg::~msg() {
   // @@protoc_insertion_point(destructor:packet.msg)
   SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
 void msg::SharedDtor() {
+  GOOGLE_DCHECK(GetArena() == nullptr);
 }
 
+void msg::ArenaDtor(void* object) {
+  msg* _this = reinterpret_cast< msg* >(object);
+  (void)_this;
+}
+void msg::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
 void msg::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
@@ -377,7 +375,7 @@ void msg::Clear() {
   (void) cached_has_bits;
 
   value_.Clear();
-  _internal_metadata_.Clear();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
 const char* msg::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
@@ -406,7 +404,9 @@ const char* msg::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::intern
           ctx->SetLastTag(tag);
           goto success;
         }
-        ptr = UnknownFieldParse(tag, &_internal_metadata_, ptr, ctx);
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
         CHK_(ptr != nullptr);
         continue;
       }
@@ -434,7 +434,7 @@ failure:
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:packet.msg)
   return target;
@@ -483,7 +483,7 @@ void msg::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
 void msg::MergeFrom(const msg& from) {
 // @@protoc_insertion_point(class_specific_merge_from_start:packet.msg)
   GOOGLE_DCHECK_NE(&from, this);
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -510,7 +510,7 @@ bool msg::IsInitialized() const {
 
 void msg::InternalSwap(msg* other) {
   using std::swap;
-  _internal_metadata_.Swap(&other->_internal_metadata_);
+  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
   value_.InternalSwap(&other->value_);
 }
 
@@ -521,24 +521,23 @@ void msg::InternalSwap(msg* other) {
 
 // ===================================================================
 
-void Server::InitAsDefaultInstance() {
-}
 class Server::_Internal {
  public:
 };
 
-Server::Server()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+Server::Server(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:packet.Server)
+  RegisterArenaDtor(arena);
+  // @@protoc_insertion_point(arena_constructor:packet.Server)
 }
 Server::Server(const Server& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
-      _internal_metadata_(nullptr) {
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ip_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (!from._internal_ip().empty()) {
-    ip_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.ip_);
+    ip_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_ip(),
+      GetArena());
   }
   ::memcpy(&id_, &from.id_,
     static_cast<size_t>(reinterpret_cast<char*>(&port_) -
@@ -557,12 +556,20 @@ void Server::SharedCtor() {
 Server::~Server() {
   // @@protoc_insertion_point(destructor:packet.Server)
   SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
 void Server::SharedDtor() {
+  GOOGLE_DCHECK(GetArena() == nullptr);
   ip_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
+void Server::ArenaDtor(void* object) {
+  Server* _this = reinterpret_cast< Server* >(object);
+  (void)_this;
+}
+void Server::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
 void Server::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
@@ -578,11 +585,11 @@ void Server::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  ip_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ip_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
   ::memset(&id_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&port_) -
       reinterpret_cast<char*>(&id_)) + sizeof(port_));
-  _internal_metadata_.Clear();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
 const char* Server::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
@@ -595,7 +602,7 @@ const char* Server::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::int
       // uint32 id = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -611,7 +618,7 @@ const char* Server::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::int
       // uint32 port = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
-          port_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          port_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -621,7 +628,9 @@ const char* Server::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::int
           ctx->SetLastTag(tag);
           goto success;
         }
-        ptr = UnknownFieldParse(tag, &_internal_metadata_, ptr, ctx);
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
         CHK_(ptr != nullptr);
         continue;
       }
@@ -665,7 +674,7 @@ failure:
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:packet.Server)
   return target;
@@ -727,13 +736,12 @@ void Server::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
 void Server::MergeFrom(const Server& from) {
 // @@protoc_insertion_point(class_specific_merge_from_start:packet.Server)
   GOOGLE_DCHECK_NE(&from, this);
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
   if (from.ip().size() > 0) {
-
-    ip_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.ip_);
+    _internal_set_ip(from._internal_ip());
   }
   if (from.id() != 0) {
     _internal_set_id(from._internal_id());
@@ -763,11 +771,14 @@ bool Server::IsInitialized() const {
 
 void Server::InternalSwap(Server* other) {
   using std::swap;
-  _internal_metadata_.Swap(&other->_internal_metadata_);
-  ip_.Swap(&other->ip_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  swap(id_, other->id_);
-  swap(port_, other->port_);
+  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  ip_.Swap(&other->ip_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(Server, port_)
+      + sizeof(Server::port_)
+      - PROTOBUF_FIELD_OFFSET(Server, id_)>(
+          reinterpret_cast<char*>(&id_),
+          reinterpret_cast<char*>(&other->id_));
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata Server::GetMetadata() const {
@@ -777,25 +788,25 @@ void Server::InternalSwap(Server* other) {
 
 // ===================================================================
 
-void Datacenter::InitAsDefaultInstance() {
-}
 class Datacenter::_Internal {
  public:
 };
 
-Datacenter::Datacenter()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+Datacenter::Datacenter(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena),
+  servers_(arena) {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:packet.Datacenter)
+  RegisterArenaDtor(arena);
+  // @@protoc_insertion_point(arena_constructor:packet.Datacenter)
 }
 Datacenter::Datacenter(const Datacenter& from)
   : ::PROTOBUF_NAMESPACE_ID::Message(),
-      _internal_metadata_(nullptr),
       servers_(from.servers_) {
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   metadata_server_ip_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (!from._internal_metadata_server_ip().empty()) {
-    metadata_server_ip_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.metadata_server_ip_);
+    metadata_server_ip_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_metadata_server_ip(),
+      GetArena());
   }
   ::memcpy(&id_, &from.id_,
     static_cast<size_t>(reinterpret_cast<char*>(&metadata_server_port_) -
@@ -814,12 +825,20 @@ void Datacenter::SharedCtor() {
 Datacenter::~Datacenter() {
   // @@protoc_insertion_point(destructor:packet.Datacenter)
   SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
 void Datacenter::SharedDtor() {
+  GOOGLE_DCHECK(GetArena() == nullptr);
   metadata_server_ip_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
+void Datacenter::ArenaDtor(void* object) {
+  Datacenter* _this = reinterpret_cast< Datacenter* >(object);
+  (void)_this;
+}
+void Datacenter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
 void Datacenter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
@@ -836,11 +855,11 @@ void Datacenter::Clear() {
   (void) cached_has_bits;
 
   servers_.Clear();
-  metadata_server_ip_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  metadata_server_ip_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
   ::memset(&id_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&metadata_server_port_) -
       reinterpret_cast<char*>(&id_)) + sizeof(metadata_server_port_));
-  _internal_metadata_.Clear();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
 const char* Datacenter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
@@ -853,7 +872,7 @@ const char* Datacenter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID:
       // uint32 id = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -869,7 +888,7 @@ const char* Datacenter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID:
       // uint32 metadata_server_port = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
-          metadata_server_port_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          metadata_server_port_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -891,7 +910,9 @@ const char* Datacenter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID:
           ctx->SetLastTag(tag);
           goto success;
         }
-        ptr = UnknownFieldParse(tag, &_internal_metadata_, ptr, ctx);
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
         CHK_(ptr != nullptr);
         continue;
       }
@@ -943,7 +964,7 @@ failure:
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:packet.Datacenter)
   return target;
@@ -1012,14 +1033,13 @@ void Datacenter::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
 void Datacenter::MergeFrom(const Datacenter& from) {
 // @@protoc_insertion_point(class_specific_merge_from_start:packet.Datacenter)
   GOOGLE_DCHECK_NE(&from, this);
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
   servers_.MergeFrom(from.servers_);
   if (from.metadata_server_ip().size() > 0) {
-
-    metadata_server_ip_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.metadata_server_ip_);
+    _internal_set_metadata_server_ip(from._internal_metadata_server_ip());
   }
   if (from.id() != 0) {
     _internal_set_id(from._internal_id());
@@ -1049,12 +1069,15 @@ bool Datacenter::IsInitialized() const {
 
 void Datacenter::InternalSwap(Datacenter* other) {
   using std::swap;
-  _internal_metadata_.Swap(&other->_internal_metadata_);
+  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
   servers_.InternalSwap(&other->servers_);
-  metadata_server_ip_.Swap(&other->metadata_server_ip_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  swap(id_, other->id_);
-  swap(metadata_server_port_, other->metadata_server_port_);
+  metadata_server_ip_.Swap(&other->metadata_server_ip_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(Datacenter, metadata_server_port_)
+      + sizeof(Datacenter::metadata_server_port_)
+      - PROTOBUF_FIELD_OFFSET(Datacenter, id_)>(
+          reinterpret_cast<char*>(&id_),
+          reinterpret_cast<char*>(&other->id_));
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata Datacenter::GetMetadata() const {
@@ -1064,28 +1087,31 @@ void Datacenter::InternalSwap(Datacenter* other) {
 
 // ===================================================================
 
-void Placement::InitAsDefaultInstance() {
-}
 class Placement::_Internal {
  public:
 };
 
-Placement::Placement()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+Placement::Placement(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena),
+  q1_(arena),
+  q2_(arena),
+  q3_(arena),
+  q4_(arena) {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:packet.Placement)
+  RegisterArenaDtor(arena);
+  // @@protoc_insertion_point(arena_constructor:packet.Placement)
 }
 Placement::Placement(const Placement& from)
   : ::PROTOBUF_NAMESPACE_ID::Message(),
-      _internal_metadata_(nullptr),
       q1_(from.q1_),
       q2_(from.q2_),
       q3_(from.q3_),
       q4_(from.q4_) {
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   protocol_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (!from._internal_protocol().empty()) {
-    protocol_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.protocol_);
+    protocol_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_protocol(),
+      GetArena());
   }
   ::memcpy(&m_, &from.m_,
     static_cast<size_t>(reinterpret_cast<char*>(&f_) -
@@ -1104,12 +1130,20 @@ void Placement::SharedCtor() {
 Placement::~Placement() {
   // @@protoc_insertion_point(destructor:packet.Placement)
   SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
 void Placement::SharedDtor() {
+  GOOGLE_DCHECK(GetArena() == nullptr);
   protocol_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
+void Placement::ArenaDtor(void* object) {
+  Placement* _this = reinterpret_cast< Placement* >(object);
+  (void)_this;
+}
+void Placement::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
 void Placement::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
@@ -1129,11 +1163,11 @@ void Placement::Clear() {
   q2_.Clear();
   q3_.Clear();
   q4_.Clear();
-  protocol_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  protocol_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
   ::memset(&m_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&f_) -
       reinterpret_cast<char*>(&m_)) + sizeof(f_));
-  _internal_metadata_.Clear();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
 const char* Placement::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
@@ -1158,7 +1192,7 @@ const char* Placement::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedUInt32Parser(_internal_mutable_q1(), ptr, ctx);
           CHK_(ptr);
         } else if (static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16) {
-          _internal_add_q1(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr));
+          _internal_add_q1(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr));
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1168,21 +1202,21 @@ const char* Placement::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedUInt32Parser(_internal_mutable_q2(), ptr, ctx);
           CHK_(ptr);
         } else if (static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24) {
-          _internal_add_q2(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr));
+          _internal_add_q2(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr));
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // uint32 m = 4;
       case 4:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
-          m_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          m_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // uint32 k = 5;
       case 5:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
-          k_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          k_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1192,7 +1226,7 @@ const char* Placement::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedUInt32Parser(_internal_mutable_q3(), ptr, ctx);
           CHK_(ptr);
         } else if (static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 48) {
-          _internal_add_q3(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr));
+          _internal_add_q3(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr));
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1202,14 +1236,14 @@ const char* Placement::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedUInt32Parser(_internal_mutable_q4(), ptr, ctx);
           CHK_(ptr);
         } else if (static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 56) {
-          _internal_add_q4(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr));
+          _internal_add_q4(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr));
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // uint32 f = 8;
       case 8:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 64)) {
-          f_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          f_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1219,7 +1253,9 @@ const char* Placement::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::
           ctx->SetLastTag(tag);
           goto success;
         }
-        ptr = UnknownFieldParse(tag, &_internal_metadata_, ptr, ctx);
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
         CHK_(ptr != nullptr);
         continue;
       }
@@ -1305,7 +1341,7 @@ failure:
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:packet.Placement)
   return target;
@@ -1434,7 +1470,7 @@ void Placement::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
 void Placement::MergeFrom(const Placement& from) {
 // @@protoc_insertion_point(class_specific_merge_from_start:packet.Placement)
   GOOGLE_DCHECK_NE(&from, this);
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -1443,8 +1479,7 @@ void Placement::MergeFrom(const Placement& from) {
   q3_.MergeFrom(from.q3_);
   q4_.MergeFrom(from.q4_);
   if (from.protocol().size() > 0) {
-
-    protocol_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.protocol_);
+    _internal_set_protocol(from._internal_protocol());
   }
   if (from.m() != 0) {
     _internal_set_m(from._internal_m());
@@ -1477,16 +1512,18 @@ bool Placement::IsInitialized() const {
 
 void Placement::InternalSwap(Placement* other) {
   using std::swap;
-  _internal_metadata_.Swap(&other->_internal_metadata_);
+  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
   q1_.InternalSwap(&other->q1_);
   q2_.InternalSwap(&other->q2_);
   q3_.InternalSwap(&other->q3_);
   q4_.InternalSwap(&other->q4_);
-  protocol_.Swap(&other->protocol_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  swap(m_, other->m_);
-  swap(k_, other->k_);
-  swap(f_, other->f_);
+  protocol_.Swap(&other->protocol_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(Placement, f_)
+      + sizeof(Placement::f_)
+      - PROTOBUF_FIELD_OFFSET(Placement, m_)>(
+          reinterpret_cast<char*>(&m_),
+          reinterpret_cast<char*>(&other->m_));
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata Placement::GetMetadata() const {
@@ -1496,10 +1533,6 @@ void Placement::InternalSwap(Placement* other) {
 
 // ===================================================================
 
-void GroupConfig::InitAsDefaultInstance() {
-  ::packet::_GroupConfig_default_instance_._instance.get_mutable()->placement_p_ = const_cast< ::packet::Placement*>(
-      ::packet::Placement::internal_default_instance());
-}
 class GroupConfig::_Internal {
  public:
   static const ::packet::Placement& placement_p(const GroupConfig* msg);
@@ -1509,17 +1542,19 @@ const ::packet::Placement&
 GroupConfig::_Internal::placement_p(const GroupConfig* msg) {
   return *msg->placement_p_;
 }
-GroupConfig::GroupConfig()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+GroupConfig::GroupConfig(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena),
+  keys_(arena),
+  client_dist_(arena) {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:packet.GroupConfig)
+  RegisterArenaDtor(arena);
+  // @@protoc_insertion_point(arena_constructor:packet.GroupConfig)
 }
 GroupConfig::GroupConfig(const GroupConfig& from)
   : ::PROTOBUF_NAMESPACE_ID::Message(),
-      _internal_metadata_(nullptr),
       keys_(from.keys_),
       client_dist_(from.client_dist_) {
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   if (from._internal_has_placement_p()) {
     placement_p_ = new ::packet::Placement(*from.placement_p_);
   } else {
@@ -1541,12 +1576,20 @@ void GroupConfig::SharedCtor() {
 GroupConfig::~GroupConfig() {
   // @@protoc_insertion_point(destructor:packet.GroupConfig)
   SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
 void GroupConfig::SharedDtor() {
+  GOOGLE_DCHECK(GetArena() == nullptr);
   if (this != internal_default_instance()) delete placement_p_;
 }
 
+void GroupConfig::ArenaDtor(void* object) {
+  GroupConfig* _this = reinterpret_cast< GroupConfig* >(object);
+  (void)_this;
+}
+void GroupConfig::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
 void GroupConfig::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
@@ -1564,14 +1607,14 @@ void GroupConfig::Clear() {
 
   keys_.Clear();
   client_dist_.Clear();
-  if (GetArenaNoVirtual() == nullptr && placement_p_ != nullptr) {
+  if (GetArena() == nullptr && placement_p_ != nullptr) {
     delete placement_p_;
   }
   placement_p_ = nullptr;
   ::memset(&num_objects_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&object_size_) -
       reinterpret_cast<char*>(&num_objects_)) + sizeof(object_size_));
-  _internal_metadata_.Clear();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
 const char* GroupConfig::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
@@ -1584,14 +1627,14 @@ const char* GroupConfig::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID
       // uint32 object_size = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          object_size_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          object_size_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // uint64 num_objects = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
-          num_objects_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          num_objects_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1612,7 +1655,7 @@ const char* GroupConfig::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID
       // uint64 duration = 5;
       case 5:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
-          duration_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          duration_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1652,7 +1695,9 @@ const char* GroupConfig::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID
           ctx->SetLastTag(tag);
           goto success;
         }
-        ptr = UnknownFieldParse(tag, &_internal_metadata_, ptr, ctx);
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
         CHK_(ptr != nullptr);
         continue;
       }
@@ -1723,7 +1768,7 @@ failure:
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:packet.GroupConfig)
   return target;
@@ -1825,7 +1870,7 @@ void GroupConfig::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
 void GroupConfig::MergeFrom(const GroupConfig& from) {
 // @@protoc_insertion_point(class_specific_merge_from_start:packet.GroupConfig)
   GOOGLE_DCHECK_NE(&from, this);
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -1871,15 +1916,15 @@ bool GroupConfig::IsInitialized() const {
 
 void GroupConfig::InternalSwap(GroupConfig* other) {
   using std::swap;
-  _internal_metadata_.Swap(&other->_internal_metadata_);
+  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
   keys_.InternalSwap(&other->keys_);
   client_dist_.InternalSwap(&other->client_dist_);
-  swap(placement_p_, other->placement_p_);
-  swap(num_objects_, other->num_objects_);
-  swap(arrival_rate_, other->arrival_rate_);
-  swap(read_ratio_, other->read_ratio_);
-  swap(duration_, other->duration_);
-  swap(object_size_, other->object_size_);
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GroupConfig, object_size_)
+      + sizeof(GroupConfig::object_size_)
+      - PROTOBUF_FIELD_OFFSET(GroupConfig, placement_p_)>(
+          reinterpret_cast<char*>(&placement_p_),
+          reinterpret_cast<char*>(&other->placement_p_));
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata GroupConfig::GetMetadata() const {
@@ -1889,23 +1934,23 @@ void GroupConfig::InternalSwap(GroupConfig* other) {
 
 // ===================================================================
 
-void Group::InitAsDefaultInstance() {
-}
 class Group::_Internal {
  public:
 };
 
-Group::Group()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+Group::Group(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena),
+  grp_id_(arena),
+  grp_config_(arena) {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:packet.Group)
+  RegisterArenaDtor(arena);
+  // @@protoc_insertion_point(arena_constructor:packet.Group)
 }
 Group::Group(const Group& from)
   : ::PROTOBUF_NAMESPACE_ID::Message(),
-      _internal_metadata_(nullptr),
       grp_id_(from.grp_id_),
       grp_config_(from.grp_config_) {
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::memcpy(&timestamp_, &from.timestamp_,
     static_cast<size_t>(reinterpret_cast<char*>(&id_) -
     reinterpret_cast<char*>(&timestamp_)) + sizeof(id_));
@@ -1922,11 +1967,19 @@ void Group::SharedCtor() {
 Group::~Group() {
   // @@protoc_insertion_point(destructor:packet.Group)
   SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
 void Group::SharedDtor() {
+  GOOGLE_DCHECK(GetArena() == nullptr);
 }
 
+void Group::ArenaDtor(void* object) {
+  Group* _this = reinterpret_cast< Group* >(object);
+  (void)_this;
+}
+void Group::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
 void Group::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
@@ -1947,7 +2000,7 @@ void Group::Clear() {
   ::memset(&timestamp_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&id_) -
       reinterpret_cast<char*>(&timestamp_)) + sizeof(id_));
-  _internal_metadata_.Clear();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
 const char* Group::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
@@ -1960,14 +2013,14 @@ const char* Group::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::inte
       // uint64 timestamp = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          timestamp_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          timestamp_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // uint32 id = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
-          id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1977,7 +2030,7 @@ const char* Group::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::inte
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedUInt32Parser(_internal_mutable_grp_id(), ptr, ctx);
           CHK_(ptr);
         } else if (static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24) {
-          _internal_add_grp_id(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr));
+          _internal_add_grp_id(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr));
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1999,7 +2052,9 @@ const char* Group::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::inte
           ctx->SetLastTag(tag);
           goto success;
         }
-        ptr = UnknownFieldParse(tag, &_internal_metadata_, ptr, ctx);
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
         CHK_(ptr != nullptr);
         continue;
       }
@@ -2050,7 +2105,7 @@ failure:
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:packet.Group)
   return target;
@@ -2127,7 +2182,7 @@ void Group::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
 void Group::MergeFrom(const Group& from) {
 // @@protoc_insertion_point(class_specific_merge_from_start:packet.Group)
   GOOGLE_DCHECK_NE(&from, this);
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -2161,11 +2216,15 @@ bool Group::IsInitialized() const {
 
 void Group::InternalSwap(Group* other) {
   using std::swap;
-  _internal_metadata_.Swap(&other->_internal_metadata_);
+  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
   grp_id_.InternalSwap(&other->grp_id_);
   grp_config_.InternalSwap(&other->grp_config_);
-  swap(timestamp_, other->timestamp_);
-  swap(id_, other->id_);
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(Group, id_)
+      + sizeof(Group::id_)
+      - PROTOBUF_FIELD_OFFSET(Group, timestamp_)>(
+          reinterpret_cast<char*>(&timestamp_),
+          reinterpret_cast<char*>(&other->timestamp_));
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata Group::GetMetadata() const {
@@ -2175,23 +2234,23 @@ void Group::InternalSwap(Group* other) {
 
 // ===================================================================
 
-void properties::InitAsDefaultInstance() {
-}
 class properties::_Internal {
  public:
 };
 
-properties::properties()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+properties::properties(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena),
+  datacenters_(arena),
+  groups_(arena) {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:packet.properties)
+  RegisterArenaDtor(arena);
+  // @@protoc_insertion_point(arena_constructor:packet.properties)
 }
 properties::properties(const properties& from)
   : ::PROTOBUF_NAMESPACE_ID::Message(),
-      _internal_metadata_(nullptr),
       datacenters_(from.datacenters_),
       groups_(from.groups_) {
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::memcpy(&local_datacenter_id_, &from.local_datacenter_id_,
     static_cast<size_t>(reinterpret_cast<char*>(&start_time_) -
     reinterpret_cast<char*>(&local_datacenter_id_)) + sizeof(start_time_));
@@ -2208,11 +2267,19 @@ void properties::SharedCtor() {
 properties::~properties() {
   // @@protoc_insertion_point(destructor:packet.properties)
   SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
 void properties::SharedDtor() {
+  GOOGLE_DCHECK(GetArena() == nullptr);
 }
 
+void properties::ArenaDtor(void* object) {
+  properties* _this = reinterpret_cast< properties* >(object);
+  (void)_this;
+}
+void properties::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
 void properties::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
@@ -2233,7 +2300,7 @@ void properties::Clear() {
   ::memset(&local_datacenter_id_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&start_time_) -
       reinterpret_cast<char*>(&local_datacenter_id_)) + sizeof(start_time_));
-  _internal_metadata_.Clear();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
 const char* properties::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
@@ -2246,35 +2313,35 @@ const char* properties::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID:
       // uint32 local_datacenter_id = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          local_datacenter_id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          local_datacenter_id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // uint32 retry_attempts = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
-          retry_attempts_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          retry_attempts_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // uint32 metadata_server_timeout = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
-          metadata_server_timeout_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          metadata_server_timeout_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // uint32 timeout_per_request = 4;
       case 4:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
-          timeout_per_request_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          timeout_per_request_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
       // uint64 start_time = 5;
       case 5:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
-          start_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          start_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -2308,7 +2375,9 @@ const char* properties::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID:
           ctx->SetLastTag(tag);
           goto success;
         }
-        ptr = UnknownFieldParse(tag, &_internal_metadata_, ptr, ctx);
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
         CHK_(ptr != nullptr);
         continue;
       }
@@ -2376,7 +2445,7 @@ failure:
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:packet.properties)
   return target;
@@ -2466,7 +2535,7 @@ void properties::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
 void properties::MergeFrom(const properties& from) {
 // @@protoc_insertion_point(class_specific_merge_from_start:packet.properties)
   GOOGLE_DCHECK_NE(&from, this);
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -2509,14 +2578,15 @@ bool properties::IsInitialized() const {
 
 void properties::InternalSwap(properties* other) {
   using std::swap;
-  _internal_metadata_.Swap(&other->_internal_metadata_);
+  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
   datacenters_.InternalSwap(&other->datacenters_);
   groups_.InternalSwap(&other->groups_);
-  swap(local_datacenter_id_, other->local_datacenter_id_);
-  swap(retry_attempts_, other->retry_attempts_);
-  swap(metadata_server_timeout_, other->metadata_server_timeout_);
-  swap(timeout_per_request_, other->timeout_per_request_);
-  swap(start_time_, other->start_time_);
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(properties, start_time_)
+      + sizeof(properties::start_time_)
+      - PROTOBUF_FIELD_OFFSET(properties, local_datacenter_id_)>(
+          reinterpret_cast<char*>(&local_datacenter_id_),
+          reinterpret_cast<char*>(&other->local_datacenter_id_));
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata properties::GetMetadata() const {
@@ -2526,10 +2596,6 @@ void properties::InternalSwap(properties* other) {
 
 // ===================================================================
 
-void MetaDataServer::InitAsDefaultInstance() {
-  ::packet::_MetaDataServer_default_instance_._instance.get_mutable()->placement_p_ = const_cast< ::packet::Placement*>(
-      ::packet::Placement::internal_default_instance());
-}
 class MetaDataServer::_Internal {
  public:
   static const ::packet::Placement& placement_p(const MetaDataServer* msg);
@@ -2539,22 +2605,24 @@ const ::packet::Placement&
 MetaDataServer::_Internal::placement_p(const MetaDataServer* msg) {
   return *msg->placement_p_;
 }
-MetaDataServer::MetaDataServer()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+MetaDataServer::MetaDataServer(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:packet.MetaDataServer)
+  RegisterArenaDtor(arena);
+  // @@protoc_insertion_point(arena_constructor:packet.MetaDataServer)
 }
 MetaDataServer::MetaDataServer(const MetaDataServer& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
-      _internal_metadata_(nullptr) {
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   status_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (!from._internal_status().empty()) {
-    status_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.status_);
+    status_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_status(),
+      GetArena());
   }
   msg_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (!from._internal_msg().empty()) {
-    msg_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.msg_);
+    msg_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_msg(),
+      GetArena());
   }
   if (from._internal_has_placement_p()) {
     placement_p_ = new ::packet::Placement(*from.placement_p_);
@@ -2574,14 +2642,22 @@ void MetaDataServer::SharedCtor() {
 MetaDataServer::~MetaDataServer() {
   // @@protoc_insertion_point(destructor:packet.MetaDataServer)
   SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
 void MetaDataServer::SharedDtor() {
+  GOOGLE_DCHECK(GetArena() == nullptr);
   status_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   msg_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete placement_p_;
 }
 
+void MetaDataServer::ArenaDtor(void* object) {
+  MetaDataServer* _this = reinterpret_cast< MetaDataServer* >(object);
+  (void)_this;
+}
+void MetaDataServer::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
 void MetaDataServer::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
@@ -2597,13 +2673,13 @@ void MetaDataServer::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  status_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  msg_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  if (GetArenaNoVirtual() == nullptr && placement_p_ != nullptr) {
+  status_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  msg_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  if (GetArena() == nullptr && placement_p_ != nullptr) {
     delete placement_p_;
   }
   placement_p_ = nullptr;
-  _internal_metadata_.Clear();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
 const char* MetaDataServer::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
@@ -2642,7 +2718,9 @@ const char* MetaDataServer::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE
           ctx->SetLastTag(tag);
           goto success;
         }
-        ptr = UnknownFieldParse(tag, &_internal_metadata_, ptr, ctx);
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
         CHK_(ptr != nullptr);
         continue;
       }
@@ -2684,7 +2762,7 @@ failure:
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:packet.MetaDataServer)
   return target;
@@ -2746,17 +2824,15 @@ void MetaDataServer::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
 void MetaDataServer::MergeFrom(const MetaDataServer& from) {
 // @@protoc_insertion_point(class_specific_merge_from_start:packet.MetaDataServer)
   GOOGLE_DCHECK_NE(&from, this);
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
   if (from.status().size() > 0) {
-
-    status_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.status_);
+    _internal_set_status(from._internal_status());
   }
   if (from.msg().size() > 0) {
-
-    msg_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.msg_);
+    _internal_set_msg(from._internal_msg());
   }
   if (from.has_placement_p()) {
     _internal_mutable_placement_p()->::packet::Placement::MergeFrom(from._internal_placement_p());
@@ -2783,11 +2859,9 @@ bool MetaDataServer::IsInitialized() const {
 
 void MetaDataServer::InternalSwap(MetaDataServer* other) {
   using std::swap;
-  _internal_metadata_.Swap(&other->_internal_metadata_);
-  status_.Swap(&other->status_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  msg_.Swap(&other->msg_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  status_.Swap(&other->status_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  msg_.Swap(&other->msg_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
   swap(placement_p_, other->placement_p_);
 }
 
@@ -2800,28 +2874,28 @@ void MetaDataServer::InternalSwap(MetaDataServer* other) {
 }  // namespace packet
 PROTOBUF_NAMESPACE_OPEN
 template<> PROTOBUF_NOINLINE ::packet::msg* Arena::CreateMaybeMessage< ::packet::msg >(Arena* arena) {
-  return Arena::CreateInternal< ::packet::msg >(arena);
+  return Arena::CreateMessageInternal< ::packet::msg >(arena);
 }
 template<> PROTOBUF_NOINLINE ::packet::Server* Arena::CreateMaybeMessage< ::packet::Server >(Arena* arena) {
-  return Arena::CreateInternal< ::packet::Server >(arena);
+  return Arena::CreateMessageInternal< ::packet::Server >(arena);
 }
 template<> PROTOBUF_NOINLINE ::packet::Datacenter* Arena::CreateMaybeMessage< ::packet::Datacenter >(Arena* arena) {
-  return Arena::CreateInternal< ::packet::Datacenter >(arena);
+  return Arena::CreateMessageInternal< ::packet::Datacenter >(arena);
 }
 template<> PROTOBUF_NOINLINE ::packet::Placement* Arena::CreateMaybeMessage< ::packet::Placement >(Arena* arena) {
-  return Arena::CreateInternal< ::packet::Placement >(arena);
+  return Arena::CreateMessageInternal< ::packet::Placement >(arena);
 }
 template<> PROTOBUF_NOINLINE ::packet::GroupConfig* Arena::CreateMaybeMessage< ::packet::GroupConfig >(Arena* arena) {
-  return Arena::CreateInternal< ::packet::GroupConfig >(arena);
+  return Arena::CreateMessageInternal< ::packet::GroupConfig >(arena);
 }
 template<> PROTOBUF_NOINLINE ::packet::Group* Arena::CreateMaybeMessage< ::packet::Group >(Arena* arena) {
-  return Arena::CreateInternal< ::packet::Group >(arena);
+  return Arena::CreateMessageInternal< ::packet::Group >(arena);
 }
 template<> PROTOBUF_NOINLINE ::packet::properties* Arena::CreateMaybeMessage< ::packet::properties >(Arena* arena) {
-  return Arena::CreateInternal< ::packet::properties >(arena);
+  return Arena::CreateMessageInternal< ::packet::properties >(arena);
 }
 template<> PROTOBUF_NOINLINE ::packet::MetaDataServer* Arena::CreateMaybeMessage< ::packet::MetaDataServer >(Arena* arena) {
-  return Arena::CreateInternal< ::packet::MetaDataServer >(arena);
+  return Arena::CreateMessageInternal< ::packet::MetaDataServer >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

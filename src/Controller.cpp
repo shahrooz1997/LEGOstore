@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-//#define LOCAL_TEST
+#define LOCAL_TEST
 
 using std::cout;
 using std::endl;
@@ -86,14 +86,14 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
             
             
             //ABD2 failure 2
-//            test->protocol = ABD_PROTOCOL_NAME;
-//            test->m = 9;
-//            test->k = 0;
-//            test->Q1.insert(begin(test->Q1), {0, 1, 2, 3, 4});
-//            test->Q2.insert(begin(test->Q2), {4, 5, 6, 7, 8});
-//            test->Q3.clear();
-//            test->Q4.clear();
-//            test->f = 2;
+            test->protocol = ABD_PROTOCOL_NAME;
+            test->m = 9;
+            test->k = 0;
+            test->Q1.insert(begin(test->Q1), {0, 1, 2, 3, 4});
+            test->Q2.insert(begin(test->Q2), {4, 5, 6, 7, 8});
+            test->Q3.clear();
+            test->Q4.clear();
+            test->f = 2;
             
             // Failures
 //            test->protocol = CAS_PROTOCOL_NAME;
@@ -108,16 +108,16 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
 //            test->f = 1;
             
             // HARD
-            test->protocol = CAS_PROTOCOL_NAME;
-            test->k = 4;
-            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
-            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
-            test->Q3.insert(begin(test->Q3), {4,5,6,7,8});
-            test->Q4.insert(begin(test->Q4), {2,3,4,5,6,7,8});
-            std::unordered_set<uint32_t> servers;
-            set_intersection(*test, servers);
-            test->m = servers.size(); //std::max(test->Q2.size(), test->Q3.size());
-            test->f = 2;
+//            test->protocol = CAS_PROTOCOL_NAME;
+//            test->k = 4;
+//            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
+//            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
+//            test->Q3.insert(begin(test->Q3), {4,5,6,7,8});
+//            test->Q4.insert(begin(test->Q4), {2,3,4,5,6,7,8});
+//            std::unordered_set<uint32_t> servers;
+//            set_intersection(*test, servers);
+//            test->m = servers.size(); //std::max(test->Q2.size(), test->Q3.size());
+//            test->f = 2;
 
 //            test->protocol = CAS_PROTOCOL_NAME;
 //            test->k = 1;
@@ -262,12 +262,15 @@ int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t gr
 #else
     std::string command = "cd project; ./Client ";
 #endif
+
     command += std::to_string(datacenter_id) + " ";
     command += std::to_string(prp.retry_attempts)+ " ";
     command += std::to_string(prp.metadata_server_timeout)+ " ";
     command += std::to_string(prp.timeout_per_request)+ " ";
     command += std::to_string(conf_id)+ " "; // Todo: Confid must be determined by the workload file
     command += std::to_string(group_id)+ " ";
+
+//    DPRINTF(DEBUG_RECONFIG_CONTROL, "11111111111111\n");
     
     // finding configuration index based on the configuration id
     uint configuration_indx = 0;
@@ -279,24 +282,38 @@ int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t gr
         }
     }
     assert(configuration_found);
+//    DPRINTF(DEBUG_RECONFIG_CONTROL, "5555555555555555\n");
     uint config_group_indx = 0;
     bool config_group_found = false;
     for(; config_group_indx < prp.groups[configuration_indx]->grp_id.size(); config_group_indx++){
-        if(prp.groups[config_group_indx]->grp_id[config_group_indx] == group_id){
+        if(prp.groups[configuration_indx]->grp_id[config_group_indx] == group_id){
             config_group_found = true;
             break;
         }
     }
     assert(config_group_found);
+
+    uint datacenter_indx = 0;
+    bool datacenter_indx_found = false;
+    for(; datacenter_indx < prp.datacenters.size(); datacenter_indx++){
+        if(prp.datacenters[datacenter_indx]->id == datacenter_id){
+            datacenter_indx_found = true;
+            break;
+        }
+    }
+    assert(datacenter_indx_found);
+
+//    DPRINTF(DEBUG_RECONFIG_CONTROL, "222222222222\n");
     const GroupConfig* gc = prp.groups[configuration_indx]->grp_config[config_group_indx];
     command += std::to_string(gc->object_size)+ " ";
-    command += std::to_string(gc->arrival_rate * gc->client_dist[datacenter_id])+ " ";
+    command += std::to_string(gc->arrival_rate * gc->client_dist[datacenter_indx])+ " ";
     command += std::to_string(gc->read_ratio)+ " ";
     command += std::to_string(gc->duration)+ " ";
     command += std::to_string(gc->keys.size());
+//    DPRINTF(DEBUG_RECONFIG_CONTROL, "333333333333\n");
 
 
-    std::vector<std::string> args = {"ssh", "-o", "StrictHostKeyChecking no", "-t", prp.datacenters[datacenter_id]->servers[0]->ip, command};
+    std::vector<std::string> args = {"ssh", "-o", "StrictHostKeyChecking no", "-t", prp.datacenters[datacenter_indx]->servers[0]->ip, command};
     std::string output;
     int status = execute("/usr/bin/ssh", args, output);
     
@@ -539,9 +556,13 @@ int Controller::init_setup(const std::string& configFile){
     
     //Free "inp" data structure
     if(!inp.empty()){
-        for(auto& it: inp){
-            delete it;
+        for(auto& it: inp) {
+            if(it != nullptr){
+                delete it;
+                it = nullptr;
+            }
         }
+        inp.clear();
     }
 //    auto timePoint = time_point_cast<milliseconds>(system_clock::now());
 //    uint64_t startTime = timePoint.time_since_epoch().count();
@@ -707,11 +728,26 @@ int main(){
     Controller master(2, 10000, 10000, "./scripts/project/config/auto_test/datacenters_access_info.json");
 #endif
 //    DPRINTF(DEBUG_RECONFIG_CONTROL, "controller created\n");
-    master.init_setup("./config/input_workload.json");
+    master.init_setup("./config/auto_test/input_workload.json");
     DPRINTF(DEBUG_RECONFIG_CONTROL, "controller created\n");
     
     // Run clients
-    master.run_client(0, 1, 2);
+    std::vector<std::thread> clients_thread;
+    for(uint i = 0; i < master.prp.groups[0]->grp_id.size(); i++){
+        for(uint j = 0; j < master.prp.datacenters.size(); j++){
+            if(master.prp.groups[0]->grp_config[i]->client_dist[j] != 0){
+                clients_thread.emplace_back(&Controller::run_client, &master, master.prp.datacenters[j]->id, 1,
+                                            master.prp.groups[0]->grp_id[i]);
+            }
+        }
+    }
+    for(auto it = clients_thread.begin(); it != clients_thread.end(); it++){
+        it->join();
+    }
+//    master.run_client(0, 1, 2);
+//    std::thread(&Controller::run_client, &master, 0, 1, 2).detach();
+//    std::thread(&Controller::run_client, &master, 0, 1, 5).detach();
+//    std::thread(&Controller::run_client, &master, 0, 1, 7).join();
     
     auto time_point2 = time_point_cast<milliseconds>(system_clock::now());
     uint64_t startTime = time_point2.time_since_epoch().count();

@@ -75,41 +75,29 @@ namespace CAS_helper{
     void _get_timestamp(std::promise <strVec>&& prm, std::string key, Server* server, std::string current_class,
             uint32_t conf_id){
         DPRINTF(DEBUG_CAS_Client, "started.\n");
-        
-        
-        uint64_t le_init = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-        DPRINTF(DEBUG_CAS_Client, "_get_timestamp_latencies: %lu\n", time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
-        
-        
+
         strVec data;
         Connect c(server->ip, server->port);
         if(!c.is_connected()){
             prm.set_value(std::move(data));
             return;
         }
-    
-        DPRINTF(DEBUG_CAS_Client, "_get_timestamp_latencies:socket connected %lu\n", time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
-        
+
         data.push_back("get_timestamp");
         data.push_back(key);
         data.push_back(current_class);
         data.push_back(std::to_string(conf_id));
         DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
-    
-        DPRINTF(DEBUG_CAS_Client, "_get_timestamp_latencies:msg sent %lu\n", time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
-        
+
         data.clear();
         std::string recvd;
         if(DataTransfer::recvMsg(*c, recvd) == 1){
-            DPRINTF(DEBUG_CAS_Client, "_get_timestamp_latencies:msg recv1 %lu\n", time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
             data = DataTransfer::deserialize(recvd);
         }
         else{
-            DPRINTF(DEBUG_CAS_Client, "_get_timestamp_latencies:msg recv2 %lu\n", time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
             data.clear();
         }
 
-//        c.unlock();
         prm.set_value(std::move(data));
         
         DPRINTF(DEBUG_ABD_Client, "finished.\n");
@@ -133,8 +121,6 @@ namespace CAS_helper{
         data.push_back(value);
         data.push_back(current_class);
         data.push_back(std::to_string(conf_id));
-    
-//        DPRINTF(DEBUG_CAS_Client, "Value to send is %s\n", value.c_str());
         
         if((value).empty()){
             DPRINTF(DEBUG_CAS_Client, "WARNING!!! SENDING EMPTY STRING TO SERVER.\n");
@@ -150,7 +136,6 @@ namespace CAS_helper{
             data.clear();
         }
 
-//        c.unlock();
         prm.set_value(std::move(data));
 
         DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %u\n", server->port);
@@ -184,7 +169,6 @@ namespace CAS_helper{
             data.clear();
         }
 
-//        c.unlock();
         prm.set_value(std::move(data));
         
         DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %u\n", server->port);
@@ -218,7 +202,6 @@ namespace CAS_helper{
             data.clear();
         }
 
-//        c.unlock();
         prm.set_value(std::move(data));
         
         DPRINTF(DEBUG_CAS_Client, "finished successfully.\n");
@@ -716,6 +699,8 @@ CAS_Client::~CAS_Client(){
 //    }
 //}
 
+static bool can_be_optimized;
+
 int CAS_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
     DPRINTF(DEBUG_CAS_Client, "started.\n");
     
@@ -855,12 +840,22 @@ int CAS_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
     }
 
     if(op_status == 0){
+        can_be_optimized = true;
+        Timestamp temp = *(tss.begin());
+        for(auto it = tss.begin() + 1; it != tss.end(); it++){
+            if(!(temp == *it)){
+                can_be_optimized = false;
+                break;
+            }
+        }
+
         timestamp = new Timestamp(Timestamp::max_timestamp2(tss));
         
         DPRINTF(DEBUG_CAS_Client, "finished successfully. Max timestamp received is %s\n",
                 (timestamp)->get_string().c_str());
     }
     else{
+        can_be_optimized = false;
         DPRINTF(DEBUG_CAS_Client, "Operation Failed. op_status is %d\n", op_status);
         fflush(stdout);
         assert(false);
@@ -1281,6 +1276,9 @@ int CAS_Client::get(const std::string& key, std::string& value){
     snprintf (log_buf, sizeof (log_buf), log_fmt, log_tv.tv_usec);
     fprintf(this->log_file, "%s read invoke nil\n", log_buf);
 #endif
+
+    static std::map<std::string, std::string> cache_optimized_get;
+    can_be_optimized = false;
     
     int le_counter = 0;
     uint64_t le_init = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
@@ -1310,7 +1308,22 @@ int CAS_Client::get(const std::string& key, std::string& value){
     }
     
     DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
-    
+
+//#ifndef No_GET_OPTIMIZED
+    if(can_be_optimized && cache_optimized_get.find(key) != cache_optimized_get.end()){
+
+        if(timestamp != nullptr){
+            delete timestamp;
+            timestamp = nullptr;
+        }
+
+        value = cache_optimized_get[key];
+
+        DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+
+        return op_status;
+    }
+//#endif
     
     // phase 2
     std::vector < std::string * > chunks;
@@ -1542,8 +1555,10 @@ int CAS_Client::get(const std::string& key, std::string& value){
     }
     
     DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
-    
+
     CAS_helper::free_chunks(chunks);
+
+    cache_optimized_get[key] = value;
     
     return op_status;
 }

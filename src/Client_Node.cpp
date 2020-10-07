@@ -27,9 +27,11 @@ Client_Node::Client_Node(uint32_t id, uint32_t local_datacenter_id, uint32_t ret
 Client_Node::~Client_Node(){
     if(abd != nullptr){
         delete abd;
+        abd = nullptr;
     }
     if(cas != nullptr){
         delete cas;
+        cas = nullptr;
     }
 }
 
@@ -51,7 +53,7 @@ int Client_Node::update_placement(const std::string& key, const uint32_t conf_id
     uint32_t requested_conf_id;
     uint32_t new_conf_id; // Not usefull for client
     std::string timestamp; // Not usefull for client
-    Placement* p;
+    Placement* p = nullptr;
     
     ret = ask_metadata(this->cas->get_metadata_server_ip(), this->cas->get_metadata_server_port(), key,
             conf_id, requested_conf_id, new_conf_id, timestamp, p, this->cas->get_retry_attempts(),
@@ -69,9 +71,11 @@ int Client_Node::update_placement(const std::string& key, const uint32_t conf_id
         fflush(stdout);
     }
     ret = 0;
-    
-    delete p;
-    p = nullptr;
+
+    if(p != nullptr) {
+        delete p;
+        p = nullptr;
+    }
     
     DPRINTF(DEBUG_CAS_Client, "finished\n");
     return ret;

@@ -204,9 +204,9 @@ std::map<std::string, bool> Connect::is_sock_lock;
 Connect::Connect(const std::string& ip, const uint16_t port) : ip(ip), port(port), sock(0), connected(false){
     
     std::string ip_port = ip + "!" + std::to_string(port);
-//    DPRINTF(DEBUG_UTIL, "tloed: IP: %s Port: %d\n", ip.c_str(), port);
+    DPRINTF(DEBUG_UTIL, "tloed: IP: %s Port: %d\n", ip.c_str(), port);
     this->socks_lock[ip_port].lock();
-//    DPRINTF(DEBUG_UTIL, "loed: IP: %s Port: %d\n", ip.c_str(), port);
+    DPRINTF(DEBUG_UTIL, "loed: IP: %s Port: %d\n", ip.c_str(), port);
     is_sock_lock[ip_port] = true;
     if(this->socks.find(ip_port) == this->socks.end()){
         bool error = false;
@@ -257,9 +257,9 @@ Connect::Connect(const std::string& ip, const uint16_t port) : ip(ip), port(port
 Connect::Connect(const std::string& ip, const std::string& port) : ip(ip), sock(0), connected(false){
     
     std::string ip_port = ip + "!" + port;
-//    DPRINTF(DEBUG_UTIL, "tloed: IP: %s Port: %s\n", ip.c_str(), port.c_str());
+    DPRINTF(DEBUG_UTIL, "tloed2: IP: %s Port: %s\n", ip.c_str(), port.c_str());
     this->socks_lock[ip_port].lock();
-//    DPRINTF(DEBUG_UTIL, "loed: IP: %s Port: %s\n", ip.c_str(), port.c_str());
+    DPRINTF(DEBUG_UTIL, "loed2: IP: %s Port: %s\n", ip.c_str(), port.c_str());
     is_sock_lock[ip_port] = true;
     if(this->socks.find(ip_port) == this->socks.end()){
         // Convert string to uint16_t
@@ -326,7 +326,7 @@ Connect::Connect(const std::string& ip, const std::string& port) : ip(ip), sock(
 
 Connect::~Connect(){
 //    ::close(sock);
-//    DPRINTF(DEBUG_UTIL, "loed: destructor called. IP: %s Port: %d\n", ip.c_str(), port);
+    DPRINTF(DEBUG_UTIL, "loed: destructor called. IP: %s Port: %d\n", ip.c_str(), port);
     this->unlock();
 }
 
@@ -334,7 +334,7 @@ void Connect::unlock(){
     std::string ip_port = this->ip + "!" + std::to_string(port);
     if(this->is_sock_lock[ip_port]) {
         this->is_sock_lock[ip_port] = false;
-//        DPRINTF(DEBUG_UTIL, "unloed: IP: %s Port: %d\n", ip.c_str(), port);
+        DPRINTF(DEBUG_UTIL, "unloed: IP: %s Port: %d\n", ip.c_str(), port);
         this->socks_lock[ip_port].unlock();
     }
 }
@@ -408,9 +408,13 @@ Datacenter::Datacenter(const Datacenter& orig){
 }
 
 Datacenter::~Datacenter(){
-    for(auto& it:servers){
-        delete it;
+    for(auto& it: servers) {
+        if (it != nullptr){
+            delete it;
+            it = nullptr;
+        }
     }
+    this->servers.clear();
 }
 
 Placement::Placement(){
@@ -419,310 +423,14 @@ Placement::Placement(){
     f = -1;
 }
 
-//Placement::Placement(const std::string &in){
-//    uint32_t cc = 0;
-//    uint32_t size, temp;
-//    
-//    // Protocol
-//    size = 0;
-//    if(cc + sizeof(uint32_t) > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-//        ((char*)(&size))[i] = in[cc++];
-//    }
-//    if(cc + size > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-//        protocol.push_back(in[cc++]);
-//    }
-//    
-//    
-//    // Q1
-//    size = 0;
-//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-//        ((char*)(&size))[i] = in[cc++];
-//    }
-//    if(cc + sizeof(uint32_t) * size > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-//        temp = 0;
-//        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
-//            ((char*)(&temp))[j] = in[cc++];
-//        }
-//        Q1.push_back(temp);
-//    }
-//    
-//    // Q2
-//    size = 0;
-//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-//        ((char*)(&size))[i] = in[cc++];
-//    }
-//    if(cc + sizeof(uint32_t) * size > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-//        temp = 0;
-//        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
-//            ((char*)(&temp))[j] = in[cc++];
-//        }
-//        Q2.push_back(temp);
-//    }
-//    
-//    // m
-//    if(cc + sizeof(uint32_t) > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-//        ((char*)(&(this->m)))[i] = in[cc++];
-//    }
-//    
-//    // k
-//    if(cc + sizeof(uint32_t) > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-//        ((char*)(&(this->k)))[i] = in[cc++];
-//    }
-//    
-//    // Q3
-//    size = 0;
-//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-//        ((char*)(&size))[i] = in[cc++];
-//    }
-//    if(cc + sizeof(uint32_t) * size > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-//        temp = 0;
-//        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
-//            ((char*)(&temp))[j] = in[cc++];
-//        }
-//        Q3.push_back(temp);
-//    }
-//    
-//    // Q4
-//    size = 0;
-//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-//        ((char*)(&size))[i] = in[cc++];
-//    }
-//    if(cc + sizeof(uint32_t) * size > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-//        temp = 0;
-//        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
-//            ((char*)(&temp))[j] = in[cc++];
-//        }
-//        Q4.push_back(temp);
-//    }
-//    
-//    // f
-//    if(cc + sizeof(uint32_t) > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-//        ((char*)(&(this->f)))[i] = in[cc++];
-//    }
-//}
-//
-//Placement::Placement(const std::string &in, uint32_t &cc){
-////    uint32_t cc = 0;
-//    uint32_t size, temp;
-//    
-//    // Protocol
-//    size = 0;
-//    if(cc + sizeof(uint32_t) > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-//        ((char*)(&size))[i] = in[cc++];
-//    }
-//    if(cc + size > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-//        protocol.push_back(in[cc++]);
-//    }
-//    
-//    
-//    // Q1
-//    size = 0;
-//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-//        ((char*)(&size))[i] = in[cc++];
-//    }
-//    if(cc + sizeof(uint32_t) * size > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-//        temp = 0;
-//        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
-//            ((char*)(&temp))[j] = in[cc++];
-//        }
-//        Q1.push_back(temp);
-//    }
-//    
-//    // Q2
-//    size = 0;
-//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-//        ((char*)(&size))[i] = in[cc++];
-//    }
-//    if(cc + sizeof(uint32_t) * size > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-//        temp = 0;
-//        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
-//            ((char*)(&temp))[j] = in[cc++];
-//        }
-//        Q2.push_back(temp);
-//    }
-//    
-//    // m
-//    if(cc + sizeof(uint32_t) > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-//        ((char*)(&(this->m)))[i] = in[cc++];
-//    }
-//    
-//    // k
-//    if(cc + sizeof(uint32_t) > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-//        ((char*)(&(this->k)))[i] = in[cc++];
-//    }
-//    
-//    // Q3
-//    size = 0;
-//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-//        ((char*)(&size))[i] = in[cc++];
-//    }
-//    if(cc + sizeof(uint32_t) * size > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-//        temp = 0;
-//        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
-//            ((char*)(&temp))[j] = in[cc++];
-//        }
-//        Q3.push_back(temp);
-//    }
-//    
-//    // Q4
-//    size = 0;
-//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-//        ((char*)(&size))[i] = in[cc++];
-//    }
-//    if(cc + sizeof(uint32_t) * size > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < size  && cc < in.size(); i++){
-//        temp = 0;
-//        for(uint32_t j = 0; j < sizeof(uint32_t) && cc < in.size(); j++){
-//            ((char*)(&temp))[j] = in[cc++];
-//        }
-//        Q4.push_back(temp);
-//    }
-//    
-//    // f
-//    if(cc + sizeof(uint32_t) > in.size()){
-//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-//    }
-//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-//        ((char*)(&(this->f)))[i] = in[cc++];
-//    }
-//}
-//
-//std::string Placement::get_string(){
-//    std::string ret;
-//    uint32_t size, temp;
-//    
-//    // Protocol
-//    size = this->protocol.size();
-//    for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-//        ret.push_back(((char*)(&size))[i]);
-//    }
-//    for(uint32_t i = 0; i < size; i++){
-//        ret.push_back(this->protocol[i]);
-//    }
-//    
-//    // Q1
-//    size = this->Q1.size();
-//    for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-//        ret.push_back(((char*)(&size))[i]);
-//    }
-//    for(uint32_t i = 0; i < size; i++){
-//        temp = this->Q1[i];
-//        for(uint32_t j = 0; j < sizeof(uint32_t); j++){
-//            ret.push_back(((char*)(&temp))[j]);
-//        }
-//    }
-//    
-//    // Q2
-//    size = this->Q2.size();
-//    for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-//        ret.push_back(((char*)(&size))[i]);
-//    }
-//    for(uint32_t i = 0; i < size; i++){
-//        temp = this->Q2[i];
-//        for(uint32_t j = 0; j < sizeof(uint32_t); j++){
-//            ret.push_back(((char*)(&temp))[j]);
-//        }
-//    }
-//    
-//    // m
-//    temp = m;
-//    for(uint32_t j = 0; j < sizeof(uint32_t); j++){
-//        ret.push_back(((char*)(&temp))[j]);
-//    }
-//    
-//    // k
-//    temp = k;
-//    for(uint32_t j = 0; j < sizeof(uint32_t); j++){
-//        ret.push_back(((char*)(&temp))[j]);
-//    }
-//    
-//    // Q3
-//    size = this->Q3.size();
-//    for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-//        ret.push_back(((char*)(&size))[i]);
-//    }
-//    for(uint32_t i = 0; i < size; i++){
-//        temp = this->Q3[i];
-//        for(uint32_t j = 0; j < sizeof(uint32_t); j++){
-//            ret.push_back(((char*)(&temp))[j]);
-//        }
-//    }
-//    
-//    // Q4
-//    size = this->Q4.size();
-//    for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-//        ret.push_back(((char*)(&size))[i]);
-//    }
-//    for(uint32_t i = 0; i < size; i++){
-//        temp = this->Q4[i];
-//        for(uint32_t j = 0; j < sizeof(uint32_t); j++){
-//            ret.push_back(((char*)(&temp))[j]);
-//        }
-//    }
-//    
-//    // f
-//    temp = f;
-//    for(uint32_t j = 0; j < sizeof(uint32_t); j++){
-//        ret.push_back(((char*)(&temp))[j]);
-//    }
-//    
-//    return ret;
-//}
-
 WorkloadConfig::~WorkloadConfig(){
-    for(auto& it: grp){
-        delete it;
+    for(auto& it: grp) {
+        if(it != nullptr){
+            delete it;
+            it = nullptr;
+        }
     }
+    this->grp.clear();
 }
 
 GroupConfig::GroupConfig(){
@@ -746,7 +454,10 @@ GroupConfig::GroupConfig(const GroupConfig& orig){
 }
 
 GroupConfig::~GroupConfig(){
-    delete placement_p;
+    if(placement_p != nullptr){
+        delete placement_p;
+        placement_p = nullptr;
+    }
 }
 
 Group::Group(){
@@ -762,18 +473,30 @@ Group::Group(const Group& orig){
 }
 
 Group::~Group(){
-    for(auto& it: grp_config){
-        delete it;
+    for(auto& it: grp_config) {
+        if(it != nullptr){
+            delete it;
+            it = nullptr;
+        }
     }
+    this->grp_config.clear();
 }
 
 Properties::~Properties(){
-    for(auto& it:datacenters){
-        delete it;
+    for(auto& it: datacenters) {
+        if(it != nullptr){
+            delete it;
+            it = nullptr;
+        }
     }
-    for(auto& it:groups){
-        delete it;
+    this->datacenters.clear();
+    for(auto& it: groups) {
+        if(it != nullptr){
+            delete it;
+            it = nullptr;
+        }
     }
+    this->groups.clear();
 }
 
 Reconfig_key_info::Reconfig_key_info(){
@@ -958,7 +681,10 @@ std::string Reconfig_key_info::get_string(){
 }
 
 Data_handler::~Data_handler(){
-    delete reconfig_info;
+    if(reconfig_info != nullptr){
+        delete reconfig_info;
+        reconfig_info = nullptr;
+    }
 }
 
 std::string construct_key(const std::string& key, const std::string& protocol, const uint32_t conf_id,

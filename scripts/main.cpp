@@ -826,7 +826,7 @@ void _config_machines(int i, bool make_clear){
     }
     // machines[i].execute("cd project/; make proto > /dev/null 2>&1; make cleanall > /dev/null 2>&1; make > /dev/null 2>&1"); // compile the project
     if(make_clear){
-        machines[i].execute("cd project/; make proto > /dev/null 2>&1; make clearall; make > /dev/null 2>&1"); // compile the project
+        machines[i].execute("cd project/; make proto > /dev/null 2>&1; make cleanall; make > /dev/null 2>&1"); // compile the project
     }
     else{
         machines[i].execute("cd project/; make proto > /dev/null 2>&1; make > /dev/null 2>&1"); // compile the project
@@ -1031,19 +1031,19 @@ int retrieve_data(const string& run_type){
 
     system((string("rm -rf data/") + run_type + "/*").c_str());
     
-    vector <thread*> thread_pool;
+    // vector <thread*> thread_pool;
 
-    for(int i = 0; i < machines.size(); i++) {
-        system((string("mkdir -p data/") + run_type + "/s" + to_string(i + 1)).c_str());
+    // for(int i = 0; i < machines.size(); i++) {
+    //     system((string("mkdir -p data/") + run_type + "/s" + to_string(i + 1)).c_str());
 
-        thread* ptr = new thread(_retrieve_data, run_type, i);
-        thread_pool.push_back(ptr);
-    }
+    //     thread* ptr = new thread(_retrieve_data, run_type, i);
+    //     thread_pool.push_back(ptr);
+    // }
 
-    for(int i = 0; i < thread_pool.size(); i++){
-        thread_pool[i]->join();
-        delete thread_pool[i];
-    }
+    // for(int i = 0; i < thread_pool.size(); i++){
+    //     thread_pool[i]->join();
+    //     delete thread_pool[i];
+    // }
 
     retrieve_logs(run_type);
 
@@ -1067,23 +1067,24 @@ int main(){
 
     // get_pairwise_latency();
 
-    // config_machines(false);
+    // config_machines(true);
 
-    cout << "Ready to run server" << endl;
+    // cout << "Ready to run server" << endl;
     vector<int> running_servers = {0,1,2,3,4,5,6,7,8};
-    thread(execute_server, running_servers).detach();
-    thread(execute_metadata_server, running_servers).detach();
+    // thread(execute_server, running_servers).detach();
+    // thread(execute_metadata_server, running_servers).detach();
 
-    sleep(5);
-    cout << "Servers and metadata servers are running,\nPress any key to stop them..." << endl;
+    // sleep(5);
+    // cout << "Servers and metadata servers are running,\nPress any key to stop them..." << endl;
 
-    getchar();
+    // getchar();
 
-    stop_server(running_servers);
+    // stop_server(running_servers);
 
-    retrieve_data("CAS_NOF");
+    // retrieve_data("CAS_F");
 
-    // manual_execute_command(running_servers, "rm -f myping");
+    // manual_execute_command(running_servers, "sudo apt-get install wget; echo \"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCdRtZWfwRgm6KxNXwrTIG+2axjp06FiM0NVBGMeVBQGVRj1D5TlsLPufmEXGJ6cpf4xT8doAN+H/d668diWJQSpE6Uo3BFVObSu7U3hXvuOBK126rBAuN4U2hMVtvinkASj9j21jYXcLKlMEc2tGhfRfzVNpflZu2rL67kizdm/6H7onlpXPUeXgXRWNvOJYUWLzdnhNPqv6PXA3pcPLpAumurTj8zwYQBAizKBXHFUB0C381v56NSHFCPpjZC9h3Ug2931jtGFYYdPVLpqvIdlPCet4aZgTtAE8RPMQSaXnxLWonerLH/MGNcdoI7fUaKtTT2jdhsempmKq3bKaRp shahrooz@s7\" >> .ssh/authorized_keys; echo \"-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn\nNhAAAAAwEAAQAAAQEAnUbWVn8EYJuisTV8K0yBvtmsY6dOhYjNDVQRjHlQUBlUY9Q+U5bC\nz7n5hFxienKX+MU/HaADfh/3euvHYliUEqROlKNwRVTm0ru1N4V77jgStduqwQLjeFNoTF\nbb4p5AEo/Y9tY2F3CypTBHNrRoX0X81TaX5Wbtqy+u5Is3Zv+h+6J5aVz1Hl4F0VjbziWF\nFi83Z4TT6r+j1wN6XDy6QLprq04/M8GEAQIsygVxxVAdAt/Nb+ejUhxQj6Y2QvYd1INvd9\nY7RhWGHT1S6aryHZTwnreGmYE7QBPETzEEml58S1qJ3qyx/zBjXHaCO31GirU09o3YbHpq\nZiqt2ymkaQAAA8h7DCQPewwkDwAAAAdzc2gtcnNhAAABAQCdRtZWfwRgm6KxNXwrTIG+2a\nxjp06FiM0NVBGMeVBQGVRj1D5TlsLPufmEXGJ6cpf4xT8doAN+H/d668diWJQSpE6Uo3BF\nVObSu7U3hXvuOBK126rBAuN4U2hMVtvinkASj9j21jYXcLKlMEc2tGhfRfzVNpflZu2rL6\n7kizdm/6H7onlpXPUeXgXRWNvOJYUWLzdnhNPqv6PXA3pcPLpAumurTj8zwYQBAizKBXHF\nUB0C381v56NSHFCPpjZC9h3Ug2931jtGFYYdPVLpqvIdlPCet4aZgTtAE8RPMQSaXnxLWo\nnerLH/MGNcdoI7fUaKtTT2jdhsempmKq3bKaRpAAAAAwEAAQAAAQEAiJD5DtRuLaEXDT8/\nGa3uP5Vtrn6ZnTQjsX4dWtgAV/0WnTSwBg80DAIV2swJqv+UXKyR2JyYS81gLLlNQWVe9i\nz8Gu8sTtehMr1RZuueqETCYm1jAQQMFvB98UO+3THCuxtzLyrkf0gZp3ybabIPqyLvnwgv\nrz/IAkx+Ve9Y5TKZkLvJUd2Y4i1rE9rsP9IeuoV2wYq1e2L8N9eDa0/jaCsKVdJqQkDVlF\n/MoSUhIsSAlkXDLihu1gfU4kFMRdFdkEglqgxakK2sPBAzQu/J2gsAVuri8th6qU+l61Kp\n2Bpkv/LYbofApMYchf2ozeJbigToXcMvGWgbuMZGJ481MQAAAIEAgpezlVt6mV02cDeabA\nk+aug6gPl+mlTvUbPqquoCwWQktuh4CTlXju/mHy4sGUPew/1JbSUhwupm8AVfq9J0merO\nrvul7A1qRr9V/B63vSKizTCLShPsiGPZwHjctbIqLjBfDXbhjQXTyyfpP60d+JlLW4embT\nJxUlJydipuCjAAAACBAM4lN3HmJTBejMqzbFEgrKptqlQWygWszyfn9WPkUEOMpVafdGSG\nOecMZREhPGvBT8GHhIg91/FfKwfLsiSI4RsxoPODH+44IHRRWTr9flGsaShiGLdgmvNokC\nUW0iSIi6bRSRRknkTT6ht9Gk7obOxEJUxTDjqINoqkFksMWOTNAAAAgQDDUBWzRPsEOsZ6\na2TRx1UrRQzmoXoW0SFjy5brZmMK7lY4HiSu2rMOeLCgl52EPvPHG0rjk7V+jiYrd0P3R3\n8FlsMqWLTJZjfXlzX3Rp0Bo44+v1fc93KslW7sSi/S8aBR9IVioW52CbB31fUThGPTfzFO\nfyk9iebGjsO1fy4eDQAAAAtzaGFocm9vekBzNwECAwQFBg==\n-----END OPENSSH PRIVATE KEY-----\" >> .ssh/id_rsa; chmod 600 .ssh/id_rsa");
+    manual_execute_command(running_servers, "wget https://kali.download/kali-images/kali-2020.3/kali-linux-2020.3-installer-netinst-amd64.iso");
 
 
 	return 0;

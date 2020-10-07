@@ -12,6 +12,8 @@
 #include <cstdlib>
 #include <fstream>
 
+//#define DEBUGGING
+
 using namespace std;
 //using namespace nlohmann;
 using std::cout;
@@ -43,9 +45,11 @@ enum Op{
 class Logger{
 public:
     Logger(uint32_t id){
+        file = nullptr;
         log_filename = "logs/logfile_";
         log_filename += std::to_string(id) + ".txt";
         file = fopen(log_filename.c_str(), "w");
+        assert(file != nullptr);
         client_id = id;
     }
     
@@ -67,6 +71,14 @@ private:
     uint32_t client_id;
 };
 
+template<typename T>
+inline void mydelete(T*& ptr){
+    if(ptr != nullptr){
+        delete ptr;
+        ptr = nullptr;
+    }
+}
+
 inline uint32_t get_unique_client_id(uint datacenter_id, uint conf_id, uint grp_id, uint req_idx){
     uint32_t id = 0;
     if((req_idx < (1 << 12)) && (grp_id < (1 << 7)) && (datacenter_id < (1 << 6)) && (conf_id < (1 << 7))){
@@ -83,7 +95,6 @@ inline int next_event(const std::string& dist_process){
         return 1000;
     }
     else if(dist_process == "poisson"){
-        //TODO:: Check this!
         return -log(1 - (double)rand() / (RAND_MAX)) * 1000;
     }
     else{
@@ -126,9 +137,11 @@ int read_keys(const std::string& file){
         element["id"].get_to(wkl->id);
         element["grp_id"].get_to(wkl->grp_id);
         if(wkl->id != conf_id){
-            delete wkl;
+            mydelete(wkl);
             continue;
         }
+
+//        DPRINTF(DEBUG_CAS_Client, "AAAAA : %lu\n", wkl->grp_id.size());
         
         bool flag = false;
         uint indx = 0;
@@ -149,30 +162,78 @@ int read_keys(const std::string& file){
                 it["keys"].get_to(gwkl->keys);
                 keys = gwkl->keys;
                 keys_set = true;
-                delete gwkl;
-                delete wkl;
+                mydelete(gwkl);
+                mydelete(wkl);
                 break;
             }
-            
         }
         else{
+            mydelete(wkl);
             assert(false);
         }
 //        input.push_back(wkl);
     }
     cfg.close();
-    
-    
+
     return 0;
+}
+
+int warm_up(Client_Node &clt){
+
+    int result = S_OK;
+
+    //Choose a random key
+//    uint key_idx = rand() % (keys.size());
+
+    for(uint i = 0; i < keys.size(); i++){ // PUTS
+        for(int j = 0; j < NUMBER_OF_OPS_FOR_WARM_UP; j++){
+            std::string val = get_random_value();
+            result = clt.put(keys[i], val);
+            if(result != 0){
+//                DPRINTF(DEBUG_CAS_Client, "clt.put on key %s, result is %d\n", keys[key_idx].c_str(), result);
+                assert(false);
+            }
+        }
+    }
+
+    for(uint i = 0; i < keys.size(); i++){ // GETS
+        for(int j = 0; j < NUMBER_OF_OPS_FOR_WARM_UP; j++){
+            std::string read_value;
+            result = clt.get(keys[i], read_value);
+            if(result != 0){
+//                DPRINTF(DEBUG_CAS_Client, "clt.get on key %s, result is %d\n", keys[key_idx].c_str(), result);
+                assert(false);
+            }
+        }
+    }
+
+    DPRINTF(DEBUG_CAS_Client, "WARMUP DONE\n");
+
+    return result;
 }
 
 // This function will create a client and start sending requests
 int run_session(uint req_idx){
     int cnt = 0;        // Count the number of requests
-    
+
     uint32_t client_id = get_unique_client_id(datacenter_id, conf_id, grp_id, req_idx);
     Client_Node clt(client_id, datacenter_id, retry_attempts_number, metadata_server_timeout, timeout_per_request, datacenters);
+
+    auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
+    timePoint2 += millis{rand() % 2000};
+    std::this_thread::sleep_until(timePoint2);
+
+    // WARM UP THE SOCKETS
+    warm_up(clt);
+
+//    srand(client_id);
+
+#ifdef DEBUGGING
     srand(client_id);
+#else
+    srand(time(NULL));
+//    srand(client_id);
+#endif
     
 //    DPRINTF(DEBUG_CAS_Client, "datacenter port: %u\n", datacenters[datacenter_id]->metadata_server_port);
     
@@ -225,8 +286,12 @@ int run_session(uint req_idx){
         if(result == S_RECFG){
             return 1;
         }
-        
+
+#ifdef DEBUGGING
         tp += millis{next_event("poisson")};
+#else
+        tp += millis{next_event("poisson") * 2};
+#endif
         std::this_thread::sleep_until(tp);
     }
     
@@ -245,17 +310,21 @@ int request_generator_for_groupconfig(){
     
     //Round up to nearest integer value
     uint numReqs = lround(arrival_rate); //lround(grpCfg->client_dist[prop.local_datacenter_id] * grpCfg->arrival_rate);
-    
-    
+
+#ifdef DEBUGGING
     for(uint i = 0; i < numReqs; i++){
+#else
+    for(uint i = 0; i < 2 * numReqs; i++){
+#endif
         fflush(stdout);
         if(fork() == 0){
+            std::setbuf(stdout, NULL);
             close(1);
             int pid = getpid();
             std::stringstream filename;
             filename << "client_" << pid << "_output.txt";
-            fopen(filename.str().c_str(), "w");
-            
+            FILE* out = fopen(filename.str().c_str(), "w");
+            std::setbuf(out, NULL);
             int cnt = run_session(i);
             exit(cnt);
         }
@@ -341,6 +410,10 @@ int main(int argc, char* argv[]){
     
     assert(read_detacenters_info("./config/auto_test/datacenters_access_info.json") == 0);
     assert(read_keys("./config/auto_test/input_workload.json") == 0);
+
+//    for(auto it = datacenters.begin(); it != datacenters.end(); it++){
+//        DPRINTF(DEBUG_CAS_Client, "%u: port = %hu\n", (*it)->id, (*it)->servers[0]->port);
+//    }
     
     request_generator_for_groupconfig();
     

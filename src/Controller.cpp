@@ -203,9 +203,33 @@ int execute(const char* command, const std::vector<std::string>& args, std::stri
             case 7:
                 execl(command, args[0].c_str(), args[1].c_str(), args[2].c_str(), args[3].c_str(), args[4].c_str(), args[5].c_str(), args[6].c_str(), (char *) 0);
                 break;
-            
+
             case 8:
                 execl(command, args[0].c_str(), args[1].c_str(), args[2].c_str(), args[3].c_str(), args[4].c_str(), args[5].c_str(), args[6].c_str(), args[7].c_str(), (char *) 0);
+                break;
+
+            case 9:
+                execl(command, args[0].c_str(), args[1].c_str(), args[2].c_str(), args[3].c_str(), args[4].c_str(), args[5].c_str(), args[6].c_str(), args[7].c_str(), args[8].c_str(), (char *) 0);
+                break;
+
+            case 10:
+                execl(command, args[0].c_str(), args[1].c_str(), args[2].c_str(), args[3].c_str(), args[4].c_str(), args[5].c_str(), args[6].c_str(), args[7].c_str(), args[8].c_str(), args[9].c_str(), (char *) 0);
+                break;
+
+            case 11:
+                execl(command, args[0].c_str(), args[1].c_str(), args[2].c_str(), args[3].c_str(), args[4].c_str(), args[5].c_str(), args[6].c_str(), args[7].c_str(), args[8].c_str(), args[9].c_str(), args[10].c_str(), (char *) 0);
+                break;
+
+            case 12:
+                execl(command, args[0].c_str(), args[1].c_str(), args[2].c_str(), args[3].c_str(), args[4].c_str(), args[5].c_str(), args[6].c_str(), args[7].c_str(), args[8].c_str(), args[9].c_str(), args[10].c_str(), args[11].c_str(), (char *) 0);
+                break;
+
+            case 13:
+                execl(command, args[0].c_str(), args[1].c_str(), args[2].c_str(), args[3].c_str(), args[4].c_str(), args[5].c_str(), args[6].c_str(), args[7].c_str(), args[8].c_str(), args[9].c_str(), args[10].c_str(), args[11].c_str(), args[12].c_str(), (char *) 0);
+                break;
+
+            case 14:
+                execl(command, args[0].c_str(), args[1].c_str(), args[2].c_str(), args[3].c_str(), args[4].c_str(), args[5].c_str(), args[6].c_str(), args[7].c_str(), args[8].c_str(), args[9].c_str(), args[10].c_str(), args[11].c_str(), args[12].c_str(), args[13].c_str(), (char *) 0);
                 break;
         }
 //            for(int i = 0; i < args.size(); i++){
@@ -258,10 +282,78 @@ int execute(const char* command, const std::vector<std::string>& args, std::stri
 int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t group_id){
 
 #ifdef LOCAL_TEST
-    std::string command = "cd /home/shahrooz/Desktop/PSU/Research/LEGOstore; ./Client ";
+    std::vector<std::string> args;
+    std::string output;
+    std::string command = "/home/shahrooz/Desktop/PSU/Research/LEGOstore/Client";
+
+    args.push_back(command);
+    args.push_back(std::to_string(datacenter_id));
+    args.push_back(std::to_string(prp.retry_attempts));
+    args.push_back(std::to_string(prp.metadata_server_timeout));
+    args.push_back(std::to_string(prp.timeout_per_request));
+    args.push_back(std::to_string(conf_id)); // Todo: Confid must be determined by the workload file
+    args.push_back(std::to_string(group_id));
+
+    uint configuration_indx = 0;
+    bool configuration_found = false;
+    for(; configuration_indx < prp.groups.size(); configuration_indx++){
+        if(prp.groups[configuration_indx]->id == conf_id){
+            configuration_found = true;
+            break;
+        }
+    }
+    assert(configuration_found);
+//    DPRINTF(DEBUG_RECONFIG_CONTROL, "5555555555555555\n");
+    uint config_group_indx = 0;
+    bool config_group_found = false;
+    for(; config_group_indx < prp.groups[configuration_indx]->grp_id.size(); config_group_indx++){
+        if(prp.groups[configuration_indx]->grp_id[config_group_indx] == group_id){
+            config_group_found = true;
+            break;
+        }
+    }
+    assert(config_group_found);
+
+    uint datacenter_indx = 0;
+    bool datacenter_indx_found = false;
+    for(; datacenter_indx < prp.datacenters.size(); datacenter_indx++){
+        if(prp.datacenters[datacenter_indx]->id == datacenter_id){
+            datacenter_indx_found = true;
+            break;
+        }
+    }
+    assert(datacenter_indx_found);
+
+    const GroupConfig* gc = prp.groups[configuration_indx]->grp_config[config_group_indx];
+    args.push_back(std::to_string(gc->object_size));
+    args.push_back(std::to_string(gc->arrival_rate * gc->client_dist[datacenter_indx]));
+    args.push_back(std::to_string(gc->read_ratio));
+    args.push_back(std::to_string(gc->duration));
+    args.push_back(std::to_string(gc->keys.size()));
+
+    int status = execute(command.c_str(), args, output);
+
+    if(status == 0){
+        cout << output << endl;
+        return 0;
+    }
+    else{
+        if(output != ""){
+            if(output.find("ERROR") != std::string::npos){
+                std::cerr << "error in execution " << command << endl;
+                std::cerr << output << endl;
+                return -4;
+            }
+        }
+        else{
+            std::cerr << "WARN: ret value in execution " << command << " is not zero and output is empty." << endl;
+            return -4;
+        }
+    }
+
+    return 0;
 #else
     std::string command = "cd project; ./Client ";
-#endif
 
     command += std::to_string(datacenter_id) + " ";
     command += std::to_string(prp.retry_attempts)+ " ";
@@ -336,6 +428,8 @@ int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t gr
     }
     
     return 0;
+
+#endif
 }
 
 int Controller::read_detacenters_info(std::string& configFile){

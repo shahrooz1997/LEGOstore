@@ -54,19 +54,30 @@ int Client_Node::update_placement(const std::string& key, const uint32_t conf_id
     uint32_t new_conf_id; // Not usefull for client
     std::string timestamp; // Not usefull for client
     Placement* p = nullptr;
-    
-    ret = ask_metadata(this->cas->get_metadata_server_ip(), this->cas->get_metadata_server_port(), key,
-            conf_id, requested_conf_id, new_conf_id, timestamp, p, this->cas->get_retry_attempts(),
-            this->cas->get_metadata_server_timeout());
+
+    if(this->cas != nullptr){
+        ret = ask_metadata(this->cas->get_metadata_server_ip(), this->cas->get_metadata_server_port(), key,
+                           conf_id, requested_conf_id, new_conf_id, timestamp, p, this->cas->get_retry_attempts(),
+                           this->cas->get_metadata_server_timeout());
+    }
+    else if(this->abd != nullptr){
+        ret = ask_metadata(this->abd->get_metadata_server_ip(), this->abd->get_metadata_server_port(), key,
+                           conf_id, requested_conf_id, new_conf_id, timestamp, p, this->abd->get_retry_attempts(),
+                           this->abd->get_metadata_server_timeout());
+    }
+    else{
+        ret = -1;
+        return ret;
+    }
     
     assert(ret == 0);
     
     keys_info[key] = std::pair<uint32_t, Placement>(requested_conf_id, *p);
     if(p->protocol == CAS_PROTOCOL_NAME){
-        if(((this->desc)) != -1){
+        if(this->desc != -1){
             destroy_liberasure_instance(((this->desc)));
         }
-        ((this->desc)) = create_liberasure_instance(p);
+        this->desc = create_liberasure_instance(p);
         DPRINTF(DEBUG_CAS_Client, "desc is %d\n", desc);
         fflush(stdout);
     }

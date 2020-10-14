@@ -341,7 +341,7 @@ int request_generator_for_groupconfig(){
     avg = total / (run_session_duration);
     std::cout << "Average arrival Rate : " << avg << std::endl;
     if(avg < numReqs){
-        fprintf(stderr, "WARNING!! The average arrival rate for group :%d and group_config :%d is"\
+        fprintf(stdout, "WARNING!! The average arrival rate for group :%d and group_config :%d is"\
                                                     " less than required : %u / %u\n", conf_id, grp_id, avg,
                 numReqs);
     }

@@ -117,6 +117,245 @@ namespace ABD_thread_helper{
         DPRINTF(DEBUG_ABD_Client, "finished.\n");
         return;
     }
+
+    inline int number_of_received_responses(std::vector<bool>& done){
+        int ret = 0;
+        for(auto it = done.begin(); it != done.end(); it++){
+            if(*it){
+                ret++;
+            }
+        }
+        return ret;
+    }
+
+//    void _send_one_server(const std::string operation, std::promise <strVec>&& prm, const  std::string key,
+//                          const Server* server, const std::string current_class, const uint32_t conf_id, const std::string value = "",
+//                          const std::string timestamp = ""){
+//
+//        DPRINTF(DEBUG_ABD_Client, "started.\n");
+//
+//        strVec data;
+//        Connect c(server->ip, server->port);
+//        if(!c.is_connected()){
+//            prm.set_value(std::move(data));
+//            return;
+//        }
+//
+//        data.push_back(operation); // get_timestamp, put, get
+//        data.push_back(key);
+//        if(operation == "put"){
+//            if((value).empty()){
+//                DPRINTF(DEBUG_CAS_Client, "WARNING!!! SENDING EMPTY STRING TO SERVER.\n");
+//            }
+//            data.push_back(timestamp);
+//            data.push_back(value);
+//        }
+//        else if(operation == "get"){
+//
+//        }
+//        else if(operation == "get_timestamp"){
+//
+//        }
+//        else{
+//            assert(false);
+//        }
+//
+//        data.push_back(current_class);
+//        data.push_back(std::to_string(conf_id));
+//
+//        DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
+//
+//        data.clear();
+//        std::string recvd;
+//        if(DataTransfer::recvMsg(*c, recvd) == 1){
+//            data = DataTransfer::deserialize(recvd);
+//            prm.set_value(std::move(data));
+//        }
+//        else{
+//            data.clear();
+//            prm.set_value(std::move(data));
+//        }
+//
+//        DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %u\n", server->port);
+//        return;
+//    }
+//
+//    /* This function will be used for all communication.
+//     * datacenters just have the information for servers
+//     */
+//    int failure_support_optimized(const string& operation, const std::string& key, const Timestamp& timestamp, const std::string& value, uint32_t RAs,
+//                                  std::vector <uint32_t> quorom, std::unordered_set <uint32_t> servers, std::vector<DC*>& datacenters,
+//                                  const string current_class, const uint32_t conf_id, std::vector<strVec> &ret){
+//        DPRINTF(DEBUG_CAS_Client, "started.\n");
+//
+//        std::map <uint32_t, std::future<strVec> > responses; // server_id, future
+//        std::vector<bool> done(servers.size(), false);
+//
+//        int op_status = 0;    // 0: Success, -1: timeout, -2: operation_fail(reconfiguration)
+//
+//        RAs--;
+//        for(auto it = quorom.begin(); it != quorom.end(); it++){
+//            std::promise <strVec> prm;
+//            responses.emplace(*it, prm.get_future());
+//            std::thread(ABD_helper::_send_one_server, operation, std::move(prm), key, datacenters[*it]->servers[0],
+//                        this->current_class, parent->get_conf_id(key), value, timestamp).detach();
+//        }
+//
+//        std::chrono::system_clock::time_point end = std::chrono::system_clock::now() +
+//                std::chrono::milliseconds(this->timeout_per_request);
+//        int i = 0;
+//        while(true){
+//            if(done[(responses.begin() + i)->first]){
+//                i++;
+//                if(i == responses.size())
+//                    i = 0;
+//                continue;
+//            }
+//
+//            if((responses.begin() + i)->second.valid() && (responses.begin() + i)->second.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready){
+//                strVec data = (responses.begin() + i)->second.get();
+//                if(data.size() != 0){
+//                    ret.push_back(data);
+//                    done[(responses.begin() + i)->first] = true;
+//                }
+//            }
+//
+//            if(std::chrono::system_clock::now() > end){
+//                // Access all the servers and wait for Q1.size() of them.
+//                op_status = -1; // You should access all the server.
+//                break;
+//            }
+//
+//            i++;
+//            if(i == responses.size())
+//                i = 0;
+//        }
+//
+////        for(auto it = servers.begin(); it != servers.end(); it++){
+////            if(responses.find(*it) != responses.end() && done[*it] == false){
+////                failed_servers.push_back(*it);
+////            }
+////        }
+//
+////        uint32_t counter = ~((uint32_t)0);
+//
+//        while(op_status == -1 && RAs--){ // Todo: RAs cannot be more than 2 with this implementation
+//
+////            responses.clear(); // ignore responses to old requests
+////            counter = number_of_received_responses(done);
+//            op_status = 0;
+//            for(auto it = servers.begin(); it != servers.end(); it++){ // request to all servers
+////                if(done[*it] || std::find(failed_servers.begin(), failed_servers.end(), *it) != failed_servers.end()){
+////                    continue;
+////                }
+//                if(responses.find(*it) != responses.end()){
+//                    continue;
+//                }
+//                std::promise <strVec> prm;
+//                responses.emplace(*it, prm.get_future());
+//                sstd::thread(ABD_helper::_send_one_server, operation, std::move(prm), key, datacenters[*it]->servers[0],
+//                             this->current_class, parent->get_conf_id(key), value, timestamp).detach();
+//            }
+//
+//            std::chrono::system_clock::time_point end = std::chrono::system_clock::now() +
+//                    std::chrono::milliseconds(this->timeout_per_request);
+//            int i = 0;
+//            while(true){
+//                if(done[(responses.begin() + i)->first]){
+//                    i++;
+//                    if(i == responses.size())
+//                        i = 0;
+//                    continue;
+//                }
+//
+//                if((responses.begin() + i)->second.valid() && (responses.begin() + i)->second.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready){
+//                    strVec data = (responses.begin() + i)->second.get();
+//                    if(data.size() != 0){
+//                        ret.push_back(data);
+//                        done[(responses.begin() + i)->first] = true;
+//                    }
+//                }
+//
+//                if(std::chrono::system_clock::now() > end){
+//                    // Access all the servers and wait for Q1.size() of them.
+//                    op_status = -1; // You should access all the server.
+//                    break;
+//                }
+//
+//                i++;
+//                if(i == responses.size())
+//                    i = 0;
+//            }
+//
+////            for(uint i = 0; i < responses.size(); i++){ // Todo: need optimization to just take the fastes responses
+////
+////                auto& it = responses[i];
+////
+////                if(it.wait_until(end) == std::future_status::timeout){
+////                    // Access all the servers and wait for Q1.size() of them.
+////                    op_status = -1; // You should access all the server.
+////                    break;
+////                }
+////
+////                strVec data = it.get();
+////
+////                if(data.size() == 0){
+////                    num_fail_servers++;
+////                    if(num_fail_servers > p.f){
+////                        op_status = -100; // You should access all the server.
+////                        break;
+////                    }
+////                    else{
+////                        continue;
+////                    }
+////                }
+////
+////                if(data[0] == "OK"){
+////                    tss.emplace_back(data[1]);
+////
+////                    // Todo: make sure that the statement below is ture!
+////                    op_status = 0;   // For get_timestamp, even if one response Received operation is success
+////                    counter++;
+////                }
+////                else if(data[0] == "operation_fail"){
+////                    DPRINTF(DEBUG_CAS_Client, "operation_fail received for key : %s\n", key.c_str());
+////                    parent->get_placement(key, true, stoul(data[1]));
+//////                assert(*p != nullptr);
+////                    op_status = -2; // reconfiguration happened on the key
+////                    timestamp = nullptr;
+////                    return S_RECFG;
+////                    //break;
+////                }
+////                else{
+//////                counter++;
+////                    DPRINTF(DEBUG_CAS_Client, "strange state recieved : %s\n", data[0].c_str());
+////                    assert(false);
+////                }
+////                //else : The server returned "Failed", that means the entry was not found
+////                // We ignore the response in that case.
+////                // The servers can return Failed for timestamp, which is acceptable
+////
+////                if(counter >= p.Q1.size()){
+////                    break;
+////                }
+////
+////            }
+//        }
+//
+////        if(op_status == 0){
+////            timestamp = new Timestamp(Timestamp::max_timestamp2(tss));
+////
+////            DPRINTF(DEBUG_CAS_Client, "finished successfully. Max timestamp received is %s\n",
+////                    (timestamp)->get_string().c_str());
+////        }
+////        else{
+////            DPRINTF(DEBUG_CAS_Client, "Operation Failed. op_status is %d\n", op_status);
+////            assert(false);
+////            return S_FAIL;
+////        }
+//
+//        return op_status;
+//    }
 }
 
 ABD_Client::ABD_Client(uint32_t id, uint32_t local_datacenter_id, uint32_t retry_attempts,
@@ -174,7 +413,7 @@ int ABD_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
                 this->current_class, parent->get_conf_id(key)).detach();
     }
     DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
-    
+    fflush(stdout);
     std::chrono::system_clock::time_point end =
             std::chrono::system_clock::now() + std::chrono::milliseconds(this->timeout_per_request);
     for(auto& it:responses){
@@ -183,9 +422,9 @@ int ABD_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
             op_status = -1; // You should access all the server.
             break;
         }
-        
+        DPRINTF(DEBUG_ABD_Client, "it.get()1\n");
         strVec data = it.get();
-        
+        DPRINTF(DEBUG_ABD_Client, "it.get()2\n");
         if(data.size() == 0){
             op_status = -1; // You should access all the server.
             break;

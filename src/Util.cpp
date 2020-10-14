@@ -84,7 +84,7 @@ int socket_setup(const std::string& port, const std::string* IP){
     }
     
     if(status != 0){
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
+        fprintf(stdout, "getaddrinfo: %s\n", gai_strerror(status));
         assert(0);
     }
     
@@ -198,17 +198,46 @@ int socket_setup(const std::string& port, const std::string* IP){
 //}
 
 std::map<std::string, int> Connect::socks;
-std::map<std::string, std::mutex> Connect::socks_lock;
+std::map<std::string, std::unique_ptr<std::mutex> > Connect::socks_lock;
 std::map<std::string, bool> Connect::is_sock_lock;
+std::mutex Connect::init_lock;
 
 Connect::Connect(const std::string& ip, const uint16_t port) : ip(ip), port(port), sock(0), connected(false){
     
     std::string ip_port = ip + "!" + std::to_string(port);
     DPRINTF(DEBUG_UTIL, "tloed: IP: %s Port: %d\n", ip.c_str(), port);
-    this->socks_lock[ip_port].lock();
+//    std::mutex* mu_temp;
+//    init_lock.lock();
+    if(this->socks_lock.find(ip_port) == this->socks_lock.end()){
+        DPRINTF(DEBUG_UTIL, "tloied: IP: %s Port: %d\n", ip.c_str(), port);
+        init_lock.lock();
+        DPRINTF(DEBUG_UTIL, "loied: IP: %s Port: %d\n", ip.c_str(), port);
+        if(this->socks_lock.find(ip_port) == this->socks_lock.end()){ // This if is necessary to improve performance
+            try {
+                this->socks_lock[ip_port] = std::unique_ptr<std::mutex>(new std::mutex);
+                this->socks[ip_port] = -1;
+                this->is_sock_lock[ip_port] = false;
+            }
+            catch (std::bad_alloc &ba) {
+                std::string err_msg = "bad_alloc caught: ";
+                err_msg += ba.what();
+                print_error(err_msg);
+            }
+        }
+        init_lock.unlock();
+        DPRINTF(DEBUG_UTIL, "tloed: INIT: pointer is %p\n", this->socks_lock[ip_port].get());
+//        DPRINTF(DEBUG_UTIL, "tloed: INIT: pointer is %p\n", mu_temp);
+    }
+//    init_lock.unlock();
+    DPRINTF(DEBUG_UTIL, "tloed: pointer is %p\n", this->socks_lock[ip_port].get());
+//    DPRINTF(DEBUG_UTIL, "tloed: pointer is %p\n", mu_temp);
+    this->socks_lock[ip_port].get()->lock();
     DPRINTF(DEBUG_UTIL, "loed: IP: %s Port: %d\n", ip.c_str(), port);
     is_sock_lock[ip_port] = true;
-    if(this->socks.find(ip_port) == this->socks.end()){
+
+    DPRINTF(DEBUG_UTIL, "afloed: IP_Port is: %s , and the value of this->is_sock_lock[ip_port] is %x\n", ip_port.c_str(), this->is_sock_lock[ip_port]);
+
+    if(this->socks[ip_port] == -1){
         bool error = false;
         struct sockaddr_in serv_addr;
         if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
@@ -258,10 +287,35 @@ Connect::Connect(const std::string& ip, const std::string& port) : ip(ip), sock(
     
     std::string ip_port = ip + "!" + port;
     DPRINTF(DEBUG_UTIL, "tloed2: IP: %s Port: %s\n", ip.c_str(), port.c_str());
-    this->socks_lock[ip_port].lock();
+//    std::mutex* mu_temp;
+//    init_lock.lock();
+
+    if(this->socks_lock.find(ip_port) == this->socks_lock.end()){
+        init_lock.lock();
+        if(this->socks_lock.find(ip_port) == this->socks_lock.end()){ // This if is necessary to improve performance
+            try {
+                this->socks_lock[ip_port] = std::unique_ptr<std::mutex>(new std::mutex);
+                this->socks[ip_port] = -1;
+                this->is_sock_lock[ip_port] = false;
+            }
+            catch (std::bad_alloc &ba) {
+                std::string err_msg = "bad_alloc caught: ";
+                err_msg += ba.what();
+                print_error(err_msg);
+            }
+        }
+        init_lock.unlock();
+        DPRINTF(DEBUG_UTIL, "tloed: INIT: pointer is %p\n", this->socks_lock[ip_port].get());
+//        DPRINTF(DEBUG_UTIL, "tloed: INIT: pointer is %p\n", mu_temp);
+    }
+//    init_lock.unlock();
+    DPRINTF(DEBUG_UTIL, "tloed2: pointer is %p\n", this->socks_lock[ip_port].get());
+//    DPRINTF(DEBUG_UTIL, "tloed2: pointer is %p\n", mu_temp);
+    this->socks_lock[ip_port].get()->lock();
     DPRINTF(DEBUG_UTIL, "loed2: IP: %s Port: %s\n", ip.c_str(), port.c_str());
     is_sock_lock[ip_port] = true;
-    if(this->socks.find(ip_port) == this->socks.end()){
+
+    if(this->socks[ip_port] == -1){
         // Convert string to uint16_t
         connected = false;
         bool error = false;
@@ -332,10 +386,11 @@ Connect::~Connect(){
 
 void Connect::unlock(){
     std::string ip_port = this->ip + "!" + std::to_string(port);
+    DPRINTF(DEBUG_UTIL, "unloed: IP_Port is: %s , and the value of this->is_sock_lock[ip_port] is %x\n", ip_port.c_str(), this->is_sock_lock[ip_port]);
     if(this->is_sock_lock[ip_port]) {
         this->is_sock_lock[ip_port] = false;
         DPRINTF(DEBUG_UTIL, "unloed: IP: %s Port: %d\n", ip.c_str(), port);
-        this->socks_lock[ip_port].unlock();
+        this->socks_lock[ip_port].get()->unlock();
     }
 }
 

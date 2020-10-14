@@ -233,7 +233,11 @@ namespace CAS_helper{
 //        }
 //    }
 //
-//    int failure_support_optimized(const string& operation, const std::string& key, Timestamp*& timestamp, uint32_t RAs, std::vector <uint32_t> quorom, std::unordered_set <uint32_t> servers, std::vector<DC*>& datacenters,
+//    /* This function will be used for all communication.
+//     * datacenters just have the information for servers
+//     */
+//    int failure_support_optimized(const string& operation, const std::string& key, Timestamp*& timestamp, uint32_t RAs,
+//                                  std::vector <uint32_t> quorom, std::unordered_set <uint32_t> servers, std::vector<DC*>& datacenters,
 //                                    const string current_class, const uint32_t conf_id){
 //        DPRINTF(DEBUG_CAS_Client, "started.\n");
 //
@@ -367,7 +371,7 @@ namespace CAS_helper{
 //
 //        return op_status;
 //    }
-    
+
     inline void free_chunks(std::vector<std::string*>& chunks){
         for(uint i = 0; i < chunks.size(); i++){
             delete chunks[i];

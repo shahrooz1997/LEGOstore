@@ -32,6 +32,7 @@
 #include <chrono>
 #include <map>
 #include <mutex>
+#include <memory>
 
 using namespace std::chrono;
 
@@ -309,7 +310,8 @@ private:
     bool connected;
     
     static std::map<std::string, int> socks;
-    static std::map<std::string, std::mutex> socks_lock;
+    static std::map<std::string, std::unique_ptr<std::mutex> > socks_lock;
+    static std::mutex init_lock;
     static std::map<std::string, bool> is_sock_lock;
     
     void print_error(std::string const& m); // thread safe print

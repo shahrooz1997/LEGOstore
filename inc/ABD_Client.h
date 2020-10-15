@@ -35,17 +35,7 @@ private:
     Client_Node* parent;
     
     int get_timestamp(const std::string& key, Timestamp*& timestamp);
-    
-    // Logging
-#ifdef LOGGING_ON
-    
-    char log_fmt[64];
-    char log_buf[64];
-    struct timeval log_tv;
-    struct tm *log_tm;
 
-    FILE* log_file;
-#endif
 };
 
 #endif /* ABDCLIENT_H */

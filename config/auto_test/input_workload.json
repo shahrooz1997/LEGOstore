@@ -10,28 +10,28 @@
         {
           "availability_target": 2,
           "client_dist": [
-            0.111111111,
-            0.111111111,
-            0.111111111,
-            0.111111111,
-            0.111111111,
-            0.111111111,
-            0.111111111,
-            0.111111111,
-            0.111111111
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
           ],
-          "object_size": 8192,
+          "object_size": 9,
           "metadata_size": 1e-09,
           "num_objects": 10001,
-          "arrival_rate": 2,
-          "read_ratio": 0.8,
-          "write_ratio": 0.2,
+          "arrival_rate": 50,
+          "read_ratio": 0.7,
+          "write_ratio": 0.3,
           "SLO_read": 1000,
           "SLO_write": 1000,
-          "duration": 20,
+          "duration": 10,
           "time_to_decode": 0.00028,
           "keys": [
-            "222221", "222222", "222223", "222224"
+            "222221", "22222"
           ]
         }
       ]

@@ -359,9 +359,9 @@ int main(int argc, char** argv){
         db_list = {"db1.temp", "db2.temp", "db3.temp", "db4.temp", "db5.temp", "db6.temp", "db7.temp", "db8.temp",
                 "db9.temp"};
         for(uint i = 0; i < socket_port.size(); i++){
-//        if(socket_port[i] == "10004" || socket_port[i] == "10005"){
-//            continue;
-//        }
+        if(socket_port[i] == "10004" || socket_port[i] == "10005"){
+            continue;
+        }
             fflush(stdout);
             if(fork() == 0){
             

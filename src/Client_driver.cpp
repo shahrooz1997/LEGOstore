@@ -105,7 +105,9 @@ inline int next_event(const std::string& dist_process){
 
 std::string get_random_value(){
     std::string value;
-    while(value.size() < object_size){
+    // First figure should not be zero
+    value += rand() % 9 + '1';
+    while(value.size() < object_size - 1){
         value += std::to_string(rand() % 10);
     }
     return value;
@@ -178,7 +180,7 @@ int read_keys(const std::string& file){
     return 0;
 }
 
-int warm_up(Client_Node &clt){
+int warm_up(Client_Node &clt, Logger& log){
 
     int result = S_OK;
 
@@ -186,7 +188,7 @@ int warm_up(Client_Node &clt){
 //    uint key_idx = rand() % (keys.size());
 
     for(uint i = 0; i < keys.size(); i++){ // PUTS
-        for(int j = 0; j < NUMBER_OF_OPS_FOR_WARM_UP; j++){
+        for(int j = 0; j < NUMBER_OF_OPS_FOR_WARM_UP - 1; j++){
             std::string val = get_random_value();
             result = clt.put(keys[i], val);
             if(result != 0){
@@ -194,7 +196,21 @@ int warm_up(Client_Node &clt){
                 assert(false);
             }
         }
+
+        // Last write must be logged for testing linearizability purposes
+        std::string val = get_random_value();
+        auto epoch = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+        result = clt.put(keys[i], val);
+        if(result != 0){
+//        DPRINTF(DEBUG_CAS_Client, "clt.put on key %s, result is %d\n", keys[key_idx].c_str(), result);
+            assert(false);
+        }
+        auto epoch2 = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+        log(Op::put, keys[i], val, epoch, epoch2);
+//        DPRINTF(DEBUG_CAS_Client, "put done on key: %s with value: %s\n", keys[key_idx].c_str(), val.c_str());
     }
+
+
 
     for(uint i = 0; i < keys.size(); i++){ // GETS
         for(int j = 0; j < NUMBER_OF_OPS_FOR_WARM_UP; j++){
@@ -207,6 +223,15 @@ int warm_up(Client_Node &clt){
         }
     }
 
+    // Wait until all the warmup operations are finished
+    auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
+#ifdef DEBUGGING
+    timePoint2 += millis{3000};
+#else
+    timePoint2 += millis{15000};
+#endif
+    std::this_thread::sleep_until(timePoint2);
+
     DPRINTF(DEBUG_CAS_Client, "WARMUP DONE\n");
 
     return result;
@@ -215,25 +240,26 @@ int warm_up(Client_Node &clt){
 // This function will create a client and start sending requests
 int run_session(uint req_idx){
     int cnt = 0;        // Count the number of requests
-
     uint32_t client_id = get_unique_client_id(datacenter_id, conf_id, grp_id, req_idx);
+
+#ifdef DEBUGGING
+    srand(client_id);
+#else
+    srand(time(NULL) + client_id);
+//    srand(client_id);
+#endif
+
     Client_Node clt(client_id, datacenter_id, retry_attempts_number, metadata_server_timeout, timeout_per_request, datacenters);
 
     auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
     timePoint2 += millis{rand() % 2000};
     std::this_thread::sleep_until(timePoint2);
 
+    // logging
+    Logger log(clt.get_id());
+
     // WARM UP THE SOCKETS
-    warm_up(clt);
-
-//    srand(client_id);
-
-#ifdef DEBUGGING
-    srand(client_id);
-#else
-    srand(time(NULL));
-//    srand(client_id);
-#endif
+    warm_up(clt, log);
     
 //    DPRINTF(DEBUG_CAS_Client, "datacenter port: %u\n", datacenters[datacenter_id]->metadata_server_port);
     
@@ -242,9 +268,6 @@ int run_session(uint req_idx){
 //    std::this_thread::sleep_until(timePoint);
     
     time_point <system_clock, millis> tp = time_point_cast<milliseconds>(system_clock::now());
-    
-    // logging
-    Logger log(clt.get_id());
     
     while(system_clock::now() < timePoint){ // for duration amount of time
         cnt += 1;

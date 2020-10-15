@@ -48,7 +48,7 @@ using namespace std::chrono;
 #define MAX_LINGER_BEFORE_SOCK_CLOSE 50
 
 //#define No_GET_OPTIMIZED
-#define NUMBER_OF_OPS_FOR_WARM_UP 30
+#define NUMBER_OF_OPS_FOR_WARM_UP 2
 
 //#define METADATA_SERVER_IP      "127.0.0.1"
 //#define METADATA_SERVER_PORT    "11001"

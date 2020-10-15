@@ -16,108 +16,6 @@
 #include "../inc/ABD_Client.h"
 
 namespace ABD_thread_helper{
-    void _get_timestamp(std::promise <strVec>&& prm, std::string key, Server* server, std::string current_class,
-            uint32_t conf_id){
-        DPRINTF(DEBUG_ABD_Client, "started.\n");
-        
-        strVec data;
-        Connect c(server->ip, server->port);
-        if(!c.is_connected()){
-            prm.set_value(std::move(data));
-            return;
-        }
-        
-        data.push_back("get_timestamp");
-        data.push_back(key);
-        data.push_back(current_class);
-        data.push_back(std::to_string(conf_id));
-        DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
-        
-        data.clear();
-        std::string recvd;
-        if(DataTransfer::recvMsg(*c, recvd) == 1){
-            data = DataTransfer::deserialize(recvd);
-        }
-        else{
-            data.clear();
-        }
-
-        prm.set_value(std::move(data));
-        
-        DPRINTF(DEBUG_ABD_Client, "finished.\n");
-        return;
-    }
-    
-    void _put(std::promise <strVec>&& prm, std::string key, std::string value, Timestamp timestamp, Server* server,
-            std::string current_class, uint32_t conf_id){
-        DPRINTF(DEBUG_ABD_Client, "started.\n");
-        
-        strVec data;
-        Connect c(server->ip, server->port);
-        if(!c.is_connected()){
-            prm.set_value(std::move(data));
-            return;
-        }
-        
-        data.push_back("put");
-        data.push_back(key);
-        data.push_back(timestamp.get_string());
-        data.push_back(value);
-        data.push_back(current_class);
-        data.push_back(std::to_string(conf_id));
-        
-        if((value).empty()){
-            DPRINTF(DEBUG_CAS_Client, "WARNING!!! SENDING EMPTY STRING TO SERVER.\n");
-        }
-        DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
-        
-        data.clear();
-        std::string recvd;
-        if(DataTransfer::recvMsg(*c, recvd) == 1){
-            data = DataTransfer::deserialize(recvd);
-        }
-        else{
-            data.clear();
-        }
-
-        prm.set_value(std::move(data));
-        
-        DPRINTF(DEBUG_ABD_Client, "finished with server port: %u\n", server->port);
-        return;
-    }
-    
-    void _get(std::promise <strVec>&& prm, std::string key, Server* server, std::string current_class,
-            uint32_t conf_id){
-        DPRINTF(DEBUG_ABD_Client, "started.\n");
-        
-        strVec data;
-        Connect c(server->ip, server->port);
-        if(!c.is_connected()){
-            prm.set_value(std::move(data));
-            return;
-        }
-        
-        data.push_back("get");
-        data.push_back(key);
-        data.push_back(current_class);
-        data.push_back(std::to_string(conf_id));
-        DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
-        
-        data.clear();
-        std::string recvd;
-        if(DataTransfer::recvMsg(*c, recvd) == 1){
-            data = DataTransfer::deserialize(recvd);
-        }
-        else{
-            data.clear();
-        }
-
-        prm.set_value(std::move(data));
-        
-        DPRINTF(DEBUG_ABD_Client, "finished.\n");
-        return;
-    }
-
     inline uint32_t number_of_received_responses(std::vector<bool>& done){
         int ret = 0;
         for(auto it = done.begin(); it != done.end(); it++){
@@ -144,7 +42,7 @@ namespace ABD_thread_helper{
         data.push_back(operation); // get_timestamp, put, get
         data.push_back(key);
         if(operation == "put"){
-            if((value).empty()){
+            if(value.empty()){
                 DPRINTF(DEBUG_CAS_Client, "WARNING!!! SENDING EMPTY STRING TO SERVER.\n");
             }
             data.push_back(timestamp);
@@ -190,6 +88,7 @@ namespace ABD_thread_helper{
 
         std::map <uint32_t, std::future<strVec> > responses; // server_id, future
         std::vector<bool> done(servers.size(), false);
+        ret.clear();
 
         int op_status = 0;    // 0: Success, -1: timeout, -2: operation_fail(reconfiguration)
 
@@ -344,7 +243,6 @@ int ABD_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
     }
 
     for(auto it = ret.begin(); it != ret.end(); it++) {
-
         if((*it)[0] == "OK"){
             tss.emplace_back((*it)[1]);
 
@@ -354,11 +252,9 @@ int ABD_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
         else if((*it)[0] == "operation_fail"){
             DPRINTF(DEBUG_ABD_Client, "operation_fail received for key : %s\n", key.c_str());
             parent->get_placement(key, true, stoul((*it)[1]));
-//            assert(*p != nullptr);
             op_status = -2; // reconfiguration happened on the key
             timestamp = nullptr;
             return S_RECFG;
-            //break;
         }
         else{
             assert(false);
@@ -409,6 +305,7 @@ int ABD_Client::put(const std::string& key, const std::string& value){
             return S_RECFG;
         }
         DPRINTF(DEBUG_ABD_Client, "get_timestamp operation failed key %s \n", key.c_str());
+        assert(false);
     }
 
     // put
@@ -552,8 +449,6 @@ int ABD_Client::get(const std::string& key, std::string& value){
     // Check if Q2 responses has the max timestamp
     uint32_t resp_counter = 0;
     for(uint32_t i = 0; i < tss.size(); i++) {
-        if(i == idx)
-            continue;
         if(tss[i] == tss[idx])
             resp_counter++;
     }

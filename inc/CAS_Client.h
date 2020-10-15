@@ -47,6 +47,8 @@ public:
 private:
     int* desc;
     Client_Node* parent;
+
+    bool can_be_optimized;
     
     int get_timestamp(const std::string& key, Timestamp*& timestamp);
     

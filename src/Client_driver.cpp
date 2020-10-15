@@ -199,13 +199,13 @@ int warm_up(Client_Node &clt, Logger& log){
 
         // Last write must be logged for testing linearizability purposes
         std::string val = get_random_value();
-        auto epoch = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+        auto epoch = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
         result = clt.put(keys[i], val);
         if(result != 0){
 //        DPRINTF(DEBUG_CAS_Client, "clt.put on key %s, result is %d\n", keys[key_idx].c_str(), result);
             assert(false);
         }
-        auto epoch2 = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+        auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
         log(Op::put, keys[i], val, epoch, epoch2);
 //        DPRINTF(DEBUG_CAS_Client, "put done on key: %s with value: %s\n", keys[key_idx].c_str(), val.c_str());
     }
@@ -280,26 +280,26 @@ int run_session(uint req_idx){
         
         if(req_type == Op::get){
             std::string read_value;
-            auto epoch = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+            auto epoch = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
             result = clt.get(keys[key_idx], read_value);
             if(result != 0){
                 DPRINTF(DEBUG_CAS_Client, "clt.get on key %s, result is %d\n", keys[key_idx].c_str(), result);
                 assert(false);
             }
-            auto epoch2 = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+            auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
             log(Op::get, keys[key_idx], read_value, epoch, epoch2);
             DPRINTF(DEBUG_CAS_Client, "get done on key: %s with value: %s\n", keys[key_idx].c_str(),
                     read_value.c_str());
         }
         else{ // Op::put
             std::string val = get_random_value();
-            auto epoch = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+            auto epoch = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
             result = clt.put(keys[key_idx], val);
             if(result != 0){
                 DPRINTF(DEBUG_CAS_Client, "clt.put on key %s, result is %d\n", keys[key_idx].c_str(), result);
                 assert(false);
             }
-            auto epoch2 = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+            auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
             log(Op::put, keys[key_idx], val, epoch, epoch2);
             DPRINTF(DEBUG_CAS_Client, "put done on key: %s with value: %s\n", keys[key_idx].c_str(), val.c_str());
         }

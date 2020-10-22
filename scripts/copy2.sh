@@ -12,5 +12,6 @@ cp -r ../src ./project/
 cp -r ../config ./project/
 cp ./setup_config.json ./project/config/auto_test/datacenters_access_info.json
 cp ../Makefile ./project/
+cp ./summarize.sh ./project
 
 tar -czf project2.tar.gz project/

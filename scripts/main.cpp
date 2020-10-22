@@ -434,6 +434,30 @@ public:
 
 	~Machine(){}
 
+    int disk_resize(int size_gb){
+        if(this->status != Status::machine_running) {
+            return Status::status_is_not_running;
+        }
+
+        vector<string> args = {"gcloud", "compute", "disks", "resize", this->name, string("--size=") + to_string(size_gb), string("--zone=") + this->zone, "-q"};
+        string output;
+        status = Helpers::execute("/home/shahrooz/google-cloud-sdk/bin/gcloud", args, output);
+
+//        cout << status << "AAA " << endl;
+        
+        if(output != ""){
+            if(output.find("ERROR") != string::npos){ // ToDo: handle other errors specially limit-reached error
+
+                cout << "UNKNOWN ERROR in resize: " << output << endl;
+                status = Status::unknown_error;
+            }
+        }
+        else{
+            status = Status::chile_exec_error;
+            cerr << output << endl;
+        }
+    }
+
 	string get_name() const{
 	    return name;
 	}
@@ -695,6 +719,9 @@ int create_machines(uint number_of_machines){
     //     name += to_string(i + 1);
     //     machines.push_back(Machine(name, MACHINE_TYPE, default_zones[i]));
     // }
+    // for(int i = 0; i < machines.size(); i++){
+    //     machines[i].disk_resize(20);
+    // }
 
     // return 0;
 
@@ -802,7 +829,11 @@ int create_machines(uint number_of_machines){
 
     if(is_a_machine_created){
         sleep(20);
+        for(int i = 0; i < machines.size(); i++){
+            machines[i].disk_resize(20);
+        }
     }
+
 
     return 0;
 }
@@ -817,7 +848,7 @@ void _config_machines(int i, bool make_clear){
     }
     else{
         // Project compile requirement
-        machines[i].execute("sudo apt-get install -y build-essential autoconf automake libtool zlib1g-dev git protobuf-compiler pkg-config psmisc > /dev/null 2>&1");
+        machines[i].execute("sudo apt-get install -y build-essential autoconf automake libtool zlib1g-dev git protobuf-compiler pkg-config psmisc bc > /dev/null 2>&1");
         machines[i].execute("git clone https://github.com/openstack/liberasurecode.git > /dev/null 2>&1");
         machines[i].execute("cd liberasurecode/; ./autogen.sh > /dev/null 2>&1; ./configure --prefix=/usr > /dev/null 2>&1; make > /dev/null 2>&1");
         machines[i].execute("cd liberasurecode/; sudo make install > /dev/null 2>&1");
@@ -1051,9 +1082,58 @@ int retrieve_data(const string& run_type){
 
 }
 
-int main(){
+int retrieve_sum(const vector<int>& server_numbers, const string& run_type){
+
+    vector <thread> thread_pool;
+
+    for(int i = 0; i < server_numbers.size(); i++){
+        int index = server_numbers[i];
+        thread_pool.emplace_back([index, run_type]() {
+            std::string command;
+            command = "cd project; ./summarize.sh ";
+            command += run_type;
+            command += " > sum.txt 2>&1";
+            machines[index].execute(command);
+        });
+    }
+
+    for(int i = 0; i < thread_pool.size(); i++){
+        thread_pool[i].join();
+    }
+
+    thread_pool.clear();
+
+    system((string("rm -rf data/") + run_type + "/*").c_str());
+
+    for(int i = 0; i < server_numbers.size(); i++) {
+        int index = server_numbers[i];
+        system((string("mkdir -p data/") + run_type + "/s" + to_string(index + 1)).c_str());
+        thread_pool.emplace_back([index, run_type]() {
+            machines[index].copy_from(string("project/sum.txt"), string("data/") + run_type + "/s" + to_string(index + 1));
+        });
+    }
+
+    for(int i = 0; i < thread_pool.size(); i++){
+        thread_pool[i].join();
+    }
+
+    return 0;
+}
+
+int main(int argc, char* argv[]){
+
+    // string run_type = "ABD_NOF";
+
+    if(argc < 2){
+        return -1;
+    }
+
+    string run_type = argv[1];
+
     srand(time(nullptr));
     fill_zones_name();
+
+    vector<int> all_servers = {0,1,2,3,4,5,6,7,8};
 
 //    Machine m1("s4", "e2-micro", "us-central1-a");
 //    cout << "the ip of the created machine is " << m1.get_external_ip() << endl;
@@ -1067,24 +1147,46 @@ int main(){
 
     // get_pairwise_latency();
 
-    // config_machines(true);
+    // config_machines(false);
 
-    // cout << "Ready to run server" << endl;
-    vector<int> running_servers = {0,1,2,3,4,5,6,7,8};
-    // thread(execute_server, running_servers).detach();
-    // thread(execute_metadata_server, running_servers).detach();
+    manual_execute_command(all_servers, "cd project; make cleandb");
+    
+    vector<int> running_servers;
+    cout << "Ready to run server" << endl;
+    if(run_type[run_type.size() - 2] == '2'){
+        running_servers = vector<int>({0,1,2,3,6,7,8});
+    }
+    else{
+        running_servers = vector<int>({0,1,2,3,4,5,6,7,8});
+    }
+    thread(execute_server, running_servers).detach();
+    
+    thread(execute_metadata_server, all_servers).detach();
 
-    // sleep(5);
-    // cout << "Servers and metadata servers are running,\nPress any key to stop them..." << endl;
+    sleep(5);
+    cout << "Servers and metadata servers are running\n" << endl;//Press any key to stop them..." << endl;
 
-    // getchar();
 
-    // stop_server(running_servers);
+    cout << "Running the controller...\n" << endl;
+    string command = "cd /home/shahrooz/Desktop/PSU/Research/LEGOstore; ./Controller > cont_output_";
+    command += run_type;
+    command += ".txt 2>&1";
+    system(command.c_str());
 
-    // retrieve_data("CAS_F");
+    sleep(2);
+
+    //getchar();
+
+    stop_server(all_servers);
+
+    retrieve_sum(all_servers, run_type);
+
+    // retrieve_data("ABD_2F");
 
     // manual_execute_command(running_servers, "sudo apt-get install wget; echo \"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCdRtZWfwRgm6KxNXwrTIG+2axjp06FiM0NVBGMeVBQGVRj1D5TlsLPufmEXGJ6cpf4xT8doAN+H/d668diWJQSpE6Uo3BFVObSu7U3hXvuOBK126rBAuN4U2hMVtvinkASj9j21jYXcLKlMEc2tGhfRfzVNpflZu2rL67kizdm/6H7onlpXPUeXgXRWNvOJYUWLzdnhNPqv6PXA3pcPLpAumurTj8zwYQBAizKBXHFUB0C381v56NSHFCPpjZC9h3Ug2931jtGFYYdPVLpqvIdlPCet4aZgTtAE8RPMQSaXnxLWonerLH/MGNcdoI7fUaKtTT2jdhsempmKq3bKaRp shahrooz@s7\" >> .ssh/authorized_keys; echo \"-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn\nNhAAAAAwEAAQAAAQEAnUbWVn8EYJuisTV8K0yBvtmsY6dOhYjNDVQRjHlQUBlUY9Q+U5bC\nz7n5hFxienKX+MU/HaADfh/3euvHYliUEqROlKNwRVTm0ru1N4V77jgStduqwQLjeFNoTF\nbb4p5AEo/Y9tY2F3CypTBHNrRoX0X81TaX5Wbtqy+u5Is3Zv+h+6J5aVz1Hl4F0VjbziWF\nFi83Z4TT6r+j1wN6XDy6QLprq04/M8GEAQIsygVxxVAdAt/Nb+ejUhxQj6Y2QvYd1INvd9\nY7RhWGHT1S6aryHZTwnreGmYE7QBPETzEEml58S1qJ3qyx/zBjXHaCO31GirU09o3YbHpq\nZiqt2ymkaQAAA8h7DCQPewwkDwAAAAdzc2gtcnNhAAABAQCdRtZWfwRgm6KxNXwrTIG+2a\nxjp06FiM0NVBGMeVBQGVRj1D5TlsLPufmEXGJ6cpf4xT8doAN+H/d668diWJQSpE6Uo3BF\nVObSu7U3hXvuOBK126rBAuN4U2hMVtvinkASj9j21jYXcLKlMEc2tGhfRfzVNpflZu2rL6\n7kizdm/6H7onlpXPUeXgXRWNvOJYUWLzdnhNPqv6PXA3pcPLpAumurTj8zwYQBAizKBXHF\nUB0C381v56NSHFCPpjZC9h3Ug2931jtGFYYdPVLpqvIdlPCet4aZgTtAE8RPMQSaXnxLWo\nnerLH/MGNcdoI7fUaKtTT2jdhsempmKq3bKaRpAAAAAwEAAQAAAQEAiJD5DtRuLaEXDT8/\nGa3uP5Vtrn6ZnTQjsX4dWtgAV/0WnTSwBg80DAIV2swJqv+UXKyR2JyYS81gLLlNQWVe9i\nz8Gu8sTtehMr1RZuueqETCYm1jAQQMFvB98UO+3THCuxtzLyrkf0gZp3ybabIPqyLvnwgv\nrz/IAkx+Ve9Y5TKZkLvJUd2Y4i1rE9rsP9IeuoV2wYq1e2L8N9eDa0/jaCsKVdJqQkDVlF\n/MoSUhIsSAlkXDLihu1gfU4kFMRdFdkEglqgxakK2sPBAzQu/J2gsAVuri8th6qU+l61Kp\n2Bpkv/LYbofApMYchf2ozeJbigToXcMvGWgbuMZGJ481MQAAAIEAgpezlVt6mV02cDeabA\nk+aug6gPl+mlTvUbPqquoCwWQktuh4CTlXju/mHy4sGUPew/1JbSUhwupm8AVfq9J0merO\nrvul7A1qRr9V/B63vSKizTCLShPsiGPZwHjctbIqLjBfDXbhjQXTyyfpP60d+JlLW4embT\nJxUlJydipuCjAAAACBAM4lN3HmJTBejMqzbFEgrKptqlQWygWszyfn9WPkUEOMpVafdGSG\nOecMZREhPGvBT8GHhIg91/FfKwfLsiSI4RsxoPODH+44IHRRWTr9flGsaShiGLdgmvNokC\nUW0iSIi6bRSRRknkTT6ht9Gk7obOxEJUxTDjqINoqkFksMWOTNAAAAgQDDUBWzRPsEOsZ6\na2TRx1UrRQzmoXoW0SFjy5brZmMK7lY4HiSu2rMOeLCgl52EPvPHG0rjk7V+jiYrd0P3R3\n8FlsMqWLTJZjfXlzX3Rp0Bo44+v1fc93KslW7sSi/S8aBR9IVioW52CbB31fUThGPTfzFO\nfyk9iebGjsO1fy4eDQAAAAtzaGFocm9vekBzNwECAwQFBg==\n-----END OPENSSH PRIVATE KEY-----\" >> .ssh/id_rsa; chmod 600 .ssh/id_rsa");
-    manual_execute_command(running_servers, "wget https://kali.download/kali-images/kali-2020.3/kali-linux-2020.3-installer-netinst-amd64.iso");
+    // manual_execute_command(running_servers, "wget https://kali.download/kali-images/kali-2020.3/kali-linux-2020.3-installer-netinst-amd64.iso");
+
+    // manual_execute_command(running_metadata_servers, "sudo apt-get install bc");
 
 
 	return 0;

@@ -60,6 +60,12 @@ public:
         fprintf(file, "%u, %s, %s, %s, %lu, %lu\n", client_id, op == Op::get ? "get" : "put", key.c_str(),
                 value.c_str(), call_time, return_time);
     }
+
+    void operator()(double val){
+        assert(file != 0);
+
+        fprintf(file, "%lf\n", val);
+    }
     
     ~Logger(){
         fclose(file);
@@ -180,7 +186,7 @@ int read_keys(const std::string& file){
     return 0;
 }
 
-int warm_up(Client_Node &clt, Logger& log){
+int warm_up(Client_Node &clt, Logger& logger){
 
     int result = S_OK;
 
@@ -188,7 +194,10 @@ int warm_up(Client_Node &clt, Logger& log){
 //    uint key_idx = rand() % (keys.size());
 
     for(uint i = 0; i < keys.size(); i++){ // PUTS
-        for(int j = 0; j < NUMBER_OF_OPS_FOR_WARM_UP - 1; j++){
+        for(int j = 0; j < NUMBER_OF_OPS_FOR_WARM_UP; j++){
+            auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
+            timePoint2 += millis{rand() % 1000};
+            std::this_thread::sleep_until(timePoint2);
             std::string val = get_random_value();
             result = clt.put(keys[i], val);
             if(result != 0){
@@ -197,23 +206,26 @@ int warm_up(Client_Node &clt, Logger& log){
             }
         }
 
-        // Last write must be logged for testing linearizability purposes
-        std::string val = get_random_value();
-        auto epoch = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-        result = clt.put(keys[i], val);
-        if(result != 0){
-//        DPRINTF(DEBUG_CAS_Client, "clt.put on key %s, result is %d\n", keys[key_idx].c_str(), result);
-            assert(false);
-        }
-        auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-        log(Op::put, keys[i], val, epoch, epoch2);
-//        DPRINTF(DEBUG_CAS_Client, "put done on key: %s with value: %s\n", keys[key_idx].c_str(), val.c_str());
+//        auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
+//        timePoint2 += millis{rand() % 1000};
+//        std::this_thread::sleep_until(timePoint2);
+//
+//        // Last write must be logged for testing linearizability purposes
+//        std::string val = get_random_value();
+//        auto epoch = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+//        result = clt.put(keys[i], val);
+//        if(result != 0){
+//            assert(false);
+//        }
+//        auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+//        log(Op::put, keys[i], val, epoch, epoch2);
     }
-
-
 
     for(uint i = 0; i < keys.size(); i++){ // GETS
         for(int j = 0; j < NUMBER_OF_OPS_FOR_WARM_UP; j++){
+            auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
+            timePoint2 += millis{rand() % 1000};
+            std::this_thread::sleep_until(timePoint2);
             std::string read_value;
             result = clt.get(keys[i], read_value);
             if(result != 0){
@@ -224,17 +236,38 @@ int warm_up(Client_Node &clt, Logger& log){
     }
 
     // Wait until all the warmup operations are finished
-    auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
-#ifdef DEBUGGING
-    timePoint2 += millis{3000};
-#else
-    timePoint2 += millis{15000};
-#endif
-    std::this_thread::sleep_until(timePoint2);
+//    auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
+//#ifdef DEBUGGING
+//    timePoint2 += millis{3000};
+//#else
+//    timePoint2 += millis{15000};
+//#endif
+//    std::this_thread::sleep_until(timePoint2);
 
     DPRINTF(DEBUG_CAS_Client, "WARMUP DONE\n");
 
     return result;
+}
+
+inline uint32_t ip_str_to_int(const std::string& ip){
+    uint32_t ret = 0;
+    uint j = 0;
+    for(int i = 0; i < 4; i++){
+        for(; j < ip.size(); j++){
+            if(ip[j] != '.'){
+                ret += ip[j] - '0';
+                ret *= 10;
+            }
+            else{
+                ret /= 10;
+                j++;
+                break;
+            }
+        }
+        if(i != 3)
+            ret *= 256;
+    }
+    return ret;
 }
 
 // This function will create a client and start sending requests
@@ -245,7 +278,19 @@ int run_session(uint req_idx){
 #ifdef DEBUGGING
     srand(client_id);
 #else
-    srand(time(NULL) + client_id);
+    uint datacenter_indx = 0;
+    bool datacenter_indx_found = false;
+    for(; datacenter_indx < datacenters.size(); datacenter_indx++){
+        if(datacenters[datacenter_indx]->id == datacenter_id){
+            datacenter_indx_found = true;
+            break;
+        }
+    }
+    if(!datacenter_indx_found){
+        DPRINTF(DEBUG_CAS_Client, "wrong local_datacenter_id %d.\n", datacenter_id);
+    }
+    assert(datacenter_indx_found);
+    srand(time(NULL) + client_id + ip_str_to_int(datacenters[datacenter_indx]->servers[0]->ip));
 //    srand(client_id);
 #endif
 
@@ -255,11 +300,18 @@ int run_session(uint req_idx){
     timePoint2 += millis{rand() % 2000};
     std::this_thread::sleep_until(timePoint2);
 
+    auto timePoint3 = time_point_cast<milliseconds>(system_clock::now());
+    timePoint3 += millis{240000};
+
+
     // logging
-    Logger log(clt.get_id());
+    Logger logger(clt.get_id());
+    Logger logger2(clt.get_id() << 1);
 
     // WARM UP THE SOCKETS
-    warm_up(clt, log);
+    warm_up(clt, logger);
+
+    std::this_thread::sleep_until(timePoint3);
     
 //    DPRINTF(DEBUG_CAS_Client, "datacenter port: %u\n", datacenters[datacenter_id]->metadata_server_port);
     
@@ -274,6 +326,8 @@ int run_session(uint req_idx){
         double random_ratio = (double)(rand() % 100) / 100.00;
         Op req_type = random_ratio <= read_ratio ? Op::get : Op::put;
         int result = S_OK;
+
+        logger2(random_ratio);
         
         //Choose a random key
         uint key_idx = rand() % (keys.size());
@@ -287,7 +341,7 @@ int run_session(uint req_idx){
                 assert(false);
             }
             auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-            log(Op::get, keys[key_idx], read_value, epoch, epoch2);
+            logger(Op::get, keys[key_idx], read_value, epoch, epoch2);
             DPRINTF(DEBUG_CAS_Client, "get done on key: %s with value: %s\n", keys[key_idx].c_str(),
                     read_value.c_str());
         }
@@ -300,7 +354,7 @@ int run_session(uint req_idx){
                 assert(false);
             }
             auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-            log(Op::put, keys[key_idx], val, epoch, epoch2);
+            logger(Op::put, keys[key_idx], val, epoch, epoch2);
             DPRINTF(DEBUG_CAS_Client, "put done on key: %s with value: %s\n", keys[key_idx].c_str(), val.c_str());
         }
         

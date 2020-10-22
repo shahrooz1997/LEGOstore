@@ -48,7 +48,7 @@ using namespace std::chrono;
 #define MAX_LINGER_BEFORE_SOCK_CLOSE 50
 
 //#define No_GET_OPTIMIZED
-#define NUMBER_OF_OPS_FOR_WARM_UP 2
+#define NUMBER_OF_OPS_FOR_WARM_UP 30
 
 //#define METADATA_SERVER_IP      "127.0.0.1"
 //#define METADATA_SERVER_PORT    "11001"
@@ -308,12 +308,17 @@ private:
     uint16_t port;
     int sock;
     bool connected;
+    int idx;
     
-    static std::map<std::string, int> socks;
-    static std::map<std::string, std::unique_ptr<std::mutex> > socks_lock;
+//    static std::map<std::string, int> socks;
+//    static std::map<std::string, std::unique_ptr<std::mutex> > socks_lock;
     static std::mutex init_lock;
-    static std::map<std::string, bool> is_sock_lock;
-    
+//    static std::map<std::string, bool> is_sock_lock;
+    static std::vector<std::pair<std::string, int> > socks;
+    static std::vector<std::pair<std::string, std::unique_ptr<std::mutex> > > socks_lock;
+    static std::vector<std::pair<std::string, bool> > is_sock_lock;
+    static uint32_t number_of_socks;
+
     void print_error(std::string const& m); // thread safe print
 };
 

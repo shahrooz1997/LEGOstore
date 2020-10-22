@@ -15,7 +15,7 @@
 #include "Client_Node.h"
 #include "../inc/ABD_Client.h"
 
-namespace ABD_thread_helper{
+namespace ABD_helper{
     inline uint32_t number_of_received_responses(std::vector<bool>& done){
         int ret = 0;
         for(auto it = done.begin(); it != done.end(); it++){
@@ -233,7 +233,7 @@ int ABD_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
     std::vector<strVec> ret;
 
     DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
-    op_status = ABD_thread_helper::failure_support_optimized("get_timestamp", key, "", "", this->retry_attempts, p.Q1, servers,
+    op_status = ABD_helper::failure_support_optimized("get_timestamp", key, "", "", this->retry_attempts, p.Q1, servers,
                                                  this->datacenters, this->current_class, parent->get_conf_id(key),
                                                  this->timeout_per_request, ret);
 
@@ -314,7 +314,7 @@ int ABD_Client::put(const std::string& key, const std::string& value){
     std::vector<strVec> ret;
 
     DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
-    op_status = ABD_thread_helper::failure_support_optimized("put", key, timestamp->get_string(), value, this->retry_attempts, p.Q2, servers,
+    op_status = ABD_helper::failure_support_optimized("put", key, timestamp->get_string(), value, this->retry_attempts, p.Q2, servers,
                                                              this->datacenters, this->current_class, parent->get_conf_id(key),
                                                              this->timeout_per_request, ret);
 
@@ -387,21 +387,21 @@ int ABD_Client::get(const std::string& key, std::string& value){
     DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
 #ifndef No_GET_OPTIMIZED
     if(p.Q1.size() < p.Q2.size()) {
-        op_status = ABD_thread_helper::failure_support_optimized("get", key, "", "", this->retry_attempts, p.Q2,
+        op_status = ABD_helper::failure_support_optimized("get", key, "", "", this->retry_attempts, p.Q2,
                                                                  servers,
                                                                  this->datacenters, this->current_class,
                                                                  parent->get_conf_id(key),
                                                                  this->timeout_per_request, ret);
     }
     else{
-        op_status = ABD_thread_helper::failure_support_optimized("get", key, "", "", this->retry_attempts, p.Q1,
+        op_status = ABD_helper::failure_support_optimized("get", key, "", "", this->retry_attempts, p.Q1,
                                                                  servers,
                                                                  this->datacenters, this->current_class,
                                                                  parent->get_conf_id(key),
                                                                  this->timeout_per_request, ret);
     }
 #else
-    op_status = ABD_thread_helper::failure_support_optimized("get", key, "", "", this->retry_attempts, p.Q1, servers,
+    op_status = ABD_helper::failure_support_optimized("get", key, "", "", this->retry_attempts, p.Q1, servers,
                                                              this->datacenters, this->current_class, parent->get_conf_id(key),
                                                              this->timeout_per_request, ret);
 #endif
@@ -469,7 +469,7 @@ int ABD_Client::get(const std::string& key, std::string& value){
 #endif
 
     // Put
-    op_status = ABD_thread_helper::failure_support_optimized("put", key, tss[idx].get_string(), vs[idx], this->retry_attempts, p.Q2,
+    op_status = ABD_helper::failure_support_optimized("put", key, tss[idx].get_string(), vs[idx], this->retry_attempts, p.Q2,
                                                              servers, this->datacenters, this->current_class,
                                                              parent->get_conf_id(key),
                                                              this->timeout_per_request, ret);

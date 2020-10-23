@@ -565,7 +565,8 @@ int CAS_Client::put(const std::string& key, const std::string& value){
         CAS_helper::free_chunks(chunks);
         if(status == S_RECFG){
             op_status = -2;
-            return S_RECFG;
+//            return S_RECFG;
+            return put(key, value);
         }
         DPRINTF(DEBUG_CAS_Client, "get_timestamp operation failed key %s \n", key.c_str());
         assert(false);
@@ -617,7 +618,8 @@ int CAS_Client::put(const std::string& key, const std::string& value){
                 delete timestamp;
                 timestamp = nullptr;
             }
-            return S_RECFG;
+//            return S_RECFG;
+            return put(key, value);
         }
         else{
             DPRINTF(DEBUG_CAS_Client, "Bad message received from server for key : %s\n", key.c_str());
@@ -670,7 +672,8 @@ int CAS_Client::put(const std::string& key, const std::string& value){
                 delete timestamp;
                 timestamp = nullptr;
             }
-            return S_RECFG;
+//            return S_RECFG;
+            return put(key, value);
         }
         else{
             op_status = -5; // Bad message received from server
@@ -722,7 +725,8 @@ int CAS_Client::get(const std::string& key, std::string& value){
     status = this->get_timestamp(key, timestamp);
     if(status == S_RECFG){
         op_status = -2;
-        return S_RECFG;
+//        return S_RECFG;
+        return get(key, value);
     }
     if(timestamp == nullptr){
         DPRINTF(DEBUG_CAS_Client, "get_timestamp operation failed key %s \n", key.c_str());
@@ -789,7 +793,8 @@ int CAS_Client::get(const std::string& key, std::string& value){
                 delete timestamp;
                 timestamp = nullptr;
             }
-            return S_RECFG;
+//            return S_RECFG;
+            return get(key, value);
         }
         else{
             DPRINTF(DEBUG_CAS_Client, "wrong message received: %s : %s\n", (*it)[0].c_str(), (*it)[1].c_str());

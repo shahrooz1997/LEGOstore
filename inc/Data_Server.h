@@ -6,6 +6,7 @@
 #include "CAS_Server.h"
 #include "ABD_Server.h"
 #include <unordered_map>
+#include <mutex>
 #include <condition_variable>
 #include "Timestamp.h"
 
@@ -52,6 +53,14 @@ private:
     std::string metadata_server_port;
     
     std::map <std::string, std::vector<Request>> recon_keys; // To maintain blocked requests
+
+    // Handling block mode of keys
+    std::vector<std::string> blocked_keys;
+    std::mutex blocked_keys_lock;
+    std::condition_variable blocked_keys_cv;
+    void check_block_keys(std::string& key, std::string& curr_class, uint32_t conf_id); // It will block the caller thread until the key is removed from the recon state
+    void add_block_keys(std::string& key, std::string& curr_class, uint32_t conf_id);
+    void remove_block_keys(std::string& key, std::string& curr_class, uint32_t conf_id);
 };
 
 #endif

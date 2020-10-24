@@ -39,10 +39,12 @@
 using namespace std;
 
 /*
- * 
+ * KEY = key!confid
+ * VALUE = pair of (newconfid!timestamp, placement)
+ * if no reconfiguration has happened on key!confid, newconfid will be confid and timestamp will be ""
  */
 
-std::map<std::string, pair<string, Placement> > key_info; //key -> confid!timestamp, placement
+std::map<std::string, pair<string, Placement> > key_info;
 std::mutex lock_t;
 
 inline std::string construct_key_metadata(const std::string& key, const std::string& conf_id){
@@ -55,26 +57,6 @@ inline std::string construct_key_metadata(const std::string& key, const std::str
 
 inline std::string construct_key_metadata(const std::string& key, const uint32_t conf_id){
     return construct_key_metadata(key, to_string(conf_id));
-}
-
-uint32_t get_most_recent_conf_id(const string& key, const string& confid){
-    auto it = key_info.find(construct_key_metadata(key, confid));
-//    uint32_t asked_conf_id = stoul(confid);
-    uint32_t saved_conf_id = stoul(it->second.first);
-    
-    if(saved_conf_id == stoul(confid)){
-        return saved_conf_id;
-    }
-    
-    while(true){
-        auto it2 = key_info.find(construct_key_metadata(key, saved_conf_id));
-        if(saved_conf_id == stoul(it2->second.first)){
-            break;
-        }
-        saved_conf_id = stoul(it2->second.first);
-    }
-    
-    return saved_conf_id;
 }
 
 inline std::string construct_confid_timestamp(const std::string& confid, const std::string& timestamp){

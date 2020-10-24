@@ -32,6 +32,7 @@ int DataServer::put_data(const std::string& key, const strVec& value){
 }
 
 void DataServer::check_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id){
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
     std::unique_lock<std::mutex> lock(this->blocked_keys_lock);
 
     // See if the key is in block mode
@@ -44,6 +45,7 @@ void DataServer::check_block_keys(const std::string& key, const std::string& cur
 }
 
 void DataServer::add_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id){
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
     std::unique_lock<std::mutex> lock(this->blocked_keys_lock);
 
     std::string con_key = construct_key(key, curr_class, conf_id);
@@ -54,10 +56,14 @@ void DataServer::add_block_keys(const std::string& key, const std::string& curr_
 }
 
 void DataServer::remove_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id){
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
     std::unique_lock<std::mutex> lock(this->blocked_keys_lock);
 
     std::string con_key = construct_key(key, curr_class, conf_id);
     auto it = std::find(this->blocked_keys.begin(), this->blocked_keys.end(), con_key);
+    if(it == this->blocked_keys.end()){
+        DPRINTF(DEBUG_RECONFIG_CONTROL, "it != this->blocked_keys.end() for con_key: %s\n", con_key.c_str());
+    }
     assert(it != this->blocked_keys.end());
     this->blocked_keys.erase(it);
 
@@ -66,39 +72,41 @@ void DataServer::remove_block_keys(const std::string& key, const std::string& cu
 
 std::string DataServer::reconfig_query(const std::string& key, const std::string& curr_class, uint32_t conf_id){
 
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
     add_block_keys(key, curr_class, conf_id);
 
-    std::string result;
     Request req; // ToDo: we do not need this variable anymore. Remove it from all the functions
     if(curr_class == CAS_PROTOCOL_NAME){
-//        result = CAS.get_timestamp(key, conf_id, req, cache, persistent, mu);
+//        return CAS.get_timestamp(key, conf_id, req, cache, persistent, mu);
     }
     else if(curr_class == ABD_PROTOCOL_NAME){
-        result = ABD.get(key, conf_id);
+        return ABD.get(key, conf_id);
     }
     else{
         assert(false);
     }
 
-    return result;
+    return DataTransfer::serialize({"ERROR", "INTERNAL ERROR"});
 }
 
 std::string DataServer::reconfig_finalize(const std::string& key, const std::string& timestamp, const std::string& curr_class, uint32_t conf_id){
 
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
     std::string result;
     Request req; // ToDo: we do not need this variable anymore. Remove it from all the functions
     if(curr_class == CAS_PROTOCOL_NAME){
-//        result = CAS.get(key, conf_id, timestamp, req, cache, persistent, mu);
+//        return CAS.get(key, conf_id, timestamp, req, cache, persistent, mu);
     }else{
         assert(false);
     }
 
-    return result;
+    return DataTransfer::serialize({"ERROR", "INTERNAL ERROR"});
 }
 
 std::string DataServer::reconfig_write(const std::string& key, const std::string& value, const std::string& timestamp, const std::string& curr_class,
                                        uint32_t conf_id){
 
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
     std::string result;
     if(curr_class == CAS_PROTOCOL_NAME){
 //        char bbuf[1024*128];
@@ -114,20 +122,21 @@ std::string DataServer::reconfig_write(const std::string& key, const std::string
 //        printf("%s", bbuf);
 
 //        CAS.put(key, conf_id, value, timestamp, req, cache, persistent, mu);
-//        result = CAS.put_fin(key, conf_id, timestamp, req, cache, persistent, mu);
+//        return CAS.put_fin(key, conf_id, timestamp, req, cache, persistent, mu);
     }
     else if(curr_class == ABD_PROTOCOL_NAME){
-        result = ABD.put(key, conf_id, value, timestamp);
+        return ABD.put(key, conf_id, value, timestamp);
     }
     else{
         assert(false);
     }
 
-    return result;
+    return DataTransfer::serialize({"ERROR", "INTERNAL ERROR"});
 }
 
 std::string DataServer::finish_reconfig(const std::string &key, const std::string &timestamp, const std::string& new_conf_id, const std::string &curr_class, uint32_t conf_id){
 
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
     //Todo: add the reconfigured timestamp to the persistent storage here.
     std::unique_lock<std::mutex> lock(mu);
     if(curr_class == CAS_PROTOCOL_NAME){
@@ -141,7 +150,7 @@ std::string DataServer::finish_reconfig(const std::string &key, const std::strin
         }
         data[3] = timestamp;
         data[4] = new_conf_id;
-        put_data(key, data);
+        put_data(con_key, data);
     }
     else{
         assert(false);

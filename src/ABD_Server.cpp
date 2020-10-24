@@ -98,7 +98,7 @@ std::string ABD_Server::put(const std::string& key, uint32_t conf_id, const std:
     if(data.empty()){
         DPRINTF(DEBUG_ABD_Server, "put new con_key which is %s\n", con_key.c_str());
         vector <string> val{value, ABD_PROTOCOL_NAME, timestamp, "", "", "FIN"};
-        put_data(key, val);
+        put_data(con_key, val);
         return DataTransfer::serialize({"OK"});
     }
 
@@ -106,7 +106,7 @@ std::string ABD_Server::put(const std::string& key, uint32_t conf_id, const std:
         if(Timestamp(timestamp) > Timestamp(data[2])){
             data[0] = value;
             data[2] = timestamp;
-            put_data(key, data);
+            put_data(con_key, data);
         }
         return DataTransfer::serialize({"OK"});
     }
@@ -115,7 +115,7 @@ std::string ABD_Server::put(const std::string& key, uint32_t conf_id, const std:
             if(Timestamp(timestamp) > Timestamp(data[2])){
                 data[0] = value;
                 data[2] = timestamp;
-                put_data(key, data);
+                put_data(con_key, data);
             }
             return DataTransfer::serialize({"OK"});
         }

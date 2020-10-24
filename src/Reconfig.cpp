@@ -496,31 +496,13 @@ Reconfig::Reconfig(uint32_t id, uint32_t local_datacenter_id, uint32_t retry_att
 Reconfig::~Reconfig(){
 }
 
-//int Reconfig::get_metadata_info(std::string& key, GroupConfig** old_config){
-//    std::unique_lock <std::mutex> lock(lock_t);
-//    if(key_metadata.find(key) == key_metadata.end()){
-//        //Key not found
-//        *old_config = nullptr;
-//        return 1;
-//    }
-//    else{
-//        *old_config = key_metadata[key];
-//        return 0;
-//    }
-//}
-//
-//int Reconfig::update_metadata_info(std::string& key, GroupConfig* new_config){
-//    std::unique_lock <std::mutex> lock(lock_t);
-//    key_metadata[key] = new_config;
-//    return 0;
-//}
-
 int Reconfig::update_metadata_info(std::string& key, uint32_t old_confid_id, uint32_t new_confid_id, const std::string& timestamp,
                          const Placement& p){
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
     for(uint k = 0; k < datacenters.size(); k++){
         Connect c(datacenters[k]->metadata_server_ip, datacenters[k]->metadata_server_port);
         if(!c.is_connected()){
-            std::cout << "Warn: cannot connect to metadata server" << std::endl;
+            DPRINTF(DEBUG_RECONFIG_CONTROL, "Warn: cannot connect to metadata server\n");
             continue;
         }
         DataTransfer::sendMsg(*c, DataTransfer::serializeMDS("update",
@@ -532,7 +514,7 @@ int Reconfig::update_metadata_info(std::string& key, uint32_t old_confid_id, uin
             std::string status;
             std::string msg;
             DataTransfer::deserializeMDS(recvd, status, msg);
-            if(status != "WARN"){
+            if(status != "OK"){
                 DPRINTF(DEBUG_RECONFIG_CONTROL, "%s\n", msg.c_str());
                 assert(false);
             }
@@ -549,21 +531,25 @@ int Reconfig::update_metadata_info(std::string& key, uint32_t old_confid_id, uin
 
 int Reconfig::start_reconfig(GroupConfig& old_config, uint32_t old_conf_id, GroupConfig& new_config, uint32_t new_conf_id){
 
-    std::string& key = old_config.keys[0];
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
 
-    Timestamp* ret_ts = nullptr;
-    std::string ret_v;
-    assert(Reconfig::send_reconfig_query(old_config, old_conf_id, key, ret_ts, ret_v) == 0);
-    if(old_config.placement_p->protocol == CAS_PROTOCOL_NAME){
-        assert(Reconfig::send_reconfig_finalize(old_config, old_conf_id, key, ret_ts, ret_v) == 0);
+    for(uint i = 0; i < old_config.keys.size(); i++){
+        std::string& key = old_config.keys[i];
+
+        Timestamp* ret_ts = nullptr;
+        std::string ret_v;
+        assert(Reconfig::send_reconfig_query(old_config, old_conf_id, key, ret_ts, ret_v) == 0);
+        if(old_config.placement_p->protocol == CAS_PROTOCOL_NAME){
+            assert(Reconfig::send_reconfig_finalize(old_config, old_conf_id, key, ret_ts, ret_v) == 0);
+        }
+        assert(Reconfig::send_reconfig_write(new_config, new_conf_id, key, ret_ts, ret_v) == 0);
+
+        assert(update_metadata_info(key, old_conf_id, new_conf_id, ret_ts->get_string(), *new_config.placement_p) == 0);
+
+        assert(Reconfig::send_reconfig_finish(old_config, old_conf_id, new_conf_id, key, ret_ts) == 0);
+
+        delete ret_ts;
     }
-    assert(Reconfig::send_reconfig_write(new_config, new_conf_id, key, ret_ts, ret_v) == 0);
-
-    assert(update_metadata_info(key, old_conf_id, new_conf_id, ret_ts->get_string(), *new_config.placement_p) == 0);
-
-    assert(Reconfig::send_reconfig_finish(old_config, old_conf_id, new_conf_id, key, ret_ts) == 0);
-
-    delete ret_ts;
     return S_OK;
 }
 
@@ -576,6 +562,11 @@ int Reconfig::send_reconfig_query(GroupConfig& old_config, uint32_t old_conf_id,
     int op_status = 0;
     std::unordered_set <uint32_t> servers;
     set_intersection(*old_config.placement_p, servers);
+
+    for(auto &t: servers){
+        DPRINTF(DEBUG_RECONFIG_CONTROL, "s %u\n", t);
+    }
+
     std::vector<strVec> ret;
 
     if(old_config.placement_p->protocol == ABD_PROTOCOL_NAME){

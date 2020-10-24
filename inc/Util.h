@@ -81,8 +81,11 @@ extern bool DEBUG_UTIL;
 
 
 #define DPRINTF(flag, fmt, ...) \
-    if(flag) \
-        fprintf(stdout, "Time %10li - Thread: %lu : [%s][%s]%d: " fmt, time(nullptr), pthread_self(), __FILE__, __func__, __LINE__, ##__VA_ARGS__);
+    do{ \
+        if(flag) \
+            fprintf(stdout, "Time %10li - Thread: %lu : [%s][%s]%d: " fmt, time(nullptr), pthread_self(), __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+            fflush(stdout); \
+    } while(0)
 
 typedef std::vector <std::string> strVec;
 

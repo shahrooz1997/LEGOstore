@@ -12,7 +12,7 @@
 #include <cstdlib>
 #include <fstream>
 
-//#define DEBUGGING
+#define DEBUGGING
 
 using namespace std;
 //using namespace nlohmann;
@@ -190,11 +190,31 @@ int warm_up(Client_Node &clt, Logger& logger){
 
     int result = S_OK;
 
-    //Choose a random key
-//    uint key_idx = rand() % (keys.size());
-
     for(uint i = 0; i < keys.size(); i++){ // PUTS
         for(int j = 0; j < NUMBER_OF_OPS_FOR_WARM_UP; j++){
+
+#ifdef DEBUGGING
+
+            if(j == NUMBER_OF_OPS_FOR_WARM_UP - 1) {
+                auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
+                timePoint2 += millis{rand() % 1000};
+                std::this_thread::sleep_until(timePoint2);
+
+                // Last write must be logged for testing linearizability purposes
+                std::string val = get_random_value();
+                auto epoch = time_point_cast<std::chrono::microseconds>(
+                        std::chrono::system_clock::now()).time_since_epoch().count();
+                result = clt.put(keys[i], val);
+                if (result != 0) {
+                    assert(false);
+                }
+                auto epoch2 = time_point_cast<std::chrono::microseconds>(
+                        std::chrono::system_clock::now()).time_since_epoch().count();
+                logger(Op::put, keys[i], val, epoch, epoch2);
+                continue;
+            }
+#endif
+
             auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
             timePoint2 += millis{rand() % 1000};
             std::this_thread::sleep_until(timePoint2);
@@ -205,23 +225,8 @@ int warm_up(Client_Node &clt, Logger& logger){
                 assert(false);
             }
         }
-
-#ifdef DEBUGGING
-        auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
-        timePoint2 += millis{rand() % 1000};
-        std::this_thread::sleep_until(timePoint2);
-
-        // Last write must be logged for testing linearizability purposes
-        std::string val = get_random_value();
-        auto epoch = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-        result = clt.put(keys[i], val);
-        if(result != 0){
-            assert(false);
-        }
-        auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-        log(Op::put, keys[i], val, epoch, epoch2);
-#endif
     }
+
 
     for(uint i = 0; i < keys.size(); i++){ // GETS
         for(int j = 0; j < NUMBER_OF_OPS_FOR_WARM_UP; j++){
@@ -312,7 +317,6 @@ int run_session(uint req_idx){
 
     // logging
     Logger logger(clt.get_id());
-    Logger logger2(clt.get_id() << 1);
 
     // WARM UP THE SOCKETS
     warm_up(clt, logger);
@@ -332,8 +336,6 @@ int run_session(uint req_idx){
         double random_ratio = (double)(rand() % 100) / 100.00;
         Op req_type = random_ratio <= read_ratio ? Op::get : Op::put;
         int result = S_OK;
-
-        logger2(random_ratio);
         
         //Choose a random key
         uint key_idx = rand() % (keys.size());

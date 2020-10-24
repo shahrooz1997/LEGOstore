@@ -112,7 +112,6 @@ namespace ABD_helper{
                 continue;
             }
 
-            DPRINTF(DEBUG_CAS_Client, "try one done.\n");
             if(it->second.valid() && it->second.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready){
                 strVec data = it->second.get();
                 if(data.size() != 0){
@@ -371,7 +370,7 @@ int ABD_Client::get(const std::string& key, std::string& value){
 
     int le_counter = 0;
     uint64_t le_init = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-    DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init)
+    DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
     
     value.clear();
     

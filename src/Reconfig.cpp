@@ -232,14 +232,14 @@ namespace CAS_helper_recon{
 
         data.push_back(operation); // get_timestamp, put, put_fin, get
         data.push_back(key);
-        if(operation == "write_config"){
+        if(operation == "reconfig_write" || operation == "finish_reconfig"){
             if(value.empty()){
                 DPRINTF(DEBUG_CAS_Client, "WARNING!!! SENDING EMPTY STRING TO SERVER.\n");
             }
             data.push_back(timestamp);
             data.push_back(value);
         }
-        else if(operation == "reconfig_finalize" || operation == "finish_reconfig"){
+        else if(operation == "reconfig_finalize"){
             data.push_back(timestamp);
         }
         else if(operation == "reconfig_query"){
@@ -372,15 +372,12 @@ namespace ABD_helper_recon{
 
         data.push_back(operation); // get_timestamp, put, get
         data.push_back(key);
-        if(operation == "write_config"){
+        if(operation == "reconfig_write" || operation == "finish_reconfig"){
             if(value.empty()){
                 DPRINTF(DEBUG_CAS_Client, "WARNING!!! SENDING EMPTY STRING TO SERVER.\n");
             }
             data.push_back(timestamp);
             data.push_back(value);
-        }
-        else if(operation == "finish_reconfig"){
-            data.push_back(timestamp);
         }
         else if(operation == "reconfig_query"){
 
@@ -564,7 +561,7 @@ int Reconfig::start_reconfig(GroupConfig& old_config, uint32_t old_conf_id, Grou
 
     assert(update_metadata_info(key, old_conf_id, new_conf_id, ret_ts->get_string(), *new_config.placement_p) == 0);
 
-    assert(Reconfig::send_reconfig_finish(old_config, old_conf_id, key, ret_ts) == 0);
+    assert(Reconfig::send_reconfig_finish(old_config, old_conf_id, new_conf_id, key, ret_ts) == 0);
 
     delete ret_ts;
     return S_OK;
@@ -964,7 +961,7 @@ int Reconfig::send_reconfig_write(GroupConfig& new_config, uint32_t new_conf_id,
     return op_status;
 }
 
-int Reconfig::send_reconfig_finish(GroupConfig& old_config, uint32_t old_conf_id, const std::string& key,
+int Reconfig::send_reconfig_finish(GroupConfig& old_config, uint32_t old_conf_id, uint32_t new_conf_id, const std::string& key,
         Timestamp* const & ts){
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started on key \"%s\"\n", key.c_str());
@@ -976,7 +973,7 @@ int Reconfig::send_reconfig_finish(GroupConfig& old_config, uint32_t old_conf_id
 
     if(old_config.placement_p->protocol == ABD_PROTOCOL_NAME){
         DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
-        op_status = ABD_helper_recon::failure_support_optimized("finish_reconfig", key, ts->get_string(), "", this->retry_attempts, servers,
+        op_status = ABD_helper_recon::failure_support_optimized("finish_reconfig", key, ts->get_string(), std::to_string(new_conf_id), this->retry_attempts, servers,
                                                                 servers.size() - old_config.placement_p->f, this->datacenters, old_config.placement_p->protocol, old_conf_id,
                                                                 this->timeout_per_request, ret);
 
@@ -1017,7 +1014,7 @@ int Reconfig::send_reconfig_finish(GroupConfig& old_config, uint32_t old_conf_id
     else if(old_config.placement_p->protocol == CAS_PROTOCOL_NAME){
         std::vector<std::string*> chunks_temp;
         for (auto it = servers.begin(); it != servers.end(); it++) { // request to all servers
-            chunks_temp.push_back(new std::string());
+            chunks_temp.push_back(new std::string(std::to_string(new_conf_id)));
         }
         DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");
         op_status = CAS_helper_recon::failure_support_optimized("finish_reconfig", key, ts->get_string(), chunks_temp, this->retry_attempts, servers,

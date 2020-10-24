@@ -7,10 +7,9 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-//#define LOCAL_TEST
-
 using std::cout;
 using std::endl;
+using std::unique_ptr;
 
 using namespace std::chrono;
 using millis = duration<uint64_t, std::milli>;
@@ -86,14 +85,14 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
             
             
             //ABD2 failure 2
-//            test->protocol = ABD_PROTOCOL_NAME;
-//            test->m = 9;
-//            test->k = 0;
-//            test->Q1.insert(begin(test->Q1), {0, 1, 2, 3, 4});
-//            test->Q2.insert(begin(test->Q2), {4, 5, 6, 7, 8});
-//            test->Q3.clear();
-//            test->Q4.clear();
-//            test->f = 2;
+            test->protocol = ABD_PROTOCOL_NAME;
+            test->m = 9;
+            test->k = 0;
+            test->Q1.insert(begin(test->Q1), {0, 1, 2, 3, 4});
+            test->Q2.insert(begin(test->Q2), {4, 5, 6, 7, 8});
+            test->Q3.clear();
+            test->Q4.clear();
+            test->f = 2;
             
             // Failures
 //            test->protocol = CAS_PROTOCOL_NAME;
@@ -108,16 +107,16 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
 //            test->f = 1;
             
             // HARD
-            test->protocol = CAS_PROTOCOL_NAME;
-            test->k = 4;
-            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
-            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
-            test->Q3.insert(begin(test->Q3), {4,5,6,7,8});
-            test->Q4.insert(begin(test->Q4), {2,3,4,5,6,7,8});
-            std::unordered_set<uint32_t> servers;
-            set_intersection(*test, servers);
-            test->m = servers.size(); //std::max(test->Q2.size(), test->Q3.size());
-            test->f = 2;
+//            test->protocol = CAS_PROTOCOL_NAME;
+//            test->k = 4;
+//            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
+//            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
+//            test->Q3.insert(begin(test->Q3), {4,5,6,7,8});
+//            test->Q4.insert(begin(test->Q4), {2,3,4,5,6,7,8});
+//            std::unordered_set<uint32_t> servers;
+//            set_intersection(*test, servers);
+//            test->m = servers.size(); //std::max(test->Q2.size(), test->Q3.size());
+//            test->f = 2;
 
 //            test->protocol = CAS_PROTOCOL_NAME;
 //            test->k = 1;
@@ -478,6 +477,8 @@ Controller::Controller(uint32_t retry, uint32_t metadata_timeout, uint32_t timeo
     if(read_detacenters_info(setupFile) == 1){
         std::cout << "Constructor failed !! " << std::endl;
     }
+
+    reconfig_p = unique_ptr<Reconfig>(new Reconfig(0, 1, retry, metadata_timeout, timeout_per_req, prp.datacenters));
 }
 
 //Returns 0 on success
@@ -866,19 +867,19 @@ int main(){
             // Do the reconfiguration for each key in the group
             for(uint i = 0; i < curr->keys.size(); i++){
                 std::string key(curr->keys[i]);
-                if(master.config_t.get_metadata_info(key, &old) == 0 &&
-                        !compare_placement(old->placement_p, curr->placement_p)){
-                    int old_desc = 0, new_desc = 0;
-//                    update_desc_info(open_desc, old->placement_p, curr->placement_p, old_desc, new_desc);
-                    std::cout << "Starting the reconfig protocol for key " << key << std::endl;
-                    pool.emplace_back(&Reconfig::start_reconfig, &master.config_t, &master.prp, std::ref(*old),
-                            std::ref(*curr), key, old_desc, new_desc);
-                }
-                else{// Else NO need for reconfig protocol as this is a new key
-                    // or the placement is same as before
-                    
-                    master.config_t.update_metadata_info(key, curr);
-                }
+//                if(master.reconfig_p->get_metadata_info(key, &old) == 0 &&
+//                        !compare_placement(old->placement_p, curr->placement_p)){
+//                    int old_desc = 0, new_desc = 0;
+////                    update_desc_info(open_desc, old->placement_p, curr->placement_p, old_desc, new_desc);
+//                    std::cout << "Starting the reconfig protocol for key " << key << std::endl;
+//                    pool.emplace_back(&Reconfig::start_reconfig, master.reconfig_p, &master.prp, std::ref(*old),
+//                            std::ref(*curr), key, old_desc, new_desc);
+//                }
+//                else{// Else NO need for reconfig protocol as this is a new key
+//                    // or the placement is same as before
+//
+//                    master.reconfig_p->update_metadata_info(key, curr);
+//                }
             }
             
             //Waiting for all reconfig to finish for this group

@@ -14,7 +14,7 @@ Persistent::Persistent(const std::string& directory){
 }
 
 //TODO:: Get the interface uniform with Cache interface
-const std::vector <std::string> Persistent::get(const std::string& key){
+const std::vector<std::string> Persistent::get(const std::string& key){
     std::string value;
     rocksdb::Status s = db->Get(rocksdb::ReadOptions(), key, &value);
     

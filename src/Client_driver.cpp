@@ -206,19 +206,21 @@ int warm_up(Client_Node &clt, Logger& logger){
             }
         }
 
-//        auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
-//        timePoint2 += millis{rand() % 1000};
-//        std::this_thread::sleep_until(timePoint2);
-//
-//        // Last write must be logged for testing linearizability purposes
-//        std::string val = get_random_value();
-//        auto epoch = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-//        result = clt.put(keys[i], val);
-//        if(result != 0){
-//            assert(false);
-//        }
-//        auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-//        log(Op::put, keys[i], val, epoch, epoch2);
+#ifdef DEBUGGING
+        auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
+        timePoint2 += millis{rand() % 1000};
+        std::this_thread::sleep_until(timePoint2);
+
+        // Last write must be logged for testing linearizability purposes
+        std::string val = get_random_value();
+        auto epoch = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+        result = clt.put(keys[i], val);
+        if(result != 0){
+            assert(false);
+        }
+        auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+        log(Op::put, keys[i], val, epoch, epoch2);
+#endif
     }
 
     for(uint i = 0; i < keys.size(); i++){ // GETS
@@ -301,7 +303,11 @@ int run_session(uint req_idx){
     std::this_thread::sleep_until(timePoint2);
 
     auto timePoint3 = time_point_cast<milliseconds>(system_clock::now());
+#ifdef LOCAL_TEST
+    timePoint3 += millis{15000};
+#else
     timePoint3 += millis{240000};
+#endif
 
 
     // logging

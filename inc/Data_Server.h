@@ -21,29 +21,25 @@ public:
     
     int getSocketDesc();
     
-    std::string get_timestamp(std::string& key, std::string& curr_class, uint32_t conf_id, const Request& req);
+    std::string get_timestamp(const std::string& key, const std::string& curr_class, uint32_t conf_id);
     
-    std::string
-    put(std::string& key, std::string& value, std::string& timestamp, std::string& curr_class, uint32_t conf_id,
-            const Request& req);
+    std::string put(const std::string& key, const std::string& value, const std::string& timestamp, const std::string& curr_class, uint32_t conf_id);
     
-    std::string
-    put_fin(std::string& key, std::string& timestamp, std::string& curr_class, uint32_t conf_id, const Request& req);
+    std::string put_fin(const std::string& key, const std::string& timestamp, const std::string& curr_class, uint32_t conf_id);
     
-    std::string
-    get(std::string& key, std::string& timestamp, std::string& curr_class, uint32_t conf_id, const Request& req);
-    
-    std::string reconfig_query(std::string& key, std::string& curr_class, uint32_t conf_id);
-    
-    std::string reconfig_finalize(std::string& key, std::string& timestamp, std::string& curr_class, uint32_t conf_id);
-    
-    std::string write_config(std::string& key, std::string& value, std::string& timestamp, std::string& curr_class,
+    std::string get(const std::string& key, const std::string& timestamp, const std::string& curr_class, uint32_t conf_id);
+
+    // Reconfig queries
+    std::string reconfig_query(const std::string& key, const std::string& curr_class, uint32_t conf_id);
+    std::string reconfig_finalize(const std::string& key, const std::string& timestamp, const std::string& curr_class, uint32_t conf_id);
+    std::string reconfig_write(const std::string& key, const std::string& value, const std::string& timestamp, const std::string& curr_class,
             uint32_t conf_id);
+    std::string finish_reconfig(const std::string &key, const std::string &timestamp, const std::string& new_conf_id, const std::string &curr_class, uint32_t conf_id);
 
 private:
     
     int sockfd;
-    std::mutex lock;
+    std::mutex mu;
     Cache cache;
     Persistent persistent;
     CAS_Server CAS;
@@ -52,15 +48,18 @@ private:
     std::string metadata_server_ip;
     std::string metadata_server_port;
     
-    std::map <std::string, std::vector<Request>> recon_keys; // To maintain blocked requests
+    std::map <std::string, std::vector<Request>> recon_keys; // Todo: remove it
+
+    strVec get_data(const std::string& key);
+    int put_data(const std::string& key, const strVec& value);
 
     // Handling block mode of keys
     std::vector<std::string> blocked_keys;
     std::mutex blocked_keys_lock;
     std::condition_variable blocked_keys_cv;
-    void check_block_keys(std::string& key, std::string& curr_class, uint32_t conf_id); // It will block the caller thread until the key is removed from the recon state
-    void add_block_keys(std::string& key, std::string& curr_class, uint32_t conf_id);
-    void remove_block_keys(std::string& key, std::string& curr_class, uint32_t conf_id);
+    void check_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id); // It will block the caller thread until the key is removed from the recon state
+    void add_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id);
+    void remove_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id);
 };
 
 #endif

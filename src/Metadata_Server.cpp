@@ -42,7 +42,7 @@ using namespace std;
  * 
  */
 
-std::map <std::string, pair<string, Placement>> key_info; //key -> confid!timestamp, placement
+std::map<std::string, pair<string, Placement> > key_info; //key -> confid!timestamp, placement
 std::mutex lock_t;
 
 inline std::string construct_key_metadata(const std::string& key, const std::string& conf_id){

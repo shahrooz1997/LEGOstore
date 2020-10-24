@@ -12,9 +12,9 @@ obj = $(patsubst src/%.cpp, obj/%.o, $(src)) #obj_t = $(src:src=obj)
 
 #src2 = Data_Server.o
 obj2 = $(filter-out obj/Client_driver.o obj/Controller.o obj/Metadata_Server.o,  $(obj))
-obj1 = $(filter-out obj/Server.o obj/Controller.o obj/Metadata_Server.o, $(obj))
-obj3 = $(filter-out obj/Client_driver.o obj/Server.o obj/Metadata_Server.o, $(obj))
-obj4 = $(filter-out obj/Client_driver.o obj/Server.o obj/Controller.o, $(obj))
+obj1 = $(filter-out obj/Server_driver.o obj/Controller.o obj/Metadata_Server.o, $(obj))
+obj3 = $(filter-out obj/Client_driver.o obj/Server_driver.o obj/Metadata_Server.o, $(obj))
+obj4 = $(filter-out obj/Client_driver.o obj/Server_driver.o obj/Controller.o, $(obj))
 
 .PHONY: all
 all: obj Client Server Controller Metadata_Server

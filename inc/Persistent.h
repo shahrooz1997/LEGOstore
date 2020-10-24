@@ -10,7 +10,7 @@ class Persistent{
 public:
     Persistent(const std::string& directory);
     
-    const std::vector <std::string> get(const std::string& key);
+    const std::vector<std::string> get(const std::string& key);
     
     void put(const std::string& key, std::vector <std::string> value);
     

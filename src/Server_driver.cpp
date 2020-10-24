@@ -15,8 +15,6 @@ void message_handler(int connection, DataServer& dataserver, int portid, std::st
     DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
 
     int result = 1;
-    Request req;
-    req.sock = connection;
 
     // if data.size > 3
     // Data[0] -> method_name
@@ -35,68 +33,40 @@ void message_handler(int connection, DataServer& dataserver, int portid, std::st
 //                    method.c_str(), data[1].c_str(), portid);
 //    }
 
-    req.function = method;
     if(method == "put"){
         DPRINTF(DEBUG_RECONFIG_CONTROL,
                 "The method put is called. The key is %s, ts: %s, value: %s, class: %s, server port is %u\n",
                 data[1].c_str(), data[2].c_str(), data[3].c_str(), data[4].c_str(), portid);
-        result = DataTransfer::sendMsg(connection,
-                                       dataserver.put(data[1], data[3], data[2], data[4], stoul(data[5]), req));
+        result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[3], data[2], data[4], stoul(data[5])));
     }
     else if(method == "get"){
         if(data[3] == CAS_PROTOCOL_NAME){
             DPRINTF(DEBUG_RECONFIG_CONTROL,
                     "The method get is called. The key is %s, ts: %s, class: %s, server port is %u\n", data[1].c_str(),
                     data[2].c_str(), data[3].c_str(), portid);
-            //std::cout << "GET fucntion called for server id "<< portid << std::endl;
-            req.key = data[1];
-            req.conf_id = stoul(data[4]);
-            req.timestamp = data[2];
-            //        req.value = data[3];
-            req.protocol = data[3];
-            result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3], stoul(data[4]), req));
+            result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3], stoul(data[4])));
         }
         else{
-            DPRINTF(DEBUG_RECONFIG_CONTROL, "The method get is called. The key is %s, class: %s, server port is %u\n",
-                    data[1].c_str(), data[2].c_str(), portid);
-            //std::cout << "GET fucntion called for server id "<< portid << std::endl;
-            req.key = data[1];
-            req.conf_id = stoul(data[3]);
-            req.timestamp = "";
-            //        req.value = data[3];
-            req.protocol = data[2];
-            std::string tt;
-            result = DataTransfer::sendMsg(connection, dataserver.get(data[1], tt, data[2], stoul(data[3]), req));
+            std::string phony_timestamp;
+            result = DataTransfer::sendMsg(connection, dataserver.get(data[1], phony_timestamp, data[2], stoul(data[3])));
         }
-
-
     }
     else if(method == "get_timestamp"){
         DPRINTF(DEBUG_RECONFIG_CONTROL,
                 "The method get_timestamp is called. The key is %s, class: %s, server port is %u\n", data[1].c_str(),
                 data[2].c_str(), portid);
-        req.key = data[1];
-        req.conf_id = stoul(data[3]);
-//        req.timestamp = data[2];
-//        req.value = data[3];
-        req.protocol = data[2];
-        result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2], stoul(data[3]), req));
+        result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2], stoul(data[3])));
     }
     else if(method == "put_fin"){
-        req.key = data[1];
-        req.conf_id = stoul(data[4]);
-        req.timestamp = data[2];
-//        req.value = data[3];
-        req.protocol = data[3];
-        result = DataTransfer::sendMsg(connection, dataserver.put_fin(data[1], data[2], data[3], stoul(data[4]), req));
+        result = DataTransfer::sendMsg(connection, dataserver.put_fin(data[1], data[2], data[3], stoul(data[4])));
     }else if(method == "reconfig_query"){
-            result = DataTransfer::sendMsg(connection, reconfig_query(dataserver, data[1], data[2]));
-//    }else if(method == "reconfig_finalize"){
-//            result = DataTransfer::sendMsg(connection, reconfig_finalize(dataserver, rlock, data[1], data[2], data[3]));
-//    }else if(method == "write_config"){
-//            result = DataTransfer::sendMsg(connection, write_config(dataserver, rlock, data[1], data[3], data[2], data[4]));
-//    }else if(method == "finish_reconfig"){
-//            result = DataTransfer::sendMsg(connection, finish_reconfig(rlock, data[1], data[2], data[3]));
+            result = DataTransfer::sendMsg(connection, dataserver.reconfig_query(data[1], data[2], stoul(data[3])));
+    }else if(method == "reconfig_finalize"){
+            result = DataTransfer::sendMsg(connection, dataserver.reconfig_finalize(data[1], data[2], data[3], stoul(data[4])));
+    }else if(method == "reconfig_write"){
+            result = DataTransfer::sendMsg(connection, dataserver.reconfig_write(data[1], data[3], data[2], data[4], stoul(data[5])));
+    }else if(method == "finish_reconfig"){
+            result = DataTransfer::sendMsg(connection, dataserver.finish_reconfig(data[1], data[2], data[3], data[4], stoul(data[5])));
     }
     else{
         DataTransfer::sendMsg(connection, DataTransfer::serialize({"MethodNotFound", "Unknown method is called"}));
@@ -172,19 +142,20 @@ int main(int argc, char** argv){
         db_list = {"db1.temp", "db2.temp", "db3.temp", "db4.temp", "db5.temp", "db6.temp", "db7.temp", "db8.temp",
                 "db9.temp"};
         for(uint i = 0; i < socket_port.size(); i++){
-        if(socket_port[i] == "10004" || socket_port[i] == "10005"){
-            continue;
-        }
+//        if(socket_port[i] == "10004" || socket_port[i] == "10005"){
+//            continue;
+//        }
             fflush(stdout);
             if(fork() == 0){
-            
+                std::setbuf(stdout, NULL);
                 close(1);
                 int pid = getpid();
                 std::stringstream filename;
                 filename << "server_" << pid << "_output.txt";
-                fopen(filename.str().c_str(), "w");
-//                setvbuf(ff, NULL, _IONBF, 0);
+                FILE* out = fopen(filename.str().c_str(), "w");
+                std::setbuf(out, NULL);
                 runServer(db_list[i], socket_port[i]);
+                exit(0);
             }
         }
     }

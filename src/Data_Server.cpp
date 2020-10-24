@@ -1,27 +1,49 @@
 #include "../inc/Data_Server.h"
 
+using std::string;
+using std::vector;
+using std::shared_ptr;
+using std::mutex;
+using std::unique_lock;
+using std::find;
 
 DataServer::DataServer(std::string directory, int sock, std::string metadata_server_ip,
         std::string metadata_server_port) : sockfd(sock), cache(1000000000), persistent(directory),
         CAS(&recon_keys, &metadata_server_ip, &metadata_server_port),
-        ABD(&recon_keys, &metadata_server_ip, &metadata_server_port){
+        ABD(shared_ptr<Cache>(&cache), shared_ptr<Persistent>(&persistent), shared_ptr<mutex>(&mu)){
     this->metadata_server_port = metadata_server_port;
     this->metadata_server_ip = metadata_server_ip;
 }
 
-void DataServer::check_block_keys(std::string& key, std::string& curr_class, uint32_t conf_id){
+strVec DataServer::get_data(const std::string& key){
+    const strVec* ptr = cache.get(key);
+    if(ptr == nullptr){ // Data is not in cache
+        return persistent.get(key);
+    }
+    else{ // data found in cache
+        return *ptr;
+    }
+}
+
+int DataServer::put_data(const std::string& key, const strVec& value){
+    cache.put(key, value);
+    persistent.put(key, value);
+    return S_OK;
+}
+
+void DataServer::check_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id){
     std::unique_lock<std::mutex> lock(this->blocked_keys_lock);
 
     // See if the key is in block mode
-    std::string con_key = construct_key(key, curr_class, conf_id);
-    while(std::find(this->blocked_keys.begin(), this->blocked_keys.end(), con_key) != this->blocked_keys.end()){
+    string con_key = construct_key(key, curr_class, conf_id);
+    while(find(this->blocked_keys.begin(), this->blocked_keys.end(), con_key) != this->blocked_keys.end()){
         this->blocked_keys_cv.wait(lock);
     }
 
     return;
 }
 
-void DataServer::add_block_keys(std::string& key, std::string& curr_class, uint32_t conf_id){
+void DataServer::add_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id){
     std::unique_lock<std::mutex> lock(this->blocked_keys_lock);
 
     std::string con_key = construct_key(key, curr_class, conf_id);
@@ -31,7 +53,7 @@ void DataServer::add_block_keys(std::string& key, std::string& curr_class, uint3
     return;
 }
 
-void DataServer::remove_block_keys(std::string& key, std::string& curr_class, uint32_t conf_id){
+void DataServer::remove_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id){
     std::unique_lock<std::mutex> lock(this->blocked_keys_lock);
 
     std::string con_key = construct_key(key, curr_class, conf_id);
@@ -42,56 +64,43 @@ void DataServer::remove_block_keys(std::string& key, std::string& curr_class, ui
     return;
 }
 
-int DataServer::getSocketDesc(){
-    return sockfd;
-}
-
-std::string DataServer::get_timestamp(std::string& key, std::string& curr_class, uint32_t conf_id, const Request& req){
-
-    check_block_keys(key, curr_class, conf_id);
-
-    std::string result;
-    if(curr_class == CAS_PROTOCOL_NAME){
-        result = CAS.get_timestamp(key, conf_id, req, cache, persistent, lock);
-    }
-    else if(curr_class == ABD_PROTOCOL_NAME){
-        result = ABD.get_timestamp(key, conf_id, req, cache, persistent, lock);
-    }
-    
-    return result;
-}
-
-std::string DataServer::reconfig_query(std::string &key, std::string &curr_class, uint32_t conf_id){
+std::string DataServer::reconfig_query(const std::string& key, const std::string& curr_class, uint32_t conf_id){
 
     add_block_keys(key, curr_class, conf_id);
 
     std::string result;
     Request req; // ToDo: we do not need this variable anymore. Remove it from all the functions
     if(curr_class == CAS_PROTOCOL_NAME){
-        result = CAS.get_timestamp(key, conf_id, req, cache, persistent, lock);
+//        result = CAS.get_timestamp(key, conf_id, req, cache, persistent, mu);
     }
     else if(curr_class == ABD_PROTOCOL_NAME){
-        std::string phony_timestamp = "";
-        result = ABD.get(key, conf_id, phony_timestamp, req, cache, persistent, lock);
+        result = ABD.get(key, conf_id);
+    }
+    else{
+        assert(false);
     }
 
     return result;
 }
 
-//std::string DataServer::reconfig_finalize(std::string &key, std::string &timestamp, std::string &curr_class, uint32_t conf_id){
-//    std::string result;
-//    if(curr_class == CAS_PROTOCOL_NAME){
-//        result = CAS.get(key, conf_id, timestamp, req, cache, persistent, lock);
-//    }else{
-//        //Error scenario;
-//    }
-//    return result;
-//}
-//
-//std::string DataServer::write_config(std::string &key, std::string &value, std::string &timestamp, std::string &curr_class, uint32_t conf_id){
-//
-//    std::string result;
-//    if(curr_class == CAS_PROTOCOL_NAME){
+std::string DataServer::reconfig_finalize(const std::string& key, const std::string& timestamp, const std::string& curr_class, uint32_t conf_id){
+
+    std::string result;
+    Request req; // ToDo: we do not need this variable anymore. Remove it from all the functions
+    if(curr_class == CAS_PROTOCOL_NAME){
+//        result = CAS.get(key, conf_id, timestamp, req, cache, persistent, mu);
+    }else{
+        assert(false);
+    }
+
+    return result;
+}
+
+std::string DataServer::reconfig_write(const std::string& key, const std::string& value, const std::string& timestamp, const std::string& curr_class,
+                                       uint32_t conf_id){
+
+    std::string result;
+    if(curr_class == CAS_PROTOCOL_NAME){
 //        char bbuf[1024*128];
 //        int bbuf_i = 0;
 ////        for(int t = 0; t < chunks.size(); t++){
@@ -103,22 +112,73 @@ std::string DataServer::reconfig_query(std::string &key, std::string &curr_class
 //        bbuf_i += sprintf(bbuf + bbuf_i, "\n");
 ////        }
 //        printf("%s", bbuf);
-//        result = CAS.put(key, conf_id, value, timestamp, req, cache, persistent, lock);
-//        result = CAS.put_fin(key, conf_id, timestamp, req, cache, persistent, lock);
-//    }else if(curr_class == ABD_PROTOCOL_NAME){
-//        result = ABD.put(key, conf_id, value, timestamp, cache, persistent, lock);
-//    }
-//
-//    return result;
-//}
 
-std::string
-DataServer::put(std::string& key, std::string& value, std::string& timestamp, std::string& curr_class, uint32_t conf_id,
-        const Request& req){
+//        CAS.put(key, conf_id, value, timestamp, req, cache, persistent, mu);
+//        result = CAS.put_fin(key, conf_id, timestamp, req, cache, persistent, mu);
+    }
+    else if(curr_class == ABD_PROTOCOL_NAME){
+        result = ABD.put(key, conf_id, value, timestamp);
+    }
+    else{
+        assert(false);
+    }
+
+    return result;
+}
+
+std::string DataServer::finish_reconfig(const std::string &key, const std::string &timestamp, const std::string& new_conf_id, const std::string &curr_class, uint32_t conf_id){
+
+    //Todo: add the reconfigured timestamp to the persistent storage here.
+    std::unique_lock<std::mutex> lock(mu);
+    if(curr_class == CAS_PROTOCOL_NAME){
+
+    }
+    else if(curr_class == ABD_PROTOCOL_NAME){
+        string con_key = construct_key(key, ABD_PROTOCOL_NAME, conf_id);
+        strVec data = get_data(con_key);
+        if(data.empty()){
+            assert(false);
+        }
+        data[3] = timestamp;
+        data[4] = new_conf_id;
+        put_data(key, data);
+    }
+    else{
+        assert(false);
+    }
+    lock.unlock();
+
+    remove_block_keys(key, curr_class, conf_id);
+
+    return DataTransfer::serialize({"OK"});
+}
+
+int DataServer::getSocketDesc(){
+    return sockfd;
+}
+
+std::string DataServer::get_timestamp(const std::string& key, const std::string& curr_class, uint32_t conf_id){
 
     check_block_keys(key, curr_class, conf_id);
 
-    std::string result;
+    Request req; // ToDo: we do not need this variable anymore. Remove it from all the functions
+    if(curr_class == CAS_PROTOCOL_NAME){
+//        return CAS.get_timestamp(key, conf_id, req, cache, persistent, mu);
+    }
+    else if(curr_class == ABD_PROTOCOL_NAME){
+        return ABD.get_timestamp(key, conf_id);
+    }
+    else{
+        assert(false);
+    }
+    return DataTransfer::serialize({"ERROR", "INTERNAL ERROR"});
+}
+
+std::string DataServer::put(const std::string& key, const std::string& value, const std::string& timestamp, const std::string& curr_class, uint32_t conf_id){
+
+    check_block_keys(key, curr_class, conf_id);
+
+    Request req; // ToDo: we do not need this variable anymore. Remove it from all the functions
     if(curr_class == CAS_PROTOCOL_NAME){
         DPRINTF(DEBUG_CAS_Client, "ddddd\n");
         fflush(stdout);
@@ -133,40 +193,44 @@ DataServer::put(std::string& key, std::string& value, std::string& timestamp, st
 //        bbuf_i += sprintf(bbuf + bbuf_i, "\n");
 ////        }
 //        printf("%s", bbuf);
-        result = CAS.put(key, conf_id, value, timestamp, req, cache, persistent, lock);
+//        return CAS.put(key, conf_id, value, timestamp, req, cache, persistent, mu);
     }
     else if(curr_class == ABD_PROTOCOL_NAME){
-        result = ABD.put(key, conf_id, value, timestamp, req, cache, persistent, lock);
+        return ABD.put(key, conf_id, value, timestamp);
     }
-    return result;
+    else{
+        assert(false);
+    }
+    return DataTransfer::serialize({"ERROR", "INTERNAL ERROR"});
 }
 
-std::string DataServer::put_fin(std::string& key, std::string& timestamp, std::string& curr_class, uint32_t conf_id,
-        const Request& req){
+std::string DataServer::put_fin(const std::string& key, const std::string& timestamp, const std::string& curr_class, uint32_t conf_id){
 
     check_block_keys(key, curr_class, conf_id);
 
-    std::string result;
+    Request req; // ToDo: we do not need this variable anymore. Remove it from all the functions
     if(curr_class == CAS_PROTOCOL_NAME){
-        result = CAS.put_fin(key, conf_id, timestamp, req, cache, persistent, lock);
+//        return CAS.put_fin(key, conf_id, timestamp, req, cache, persistent, mu);
     }
-    // else if(curr_class == ABD_PROTOCOL_NAME){
-    //
-    // }
-    return result;
+    else{
+        assert(false);
+    }
+    return DataTransfer::serialize({"ERROR", "INTERNAL ERROR"});
 }
 
-std::string DataServer::get(std::string& key, std::string& timestamp, std::string& curr_class, uint32_t conf_id,
-        const Request& req){
+std::string DataServer::get(const std::string& key, const std::string& timestamp, const std::string& curr_class, uint32_t conf_id){
 
     check_block_keys(key, curr_class, conf_id);
 
-    std::string result;
+    Request req; // ToDo: we do not need this variable anymore. Remove it from all the functions
     if(curr_class == CAS_PROTOCOL_NAME){
-        result = CAS.get(key, conf_id, timestamp, req, cache, persistent, lock);
+//        return CAS.get(key, conf_id, timestamp, req, cache, persistent, mu);
     }
     else if(curr_class == ABD_PROTOCOL_NAME){
-        result = ABD.get(key, conf_id, timestamp, req, cache, persistent, lock);
+        return ABD.get(key, conf_id);
     }
-    return result;
+    else{
+        assert(false);
+    }
+    return DataTransfer::serialize({"ERROR", "INTERNAL ERROR"});
 }

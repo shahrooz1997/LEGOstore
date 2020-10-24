@@ -32,7 +32,7 @@ public:
     int run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t group_id);
     
     Properties prp;
-    Reconfig config_t;
+    std::unique_ptr<Reconfig> reconfig_p;
 private:
 
 };

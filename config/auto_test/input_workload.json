@@ -20,10 +20,10 @@
             0.1111111111,
             0.1111111111
           ],
-          "object_size": 8192,
+          "object_size": 30,
           "metadata_size": 1e-09,
           "num_objects": 10001,
-          "arrival_rate": 100,
+          "arrival_rate": 20,
           "read_ratio": 0.5,
           "write_ratio": 0.5,
           "SLO_read": 1000,
@@ -47,10 +47,10 @@
             0.1111111111,
             0.1111111111
           ],
-          "object_size": 512,
+          "object_size": 20,
           "metadata_size": 1e-09,
           "num_objects": 10001,
-          "arrival_rate": 50,
+          "arrival_rate": 30,
           "read_ratio": 0.5,
           "write_ratio": 0.5,
           "SLO_read": 1000,
@@ -74,10 +74,10 @@
             0.1111111111,
             0.1111111111
           ],
-          "object_size": 1024,
+          "object_size": 20,
           "metadata_size": 1e-09,
           "num_objects": 10001,
-          "arrival_rate": 50,
+          "arrival_rate": 20,
           "read_ratio": 0.5,
           "write_ratio": 0.5,
           "SLO_read": 1000,
@@ -92,3 +92,4 @@
     }
   ]
 }
+

@@ -55,7 +55,7 @@ private:
                             const std::string& ret_v);
     
     int
-    send_reconfig_finish(GroupConfig& old_config, uint32_t old_conf_id, const std::string& key,
+    send_reconfig_finish(GroupConfig& old_config, uint32_t old_conf_id, uint32_t new_conf_id, const std::string& key,
                          Timestamp* const & ts);
     
 //    std::unordered_map<std::string, GroupConfig*> key_metadata;

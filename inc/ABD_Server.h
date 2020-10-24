@@ -25,36 +25,27 @@
 #include "Timestamp.h"
 #include "Data_Transfer.h"
 
-using std::string;
-
 class ABD_Server{
 public:
-    ABD_Server(std::map <std::string, std::vector<Request>>* recon_keys, std::string* metadata_server_ip,
-            std::string* metadata_server_port);
-    
+    ABD_Server(const std::shared_ptr<Cache>& cache_p, const std::shared_ptr<Persistent>& persistent_p, const std::shared_ptr<std::mutex>& mu_p);
     ABD_Server(const ABD_Server& orig) = delete;
-    
     virtual ~ABD_Server();
-    
-    string get_timestamp(string& key, uint32_t conf_id, const Request& req, Cache& cache, Persistent& persistent,
-            std::mutex& lock_t);
-    
-    string put(string& key, uint32_t conf_id, string& value, string& timestamp, const Request& req, Cache& cache,
-            Persistent& persistent, std::mutex& lock_t);
-    
-    string get(string& key, uint32_t conf_id, string& timestamp, const Request& req, Cache& cache,
-            Persistent& persistent, std::mutex& lock_t);
+
+    std::string get_timestamp(const std::string& key, uint32_t conf_id);
+
+    std::string put(const std::string& key, uint32_t conf_id, const std::string& value, const std::string& timestamp);
+
+    std::string get(const std::string& key, uint32_t conf_id);
 
 private:
-    Reconfig_key_info* create_rki(const std::string& key, const uint32_t conf_id);
-    int init_key(const string& key, const uint32_t conf_id, Cache& cache, Persistent& persistent);
-    
-    int reconfig_info(const string& key, uint32_t conf_id, const Request& req, string& msg, string& recon_timestamp,
-            Cache& cache, Persistent& persistent);
-    
-    std::map <std::string, std::vector<Request>>* recon_keys;
-    std::string* metadata_server_ip;
-    std::string* metadata_server_port;
+    int init_key(const std::string& key, const uint32_t conf_id);
+
+    strVec get_data(const std::string& key);
+    int put_data(const std::string& key, const strVec& value);
+
+    std::shared_ptr<Cache> cache_p;
+    std::shared_ptr<Persistent> persistent_p;
+    std::shared_ptr<std::mutex> mu_p;
 };
 
 #endif /* ABD_Server_H */

@@ -301,7 +301,7 @@ int ABD_Client::put(const std::string& key, const std::string& value){
     if(timestamp == nullptr){
         if(status == S_RECFG){
             op_status = -2;
-            return put(key, value);
+            return parent->put(key, value);
         }
         DPRINTF(DEBUG_ABD_Client, "get_timestamp operation failed key %s \n", key.c_str());
         assert(false);
@@ -337,7 +337,7 @@ int ABD_Client::put(const std::string& key, const std::string& value){
 //            assert(p != nullptr);
             op_status = -2; // reconfiguration happened on the key
 //            return S_RECFG;
-            return put(key, value);
+            return parent->put(key, value);
         }
         else{
             DPRINTF(DEBUG_ABD_Client, "Bad message received from server for key : %s\n", key.c_str());
@@ -424,7 +424,7 @@ int ABD_Client::get(const std::string& key, std::string& value){
             parent->get_placement(key, true, stoul((*it)[1]));
             op_status = -2; // reconfiguration happened on the key
 //            return S_RECFG;
-            return get(key, value);
+            return parent->get(key, value);
             //break;
         }
         else{
@@ -490,7 +490,7 @@ int ABD_Client::get(const std::string& key, std::string& value){
 //            assert(p != nullptr);
             op_status = -2; // reconfiguration happened on the key
 //            return S_RECFG;
-            return get(key, value);
+            return parent->get(key, value);
         }
         else{
             DPRINTF(DEBUG_ABD_Client, "Bad message received from server for key : %s\n", key.c_str());

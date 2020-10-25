@@ -26,25 +26,25 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
 
         if(temp){
             //CAS
-//            test->protocol = CAS_PROTOCOL_NAME;
-//            test->k = 3;
-//            test->Q1.insert(begin(test->Q1), {0,1,2});
-//            test->Q2.insert(begin(test->Q2), {0,1,2,3,4});
-//            test->Q3.insert(begin(test->Q3), {2,3,4});
-//            test->Q4.insert(begin(test->Q4), {2,3,4});
-//            std::unordered_set<uint32_t> servers;
-//            set_intersection(*test, servers);
-//            test->m = servers.size();
+            test->protocol = CAS_PROTOCOL_NAME;
+            test->k = 3;
+            test->Q1.insert(begin(test->Q1), {0,1,2});
+            test->Q2.insert(begin(test->Q2), {0,1,2,3,4});
+            test->Q3.insert(begin(test->Q3), {2,3,4});
+            test->Q4.insert(begin(test->Q4), {2,3,4});
+            std::unordered_set<uint32_t> servers;
+            set_intersection(*test, servers);
+            test->m = servers.size();
             
             // ABD HARD NO F
-            test->protocol = ABD_PROTOCOL_NAME;
-            test->m = 5;
-            test->k = 0;
-            test->Q1.insert(begin(test->Q1), {2, 3, 4});
-            test->Q2.insert(begin(test->Q2), {0, 1, 2});
-            test->Q3.clear();
-            test->Q4.clear();
-            test->f = 0;
+//            test->protocol = ABD_PROTOCOL_NAME;
+//            test->m = 5;
+//            test->k = 0;
+//            test->Q1.insert(begin(test->Q1), {2, 3, 4});
+//            test->Q2.insert(begin(test->Q2), {0, 1, 2});
+//            test->Q3.clear();
+//            test->Q4.clear();
+//            test->f = 0;
         }
         else{
             
@@ -81,14 +81,14 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
             
             
             //ABD2 failure 2
-//            test->protocol = ABD_PROTOCOL_NAME;
-//            test->m = 9;
-//            test->k = 0;
-//            test->Q1.insert(begin(test->Q1), {0, 1, 2, 3, 4});
-//            test->Q2.insert(begin(test->Q2), {4, 5, 6, 7, 8});
-//            test->Q3.clear();
-//            test->Q4.clear();
-//            test->f = 2;
+            test->protocol = ABD_PROTOCOL_NAME;
+            test->m = 9;
+            test->k = 0;
+            test->Q1.insert(begin(test->Q1), {0, 1, 2, 3, 4});
+            test->Q2.insert(begin(test->Q2), {4, 5, 6, 7, 8});
+            test->Q3.clear();
+            test->Q4.clear();
+            test->f = 2;
             
             // Failures
 //            test->protocol = CAS_PROTOCOL_NAME;
@@ -103,16 +103,16 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
 //            test->f = 1;
             
             // HARD
-            test->protocol = CAS_PROTOCOL_NAME;
-            test->k = 4;
-            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
-            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
-            test->Q3.insert(begin(test->Q3), {4,5,6,7,8});
-            test->Q4.insert(begin(test->Q4), {2,3,4,5,6,7,8});
-            std::unordered_set<uint32_t> servers;
-            set_intersection(*test, servers);
-            test->m = servers.size();
-            test->f = 2;
+//            test->protocol = CAS_PROTOCOL_NAME;
+//            test->k = 4;
+//            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
+//            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
+//            test->Q3.insert(begin(test->Q3), {4,5,6,7,8});
+//            test->Q4.insert(begin(test->Q4), {2,3,4,5,6,7,8});
+//            std::unordered_set<uint32_t> servers;
+//            set_intersection(*test, servers);
+//            test->m = servers.size();
+//            test->f = 2;
 
 //            test->protocol = CAS_PROTOCOL_NAME;
 //            test->k = 1;

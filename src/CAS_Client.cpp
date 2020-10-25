@@ -408,12 +408,10 @@ namespace liberasure{
 }
 
 CAS_Client::CAS_Client(uint32_t id, uint32_t local_datacenter_id, uint32_t retry_attempts,
-        uint32_t metadata_server_timeout, uint32_t timeout_per_request, std::vector<DC*>& datacenters, int* desc,
+        uint32_t metadata_server_timeout, uint32_t timeout_per_request, std::vector<DC*>& datacenters,
         Client_Node* parent) : Client(id, local_datacenter_id, retry_attempts, metadata_server_timeout,
         timeout_per_request, datacenters){
-    assert(desc != nullptr);
     assert(parent != nullptr);
-    this->desc = desc;
     this->parent = parent;
     this->current_class = CAS_PROTOCOL_NAME;
 }
@@ -537,13 +535,9 @@ int CAS_Client::put(const std::string& key, const std::string& value){
     null_args.m = p.m - p.k; // m here is the number of parity chunks
     null_args.w = 16;
     null_args.ct = CHKSUM_NONE;
-    
-    if((*(this->desc)) == -1){
-        DPRINTF(DEBUG_CAS_Client, "liberasure instance is not initialized.\n");
-        return GENERAL_ERASURE_ERROR;
-    }
 
-    std::thread encoder(liberasure::encode, &value, &chunks, &null_args, (*(this->desc)));
+    int desc = create_liberasure_instance(&p);
+    std::thread encoder(liberasure::encode, &value, &chunks, &null_args, desc);
     
     DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
     
@@ -559,6 +553,7 @@ int CAS_Client::put(const std::string& key, const std::string& value){
 
     // Join the encoder thread
     encoder.join();
+    destroy_liberasure_instance(desc);
     DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
 
     if(timestamp == nullptr){
@@ -852,8 +847,9 @@ int CAS_Client::get(const std::string& key, std::string& value){
         //        bbuf_i += sprintf(bbuf + bbuf_i, "\n");
         //    }
         //    printf("%s", bbuf);
-        
-        liberasure::decode(&value, &chunks, &null_args, (*(this->desc)));
+        int desc = create_liberasure_instance(&p);
+        liberasure::decode(&value, &chunks, &null_args, desc);
+        destroy_liberasure_instance(desc);
     }
     else{
         if(op_status != 0){

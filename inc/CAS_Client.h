@@ -33,7 +33,7 @@ class Client_Node;
 class CAS_Client : public Client{
 public:
     CAS_Client(uint32_t id, uint32_t local_datacenter_id, uint32_t retry_attempts, uint32_t metadata_server_timeout,
-            uint32_t timeout_per_request, std::vector<DC*>& datacenters, int* desc, Client_Node* parent);
+            uint32_t timeout_per_request, std::vector<DC*>& datacenters, Client_Node* parent);
     
     CAS_Client(const CAS_Client& orig) = delete;
     
@@ -45,7 +45,6 @@ public:
 
 
 private:
-    int* desc;
     Client_Node* parent;
 
     bool can_be_optimized;

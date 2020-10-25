@@ -23,8 +23,7 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
         Placement* test = new Placement;
         // Controller trial(1, 120, 120, "./config/setup_config.json");
         // std::vector<DC*> dcs = trial.prp.datacenters;
-        
-        
+
         if(temp){
             //CAS
 //            test->protocol = CAS_PROTOCOL_NAME;
@@ -33,10 +32,9 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
 //            test->Q2.insert(begin(test->Q2), {0,1,2,3,4});
 //            test->Q3.insert(begin(test->Q3), {2,3,4});
 //            test->Q4.insert(begin(test->Q4), {2,3,4});
-//            std::unordered_set<uint32_t> Q2_Q3;
-//            Q2_Q3.insert(test->Q2.begin(), test->Q2.end());
-//            Q2_Q3.insert(test->Q3.begin(), test->Q3.end());
-//            test->m = Q2_Q3.size(); // Note: it must be the size of Q2 U Q3 for reconfiguration to work
+//            std::unordered_set<uint32_t> servers;
+//            set_intersection(*test, servers);
+//            test->m = servers.size();
             
             // ABD HARD NO F
             test->protocol = ABD_PROTOCOL_NAME;
@@ -83,14 +81,14 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
             
             
             //ABD2 failure 2
-            test->protocol = ABD_PROTOCOL_NAME;
-            test->m = 9;
-            test->k = 0;
-            test->Q1.insert(begin(test->Q1), {0, 1, 2, 3, 4});
-            test->Q2.insert(begin(test->Q2), {4, 5, 6, 7, 8});
-            test->Q3.clear();
-            test->Q4.clear();
-            test->f = 2;
+//            test->protocol = ABD_PROTOCOL_NAME;
+//            test->m = 9;
+//            test->k = 0;
+//            test->Q1.insert(begin(test->Q1), {0, 1, 2, 3, 4});
+//            test->Q2.insert(begin(test->Q2), {4, 5, 6, 7, 8});
+//            test->Q3.clear();
+//            test->Q4.clear();
+//            test->f = 2;
             
             // Failures
 //            test->protocol = CAS_PROTOCOL_NAME;
@@ -105,16 +103,16 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
 //            test->f = 1;
             
             // HARD
-//            test->protocol = CAS_PROTOCOL_NAME;
-//            test->k = 4;
-//            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
-//            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
-//            test->Q3.insert(begin(test->Q3), {4,5,6,7,8});
-//            test->Q4.insert(begin(test->Q4), {2,3,4,5,6,7,8});
-//            std::unordered_set<uint32_t> servers;
-//            set_intersection(*test, servers);
-//            test->m = servers.size(); //std::max(test->Q2.size(), test->Q3.size());
-//            test->f = 2;
+            test->protocol = CAS_PROTOCOL_NAME;
+            test->k = 4;
+            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
+            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
+            test->Q3.insert(begin(test->Q3), {4,5,6,7,8});
+            test->Q4.insert(begin(test->Q4), {2,3,4,5,6,7,8});
+            std::unordered_set<uint32_t> servers;
+            set_intersection(*test, servers);
+            test->m = servers.size();
+            test->f = 2;
 
 //            test->protocol = CAS_PROTOCOL_NAME;
 //            test->k = 1;
@@ -688,8 +686,8 @@ GroupConfig* find_old_configuration(const Properties& prp, uint curr_group_confi
     assert(conf_id_indx_found);
 
     for(uint i = conf_id_indx - 1; i >= 0; i--){
-        for(uint j = 0; j < prp.groups[conf_id_indx]->grp_id.size(); j++){
-            if(prp.groups[conf_id_indx]->grp_id[j] == curr_group_config_id){
+        for(uint j = 0; j < prp.groups[i]->grp_id.size(); j++){
+            if(prp.groups[i]->grp_id[j] == curr_group_config_id){
                 old_conf_id = prp.groups[i]->id;
                 return prp.groups[i]->grp_config[j];
             }
@@ -733,10 +731,7 @@ int main(){
         auto& grp = master.prp.groups[i];
         timePoint = startPoint + millis{grp->timestamp * 1000};
         std::this_thread::sleep_until(timePoint);
-        
-        //TODO:: Add some heuristics on how to sequence the reconf
-        // Do reconfiguration of one grp at a time
-        // Cos they are using a common placement and that's used for liberasure desc
+
         for(uint j = 0; j < grp->grp_config.size(); j++){
             std::cout << "Starting the reconfiguration for group id" << grp->grp_id[j] << std::endl;
             GroupConfig* curr = grp->grp_config[j];

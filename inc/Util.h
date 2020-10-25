@@ -333,7 +333,7 @@ private:
 void print_time();
 
 //returns the liberasure desc
-inline int create_liberasure_instance(Placement* pp){
+inline int create_liberasure_instance(const Placement* pp){
     struct ec_args null_args;
     null_args.k = pp->k;
     null_args.m = pp->m - pp->k;

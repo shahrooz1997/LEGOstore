@@ -25,6 +25,7 @@
 #include "Timestamp.h"
 #include "Data_Transfer.h"
 
+
 class ABD_Server{
 public:
     ABD_Server(const std::shared_ptr<Cache>& cache_p, const std::shared_ptr<Persistent>& persistent_p, const std::shared_ptr<std::mutex>& mu_p);
@@ -32,14 +33,12 @@ public:
     virtual ~ABD_Server();
 
     std::string get_timestamp(const std::string& key, uint32_t conf_id);
-
     std::string put(const std::string& key, uint32_t conf_id, const std::string& value, const std::string& timestamp);
-
     std::string get(const std::string& key, uint32_t conf_id);
 
-private:
     int init_key(const std::string& key, const uint32_t conf_id);
 
+private:
     strVec get_data(const std::string& key);
     int put_data(const std::string& key, const strVec& value);
 

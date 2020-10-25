@@ -15,11 +15,9 @@
 
 Client_Node::Client_Node(uint32_t id, uint32_t local_datacenter_id, uint32_t retry_attempts,
         uint32_t metadata_server_timeout, uint32_t timeout_per_request, std::vector<DC*>& datacenters){
-    
-    this->desc = -1;
-    
+
     cas = new CAS_Client(id, local_datacenter_id, retry_attempts, metadata_server_timeout, timeout_per_request,
-            datacenters, &(this->desc), this);
+            datacenters, this);
     abd = new ABD_Client(id, local_datacenter_id, retry_attempts, metadata_server_timeout, timeout_per_request,
             datacenters, this);
 }
@@ -73,14 +71,14 @@ int Client_Node::update_placement(const std::string& key, const uint32_t conf_id
     assert(ret == 0);
     
     keys_info[key] = std::pair<uint32_t, Placement>(requested_conf_id, *p);
-    if(p->protocol == CAS_PROTOCOL_NAME){
-        if(this->desc != -1){
-            destroy_liberasure_instance(((this->desc)));
-        }
-        this->desc = create_liberasure_instance(p);
-        DPRINTF(DEBUG_CAS_Client, "desc is %d\n", desc);
-        fflush(stdout);
-    }
+//    if(p->protocol == CAS_PROTOCOL_NAME){
+//        if(this->desc != -1){
+//            destroy_liberasure_instance(((this->desc)));
+//        }
+//        this->desc = create_liberasure_instance(p);
+//        DPRINTF(DEBUG_CAS_Client, "desc is %d\n", desc);
+//        fflush(stdout);
+//    }
     ret = 0;
 
     if(p != nullptr) {

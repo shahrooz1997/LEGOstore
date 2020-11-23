@@ -12,7 +12,7 @@
 #include <cstdlib>
 #include <fstream>
 
-#define DEBUGGING
+//#define DEBUGGING
 
 using namespace std;
 //using namespace nlohmann;
@@ -42,9 +42,9 @@ enum Op{
     put
 };
 
-class Logger{
+class File_logger{
 public:
-    Logger(uint32_t id){
+    File_logger(uint32_t id){
         file = nullptr;
         log_filename = "logs/logfile_";
         log_filename += std::to_string(id) + ".txt";
@@ -67,7 +67,7 @@ public:
         fprintf(file, "%lf\n", val);
     }
     
-    ~Logger(){
+    ~File_logger(){
         fclose(file);
     }
 
@@ -186,7 +186,7 @@ int read_keys(const std::string& file){
     return 0;
 }
 
-int warm_up(Client_Node &clt, Logger& logger){
+int warm_up(Client_Node &clt, File_logger& file_logger){
 
     int result = S_OK;
 
@@ -210,7 +210,7 @@ int warm_up(Client_Node &clt, Logger& logger){
                 }
                 auto epoch2 = time_point_cast<std::chrono::microseconds>(
                         std::chrono::system_clock::now()).time_since_epoch().count();
-                logger(Op::put, keys[i], val, epoch, epoch2);
+                file_logger(Op::put, keys[i], val, epoch, epoch2);
                 continue;
             }
 #endif
@@ -311,15 +311,15 @@ int run_session(uint req_idx){
 #ifdef LOCAL_TEST
     timePoint3 += millis{15000};
 #else
-    timePoint3 += millis{240000};
+//    timePoint3 += millis{240000};
 #endif
 
 
     // logging
-    Logger logger(clt.get_id());
+    File_logger file_logger(clt.get_id());
 
     // WARM UP THE SOCKETS
-    warm_up(clt, logger);
+//    warm_up(clt, file_logger);
 
     std::this_thread::sleep_until(timePoint3);
     
@@ -349,7 +349,7 @@ int run_session(uint req_idx){
                 assert(false);
             }
             auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-            logger(Op::get, keys[key_idx], read_value, epoch, epoch2);
+            file_logger(Op::get, keys[key_idx], read_value, epoch, epoch2);
             DPRINTF(DEBUG_CAS_Client, "get done on key: %s with value: %s\n", keys[key_idx].c_str(),
                     read_value.c_str());
         }
@@ -362,7 +362,7 @@ int run_session(uint req_idx){
                 assert(false);
             }
             auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-            logger(Op::put, keys[key_idx], val, epoch, epoch2);
+            file_logger(Op::put, keys[key_idx], val, epoch, epoch2);
             DPRINTF(DEBUG_CAS_Client, "put done on key: %s with value: %s\n", keys[key_idx].c_str(), val.c_str());
         }
         

@@ -68,6 +68,7 @@ void DataServer::remove_block_keys(const std::string& key, const std::string& cu
     if(it != this->blocked_keys.end()){
         this->blocked_keys.erase(it);
     }
+    this->blocked_keys_cv.notify_all();
     return;
 }
 

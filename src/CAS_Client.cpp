@@ -116,7 +116,7 @@ namespace CAS_helper{
                 continue;
             }
 
-            DPRINTF(DEBUG_CAS_Client, "try one done.\n");
+//            DPRINTF(DEBUG_CAS_Client, "try one done.\n");
             if(it->second.valid() && it->second.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready){
                 strVec data = it->second.get();
                 if(data.size() != 0){
@@ -422,7 +422,7 @@ CAS_Client::~CAS_Client(){
 
 int CAS_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
 
-    DPRINTF(DEBUG_CAS_Client, "started.\n");
+    DPRINTF(DEBUG_ABD_Client, "started on key %s\n", key.c_str());
 
     std::vector <Timestamp> tss;
     timestamp = nullptr;
@@ -435,7 +435,11 @@ int CAS_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
     set_intersection(p, servers);
     std::vector<strVec> ret;
     std::vector<std::string*> chunks_temp;
-    for (auto it = servers.begin(); it != servers.end(); it++) { // request to all servers
+//    for (auto it = servers.begin(); it != servers.end(); it++) { // request to all servers
+//        chunks_temp.push_back(new std::string());
+//    }
+
+    for (int i = 0; i < 9; i++) { // request to all servers
         chunks_temp.push_back(new std::string());
     }
     DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");
@@ -520,7 +524,7 @@ int CAS_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
 
 int CAS_Client::put(const std::string& key, const std::string& value){
 
-    DPRINTF(DEBUG_CAS_Client, "started.\n");
+    DPRINTF(DEBUG_ABD_Client, "started on key %s\n", key.c_str());
     
     int le_counter = 0;
     uint64_t le_init = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
@@ -539,7 +543,7 @@ int CAS_Client::put(const std::string& key, const std::string& value){
     int desc = create_liberasure_instance(&p);
     std::thread encoder(liberasure::encode, &value, &chunks, &null_args, desc);
     
-    DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+    DPRINTF(DEBUG_CAS_Client, "ts_latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
     
     Timestamp* timestamp = nullptr;
     Timestamp* tmp = nullptr;
@@ -554,7 +558,7 @@ int CAS_Client::put(const std::string& key, const std::string& value){
     // Join the encoder thread
     encoder.join();
     destroy_liberasure_instance(desc);
-    DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+    DPRINTF(DEBUG_CAS_Client, "ts_latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
 
     if(timestamp == nullptr){
         CAS_helper::free_chunks(chunks);
@@ -640,7 +644,11 @@ int CAS_Client::put(const std::string& key, const std::string& value){
     }
 
     // Fin
-    for (auto it = servers.begin(); it != servers.end(); it++) { // request to all servers
+//    for (auto it = servers.begin(); it != servers.end(); it++) { // request to all servers
+//        chunks.push_back(new std::string());
+//    }
+
+    for (int i = 0; i < 9; i++) { // request to all servers
         chunks.push_back(new std::string());
     }
 
@@ -693,20 +701,20 @@ int CAS_Client::put(const std::string& key, const std::string& value){
         return -6; // Fin_write could not succeed.
     }
     
-    DPRINTF(DEBUG_CAS_Client, "latencies%d:fin %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+    DPRINTF(DEBUG_CAS_Client, "end latencies%d:fin %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
     
     return op_status;
 }
 
 int CAS_Client::get(const std::string& key, std::string& value){
 
-    DPRINTF(DEBUG_CAS_Client, "started.\n");
+    DPRINTF(DEBUG_ABD_Client, "started on key %s\n", key.c_str());
 
     static std::map<std::string, std::string> cache_optimized_get; // key!timestamp -> value
     
     int le_counter = 0;
     uint64_t le_init = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-    DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+    DPRINTF(DEBUG_CAS_Client, "ts_latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
 
     const Placement& p = parent->get_placement(key);
     int op_status = 0;    // 0: Success, -1: timeout, -2: operation_fail(reconfiguration)
@@ -728,7 +736,7 @@ int CAS_Client::get(const std::string& key, std::string& value){
         assert(false);
     }
     
-    DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+    DPRINTF(DEBUG_CAS_Client, "ts_latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
 
 #ifndef No_GET_OPTIMIZED
     if(can_be_optimized && cache_optimized_get.find(key + "!" + timestamp->get_string()) != cache_optimized_get.end()){
@@ -752,7 +760,11 @@ int CAS_Client::get(const std::string& key, std::string& value){
     std::vector<strVec> ret;
     std::vector<std::string*> chunks;
     std::vector<std::string*> chunks_temp;
-    for (auto it = servers.begin(); it != servers.end(); it++) { // request to all servers
+//    for (auto it = servers.begin(); it != servers.end(); it++) { // request to all servers
+//        chunks_temp.push_back(new std::string());
+//    }
+
+    for (int i = 0; i < 9; i++) { // request to all servers
         chunks_temp.push_back(new std::string());
     }
     op_status = CAS_helper::failure_support_optimized("get", key, timestamp->get_string(), chunks_temp, this->retry_attempts, p.Q4,
@@ -866,7 +878,7 @@ int CAS_Client::get(const std::string& key, std::string& value){
         }
     }
     
-    DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+    DPRINTF(DEBUG_CAS_Client, "end latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
 
     CAS_helper::free_chunks(chunks);
 

@@ -48,7 +48,7 @@ using namespace std::chrono;
 #define MAX_LINGER_BEFORE_SOCK_CLOSE 50
 
 //#define No_GET_OPTIMIZED
-#define LOCAL_TEST
+//#define LOCAL_TEST
 
 #ifdef LOCAL_TEST
 #define NUMBER_OF_OPS_FOR_WARM_UP 2
@@ -84,8 +84,32 @@ extern bool DEBUG_UTIL;
     do{ \
         if(flag) \
             fprintf(stdout, "Time %10li - Thread: %lu : [%s][%s]%d: " fmt, time(nullptr), pthread_self(), __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
-            fflush(stdout); \
+        fflush(stdout); \
     } while(0)
+
+//class Logger{
+//public:
+//    Logger(const std::string& file_name, const std::string& function_name, const int& line_number);
+//    Logger(const std::string& file_name, const std::string& function_name, const int& line_number, const std::string& msg);
+//    ~Logger();
+//
+//    void operator()(const int& line_number);
+//    void operator()(const int& line_number, const std::string& msg);
+//
+//private:
+//    std::string file_name;
+//    std::string function_name;
+//    time_point<steady_clock, microseconds> timer;
+//    time_point<steady_clock, microseconds> last_lapse;
+//    std::stringstream output;
+//};
+//
+//// Todo: using variable argument macros try to add message as well
+////#define GET_MACRO(_0, _1, _2, NAME, ...) NAME
+////#define FOO(...) GET_MACRO(_0, ##__VA_ARGS__, FOO2, FOO1, FOO0)(__VA_ARGS__)
+//#define EASY_LOGGER_INSTANCE_NAME __LEGO_log
+//#define EASY_LOG_INIT() Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__)
+//#define EASY_LOG() EASY_LOGGER_INSTANCE_NAME(__LINE__)
 
 typedef std::vector <std::string> strVec;
 

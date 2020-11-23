@@ -6,7 +6,7 @@ if __name__ == "__main__":
     start_time = time.time()
     
     
-    COMMAND = "python3 placement.py -f tests/inputtests/dc.json -i Sense/uniform/{} -o Sense/uniform/res_{} -H min_cost"
+    COMMAND = "python3 placement.py -f tests/inputtests/dc_gcp.json -i Sense/uniform/{} -o Sense/uniform/res_{} -H min_cost -v"
     files = [
         'uniform_HR_arrival_rate.json',
         'uniform_HR_object_count.json',

@@ -214,7 +214,7 @@ ABD_Client::~ABD_Client(){
 // get timestamp for write operation
 int ABD_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
 
-    DPRINTF(DEBUG_ABD_Client, "started.\n");
+    DPRINTF(DEBUG_ABD_Client, "started on key %s\n", key.c_str());
 
     std::vector <Timestamp> tss;
     timestamp = nullptr;
@@ -278,8 +278,8 @@ int ABD_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
 }
 
 int ABD_Client::put(const std::string& key, const std::string& value){
-    
-    DPRINTF(DEBUG_ABD_Client, "started.\n");
+
+    DPRINTF(DEBUG_ABD_Client, "started on key %s\n", key.c_str());
 
     int le_counter = 0;
     uint64_t le_init = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
@@ -366,7 +366,7 @@ int ABD_Client::put(const std::string& key, const std::string& value){
 
 int ABD_Client::get(const std::string& key, std::string& value){
 
-    DPRINTF(DEBUG_ABD_Client, "started.\n");
+    DPRINTF(DEBUG_ABD_Client, "started on key %s\n", key.c_str());
 
     int le_counter = 0;
     uint64_t le_init = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();

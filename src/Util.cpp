@@ -923,6 +923,7 @@ int ask_metadata(const std::string& metadata_server_ip, const std::string& metad
 
 template<typename T>
 void set_intersection(const Placement& p, std::unordered_set <T>& res){
+    res.clear();
     res.insert(p.Q1.begin(), p.Q1.end());
     res.insert(p.Q2.begin(), p.Q2.end());
     res.insert(p.Q3.begin(), p.Q3.end());
@@ -930,3 +931,43 @@ void set_intersection(const Placement& p, std::unordered_set <T>& res){
 }
 
 template void set_intersection(const Placement& p, std::unordered_set <unsigned int>& res);
+
+//Logger::Logger(const std::string& file_name, const std::string& function_name, const int& line_number) :
+//                        file_name(file_name), function_name(function_name){
+//    output << "Time " << setw(10) << time(nullptr) << " - Thread: " << pthread_self() << "[" << this->file_name << "]"
+//            << "[" << this->function_name << "]:\n";
+//
+//    timer = steady_clock::now();
+//    last_lapse = timer;
+//
+//    output << "    " << (steady_clock::now() - last_lapse).count() << ":" << line_number << ": started\n";
+//}
+//
+//Logger::Logger(const std::string& file_name, const std::string& function_name, const int& line_number,
+//               const std::string& msg){
+//    output << "Time " << setw(10) << time(nullptr) << " - Thread: " << pthread_self() << "[" << this->file_name << "]"
+//           << "[" << this->function_name << "]:\n";
+//
+//    timer = steady_clock::now();
+//    last_lapse = timer;
+//
+//    output << "    " << (steady_clock::now() - last_lapse).count() << ":" << line_number << ": started, " << msg << "\n";
+//    last_lapse = steady_clock::now();
+//}
+//
+//Logger::~Logger(){
+//    output << "    " << (steady_clock::now() - last_lapse).count() ": finished, " << "elapsed time = " << (steady_clock::now() - timer).count() << "\n";
+//    last_lapse = steady_clock::now();
+//
+//    cout << output.str() << std::flush();
+//}
+//
+//void Logger::operator()(const int& line_number){
+//    output << "    " << (steady_clock::now() - last_lapse).count() << ":" << line_number << "\n";
+//    last_lapse = steady_clock::now();
+//}
+//
+//void Logger::operator()(const int& line_number, const std::string& msg){
+//    output << "    " << (steady_clock::now() - last_lapse).count() << ":" << line_number << ": " << msg << "\n";
+//    last_lapse = steady_clock::now();
+//}

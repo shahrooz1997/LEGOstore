@@ -15,16 +15,16 @@ using namespace std::chrono;
 
 //Input : A vector of key groups
 // Returns the placement for each key group
-//int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Placement*>& placement){
-//    static int temp = 0;
-//    //For testing purposes
-//    for(uint i = 0; i < gworkload.size(); i++){
-//        Placement* test = new Placement;
-//        // Controller trial(1, 120, 120, "./config/setup_config.json");
-//        // std::vector<DC*> dcs = trial.prp.datacenters;
-//
-//        if(temp){
-//            //CAS
+int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Placement*>& placement){
+    static int temp = 0;
+    //For testing purposes
+    for(uint i = 0; i < gworkload.size(); i++){
+        Placement* test = new Placement;
+        // Controller trial(1, 120, 120, "./config/setup_config.json");
+        // std::vector<DC*> dcs = trial.prp.datacenters;
+
+        if(temp){
+            //CAS
 //            test->protocol = CAS_PROTOCOL_NAME;
 //            test->k = 4;
 //            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
@@ -35,144 +35,144 @@ using namespace std::chrono;
 //            set_intersection(*test, servers);
 //            test->m = servers.size();
 //            test->f = 2;
-//
-//            // ABD HARD NO F
-////            test->protocol = ABD_PROTOCOL_NAME;
-////            test->m = 5;
-////            test->k = 0;
-////            test->Q1.insert(begin(test->Q1), {2, 3, 4});
-////            test->Q2.insert(begin(test->Q2), {0, 1, 2});
-////            test->Q3.clear();
-////            test->Q4.clear();
-////            test->f = 0;
-//        }
-//        else{
-//
-//            //No failures
-//            // CAS
-////            test->protocol = CAS_PROTOCOL_NAME;
-////            test->k = 4;
-////            test->Q1.insert(begin(test->Q1), {3,4,5,6});
-////            test->Q2.insert(begin(test->Q2), {2,3,4,5,6});
-////            test->Q3.insert(begin(test->Q3), {1,2,3,4});
-////            test->Q4.insert(begin(test->Q4), {0,1,2,3,4,5});
-////            test->m = std::max(test->Q2.size(), test->Q3.size());
-////            test->f = 0;
-//
-//            // ABD
-////            test->protocol = ABD_PROTOCOL_NAME;
-////            test->m = 5;
-////            test->k = 0;
-////            test->Q1.insert(begin(test->Q1), {0,1,2,3,4,5,6});
-////            test->Q2.insert(begin(test->Q2), {3});
-////            test->Q3.clear();
-////            test->Q4.clear();
-////            test->f = 0;
-//
-//            //ABD2
-////            test->protocol = ABD_PROTOCOL_NAME;
-////            test->m = 5;
-////            test->k = 0;
-////            test->Q1.insert(begin(test->Q1), {0,1,2,3});
-////            test->Q2.insert(begin(test->Q2), {3,4,5});
-////            test->Q3.clear();
-////            test->Q4.clear();
-////            test->f = 0;
-//
-//
-//            //ABD2 failure 2
+
+            // ABD HARD NO F
+            test->protocol = ABD_PROTOCOL_NAME;
+            test->m = 5;
+            test->k = 0;
+            test->Q1.insert(begin(test->Q1), {2, 3, 4});
+            test->Q2.insert(begin(test->Q2), {0, 1, 2});
+            test->Q3.clear();
+            test->Q4.clear();
+            test->f = 0;
+        }
+        else{
+
+            //No failures
+            // CAS
+//            test->protocol = CAS_PROTOCOL_NAME;
+//            test->k = 4;
+//            test->Q1.insert(begin(test->Q1), {3,4,5,6});
+//            test->Q2.insert(begin(test->Q2), {2,3,4,5,6});
+//            test->Q3.insert(begin(test->Q3), {1,2,3,4});
+//            test->Q4.insert(begin(test->Q4), {0,1,2,3,4,5});
+//            test->m = std::max(test->Q2.size(), test->Q3.size());
+//            test->f = 0;
+
+            // ABD
 //            test->protocol = ABD_PROTOCOL_NAME;
-//            test->m = 9;
+//            test->m = 5;
 //            test->k = 0;
-//            test->Q1.insert(begin(test->Q1), {0, 1, 2, 3, 4});
-//            test->Q2.insert(begin(test->Q2), {4, 5, 6, 7, 8});
+//            test->Q1.insert(begin(test->Q1), {0,1,2,3,4,5,6});
+//            test->Q2.insert(begin(test->Q2), {3});
 //            test->Q3.clear();
 //            test->Q4.clear();
+//            test->f = 0;
+
+            //ABD2
+//            test->protocol = ABD_PROTOCOL_NAME;
+//            test->m = 5;
+//            test->k = 0;
+//            test->Q1.insert(begin(test->Q1), {0,1,2,3});
+//            test->Q2.insert(begin(test->Q2), {3,4,5});
+//            test->Q3.clear();
+//            test->Q4.clear();
+//            test->f = 0;
+
+
+            //ABD2 failure 2
+            test->protocol = ABD_PROTOCOL_NAME;
+            test->m = 9;
+            test->k = 0;
+            test->Q1.insert(begin(test->Q1), {0, 1, 2, 3, 4});
+            test->Q2.insert(begin(test->Q2), {4, 5, 6, 7, 8});
+            test->Q3.clear();
+            test->Q4.clear();
+            test->f = 2;
+
+            // Failures
+//            test->protocol = CAS_PROTOCOL_NAME;
+//            test->k = 4;
+//            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
+//            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
+//            test->Q3.insert(begin(test->Q3), {4,5,6});
+//            test->Q4.insert(begin(test->Q4), {2,3,4,5,6});
+//            std::unordered_set<uint32_t> servers;
+//            set_intersection(*test, servers);
+//            test->m = servers.size(); //std::max(test->Q2.size(), test->Q3.size());
+//            test->f = 1;
+
+            // HARD
+//            test->protocol = CAS_PROTOCOL_NAME;
+//            test->k = 4;
+//            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
+//            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
+//            test->Q3.insert(begin(test->Q3), {4,5,6,7,8});
+//            test->Q4.insert(begin(test->Q4), {2,3,4,5,6,7,8});
+//            std::unordered_set<uint32_t> servers;
+//            set_intersection(*test, servers);
+//            test->m = servers.size();
 //            test->f = 2;
-//
-//            // Failures
-////            test->protocol = CAS_PROTOCOL_NAME;
-////            test->k = 4;
-////            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
-////            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
-////            test->Q3.insert(begin(test->Q3), {4,5,6});
-////            test->Q4.insert(begin(test->Q4), {2,3,4,5,6});
-////            std::unordered_set<uint32_t> servers;
-////            set_intersection(*test, servers);
-////            test->m = servers.size(); //std::max(test->Q2.size(), test->Q3.size());
-////            test->f = 1;
-//
-//            // HARD
-////            test->protocol = CAS_PROTOCOL_NAME;
-////            test->k = 4;
-////            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
-////            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
-////            test->Q3.insert(begin(test->Q3), {4,5,6,7,8});
-////            test->Q4.insert(begin(test->Q4), {2,3,4,5,6,7,8});
-////            std::unordered_set<uint32_t> servers;
-////            set_intersection(*test, servers);
-////            test->m = servers.size();
-////            test->f = 2;
-//
-////            test->protocol = CAS_PROTOCOL_NAME;
-////            test->k = 1;
-////            test->Q1.insert(begin(test->Q1), {1,2});
-////            test->Q2.insert(begin(test->Q2), {0,1});
-////            test->Q3.insert(begin(test->Q3), {0,1});
-////            test->Q4.insert(begin(test->Q4), {1,2});
-////            std::unordered_set<uint32_t> servers;
-////            set_intersection(*test, servers);
-////            test->m = servers.size(); //std::max(test->Q2.size(), test->Q3.size());
-////            test->f = 1;
-//
-//
-//        }
-//
-//        // SHAHROOZ: We need the servers participating to accomplish one protocol and number of failures we can tolerate for doing reconfiguration
-//        // SHAHROOZ: We can remake the vector of all servers.
-//        // test->N.push_back(dcs[0]);
-//        // test->N.push_back(dcs[1]);
-//        // test->N.push_back(dcs[2]);
-//        // test->N.push_back(dcs[3]);
-//        // test->N.push_back(dcs[4]);
-////        test->f = 0; // TODO: we need to implement failure support.
-//
-//        placement.push_back(test);
-//    }
-//    temp +=1;
-//    return 0;
-//}
 
-int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Placement*>& placement){
-    //0
-    Placement* test = new Placement;
-    test->protocol = CAS_PROTOCOL_NAME;
-    test->k = 1;
-    test->Q1.insert(begin(test->Q1), {8,0,2});
-    test->Q2.insert(begin(test->Q2), {8,0,2});
-    test->Q3.insert(begin(test->Q3), {8,0,2});
-    test->Q4.insert(begin(test->Q4), {8,0,2});
-    std::unordered_set<uint32_t> servers;
-    set_intersection(*test, servers);
-    test->m = 9; //servers.size();
-    test->f = 0;
-    placement.push_back(test);
+//            test->protocol = CAS_PROTOCOL_NAME;
+//            test->k = 1;
+//            test->Q1.insert(begin(test->Q1), {1,2});
+//            test->Q2.insert(begin(test->Q2), {0,1});
+//            test->Q3.insert(begin(test->Q3), {0,1});
+//            test->Q4.insert(begin(test->Q4), {1,2});
+//            std::unordered_set<uint32_t> servers;
+//            set_intersection(*test, servers);
+//            test->m = servers.size(); //std::max(test->Q2.size(), test->Q3.size());
+//            test->f = 1;
 
-    //4
-    test = new Placement;
-    test->protocol = CAS_PROTOCOL_NAME;
-    test->k = 2;
-    test->Q1.insert(begin(test->Q1), {8,0,1});
-    test->Q2.insert(begin(test->Q2), {8,0,1,2});
-    test->Q3.insert(begin(test->Q3), {8,0,1,2});
-    test->Q4.insert(begin(test->Q4), {8,0,1,2});
-    set_intersection(*test, servers);
-    test->m = 9; //servers.size();
-    test->f = 0;
-    placement.push_back(test);
 
+        }
+
+        // SHAHROOZ: We need the servers participating to accomplish one protocol and number of failures we can tolerate for doing reconfiguration
+        // SHAHROOZ: We can remake the vector of all servers.
+        // test->N.push_back(dcs[0]);
+        // test->N.push_back(dcs[1]);
+        // test->N.push_back(dcs[2]);
+        // test->N.push_back(dcs[3]);
+        // test->N.push_back(dcs[4]);
+//        test->f = 0; // TODO: we need to implement failure support.
+
+        placement.push_back(test);
+    }
+    temp +=1;
     return 0;
 }
+
+//int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Placement*>& placement){
+//    //0
+//    Placement* test = new Placement;
+//    test->protocol = CAS_PROTOCOL_NAME;
+//    test->k = 1;
+//    test->Q1.insert(begin(test->Q1), {8,0,2});
+//    test->Q2.insert(begin(test->Q2), {8,0,2});
+//    test->Q3.insert(begin(test->Q3), {8,0,2});
+//    test->Q4.insert(begin(test->Q4), {8,0,2});
+//    std::unordered_set<uint32_t> servers;
+//    set_intersection(*test, servers);
+//    test->m = 9; //servers.size();
+//    test->f = 0;
+//    placement.push_back(test);
+//
+//    //4
+//    test = new Placement;
+//    test->protocol = CAS_PROTOCOL_NAME;
+//    test->k = 2;
+//    test->Q1.insert(begin(test->Q1), {8,0,1});
+//    test->Q2.insert(begin(test->Q2), {8,0,1,2});
+//    test->Q3.insert(begin(test->Q3), {8,0,1,2});
+//    test->Q4.insert(begin(test->Q4), {8,0,1,2});
+//    set_intersection(*test, servers);
+//    test->m = 9; //servers.size();
+//    test->f = 0;
+//    placement.push_back(test);
+//
+//    return 0;
+//}
 
 int execute(const char* command, const std::vector<std::string>& args, std::string& output){
     

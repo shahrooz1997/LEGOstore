@@ -216,6 +216,8 @@ int ABD_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
 
     DPRINTF(DEBUG_ABD_Client, "started on key %s\n", key.c_str());
 
+    EASY_LOG_INIT();
+
     std::vector <Timestamp> tss;
     timestamp = nullptr;
 
@@ -260,6 +262,8 @@ int ABD_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
         }
     }
 
+    EASY_LOG();
+
     if(op_status == 0){
         timestamp = new Timestamp(Timestamp::max_timestamp2(tss));
         
@@ -271,6 +275,8 @@ int ABD_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
         assert(false);
         return S_FAIL;
     }
+
+    EASY_LOG_M("Before finishing");
 
     DPRINTF(DEBUG_CAS_Client, "end latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
     

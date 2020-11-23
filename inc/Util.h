@@ -15,6 +15,7 @@
 #define UTIL_H
 
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <vector>
 #include <string>
@@ -48,7 +49,7 @@ using namespace std::chrono;
 #define MAX_LINGER_BEFORE_SOCK_CLOSE 50
 
 //#define No_GET_OPTIMIZED
-//#define LOCAL_TEST
+#define LOCAL_TEST
 
 #ifdef LOCAL_TEST
 #define NUMBER_OF_OPS_FOR_WARM_UP 2
@@ -87,29 +88,36 @@ extern bool DEBUG_UTIL;
         fflush(stdout); \
     } while(0)
 
-//class Logger{
-//public:
-//    Logger(const std::string& file_name, const std::string& function_name, const int& line_number);
-//    Logger(const std::string& file_name, const std::string& function_name, const int& line_number, const std::string& msg);
-//    ~Logger();
-//
-//    void operator()(const int& line_number);
-//    void operator()(const int& line_number, const std::string& msg);
-//
-//private:
-//    std::string file_name;
-//    std::string function_name;
-//    time_point<steady_clock, microseconds> timer;
-//    time_point<steady_clock, microseconds> last_lapse;
-//    std::stringstream output;
-//};
-//
-//// Todo: using variable argument macros try to add message as well
-////#define GET_MACRO(_0, _1, _2, NAME, ...) NAME
-////#define FOO(...) GET_MACRO(_0, ##__VA_ARGS__, FOO2, FOO1, FOO0)(__VA_ARGS__)
+class Logger{
+public:
+    Logger(const std::string& file_name, const std::string& function_name, const int& line_number);
+    Logger(const std::string& file_name, const std::string& function_name, const int& line_number, const std::string& msg);
+    ~Logger();
+
+    void operator()(const int& line_number);
+    void operator()(const int& line_number, const std::string& msg);
+
+private:
+    std::string file_name;
+    std::string function_name;
+    time_point<steady_clock, microseconds> timer;
+    time_point<steady_clock, microseconds> last_lapse;
+    std::stringstream output;
+};
+
+//// Todo: using variable argument macros try to add message as well. It does not work when there is no argurments in -std=c++11.
+//#define GET_MACRO(_1, _2, NAME, ...) NAME
 //#define EASY_LOGGER_INSTANCE_NAME __LEGO_log
-//#define EASY_LOG_INIT() Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__)
-//#define EASY_LOG() EASY_LOGGER_INSTANCE_NAME(__LINE__)
+//#define EASY_LOG_INIT0() Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__)
+//#define EASY_LOG_INIT1(M) Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, M)
+//#define EASY_LOG_INIT2(M, P) Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, M)
+//#define EASY_LOG_INIT(...) GET_MACRO(##__VA_ARGS__, EASY_LOG_INIT2, EASY_LOG_INIT1, EASY_LOG_INIT0)(__VA_ARGS__)
+
+#define EASY_LOG_INIT() Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__)
+#define EASY_LOG() EASY_LOGGER_INSTANCE_NAME(__LINE__)
+#define EASY_LOG_INIT_M(M) Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, M)
+#define EASY_LOG_M(M) EASY_LOGGER_INSTANCE_NAME(__LINE__, M)
+
 
 typedef std::vector <std::string> strVec;
 

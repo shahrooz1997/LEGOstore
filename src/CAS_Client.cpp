@@ -525,12 +525,15 @@ int CAS_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
 int CAS_Client::put(const std::string& key, const std::string& value){
 
     DPRINTF(DEBUG_ABD_Client, "started on key %s\n", key.c_str());
+
+    EASY_LOG_INIT_M(std::string("on key ") + key);
     
     int le_counter = 0;
     uint64_t le_init = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
     DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
     
     const Placement& p = parent->get_placement(key);
+    EASY_LOG_M("placement received. trying to get timestamp and encoding data simultaneously...");
     int op_status = 0;    // 0: Success, -1: timeout, -2: operation_fail(reconfiguration)
     
     std::vector <std::string*> chunks;
@@ -555,10 +558,14 @@ int CAS_Client::put(const std::string& key, const std::string& value){
         tmp = nullptr;
     }
 
+    EASY_LOG_M("timestamp received.");
+
     // Join the encoder thread
     encoder.join();
     destroy_liberasure_instance(desc);
     DPRINTF(DEBUG_CAS_Client, "ts_latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+
+    EASY_LOG_M("Data encoded. Trying to do phase 2...");
 
     if(timestamp == nullptr){
         CAS_helper::free_chunks(chunks);
@@ -643,6 +650,8 @@ int CAS_Client::put(const std::string& key, const std::string& value){
         return -4; // pre_write could not succeed.
     }
 
+    EASY_LOG_M("phase 2 done. Trying to do phase 3(FIN)...");
+
     // Fin
 //    for (auto it = servers.begin(); it != servers.end(); it++) { // request to all servers
 //        chunks.push_back(new std::string());
@@ -700,6 +709,8 @@ int CAS_Client::put(const std::string& key, const std::string& value){
 //        delete timestamp;
         return -6; // Fin_write could not succeed.
     }
+
+    EASY_LOG_M("phase 3 done.");
     
     DPRINTF(DEBUG_CAS_Client, "end latencies%d:fin %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
     
@@ -710,6 +721,8 @@ int CAS_Client::get(const std::string& key, std::string& value){
 
     DPRINTF(DEBUG_ABD_Client, "started on key %s\n", key.c_str());
 
+    EASY_LOG_INIT_M(std::string("on key ") + key);
+
     static std::map<std::string, std::string> cache_optimized_get; // key!timestamp -> value
     
     int le_counter = 0;
@@ -717,6 +730,7 @@ int CAS_Client::get(const std::string& key, std::string& value){
     DPRINTF(DEBUG_CAS_Client, "ts_latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
 
     const Placement& p = parent->get_placement(key);
+    EASY_LOG_M("placement received. trying to get timestamp...");
     int op_status = 0;    // 0: Success, -1: timeout, -2: operation_fail(reconfiguration)
 
     bool uninitialized_key = false;
@@ -738,6 +752,8 @@ int CAS_Client::get(const std::string& key, std::string& value){
     
     DPRINTF(DEBUG_CAS_Client, "ts_latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
 
+    EASY_LOG_M("timestamp received. Trying to do phase 2...");
+
 #ifndef No_GET_OPTIMIZED
     if(can_be_optimized && cache_optimized_get.find(key + "!" + timestamp->get_string()) != cache_optimized_get.end()){
         DPRINTF(DEBUG_CAS_Client, "get_optimized done \n");
@@ -749,6 +765,8 @@ int CAS_Client::get(const std::string& key, std::string& value){
         }
 
         DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+
+        EASY_LOG_M("GET_OPTIMIZED: no need to do phase 2. Done.");
 
         return op_status;
     }
@@ -817,6 +835,8 @@ int CAS_Client::get(const std::string& key, std::string& value){
         }
     }
 
+    EASY_LOG_M(std::string("phase 2 done with status code: ") + std::to_string(op_status) + ". Trying to decode...");
+
     DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
     
     if(!uninitialized_key){
@@ -877,6 +897,8 @@ int CAS_Client::get(const std::string& key, std::string& value){
             value = "__Uninitiliazed";
         }
     }
+
+    EASY_LOG_M("Decode done.");
     
     DPRINTF(DEBUG_CAS_Client, "end latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
 

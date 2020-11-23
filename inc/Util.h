@@ -90,8 +90,8 @@ extern bool DEBUG_UTIL;
 
 class Logger{
 public:
-    Logger(const std::string& file_name, const std::string& function_name, const int& line_number);
-    Logger(const std::string& file_name, const std::string& function_name, const int& line_number, const std::string& msg);
+    Logger(const std::string& file_name, const std::string& function_name, const int& line_number, bool logging_on = true);
+    Logger(const std::string& file_name, const std::string& function_name, const int& line_number, const std::string& msg, bool logging_on = true);
     ~Logger();
 
     void operator()(const int& line_number);
@@ -103,19 +103,20 @@ private:
     time_point<steady_clock, microseconds> timer;
     time_point<steady_clock, microseconds> last_lapse;
     std::stringstream output;
+    bool logging_on;
 };
 
-//// Todo: using variable argument macros try to add message as well. It does not work when there is no argurments in -std=c++11.
-//#define GET_MACRO(_1, _2, NAME, ...) NAME
-//#define EASY_LOGGER_INSTANCE_NAME __LEGO_log
-//#define EASY_LOG_INIT0() Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__)
-//#define EASY_LOG_INIT1(M) Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, M)
-//#define EASY_LOG_INIT2(M, P) Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, M)
-//#define EASY_LOG_INIT(...) GET_MACRO(##__VA_ARGS__, EASY_LOG_INIT2, EASY_LOG_INIT1, EASY_LOG_INIT0)(__VA_ARGS__)
+//// Todo: using variable argument macros try to add message as well. It does not work when there is no arguments in -std=c++11.
+#define GET_MACRO(_1, _2, NAME, ...) NAME
+#define EASY_LOGGER_INSTANCE_NAME __LEGO_log
+#define EASY_LOG_INIT_M1(M) Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, M)
+#define EASY_LOG_INIT_M2(M, O) Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, M, O)
+#define EASY_LOG_INIT_M(...) GET_MACRO(__VA_ARGS__, EASY_LOG_INIT_M2, EASY_LOG_INIT_M1)(__VA_ARGS__)
 
 #define EASY_LOG_INIT() Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__)
+#define EASY_LOG_INIT_OFF() Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, false)
 #define EASY_LOG() EASY_LOGGER_INSTANCE_NAME(__LINE__)
-#define EASY_LOG_INIT_M(M) Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, M)
+//#define EASY_LOG_INIT_M(M) Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, M)
 #define EASY_LOG_M(M) EASY_LOGGER_INSTANCE_NAME(__LINE__, M)
 
 

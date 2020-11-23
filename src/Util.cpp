@@ -932,8 +932,8 @@ void set_intersection(const Placement& p, std::unordered_set <T>& res){
 
 template void set_intersection(const Placement& p, std::unordered_set <unsigned int>& res);
 
-Logger::Logger(const std::string& file_name, const std::string& function_name, const int& line_number) :
-                        file_name(file_name), function_name(function_name){
+Logger::Logger(const std::string& file_name, const std::string& function_name, const int& line_number, bool logging_on) :
+                        file_name(file_name), function_name(function_name), logging_on(logging_on){
     output << "Time " << std::setw(10) << time(nullptr) << " - Thread: " << pthread_self() << " : [" << this->file_name << "]"
             << "[" << this->function_name << "]:\n";
 
@@ -944,14 +944,14 @@ Logger::Logger(const std::string& file_name, const std::string& function_name, c
 }
 
 Logger::Logger(const std::string& file_name, const std::string& function_name, const int& line_number,
-               const std::string& msg){
+               const std::string& msg, bool logging_on) : file_name(file_name), function_name(function_name), logging_on(logging_on){
     output << "Time " << std::setw(10) << time(nullptr) << " - Thread: " << pthread_self() << " : [" << this->file_name << "]"
            << "[" << this->function_name << "]:\n";
 
     timer = time_point_cast<microseconds>(steady_clock::now());
     last_lapse = timer;
 
-    output << "    " << std::setw(10) << 0 << ":" << std::setfill('0') << std::setw(4) << line_number << ": started";
+    output << "    " << std::setw(10) << 0 << ":" << std::setfill('0') << std::setw(4) << line_number << ": started, ";
     output << msg << "\n" << std::setfill(' ');
 }
 
@@ -959,7 +959,9 @@ Logger::~Logger(){
     time_point<steady_clock, microseconds> new_lapse = time_point_cast<microseconds>(steady_clock::now());
     output << "    " << std::setw(10) << (new_lapse - last_lapse).count() << ": finished, " << "elapsed time = " << (new_lapse - timer).count() << "micros\n";
 
-    std::cout << output.str() << std::flush;
+    if(logging_on){
+        std::cout << output.str() << std::flush;
+    }
 }
 
 void Logger::operator()(const int& line_number){

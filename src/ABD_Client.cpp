@@ -133,6 +133,7 @@ namespace ABD_helper{
                     done[it->first] = true;
                     DPRINTF(DEBUG_ABD_Client, "one done.\n");
                     if(number_of_received_responses(done) == quorom.size()){
+                        EASY_LOG_M("Responses collected successfully");
                         op_status = 0;
                         break;
                     }
@@ -190,6 +191,7 @@ namespace ABD_helper{
                         ret.push_back(data);
                         done[it->first] = true;
                         if(number_of_received_responses(done) == quorom.size()){
+                            EASY_LOG_M("Responses collected successfully");
                             op_status = 0;
                             break;
                         }
@@ -215,10 +217,9 @@ namespace ABD_helper{
 }
 
 ABD_Client::ABD_Client(uint32_t id, uint32_t local_datacenter_id, uint32_t retry_attempts, uint32_t metadata_server_timeout,
-                       uint32_t timeout_per_request, std::vector<DC*>& datacenters, Client_Node* parent) :
-                        Client(id, local_datacenter_id, retry_attempts, metadata_server_timeout,
+        uint32_t timeout_per_request, std::vector<DC*>& datacenters, Client_Node* parent) :
+        Client(id, local_datacenter_id, retry_attempts, metadata_server_timeout,
         timeout_per_request, datacenters), parent(parent){
-
     assert(parent != nullptr);
     this->current_class = ABD_PROTOCOL_NAME;
 }

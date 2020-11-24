@@ -12,7 +12,7 @@
 #include <cstdlib>
 #include <fstream>
 
-//#define DEBUGGING
+#define DEBUGGING
 
 using namespace std;
 //using namespace nlohmann;

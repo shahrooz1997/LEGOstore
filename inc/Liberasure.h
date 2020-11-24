@@ -7,15 +7,18 @@
 
 #include <erasurecode.h>
 #include <mutex>
+#include "Util.h"
 
 using namespace std;
 
 class Liberasure{
 public:
-    Liberasure();
-    ~Liberasure();
+    Liberasure() = default;
+    ~Liberasure() = default;
 
+    int encode(const std::string& data, std::vector<std::string>& chunks, uint32_t m, uint32_t k);
 
+    int decode(std::string& data, const std::vector<std::string>& chunks, uint32_t m, uint32_t k);
 
 private:
     mutex lock;

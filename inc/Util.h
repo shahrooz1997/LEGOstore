@@ -271,6 +271,27 @@ struct Request{
     std::string protocol;
 };
 
+// Todo: remove the two following functions
+//returns the liberasure desc
+inline int create_liberasure_instance(Placement* pp){
+    struct ec_args null_args;
+    null_args.k = pp->k;
+    null_args.m = pp->m - pp->k;
+    null_args.w = 16; // ToDo: what must it be?
+    null_args.ct = CHKSUM_NONE;
+    //EC_BACKEND_LIBERASURECODE_RS_VAND
+    //EC_BACKEND_JERASURE_RS_VAND
+    return liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, &null_args);
+}
+
+inline int destroy_liberasure_instance(int desc){
+    if(liberasurecode_instance_destroy(desc) != 0){
+        fprintf(stderr, "Liberasure instance destory failed! Will lead to memory leaks..");
+    }
+    return 0;
+}
+
+
 class JSON_Reader{
 public:
     JSON_Reader();
@@ -358,25 +379,6 @@ private:
 };
 
 void print_time();
-
-//returns the liberasure desc
-inline int create_liberasure_instance(const Placement* pp){
-    struct ec_args null_args;
-    null_args.k = pp->k;
-    null_args.m = pp->m - pp->k;
-    null_args.w = 16; // ToDo: what must it be?
-    null_args.ct = CHKSUM_NONE;
-    //EC_BACKEND_LIBERASURECODE_RS_VAND
-    //EC_BACKEND_JERASURE_RS_VAND
-    return liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, &null_args);
-}
-
-inline int destroy_liberasure_instance(int desc){
-    if(liberasurecode_instance_destroy(desc) != 0){
-        fprintf(stderr, "Liberasure instance destory failed! Will lead to memory leaks..");
-    }
-    return 0;
-}
 
 int
 request_placement(const std::string& metadata_server_ip, const std::string& metadata_server_port,

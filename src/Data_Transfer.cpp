@@ -185,6 +185,10 @@ std::string DataTransfer::serializePrp(const Properties& properties_p){
             placement_p->set_m(pp->m);
             placement_p->set_k(pp->k);
             placement_p->set_f(pp->f);
+
+            for(auto s : pp->servers){
+                placement_p->add_servers(s);
+            }
             
             for(auto q : pp->Q1){
                 placement_p->add_q1(q);
@@ -222,6 +226,10 @@ std::string DataTransfer::serializePlacement(const Placement& placement){
     p.set_m(placement.m);
     p.set_k(placement.k);
     p.set_f(placement.f);
+
+    for(auto s : placement.servers){
+        p.add_servers(s);
+    }
     
     for(auto q : placement.Q1){
         p.add_q1(q);
@@ -320,6 +328,10 @@ Properties* DataTransfer::deserializePrp(std::string& data){
             plc->m = gplc.m();
             plc->k = gplc.k();
             plc->f = gplc.f();
+
+            for(int m = 0; m < gplc.servers_size(); m++){
+                plc->servers.push_back(gplc.servers(m));
+            }
             
             for(int m = 0; m < gplc.q1_size(); m++){
                 plc->Q1.push_back(gplc.q1(m));
@@ -355,7 +367,10 @@ Placement* DataTransfer::deserializePlacement(const std::string& data){
     p->m = gp.m();
     p->k = gp.k();
     p->f = gp.f();
-    
+
+    for(int m = 0; m < gp.servers_size(); m++){
+        p->servers.push_back(gp.servers(m));
+    }
     for(int m = 0; m < gp.q1_size(); m++){
         p->Q1.push_back(gp.q1(m));
     }
@@ -379,7 +394,11 @@ std::string DataTransfer::serializeCFG(const Placement& pp){
     placement_p.set_m(pp.m);
     placement_p.set_k(pp.k);
     placement_p.set_f(pp.f);
-    
+
+    for(auto s : pp.servers){
+        placement_p.add_servers(s);
+    }
+
     for(auto q : pp.Q1){
         placement_p.add_q1(q);
     }
@@ -418,7 +437,10 @@ Placement DataTransfer::deserializeCFG(std::string& data){
     plc.m = gplc.m();
     plc.k = gplc.k();
     plc.f = gplc.f();
-    
+
+    for(int m = 0; m < gplc.servers_size(); m++){
+        plc.servers.push_back(gplc.servers(m));
+    }
     for(int m = 0; m < gplc.q1_size(); m++){
         plc.Q1.push_back(gplc.q1(m));
     }
@@ -448,7 +470,11 @@ std::string DataTransfer::serializeMDS(const std::string& status, const std::str
         placement_p->set_m(pp.m);
         placement_p->set_k(pp.k);
         placement_p->set_f(pp.f);
-        
+
+        for(auto s : pp.servers){
+            placement_p->add_servers(s);
+        }
+
         for(auto q : pp.Q1){
             placement_p->add_q1(q);
         }
@@ -473,7 +499,6 @@ std::string DataTransfer::serializeMDS(const std::string& status, const std::str
         placement_p->set_k(0);
         placement_p->set_f(0);
     }
-    
     
     std::string str_out;
     if(!mds.SerializeToString(&str_out)){
@@ -502,7 +527,10 @@ Placement* DataTransfer::deserializeMDS(const std::string& data, std::string& st
         p->m = gp.m();
         p->k = gp.k();
         p->f = gp.f();
-        
+
+        for(int m = 0; m < gp.servers_size(); m++){
+            p->servers.push_back(gp.servers(m));
+        }
         for(int m = 0; m < gp.q1_size(); m++){
             p->Q1.push_back(gp.q1(m));
         }

@@ -8,7 +8,7 @@
 #include <cstdio>
 #include <string>
 #include <arpa/inet.h>
-#include "serialize.pb.h"
+#include "gbuffer.pb.h"
 #include "Util.h"
 #include <cerrno>
 #include <mutex>

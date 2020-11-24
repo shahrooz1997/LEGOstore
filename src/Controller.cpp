@@ -24,119 +24,104 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
         // std::vector<DC*> dcs = trial.prp.datacenters;
 
         if(temp){
+
             //CAS
-            test->protocol = CAS_PROTOCOL_NAME;
-            test->k = 4;
-            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
-            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
-            test->Q3.insert(begin(test->Q3), {4,5,6,7,8});
-            test->Q4.insert(begin(test->Q4), {2,3,4,5,6,7,8});
-            std::unordered_set<uint32_t> servers;
-            set_intersection(*test, servers);
-            test->m = servers.size();
-            test->f = 2;
+//            test->protocol = CAS_PROTOCOL_NAME;
+//            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6,7,8}); // All the servers participating in this placement
+//            test->Q1.insert(test->Q1.begin(), {0,1,2,3,4});
+//            test->Q2.insert(test->Q2.begin(), {0,1,2,3,4,5});
+//            test->Q3.insert(test->Q3.begin(), {4,5,6,7,8});
+//            test->Q4.insert(test->Q4.begin(), {2,3,4,5,6,7,8});
+//            test->f = 2;
+//            test->m = 9; // m should be total number of datacenters in the system
+//            test->k = 4;
+
 
             // ABD HARD NO F
-//            test->protocol = ABD_PROTOCOL_NAME;
-//            test->m = 5;
-//            test->k = 0;
-//            test->Q1.insert(begin(test->Q1), {2, 3, 4});
-//            test->Q2.insert(begin(test->Q2), {0, 1, 2});
-//            test->Q3.clear();
-//            test->Q4.clear();
-//            test->f = 0;
+            test->protocol = ABD_PROTOCOL_NAME;
+            test->servers.insert(test->servers.begin(), {0,1,2,3,4}); // All the servers participating in this placement
+            test->Q1.insert(test->Q1.begin(), {2,3,4});
+            test->Q2.insert(test->Q2.begin(), {0,1,2});
+            test->Q3.clear();
+            test->Q4.clear();
+            test->f = 0;
+            test->m = 9; // m should be total number of datacenters in the system
+            test->k = 0; // k should be zero for ABD
         }
         else{
 
             //No failures
-            // CAS
+            //CAS
 //            test->protocol = CAS_PROTOCOL_NAME;
-//            test->k = 4;
-//            test->Q1.insert(begin(test->Q1), {3,4,5,6});
-//            test->Q2.insert(begin(test->Q2), {2,3,4,5,6});
-//            test->Q3.insert(begin(test->Q3), {1,2,3,4});
-//            test->Q4.insert(begin(test->Q4), {0,1,2,3,4,5});
-//            test->m = std::max(test->Q2.size(), test->Q3.size());
+//            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6}); // All the servers participating in this placement
+//            test->Q1.insert(test->Q1.begin(), {3,4,5,6});
+//            test->Q2.insert(test->Q2.begin(), {2,3,4,5,6});
+//            test->Q3.insert(test->Q3.begin(), {1,2,3,4});
+//            test->Q4.insert(test->Q4.begin(), {0,1,2,3,4,5});
 //            test->f = 0;
+//            test->m = 9; // m should be total number of datacenters in the system
+//            test->k = 4;
 
             // ABD
 //            test->protocol = ABD_PROTOCOL_NAME;
-//            test->m = 5;
-//            test->k = 0;
-//            test->Q1.insert(begin(test->Q1), {0,1,2,3,4,5,6});
-//            test->Q2.insert(begin(test->Q2), {3});
+//            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6}); // All the servers participating in this placement
+//            test->Q1.insert(test->Q1.begin(), {0,1,2,3,4,5,6});
+//            test->Q2.insert(test->Q2.begin(), {3});
 //            test->Q3.clear();
 //            test->Q4.clear();
 //            test->f = 0;
+//            test->m = 9; // m should be total number of datacenters in the system
+//            test->k = 0; // k should be zero for ABD
+
 
             //ABD2
 //            test->protocol = ABD_PROTOCOL_NAME;
-//            test->m = 5;
-//            test->k = 0;
-//            test->Q1.insert(begin(test->Q1), {0,1,2,3});
-//            test->Q2.insert(begin(test->Q2), {3,4,5});
+//            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5}); // All the servers participating in this placement
+//            test->Q1.insert(test->Q1.begin(), {0,1,2,3});
+//            test->Q2.insert(test->Q2.begin(), {3,4,5});
 //            test->Q3.clear();
 //            test->Q4.clear();
 //            test->f = 0;
-
+//            test->m = 9; // m should be total number of datacenters in the system
+//            test->k = 0; // k should be zero for ABD
 
             //ABD2 failure 2
-//            test->protocol = ABD_PROTOCOL_NAME;
-//            test->m = 9;
-//            test->k = 0;
-//            test->Q1.insert(begin(test->Q1), {0, 1, 2, 3, 4});
-//            test->Q2.insert(begin(test->Q2), {4, 5, 6, 7, 8});
-//            test->Q3.clear();
-//            test->Q4.clear();
-//            test->f = 2;
+            test->protocol = ABD_PROTOCOL_NAME;
+            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6,7,8}); // All the servers participating in this placement
+            test->Q1.insert(test->Q1.begin(), {0,1,2,3,4});
+            test->Q2.insert(test->Q2.begin(), {4,5,6,7,8});
+            test->Q3.clear();
+            test->Q4.clear();
+            test->f = 2;
+            test->m = 9; // m should be total number of datacenters in the system
+            test->k = 0; // k should be zero for ABD
 
             // Failures
+            //CAS
 //            test->protocol = CAS_PROTOCOL_NAME;
-//            test->k = 4;
-//            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
-//            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
-//            test->Q3.insert(begin(test->Q3), {4,5,6});
-//            test->Q4.insert(begin(test->Q4), {2,3,4,5,6});
-//            std::unordered_set<uint32_t> servers;
-//            set_intersection(*test, servers);
-//            test->m = servers.size(); //std::max(test->Q2.size(), test->Q3.size());
+//            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6}); // All the servers participating in this placement
+//            test->Q1.insert(test->Q1.begin(), {0,1,2,3,4});
+//            test->Q2.insert(test->Q2.begin(), {0,1,2,3,4,5});
+//            test->Q3.insert(test->Q3.begin(), {4,5,6});
+//            test->Q4.insert(test->Q4.begin(), {2,3,4,5,6});
 //            test->f = 1;
+//            test->m = 9; // m should be total number of datacenters in the system
+//            test->k = 4;
+
 
             // HARD
-            test->protocol = CAS_PROTOCOL_NAME;
-            test->k = 4;
-            test->Q1.insert(begin(test->Q1), {0,1,2,3,4});
-            test->Q2.insert(begin(test->Q2), {0,1,2,3,4,5});
-            test->Q3.insert(begin(test->Q3), {4,5,6,7,8});
-            test->Q4.insert(begin(test->Q4), {2,3,4,5,6,7,8});
-            std::unordered_set<uint32_t> servers;
-            set_intersection(*test, servers);
-            test->m = servers.size();
-            test->f = 2;
-
+            //CAS
 //            test->protocol = CAS_PROTOCOL_NAME;
-//            test->k = 1;
-//            test->Q1.insert(begin(test->Q1), {1,2});
-//            test->Q2.insert(begin(test->Q2), {0,1});
-//            test->Q3.insert(begin(test->Q3), {0,1});
-//            test->Q4.insert(begin(test->Q4), {1,2});
-//            std::unordered_set<uint32_t> servers;
-//            set_intersection(*test, servers);
-//            test->m = servers.size(); //std::max(test->Q2.size(), test->Q3.size());
-//            test->f = 1;
-
+//            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6,7,8}); // All the servers participating in this placement
+//            test->Q1.insert(test->Q1.begin(), {0,1,2,3,4});
+//            test->Q2.insert(test->Q2.begin(), {0,1,2,3,4,5});
+//            test->Q3.insert(test->Q3.begin(), {4,5,6,7,8});
+//            test->Q4.insert(test->Q4.begin(), {2,3,4,5,6,7,8});
+//            test->f = 2;
+//            test->m = 9; // m should be total number of datacenters in the system
+//            test->k = 4;
 
         }
-
-        // SHAHROOZ: We need the servers participating to accomplish one protocol and number of failures we can tolerate for doing reconfiguration
-        // SHAHROOZ: We can remake the vector of all servers.
-        // test->N.push_back(dcs[0]);
-        // test->N.push_back(dcs[1]);
-        // test->N.push_back(dcs[2]);
-        // test->N.push_back(dcs[3]);
-        // test->N.push_back(dcs[4]);
-//        test->f = 0; // TODO: we need to implement failure support.
-
         placement.push_back(test);
     }
     temp +=1;
@@ -772,7 +757,7 @@ int main(){
             GroupConfig* old = find_old_configuration(master.prp, grp->grp_id[j], grp->id, old_conf_id);
 
             auto epoch = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-//            master.reconfig_p->start_reconfig(*old, old_conf_id, *curr, grp->id);
+            master.reconfig_p->start_reconfig(*old, old_conf_id, *curr, grp->id);
             auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
             std::cout << "reconfiguration latency: " << (double)(epoch2 - epoch) / 1000000. << std::endl;
 

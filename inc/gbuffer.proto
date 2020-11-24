@@ -21,13 +21,14 @@ message Datacenter{
 
 message Placement{
 	string protocol = 1;
-	repeated uint32 q1 = 2;
-	repeated uint32 q2 = 3;
-	uint32 m = 4;
-	uint32 k = 5;
-	repeated uint32 q3 = 6;
-	repeated uint32 q4 = 7;
-	uint32 f = 8;
+	repeated uint32 servers = 2;
+	repeated uint32 q1 = 3;
+	repeated uint32 q2 = 4;
+	uint32 f = 5;
+	uint32 m = 6;
+	uint32 k = 7;
+	repeated uint32 q3 = 8;
+	repeated uint32 q4 = 9;
 }
 
 message GroupConfig{

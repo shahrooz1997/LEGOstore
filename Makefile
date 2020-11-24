@@ -11,44 +11,45 @@ obj = $(patsubst src/%.cpp, obj/%.o, $(src)) #obj_t = $(src:src=obj)
 #src1 = main.o
 
 #src2 = Data_Server.o
-obj2 = $(filter-out obj/Client_driver.o obj/Controller.o obj/Metadata_Server.o,  $(obj))
-obj1 = $(filter-out obj/Server_driver.o obj/Controller.o obj/Metadata_Server.o, $(obj))
-obj3 = $(filter-out obj/Client_driver.o obj/Server_driver.o obj/Metadata_Server.o, $(obj))
-obj4 = $(filter-out obj/Client_driver.o obj/Server_driver.o obj/Controller.o, $(obj))
+obj2 = $(filter-out obj/Client_driver.o obj/Controller.o obj/Metadata_Server.o obj/gbuffer.pb.o,  $(obj))
+obj1 = $(filter-out obj/Server_driver.o obj/Controller.o obj/Metadata_Server.o obj/gbuffer.pb.o, $(obj))
+obj3 = $(filter-out obj/Client_driver.o obj/Server_driver.o obj/Metadata_Server.o obj/gbuffer.pb.o, $(obj))
+obj4 = $(filter-out obj/Client_driver.o obj/Server_driver.o obj/Controller.o obj/gbuffer.pb.o, $(obj))
 
 .PHONY: all
-all: obj Client Server Controller Metadata_Server
+all: obj client server controller metadata_Server
 
 LEGOStore: $(obj) 
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-Metadata_Server: $(obj4) 
+metadata_Server: obj Metadata_Server
+Metadata_Server: $(obj4) obj/gbuffer.pb.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 client : obj Client
-Client: $(obj1) 
+Client: $(obj1) obj/gbuffer.pb.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 server: obj Server
-Server: $(obj2) 
+Server: $(obj2) obj/gbuffer.pb.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 controller: obj Controller
-Controller: $(obj3)
+Controller: $(obj3) obj/gbuffer.pb.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-obj: 
+obj:
 	mkdir obj
 
-proto: serialize.proto
-	mv inc/serialize.pb.cc src/serialize.pb.cpp
+obj/gbuffer.pb.o: src/gbuffer.pb.cpp
+	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-serialize.proto:
-	protoc -I=inc --cpp_out=inc inc/serialize.proto
-	
+src/gbuffer.pb.cpp:
+	protoc -I=inc --cpp_out=inc inc/gbuffer.proto
+	mv inc/gbuffer.pb.cc src/gbuffer.pb.cpp
 
 # Create object files
-$(obj): obj/%.o: src/%.cpp
+obj/%.o: src/%.cpp src/gbuffer.pb.cpp
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 # For testing purposes
@@ -59,7 +60,7 @@ ABD: obj src/ABD.cpp
 cleanall: clean cleandb
 
 clean:
-	rm -rf obj Client Server Controller LEGOStore Metadata_Server
+	rm -rf obj Client Server Controller LEGOStore Metadata_Server inc/gbuffer.pb.h src/gbuffer.pb.cpp
 
 cleandb:
 	rm -rf db*.temp

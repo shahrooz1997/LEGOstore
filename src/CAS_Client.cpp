@@ -17,11 +17,9 @@
 
 using namespace std;
 
-#define assert2(x) do{fflush(stdout); assert(#x);} while(0)
-
 namespace CAS_helper{
     
-    void _send_one_server(const string operation, promise <strVec>&& prm, const  string key,
+    void _send_one_server(const string operation, promise<strVec>&& prm, const  string key,
             const Server server, const string current_class, const uint32_t conf_id, const string value = "",
             const string timestamp = ""){
         
@@ -95,21 +93,21 @@ namespace CAS_helper{
      * datacenters just have the information for servers
      */
     int failure_support_optimized(const string& operation, const string& key, const string& timestamp, const vector<string>& values, uint32_t RAs,
-                                  vector <uint32_t> quorom, unordered_set <uint32_t> servers, vector<DC*>& datacenters,
+                                  vector<uint32_t> quorom, vector<uint32_t> servers, uint32_t total_num_servers, vector<DC*>& datacenters,
                                   const string current_class, const uint32_t conf_id, uint32_t timeout_per_request, vector<strVec> &ret){
         DPRINTF(DEBUG_CAS_Client, "started.\n");
 
-        EASY_LOG_INIT_M(string("to do ") + operation + " on key " + key + " with quorum size " + to_string(quorom.size()), DEBUG_ABD_Client);
+        EASY_LOG_INIT_M(string("to do ") + operation + " on key " + key + " with quorum size " + to_string(quorom.size()), DEBUG_CAS_Client);
 
-        map <uint32_t, future<strVec> > responses; // server_id, future
-        vector<bool> done(servers.size(), false);
+        map<uint32_t, future<strVec> > responses; // server_id, future
+        vector<bool> done(total_num_servers, false);
         ret.clear();
 
         int op_status = 0;    // 0: Success, -1: timeout, -2: operation_fail(reconfiguration)
 
         RAs--;
         for(auto it = quorom.begin(); it != quorom.end(); it++){
-            promise <strVec> prm;
+            promise<strVec> prm;
             responses.emplace(*it, prm.get_future());
             thread(&_send_one_server, operation, move(prm), key, *(datacenters[*it]->servers[0]),
                         current_class, conf_id, values[*it], timestamp).detach();
@@ -170,7 +168,7 @@ namespace CAS_helper{
                 if (responses.find(*it) != responses.end()) {
                     continue;
                 }
-                promise <strVec> prm;
+                promise<strVec> prm;
                 responses.emplace(*it, prm.get_future());
                 thread(&_send_one_server, operation, move(prm), key, *(datacenters[*it]->servers[0]),
                             current_class, conf_id, values[*it], timestamp).detach();
@@ -234,39 +232,37 @@ CAS_Client::~CAS_Client(){
 
 int CAS_Client::get_timestamp(const string& key, unique_ptr<Timestamp>& timestamp_p){
 
-    DPRINTF(DEBUG_ABD_Client, "started on key %s\n", key.c_str());
+    DPRINTF(DEBUG_CAS_Client, "started on key %s\n", key.c_str());
 
-    vector <Timestamp> tss;
+    vector<Timestamp> tss;
     timestamp_p.reset();
 
     const Placement& p = parent->get_placement(key);
     int op_status = 0;    // 0: Success, -1: timeout, -2: operation_fail(reconfiguration)
-
-    unordered_set <uint32_t> servers;
-    set_intersection(p, servers);
     
     vector<strVec> ret;
     
     DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");
 #ifndef No_GET_OPTIMIZED
     if(p.Q1.size() < p.Q4.size()) {
-        op_status = CAS_helper::failure_support_optimized("get_timestamp", key, "", vector<string>(servers.size(), ""), this->retry_attempts, p.Q4,
-                                                                 servers,
+        op_status = CAS_helper::failure_support_optimized("get_timestamp", key, "", vector<string>(p.m, ""), this->retry_attempts, p.Q4,
+                                                                 p.servers, p.m,
                                                                  this->datacenters, this->current_class,
                                                                  parent->get_conf_id(key),
                                                                  this->timeout_per_request, ret);
     }
     else{
-        op_status = CAS_helper::failure_support_optimized("get_timestamp", key, "", vector<string>(servers.size(), ""), this->retry_attempts, p.Q1,
-                                                                 servers,
+        op_status = CAS_helper::failure_support_optimized("get_timestamp", key, "", vector<string>(p.m, ""), this->retry_attempts, p.Q1,
+                                                                 p.servers, p.m,
                                                                  this->datacenters, this->current_class,
                                                                  parent->get_conf_id(key),
                                                                  this->timeout_per_request, ret);
     }
 #else
-    op_status = CAS_helper::failure_support_optimized("get_timestamp", key, "", vector<string>(servers.size(), ""), this->retry_attempts, p.Q1, servers,
-                                                             this->datacenters, this->current_class, parent->get_conf_id(key),
-                                                             this->timeout_per_request, ret);
+    op_status = CAS_helper::failure_support_optimized("get_timestamp", key, "", vector<string>(p.m, ""), this->retry_attempts,
+                                                      p.Q1, p.servers, p.m,
+                                                     this->datacenters, this->current_class, parent->get_conf_id(key),
+                                                     this->timeout_per_request, ret);
 #endif
 
     DPRINTF(DEBUG_CAS_Client, "op_status: %d.\n", op_status);
@@ -322,7 +318,7 @@ int CAS_Client::get_timestamp(const string& key, unique_ptr<Timestamp>& timestam
 
 int CAS_Client::put(const string& key, const string& value){
 
-    DPRINTF(DEBUG_ABD_Client, "started on key %s\n", key.c_str());
+    DPRINTF(DEBUG_CAS_Client, "started on key %s\n", key.c_str());
 
     EASY_LOG_INIT_M(string("on key ") + key);
     
@@ -351,7 +347,7 @@ int CAS_Client::put(const string& key, const string& value){
         timestamp_tmp_p.reset();
     }
     else{
-        DPRINTF(DEBUG_ABD_Client, "get_timestamp operation failed key %s \n", key.c_str());
+        DPRINTF(DEBUG_CAS_Client, "get_timestamp operation failed key %s \n", key.c_str());
         assert(false);
     }
 
@@ -385,14 +381,13 @@ int CAS_Client::put(const string& key, const string& value){
 //    printf("%s", bbuf);
 //    fflush(stdout);
 
-    unordered_set <uint32_t> servers;
-    set_intersection(p, servers);
     vector<strVec> ret;
 
     DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");
-    op_status = CAS_helper::failure_support_optimized("put", key, timestamp_p->get_string(), chunks, this->retry_attempts, p.Q2, servers,
-                                                             this->datacenters, this->current_class, parent->get_conf_id(key),
-                                                             this->timeout_per_request, ret);
+    op_status = CAS_helper::failure_support_optimized("put", key, timestamp_p->get_string(), chunks, this->retry_attempts, p.Q2,
+                                                      p.servers, p.m,
+                                                     this->datacenters, this->current_class, parent->get_conf_id(key),
+                                                     this->timeout_per_request, ret);
 
     DPRINTF(DEBUG_CAS_Client, "op_status: %d.\n", op_status);
     if(op_status == -1) {
@@ -428,9 +423,10 @@ int CAS_Client::put(const string& key, const string& value){
     // Fin
 
     DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");
-    op_status = CAS_helper::failure_support_optimized("put_fin", key, timestamp_p->get_string(), vector<string>(servers.size(), ""), this->retry_attempts, p.Q3, servers,
-                                                             this->datacenters, this->current_class, parent->get_conf_id(key),
-                                                             this->timeout_per_request, ret);
+    op_status = CAS_helper::failure_support_optimized("put_fin", key, timestamp_p->get_string(), vector<string>(p.m, ""),
+                                                        this->retry_attempts, p.Q3, p.servers, p.m,
+                                                        this->datacenters, this->current_class, parent->get_conf_id(key),
+                                                        this->timeout_per_request, ret);
 
     DPRINTF(DEBUG_CAS_Client, "op_status: %d.\n", op_status);
     if(op_status == -1) {
@@ -469,7 +465,7 @@ int CAS_Client::put(const string& key, const string& value){
 
 int CAS_Client::get(const string& key, string& value){
 
-    DPRINTF(DEBUG_ABD_Client, "started on key %s\n", key.c_str());
+    DPRINTF(DEBUG_CAS_Client, "started on key %s\n", key.c_str());
 
     EASY_LOG_INIT_M(string("on key ") + key);
 
@@ -513,13 +509,12 @@ int CAS_Client::get(const string& key, string& value){
 #endif
     
     // writeback
-    unordered_set <uint32_t> servers;
-    set_intersection(p, servers);
     vector<strVec> ret;
     vector<string> chunks;
 
-    op_status = CAS_helper::failure_support_optimized("get", key, timestamp_p->get_string(), vector<string>(servers.size(), ""), this->retry_attempts, p.Q4,
-                                                             servers, this->datacenters, this->current_class,
+    op_status = CAS_helper::failure_support_optimized("get", key, timestamp_p->get_string(), vector<string>(p.m, ""),
+                                                             this->retry_attempts, p.Q4,
+                                                             p.servers, p.m, this->datacenters, this->current_class,
                                                              parent->get_conf_id(key),
                                                              this->timeout_per_request, ret);
 

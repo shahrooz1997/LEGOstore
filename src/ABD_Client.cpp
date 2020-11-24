@@ -15,6 +15,8 @@
 #include "Client_Node.h"
 #include "../inc/ABD_Client.h"
 
+using namespace std;
+
 namespace ABD_helper{
     inline uint32_t number_of_received_responses(std::vector<bool>& done){
         int ret = 0;
@@ -27,23 +29,27 @@ namespace ABD_helper{
     }
 
     void _send_one_server(const std::string operation, std::promise <strVec>&& prm, const std::string key,
-                          const Server* server, const std::string current_class, const uint32_t conf_id, const std::string value = "",
+                          const Server server, const std::string current_class, const uint32_t conf_id, const std::string value = "",
                           const std::string timestamp = ""){
 
         DPRINTF(DEBUG_ABD_Client, "started.\n");
 
+        EASY_LOG_INIT_M(std::string("to do ") + operation + " on key " + key + " with conf_id " + std::to_string(conf_id), DEBUG_ABD_Client);
+
         strVec data;
-        Connect c(server->ip, server->port);
+        Connect c(server.ip, server.port);
         if(!c.is_connected()){
             prm.set_value(std::move(data));
             return;
         }
 
+        EASY_LOG_M(std::string("Connected to ") + server.ip + ":" + std::to_string(server.port));
+
         data.push_back(operation); // get_timestamp, put, get
         data.push_back(key);
         if(operation == "put"){
             if(value.empty()){
-                DPRINTF(DEBUG_CAS_Client, "WARNING!!! SENDING EMPTY STRING TO SERVER.\n");
+                DPRINTF(DEBUG_ABD_Client, "WARNING!!! SENDING EMPTY STRING TO SERVER.\n");
             }
             data.push_back(timestamp);
             data.push_back(value);
@@ -63,18 +69,22 @@ namespace ABD_helper{
 
         DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
 
+        EASY_LOG_M("request sent");
+
         data.clear();
         std::string recvd;
         if(DataTransfer::recvMsg(*c, recvd) == 1){
             data = DataTransfer::deserialize(recvd);
+            EASY_LOG_M(std::string("response received with status: ") + data[0]);
             prm.set_value(std::move(data));
         }
         else{
             data.clear();
+            EASY_LOG_M("response failed");
             prm.set_value(std::move(data));
         }
 
-        DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %u\n", server->port);
+        DPRINTF(DEBUG_ABD_Client, "finished successfully. with port: %u\n", server.port);
         return;
     }
 
@@ -84,9 +94,9 @@ namespace ABD_helper{
     int failure_support_optimized(const std::string& operation, const std::string& key, const std::string& timestamp, const std::string& value, uint32_t RAs,
                                   std::vector <uint32_t> quorom, std::unordered_set <uint32_t> servers, std::vector<DC*>& datacenters,
                                   const std::string current_class, const uint32_t conf_id, uint32_t timeout_per_request, std::vector<strVec> &ret){
-        DPRINTF(DEBUG_CAS_Client, "started.\n");
+        DPRINTF(DEBUG_ABD_Client, "started.\n");
 
-        EASY_LOG_INIT_M(std::string("to do ") + operation + " on key " + key + " with quorum size " + std::to_string(quorom.size()), false);
+        EASY_LOG_INIT_M(std::string("to do ") + operation + " on key " + key + " with quorum size " + std::to_string(quorom.size()), DEBUG_ABD_Client);
 
         std::map <uint32_t, std::future<strVec> > responses; // server_id, future
         std::vector<bool> done(servers.size(), false);
@@ -98,7 +108,7 @@ namespace ABD_helper{
         for(auto it = quorom.begin(); it != quorom.end(); it++){
             std::promise <strVec> prm;
             responses.emplace(*it, prm.get_future());
-            std::thread(&_send_one_server, operation, std::move(prm), key, datacenters[*it]->servers[0],
+            std::thread(&_send_one_server, operation, std::move(prm), key, *(datacenters[*it]->servers[0]),
                         current_class, conf_id, value, timestamp).detach();
         }
 
@@ -112,7 +122,7 @@ namespace ABD_helper{
                 it++;
                 if(it == responses.end())
                     it = responses.begin();
-//                DPRINTF(DEBUG_CAS_Client, "one done skipped.\n");
+//                DPRINTF(DEBUG_ABD_Client, "one done skipped.\n");
                 continue;
             }
 
@@ -121,7 +131,7 @@ namespace ABD_helper{
                 if(data.size() != 0){
                     ret.push_back(data);
                     done[it->first] = true;
-                    DPRINTF(DEBUG_CAS_Client, "one done.\n");
+                    DPRINTF(DEBUG_ABD_Client, "one done.\n");
                     if(number_of_received_responses(done) == quorom.size()){
                         op_status = 0;
                         break;
@@ -146,7 +156,7 @@ namespace ABD_helper{
             continue;
         }
 
-        DPRINTF(DEBUG_CAS_Client, "op_status %d\n", op_status);
+        DPRINTF(DEBUG_ABD_Client, "op_status %d\n", op_status);
 
         while(op_status == -1 && RAs--) { // Todo: RAs cannot be more than 2 with this implementation
             EASY_LOG_M("at least one request failed. Try again...");
@@ -157,7 +167,7 @@ namespace ABD_helper{
                 }
                 std::promise <strVec> prm;
                 responses.emplace(*it, prm.get_future());
-                std::thread(&_send_one_server, operation, std::move(prm), key, datacenters[*it]->servers[0],
+                std::thread(&_send_one_server, operation, std::move(prm), key, *(datacenters[*it]->servers[0]),
                              current_class, conf_id, value, timestamp).detach();
             }
             EASY_LOG_M(std::string("requests were sent to all servers. Number of servers: ") + std::to_string(servers.size()));
@@ -204,13 +214,12 @@ namespace ABD_helper{
     }
 }
 
-ABD_Client::ABD_Client(uint32_t id, uint32_t local_datacenter_id, uint32_t retry_attempts,
-        uint32_t metadata_server_timeout, uint32_t timeout_per_request, std::vector<DC*>& datacenters,
-        Client_Node* parent) : Client(id, local_datacenter_id, retry_attempts, metadata_server_timeout,
-        timeout_per_request, datacenters){
+ABD_Client::ABD_Client(uint32_t id, uint32_t local_datacenter_id, uint32_t retry_attempts, uint32_t metadata_server_timeout,
+                       uint32_t timeout_per_request, std::vector<DC*>& datacenters, Client_Node* parent) :
+                        Client(id, local_datacenter_id, retry_attempts, metadata_server_timeout,
+        timeout_per_request, datacenters), parent(parent){
 
     assert(parent != nullptr);
-    this->parent = parent;
     this->current_class = ABD_PROTOCOL_NAME;
 }
 
@@ -219,16 +228,16 @@ ABD_Client::~ABD_Client(){
 }
 
 // get timestamp for write operation
-int ABD_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
+int ABD_Client::get_timestamp(const std::string& key, std::unique_ptr<Timestamp>& timestamp_p){
 
     DPRINTF(DEBUG_ABD_Client, "started on key %s\n", key.c_str());
 
-    std::vector <Timestamp> tss;
-    timestamp = nullptr;
+    std::vector<Timestamp> tss;
+    timestamp_p.reset();
 
     int le_counter = 0;
     uint64_t le_init = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-    DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+    DPRINTF(DEBUG_ABD_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
 
     const Placement& p = parent->get_placement(key);
     int op_status = 0;    // 0: Success, -1: timeout, -2: operation_fail(reconfiguration)
@@ -251,15 +260,13 @@ int ABD_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
     for(auto it = ret.begin(); it != ret.end(); it++) {
         if((*it)[0] == "OK"){
             tss.emplace_back((*it)[1]);
-
-            // Todo: make sure that the statement below is ture!
-            op_status = 0;   // For get_timestamp, even if one response Received operation is success
+            op_status = 0;   // For get_timestamp, even one OK response suffices.
         }
         else if((*it)[0] == "operation_fail"){
             DPRINTF(DEBUG_ABD_Client, "operation_fail received for key : %s\n", key.c_str());
-            parent->get_placement(key, true, stoul((*it)[1]));
+            parent->get_placement(key, true, (*it)[1]);
             op_status = -2; // reconfiguration happened on the key
-            timestamp = nullptr;
+            timestamp_p.reset();
             return S_RECFG;
         }
         else{
@@ -268,18 +275,19 @@ int ABD_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
     }
 
     if(op_status == 0){
-        timestamp = new Timestamp(Timestamp::max_timestamp2(tss));
+        timestamp_p.reset(new Timestamp(Timestamp::max_timestamp2(tss)));
         
         DPRINTF(DEBUG_ABD_Client, "finished successfully. Max timestamp received is %s\n",
-                (timestamp)->get_string().c_str());
+                timestamp_p->get_string().c_str());
     }
     else{
-        DPRINTF(DEBUG_CAS_Client, "Operation Failed. op_status is %d\n", op_status);
+        DPRINTF(DEBUG_ABD_Client, "Operation Failed. op_status is %d\n", op_status);
+        timestamp_p.reset();
         assert(false);
         return S_FAIL;
     }
 
-    DPRINTF(DEBUG_CAS_Client, "end latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+    DPRINTF(DEBUG_ABD_Client, "end latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
     
     return op_status;
 }
@@ -292,27 +300,25 @@ int ABD_Client::put(const std::string& key, const std::string& value){
 
     int le_counter = 0;
     uint64_t le_init = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-    DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+    DPRINTF(DEBUG_ABD_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
 
     const Placement& p = parent->get_placement(key);
     EASY_LOG_M("placement received. trying to get timestamp...");
     int op_status = 0;    // 0: Success, -1: timeout, -2: operation_fail(reconfiguration)
 
     // Get the timestamp
-    Timestamp* timestamp = nullptr;
-    Timestamp* tmp = nullptr;
+    unique_ptr<Timestamp> timestamp_p;
+    unique_ptr<Timestamp> timestamp_tmp_p;
     int status = S_OK;
-    status = this->get_timestamp(key, tmp);
-    if(tmp != nullptr){
-        timestamp = new Timestamp(tmp->increase_timestamp(this->id));
-        delete tmp;
-        tmp = nullptr;
+    status = this->get_timestamp(key, timestamp_tmp_p);
+    if(status == S_RECFG){
+        return parent->put(key, value);
     }
-    if(timestamp == nullptr){
-        if(status == S_RECFG){
-            op_status = -2;
-            return parent->put(key, value);
-        }
+    if(timestamp_tmp_p){
+        timestamp_p.reset(new Timestamp(timestamp_tmp_p->increase_timestamp(this->id)));
+        timestamp_tmp_p.reset();
+    }
+    else{
         DPRINTF(DEBUG_ABD_Client, "get_timestamp operation failed key %s \n", key.c_str());
         assert(false);
     }
@@ -325,7 +331,7 @@ int ABD_Client::put(const std::string& key, const std::string& value){
     std::vector<strVec> ret;
 
     DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
-    op_status = ABD_helper::failure_support_optimized("put", key, timestamp->get_string(), value, this->retry_attempts, p.Q2, servers,
+    op_status = ABD_helper::failure_support_optimized("put", key, timestamp_p->get_string(), value, this->retry_attempts, p.Q2, servers,
                                                              this->datacenters, this->current_class, parent->get_conf_id(key),
                                                              this->timeout_per_request, ret);
 
@@ -340,41 +346,28 @@ int ABD_Client::put(const std::string& key, const std::string& value){
             DPRINTF(DEBUG_ABD_Client, "OK received for key : %s\n", key.c_str());
         }
         else if((*it)[0] == "operation_fail"){
-            if(timestamp != nullptr){
-                delete timestamp;
-                timestamp = nullptr;
-            }
             DPRINTF(DEBUG_ABD_Client, "operation_fail received for key : %s\n", key.c_str());
-            parent->get_placement(key, true, stoul((*it)[1]));
-//            assert(p != nullptr);
-            op_status = -2; // reconfiguration happened on the key
+            parent->get_placement(key, true, (*it)[1]);
+//            op_status = -2; // reconfiguration happened on the key
 //            return S_RECFG;
             return parent->put(key, value);
         }
         else{
             DPRINTF(DEBUG_ABD_Client, "Bad message received from server for key : %s\n", key.c_str());
-            if(timestamp != nullptr){
-                delete timestamp;
-                timestamp = nullptr;
-            }
             return -3; // Bad message received from server
         }
     }
 
-    DPRINTF(DEBUG_CAS_Client, "put latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+    DPRINTF(DEBUG_ABD_Client, "put latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
 
     if(op_status != 0){
         DPRINTF(DEBUG_ABD_Client, "pre_write could not succeed\n");
-        if(timestamp != nullptr){
-            delete timestamp;
-            timestamp = nullptr;
-        }
         return -4; // pre_write could not succeed.
     }
 
     EASY_LOG_M("phase 2 done.");
 
-    DPRINTF(DEBUG_CAS_Client, "fin latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+    DPRINTF(DEBUG_ABD_Client, "fin latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
     return op_status;
 }
 
@@ -386,7 +379,7 @@ int ABD_Client::get(const std::string& key, std::string& value){
 
     int le_counter = 0;
     uint64_t le_init = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-    DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+    DPRINTF(DEBUG_ABD_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
     
     value.clear();
     
@@ -394,8 +387,8 @@ int ABD_Client::get(const std::string& key, std::string& value){
     EASY_LOG_M("placement received. trying to do phase 1...");
     int op_status = 0;    // 0: Success, -1: timeout, -2: operation_fail(reconfiguration)
 
-    std::vector <Timestamp> tss;
-    std::vector <std::string> vs;
+    std::vector<Timestamp> tss;
+    std::vector<std::string> vs;
     uint32_t idx = -1;
     std::unordered_set <uint32_t> servers;
     set_intersection(p, servers);
@@ -432,24 +425,18 @@ int ABD_Client::get(const std::string& key, std::string& value){
         if((*it)[0] == "OK"){
             tss.emplace_back((*it)[1]);
             vs.emplace_back((*it)[2]);
-
-            // Todo: make sure that the statement below is ture!
             op_status = 0;   // For get_timestamp, even if one response Received operation is success
         }
         else if((*it)[0] == "operation_fail"){
             DPRINTF(DEBUG_ABD_Client, "operation_fail received for key : %s\n", key.c_str());
-            parent->get_placement(key, true, stoul((*it)[1]));
-            op_status = -2; // reconfiguration happened on the key
+            parent->get_placement(key, true, (*it)[1]);
+//            op_status = -2; // reconfiguration happened on the key
 //            return S_RECFG;
             return parent->get(key, value);
-            //break;
         }
         else{
             assert(false);
         }
-        //else : The server returned "Failed", that means the entry was not found
-        // We ignore the response in that case.
-        // The servers can return Failed for timestamp, which is acceptable
     }
     
     if(op_status == 0){
@@ -463,7 +450,7 @@ int ABD_Client::get(const std::string& key, std::string& value){
 
     EASY_LOG_M("phase 1 done. Trying to do phase 2...");
 
-    DPRINTF(DEBUG_CAS_Client, "phase 1 fin, put latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
+    DPRINTF(DEBUG_ABD_Client, "phase 1 fin, put latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
 
 #ifndef No_GET_OPTIMIZED
     // Check if Q2 responses has the max timestamp
@@ -472,20 +459,15 @@ int ABD_Client::get(const std::string& key, std::string& value){
         if(tss[i] == tss[idx])
             resp_counter++;
     }
-
     if(resp_counter >= p.Q2.size()){
-
         if(vs[idx] == "init"){
             value = "__Uninitiliazed";
         }
         else{
             value = vs[idx];
         }
-
         EASY_LOG_M("GET_OPTIMIZED: no need to do phase 2. Done.");
-
-        DPRINTF(DEBUG_CAS_Client, "get does not need to put. end latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
-
+        DPRINTF(DEBUG_ABD_Client, "get does not need to put. end latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
         return op_status;
     }
 #endif
@@ -507,9 +489,8 @@ int ABD_Client::get(const std::string& key, std::string& value){
         }
         else if((*it)[0] == "operation_fail"){
             DPRINTF(DEBUG_ABD_Client, "operation_fail received for key : %s\n", key.c_str());
-            parent->get_placement(key, true, stoul((*it)[1]));
-//            assert(p != nullptr);
-            op_status = -2; // reconfiguration happened on the key
+            parent->get_placement(key, true, (*it)[1]);
+//            op_status = -2; // reconfiguration happened on the key
 //            return S_RECFG;
             return parent->get(key, value);
         }
@@ -518,12 +499,11 @@ int ABD_Client::get(const std::string& key, std::string& value){
             return -3; // Bad message received from server
         }
     }
-
     if(op_status != 0){
         DPRINTF(DEBUG_ABD_Client, "pre_write could not succeed\n");
         return -4; // pre_write could not succeed.
     }
-    
+
     if(vs[idx] == "init"){
         value = "__Uninitiliazed";
     }
@@ -532,9 +512,7 @@ int ABD_Client::get(const std::string& key, std::string& value){
     }
 
     EASY_LOG_M("phase 2 done.");
-
-    DPRINTF(DEBUG_CAS_Client, "end latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
-    
+    DPRINTF(DEBUG_ABD_Client, "end latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
     return op_status;
 }
 

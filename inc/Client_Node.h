@@ -29,6 +29,7 @@ public:
     
     // There must be something on the metadata server with conf_id zero for initialization
     const Placement& get_placement(const std::string& key, const bool force_update = false, const uint32_t conf_id = 0);
+    const Placement& get_placement(const std::string& key, const bool force_update, const std::string& conf_id);
     const uint32_t& get_conf_id(const std::string& key);
     
     // getters

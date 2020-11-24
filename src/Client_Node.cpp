@@ -120,6 +120,10 @@ const Placement& Client_Node::get_placement(const std::string& key, const bool f
     
 }
 
+const Placement& Client_Node::get_placement(const std::string& key, const bool force_update, const std::string& conf_id){
+    return this->get_placement(key, force_update, stoul(conf_id));
+}
+
 const uint32_t& Client_Node::get_conf_id(const std::string& key){
     auto it = this->keys_info.find(key);
     if(it != this->keys_info.end()){

@@ -131,7 +131,6 @@ struct Server{
     DC* datacenter;
     
     Server();
-    
     Server(const Server& orig);
 };
 
@@ -151,21 +150,16 @@ typedef struct Datacenter{
 
 struct Placement{ // For ABD, you can use just the first portion of this struct.
     std::string protocol;
+    std::vector <uint32_t> servers;
     std::vector <uint32_t> Q1;
     std::vector <uint32_t> Q2;
+    uint32_t f; // The number of failures this placement can tolerate.
     uint32_t m; // Total number of servers
     uint32_t k; // The number of chunks necessary for decoding data
     std::vector <uint32_t> Q3;
     std::vector <uint32_t> Q4;
-//    std::vector<DC*>        N; // The whole servers participating in this placement.
-    uint32_t f; // The number of failures this placement can tolerate.
     
     Placement();
-//    Placement(const std::string &in);
-//    Placement(const std::string &in, uint32_t &cc);
-
-//    std::string get_string();
-    
 };
 
 

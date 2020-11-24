@@ -26,6 +26,8 @@
 #include <regex>
 #include "Util.h"
 
+// Todo: get rid of this class and use all its attributes in the Client_Node class
+
 class Client{
 public:
     Client(uint32_t id, uint32_t local_datacenter_id, uint32_t retry_attempts, uint32_t metadata_server_timeout,

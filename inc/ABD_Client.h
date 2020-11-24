@@ -34,8 +34,7 @@ public:
 private:
     Client_Node* parent;
     
-    int get_timestamp(const std::string& key, Timestamp*& timestamp);
-
+    int get_timestamp(const std::string& key, std::unique_ptr<Timestamp>& timestamp_p);
 };
 
 #endif /* ABDCLIENT_H */

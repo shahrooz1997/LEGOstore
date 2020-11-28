@@ -2,9 +2,9 @@
 
 import os, sys, time, json
 
-availability_targets = [0, 1, 2]
+# availability_targets = [0, 1, 2]
 
-# availability_targets = [0]
+availability_targets = [sys.argv[1]]
 
 client_dists = {
     "uniform": [1/9 for _ in range(9)],

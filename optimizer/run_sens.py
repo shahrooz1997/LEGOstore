@@ -23,7 +23,8 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    directory = "Sense/"
+    # directory = "Sense/"
+    directory = "../../data/Sense/"
 
     for f in availability_targets:
         availability_target = f

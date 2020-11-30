@@ -3,7 +3,7 @@
 import json
 import os, sys, time
 
-availability_targets = [2]
+availability_targets = [sys.argv[1]]
 
 client_dists = {
     "uniform": [1/9 for _ in range(9)],
@@ -58,16 +58,16 @@ if __name__ == "__main__":
     # file_name = "/home/shahrooz/Desktop/PSU/Research/data/Sense/f=2/uniform/res_uniform_HR_arrival_rate.json" # = 'res_{}_{}_{}.json'
     # result_path = "../../data/Sense/"
 
-    if len(sys.argv) == 2:
-        result_path = "Sense/"
-    else:
-        result_path = "../../data/Sense/"
+    # if len(sys.argv) == 3:
+    #     result_path = "Sense/"
+    # else:
+    result_path = "../../data/Sense/"
 
     for f in availability_targets:
         for m in metrics:
             for cd in client_dists:
                 for rr in read_ratios:
-                    if len(sys.argv) == 2:
+                    if len(sys.argv) == 3:
                         file_name = result_path + "f={0}/{1}/res_baseline_{1}_{2}_{3}.json".format(f, cd, rr, m)
                     else:
                         file_name = result_path + "f={0}/{1}/res_{1}_{2}_{3}.json".format(f, cd, rr, m)

@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import matplotlib.pyplot as plt
+from matplotlib.pyplot import figure
 import json
 import os, sys, time, shutil
 
@@ -25,12 +26,17 @@ if __name__ == "__main__":
     result_path = "../../data/Sense/"
 
     for f in availability_targets:
+        y = []
+        x = []
+        x_ticks = []
+        x_count = 0;
         for cd in client_dists:
             file_path = result_path + "f={0}/{1}/".format(f, cd)
-            shutil.rmtree(file_path + "graphs", ignore_errors=True)
-            os.mkdir(file_path + "graphs")
+            # shutil.rmtree(file_path + "graphs", ignore_errors=True)
+            # os.mkdir(file_path + "graphs")
             for m in metrics:
                 for rr in read_ratios:
+                    file_name_baseline = "res_baseline_{1}_{2}_{3}.json".format(f, cd, rr, m)
                     file_name = "res_{1}_{2}_{3}.json".format(f, cd, rr, m)
 
                     print("plotting ", file_path + file_name, "...")
@@ -38,33 +44,51 @@ if __name__ == "__main__":
                     network_costs = []
                     _data = json.load(open(file_path + file_name, "r"))["output"]
                     for ele in _data:
-                        get_cost = float(ele["get_cost"])
-                        put_cost = float(ele["put_cost"])
-                        network_costs.append(get_cost + put_cost)
+                        # get_cost = float(ele["get_cost"])
+                        # put_cost = float(ele["put_cost"])
+                        # network_costs.append(get_cost + put_cost)
                         total_costs.append(ele["total_cost"])
 
-                    if m == "arrival_rate":
-                        granularity = 50
-                        start = 200
-                        end = 1000
-                    elif m == "object_count":
-                        granularity = 10000
-                        start = 1
-                        end = 1000000
-                    else:
-                        granularity = 1000
-                        start = 1
-                        end = 100000
+                    total_costs_baseline = []
+                    _data = json.load(open(file_path + file_name_baseline, "r"))["output"]
+                    for ele in _data:
+                        # get_cost = float(ele["get_cost"])
+                        # put_cost = float(ele["put_cost"])
+                        # network_costs.append(get_cost + put_cost)
+                        total_costs_baseline.append(ele["total_cost"])
 
-                    x_axis = list(range(start, end, granularity))
-                    print(len(x_axis), len(total_costs))
-                    plt.scatter(x_axis, total_costs)
-                    plt.ylabel(m)
-                    print("saving ", file_path + file_name, "...")
-                    plt.savefig(file_path + "graphs/" +
-                                file_name + ".png")
-                    plt.clf()
-                    print("cleared figure and move to next...")
+                    y.append(sum(total_costs) / sum(total_costs_baseline) * 100)
+                    x_ticks.append("{1}_{2}_{3}".format(f, cd, rr, m))
+                    x.append(x_count)
+                    x_count += 1
+
+
+                    # x_axis = list(range(start, end, granularity))
+                    # print(len(x_axis), len(total_costs))
+                    # plt.scatter(x_axis, total_costs)
+                    # plt.ylabel(m)
+                    # print("saving ", file_path + file_name, "...")
+                    # plt.savefig(file_path + "graphs/" +
+                    #             file_name + ".png")
+                    # plt.clf()
+                    # print("cleared figure and move to next...")
+
+        file_path_norm = result_path + "f={0}/".format(f)
+        shutil.rmtree(file_path_norm + "graphs", ignore_errors=True)
+        os.mkdir(file_path_norm + "graphs")
+        fig = plt.figure(figsize=(20, 14))
+
+        plt.xticks(x, x_ticks, rotation=90)
+        plt.ylabel("Normalized percentage")
+        for index, _ in enumerate(x):
+            plt.text(index-.4, y[index], "{:.2f}".format(y[index]))
+
+        plt.bar(x, y)
+        # plt.show()
+        # plt.savefig(file_path_norm + "graphs/" + "Normalized costs" + ".png")
+        fig.tight_layout()
+        fig.savefig(file_path_norm + "graphs/" + "Normalized costs" + ".png")
+        plt.clf()
 
     # FILE_FORMAT = 'res_{}_{}_{}.json'
     # cli_distrib = ['uniform']

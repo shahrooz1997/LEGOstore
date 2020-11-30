@@ -41,8 +41,12 @@ if __name__ == "__main__":
 
                 for metric in metrics:
                     FILE_NAME = FILES_PATH_DIST + FILE_NAME_TEMP + metric + ".json"
-                    RES_FILE_NAME = FILES_PATH_DIST + "res_" + FILE_NAME_TEMP + metric + ".json"
-                    COMMAND = "python3 placement.py -f tests/inputtests/dc_gcp.json -i " + FILE_NAME + " -o " + RES_FILE_NAME + " -H min_cost -v"
+                    if len(sys.argv) == 3: # Baseline
+                        RES_FILE_NAME = FILES_PATH_DIST + "res_baseline_" + FILE_NAME_TEMP + metric + ".json"
+                        COMMAND = "python3 placement.py -f tests/inputtests/dc_gcp.json -i " + FILE_NAME + " -o " + RES_FILE_NAME + " -H min_cost -b -t abd -m 5 -v"
+                    else:
+                        RES_FILE_NAME = FILES_PATH_DIST + "res_" + FILE_NAME_TEMP + metric + ".json"
+                        COMMAND = "python3 placement.py -f tests/inputtests/dc_gcp.json -i " + FILE_NAME + " -o " + RES_FILE_NAME + " -H min_cost -v"
                     print("running", FILE_NAME, "...")
                     os.system(COMMAND)
                     print("finishehd", FILE_NAME, "...")

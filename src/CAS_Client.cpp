@@ -318,8 +318,10 @@ int CAS_Client::get_timestamp(const string& key, unique_ptr<Timestamp>& timestam
 int CAS_Client::put(const string& key, const string& value){
 
     DPRINTF(DEBUG_CAS_Client, "started on key %s\n", key.c_str());
-
     EASY_LOG_INIT_M(string("on key ") + key);
+
+    Key_gaurd(this, key);
+    EASY_LOG_M("lock for the key granted");
     
     int le_counter = 0;
     uint64_t le_init = time_point_cast<chrono::milliseconds>(chrono::system_clock::now()).time_since_epoch().count();
@@ -467,6 +469,9 @@ int CAS_Client::get(const string& key, string& value){
     DPRINTF(DEBUG_CAS_Client, "started on key %s\n", key.c_str());
 
     EASY_LOG_INIT_M(string("on key ") + key);
+
+    Key_gaurd(this, key);
+    EASY_LOG_M("lock for the key granted");
 
     static map<string, string> cache_optimized_get; // key!timestamp -> value
     

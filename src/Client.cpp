@@ -60,3 +60,36 @@ const std::string& Client::get_metadata_server_ip() const{
 const std::string& Client::get_metadata_server_port() const{
     return metadata_server_port;
 }
+
+void Client::check_and_add_ongoing_keys(const std::string& key){
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
+    std::unique_lock<std::mutex> lock(this->ongoing_keys_lock);
+
+    while(find(this->ongoing_keys.begin(), this->ongoing_keys.end(), key) != this->ongoing_keys.end()){
+        this->ongoing_keys_cv.wait(lock);
+    }
+
+    this->ongoing_keys.push_back(key);
+
+    return;
+}
+
+void Client::remove_ongoing_keys(const std::string& key){
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
+    std::unique_lock<std::mutex> lock(this->ongoing_keys_lock);
+
+    auto it = find(this->ongoing_keys.begin(), this->ongoing_keys.end(), key);
+    assert(it != this->ongoing_keys.end());
+
+    this->ongoing_keys.erase(it);
+    this->ongoing_keys_cv.notify_all();
+    return;
+}
+
+Key_gaurd::Key_gaurd(Client* client_p, const std::string& key) : client_p(client_p), key(key){
+    client_p->check_and_add_ongoing_keys(key);
+}
+
+Key_gaurd::~Key_gaurd(){
+    client_p->remove_ongoing_keys(key);
+}

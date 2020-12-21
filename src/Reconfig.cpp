@@ -348,12 +348,17 @@ int Reconfig::reconfig(GroupConfig& old_config, uint32_t old_conf_id, GroupConfi
         unique_ptr<Timestamp> ret_ts;
         string ret_v;
         assert(Reconfig::send_reconfig_query(old_config, old_conf_id, key, ret_ts, ret_v) == 0);
+        EASY_LOG_M("send_reconfig_query done");
         if(old_config.placement_p->protocol == CAS_PROTOCOL_NAME){
             assert(Reconfig::send_reconfig_finalize(old_config, old_conf_id, key, ret_ts, ret_v) == 0);
         }
+        EASY_LOG_M("send_reconfig_query done ret_ts: " + ret_ts->get_string() + ", ret_v: " + ret_v);
         assert(Reconfig::send_reconfig_write(new_config, new_conf_id, key, ret_ts, ret_v) == 0);
+        EASY_LOG_M("send_reconfig_write done");
         assert(update_metadata_info(key, old_conf_id, new_conf_id, ret_ts->get_string(), *new_config.placement_p) == 0);
+        EASY_LOG_M("update_metadata_info done");
         assert(Reconfig::send_reconfig_finish(old_config, old_conf_id, new_conf_id, key, ret_ts) == 0);
+        EASY_LOG_M("send_reconfig_finish done");
     }
     return S_OK;
 }

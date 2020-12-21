@@ -293,6 +293,9 @@ int ABD_Client::put(const string& key, const string& value){
 
     EASY_LOG_INIT_M(string("on key ") + key);
 
+    Key_gaurd(this, key);
+    EASY_LOG_M("lock for the key granted");
+
     int le_counter = 0;
     uint64_t le_init = time_point_cast<chrono::milliseconds>(chrono::system_clock::now()).time_since_epoch().count();
     DPRINTF(DEBUG_ABD_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<chrono::milliseconds>(chrono::system_clock::now()).time_since_epoch().count() - le_init);
@@ -369,6 +372,9 @@ int ABD_Client::get(const string& key, string& value){
     DPRINTF(DEBUG_ABD_Client, "started on key %s\n", key.c_str());
 
     EASY_LOG_INIT_M(string("on key ") + key);
+
+    Key_gaurd(this, key);
+    EASY_LOG_M("lock for the key granted");
 
     int le_counter = 0;
     uint64_t le_init = time_point_cast<chrono::milliseconds>(chrono::system_clock::now()).time_since_epoch().count();

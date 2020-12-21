@@ -169,7 +169,6 @@ def min_cost_abd(datacenters, group, params):
     dc_ids = [int(dc.id) for dc in datacenters]
     mincost = 99999999999
     min_get_cost = 0
-    min_get_cost = 0
     min_put_cost = 0
     read_lat = 0
     write_lat = 0

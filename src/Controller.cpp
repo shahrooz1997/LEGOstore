@@ -26,27 +26,27 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
         if(temp){
 
             //CAS
-//            test->protocol = CAS_PROTOCOL_NAME;
-//            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6,7,8}); // All the servers participating in this placement
-//            test->Q1.insert(test->Q1.begin(), {0,1,2,3,4});
-//            test->Q2.insert(test->Q2.begin(), {0,1,2,3,4,5});
-//            test->Q3.insert(test->Q3.begin(), {4,5,6,7,8});
-//            test->Q4.insert(test->Q4.begin(), {2,3,4,5,6,7,8});
-//            test->f = 2;
-//            test->m = 9; // m should be total number of datacenters in the system
-//            test->k = 4;
+            test->protocol = CAS_PROTOCOL_NAME;
+            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6,7,8}); // All the servers participating in this placement
+            test->Q1.insert(test->Q1.begin(), {0,1,2,3,4});
+            test->Q2.insert(test->Q2.begin(), {0,1,2,3,4,5});
+            test->Q3.insert(test->Q3.begin(), {4,5,6,7,8});
+            test->Q4.insert(test->Q4.begin(), {2,3,4,5,6,7,8});
+            test->f = 2;
+            test->m = 9; // m should be total number of datacenters in the system
+            test->k = 4;
 
 
             // ABD HARD NO F
-            test->protocol = ABD_PROTOCOL_NAME;
-            test->servers.insert(test->servers.begin(), {0,1,2,3,4}); // All the servers participating in this placement
-            test->Q1.insert(test->Q1.begin(), {2,3,4});
-            test->Q2.insert(test->Q2.begin(), {0,1,2});
-            test->Q3.clear();
-            test->Q4.clear();
-            test->f = 0;
-            test->m = 9; // m should be total number of datacenters in the system
-            test->k = 0; // k should be zero for ABD
+//            test->protocol = ABD_PROTOCOL_NAME;
+//            test->servers.insert(test->servers.begin(), {0,1,2,3,4}); // All the servers participating in this placement
+//            test->Q1.insert(test->Q1.begin(), {2,3,4});
+//            test->Q2.insert(test->Q2.begin(), {0,1,2});
+//            test->Q3.clear();
+//            test->Q4.clear();
+//            test->f = 0;
+//            test->m = 9; // m should be total number of datacenters in the system
+//            test->k = 0; // k should be zero for ABD
         }
         else{
 
@@ -86,27 +86,27 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
 //            test->k = 0; // k should be zero for ABD
 
             //ABD2 failure 2
-            test->protocol = ABD_PROTOCOL_NAME;
-            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6,7,8}); // All the servers participating in this placement
-            test->Q1.insert(test->Q1.begin(), {0,1,2,3,4});
-            test->Q2.insert(test->Q2.begin(), {4,5,6,7,8});
-            test->Q3.clear();
-            test->Q4.clear();
-            test->f = 2;
-            test->m = 9; // m should be total number of datacenters in the system
-            test->k = 0; // k should be zero for ABD
+//            test->protocol = ABD_PROTOCOL_NAME;
+//            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6,7,8}); // All the servers participating in this placement
+//            test->Q1.insert(test->Q1.begin(), {0,1,2,3,4});
+//            test->Q2.insert(test->Q2.begin(), {4,5,6,7,8});
+//            test->Q3.clear();
+//            test->Q4.clear();
+//            test->f = 2;
+//            test->m = 9; // m should be total number of datacenters in the system
+//            test->k = 0; // k should be zero for ABD
 
             // Failures
             //CAS
-//            test->protocol = CAS_PROTOCOL_NAME;
-//            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6}); // All the servers participating in this placement
-//            test->Q1.insert(test->Q1.begin(), {0,1,2,3,4});
-//            test->Q2.insert(test->Q2.begin(), {0,1,2,3,4,5});
-//            test->Q3.insert(test->Q3.begin(), {4,5,6});
-//            test->Q4.insert(test->Q4.begin(), {2,3,4,5,6});
-//            test->f = 1;
-//            test->m = 9; // m should be total number of datacenters in the system
-//            test->k = 4;
+            test->protocol = CAS_PROTOCOL_NAME;
+            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6}); // All the servers participating in this placement
+            test->Q1.insert(test->Q1.begin(), {0,1,2,3,4});
+            test->Q2.insert(test->Q2.begin(), {0,1,2,3,4,5});
+            test->Q3.insert(test->Q3.begin(), {4,5,6});
+            test->Q4.insert(test->Q4.begin(), {2,3,4,5,6});
+            test->f = 1;
+            test->m = 9; // m should be total number of datacenters in the system
+            test->k = 4;
 
 
             // HARD

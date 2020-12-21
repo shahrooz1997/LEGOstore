@@ -44,7 +44,7 @@ if __name__ == "__main__":
                     FILE_NAME = FILES_PATH_DIST + FILE_NAME_TEMP + metric + ".json"
                     if len(sys.argv) == 3: # Baseline
                         RES_FILE_NAME = FILES_PATH_DIST + "res_baseline_" + FILE_NAME_TEMP + metric + ".json"
-                        COMMAND = "python3 placement.py -f tests/inputtests/dc_gcp.json -i " + FILE_NAME + " -o " + RES_FILE_NAME + " -H min_cost -b -t abd -m 5 -v"
+                        COMMAND = "python3 placement.py -f tests/inputtests/dc_gcp.json -i " + FILE_NAME + " -o " + RES_FILE_NAME + " -H min_cost -b -t abd -v"
                     else:
                         RES_FILE_NAME = FILES_PATH_DIST + "res_" + FILE_NAME_TEMP + metric + ".json"
                         COMMAND = "python3 placement.py -f tests/inputtests/dc_gcp.json -i " + FILE_NAME + " -o " + RES_FILE_NAME + " -H min_cost -v"

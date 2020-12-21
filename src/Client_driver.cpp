@@ -319,7 +319,7 @@ int run_session(uint req_idx){
     File_logger file_logger(clt.get_id());
 
     // WARM UP THE SOCKETS
-//    warm_up(clt, file_logger);
+    warm_up(clt, file_logger);
 
     std::this_thread::sleep_until(timePoint3);
     

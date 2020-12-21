@@ -23,7 +23,7 @@ metrics = ["arrival_rate", "object_size", "object_count"]
 if __name__ == "__main__":
 
     # os.system('mkdir -p graphs')
-    result_path = "../../data/Sense/"
+    result_path = "../../data/Sense_baseline_best_abd/"
 
     for f in availability_targets:
         y = []

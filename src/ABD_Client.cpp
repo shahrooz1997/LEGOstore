@@ -33,7 +33,6 @@ namespace ABD_helper{
                           const string timestamp = ""){
 
         DPRINTF(DEBUG_ABD_Client, "started.\n");
-
         EASY_LOG_INIT_M(string("to do ") + operation + " on key " + key + " with conf_id " + to_string(conf_id), DEBUG_ABD_Client);
 
         strVec data;
@@ -103,7 +102,6 @@ namespace ABD_helper{
         ret.clear();
 
         int op_status = 0;    // 0: Success, -1: timeout, -2: operation_fail(reconfiguration)
-
         RAs--;
         for(auto it = quorom.begin(); it != quorom.end(); it++){
             promise <strVec> prm;
@@ -131,7 +129,7 @@ namespace ABD_helper{
                 if(data.size() != 0){
                     ret.push_back(data);
                     done[it->first] = true;
-                    DPRINTF(DEBUG_ABD_Client, "one done.\n");
+//                    DPRINTF(DEBUG_ABD_Client, "one done.\n");
                     if(number_of_received_responses(done) == quorom.size()){
                         EASY_LOG_M("Responses collected successfully");
                         op_status = 0;

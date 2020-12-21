@@ -489,7 +489,7 @@ Controller::Controller(uint32_t retry, uint32_t metadata_timeout, uint32_t timeo
         std::cout << "Constructor failed !! " << std::endl;
     }
 
-    reconfig_p = unique_ptr<Reconfig>(new Reconfig(0, 1, retry, metadata_timeout, timeout_per_req, prp.datacenters));
+    configurer_p = unique_ptr<Reconfig>(new Reconfig(0, 1, retry, metadata_timeout, timeout_per_req, prp.datacenters));
 }
 
 //Returns 0 on success
@@ -757,7 +757,7 @@ int main(){
             GroupConfig* old = find_old_configuration(master.prp, grp->grp_id[j], grp->id, old_conf_id);
 
             auto epoch = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-            master.reconfig_p->start_reconfig(*old, old_conf_id, *curr, grp->id);
+            master.configurer_p->reconfig(*old, old_conf_id, *curr, grp->id);
             auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
             std::cout << "reconfiguration latency: " << (double)(epoch2 - epoch) / 1000000. << std::endl;
 

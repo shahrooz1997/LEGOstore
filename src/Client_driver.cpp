@@ -113,7 +113,7 @@ std::string get_random_value(){
     std::string value;
     // First figure should not be zero
     value += rand() % 9 + '1';
-    while(value.size() < object_size - 1){
+    while(value.size() < object_size){
         value += std::to_string(rand() % 10);
     }
     return value;

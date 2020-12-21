@@ -104,7 +104,6 @@ namespace CAS_helper{
         ret.clear();
 
         int op_status = 0;    // 0: Success, -1: timeout, -2: operation_fail(reconfiguration)
-
         RAs--;
         for(auto it = quorom.begin(); it != quorom.end(); it++){
             promise<strVec> prm;

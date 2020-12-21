@@ -63,6 +63,7 @@ using namespace std::chrono;
 
 #define CAS_PROTOCOL_NAME "CAS"
 #define ABD_PROTOCOL_NAME "ABD"
+#define MIX_PROTOCOL_NAME "MIX"
 
 //#define DEVELOPMENT
 

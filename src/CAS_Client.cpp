@@ -486,7 +486,8 @@ int CAS_Client::get(const string& key, string& value){
     int status = S_OK;
     status = this->get_timestamp(key, timestamp_p);
     if(status == S_RECFG){
-        return parent->put(key, value);
+        EASY_LOG_M("key reconfigured. Trying again...");
+        return parent->get(key, value);
     }
     if(!timestamp_p){
         DPRINTF(DEBUG_CAS_Client, "get_timestamp operation failed key %s \n", key.c_str());

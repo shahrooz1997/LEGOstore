@@ -30,7 +30,7 @@ namespace CAS_helper_recon{
                           const string timestamp = ""){
 
         DPRINTF(DEBUG_CAS_Client, "started.\n");
-        EASY_LOG_INIT_M(string("to do ") + operation + " on key " + key + " with conf_id " + to_string(conf_id), DEBUG_CAS_Client);
+        EASY_LOG_INIT_M(string("to do ") + operation + " on key " + key + " with conf_id " + to_string(conf_id), false);
 
         strVec data;
         Connect c(server.ip, server.port);
@@ -176,7 +176,7 @@ namespace ABD_helper_recon{
                           const string timestamp = ""){
 
         DPRINTF(DEBUG_ABD_Client, "started.\n");
-        EASY_LOG_INIT_M(string("to do ") + operation + " on key " + key + " with conf_id " + to_string(conf_id), DEBUG_ABD_Client);
+        EASY_LOG_INIT_M(string("to do ") + operation + " on key " + key + " with conf_id " + to_string(conf_id), false);
 
         strVec data;
         Connect c(server.ip, server.port);
@@ -297,20 +297,6 @@ Reconfig::Reconfig(uint32_t id, uint32_t local_datacenter_id, uint32_t retry_att
         uint32_t timeout_per_request, vector<DC*>& datacenters) : Client(id, local_datacenter_id, retry_attempts, metadata_server_timeout,
                                                                          timeout_per_request, datacenters){
     this->current_class = MIX_PROTOCOL_NAME;
-//    uint datacenter_indx = 0;
-//    bool datacenter_indx_found = false;
-//    for(; datacenter_indx < datacenters.size(); datacenter_indx++){
-//        if(datacenters[datacenter_indx]->id == local_datacenter_id){
-//            datacenter_indx_found = true;
-//            break;
-//        }
-//    }
-//    if(!datacenter_indx_found){
-//        DPRINTF(DEBUG_CAS_Client, "wrong local_datacenter_id %d.\n", local_datacenter_id);
-//    }
-//    assert(datacenter_indx_found);
-//    this->metadata_server_ip = datacenters[datacenter_indx]->metadata_server_ip;
-//    this->metadata_server_port = to_string(datacenters[datacenter_indx]->metadata_server_port);
 }
 
 Reconfig::~Reconfig(){
@@ -539,7 +525,7 @@ int Reconfig::send_reconfig_finalize(GroupConfig& old_config, uint32_t old_conf_
         //        bbuf_i += sprintf(bbuf + bbuf_i, "\n");
         //    }
         //    printf("%s", bbuf);
-        liberasure.decode(ret_v, chunks, old_config.placement_p->m, old_config.placement_p->k);
+        assert(liberasure.decode(ret_v, chunks, old_config.placement_p->m, old_config.placement_p->k) == 0);
         EASY_LOG_M("value is " + ret_v);
     }
     else{
@@ -587,8 +573,9 @@ int Reconfig::send_reconfig_write(GroupConfig& new_config, uint32_t new_conf_id,
     else if(new_config.placement_p->protocol == CAS_PROTOCOL_NAME){
         vector <string> chunks;
 
-        EASY_LOG_M("calling liberasure.encode");
-        this->liberasure.encode(value, chunks, new_config.placement_p->m, new_config.placement_p->k);
+        assert(value.size() > 3);
+        EASY_LOG_M("calling liberasure.encode for value " + value.substr(0, 3) + "...[" + to_string(value.size()) + " bytes]");
+        assert(this->liberasure.encode(value, chunks, new_config.placement_p->m, new_config.placement_p->k) == 0);
 
         EASY_LOG_M("calling failure_support_optimized.");
         DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");

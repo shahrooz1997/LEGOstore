@@ -25,7 +25,10 @@ public:
     Reconfig(const Reconfig& orig) = delete;
     virtual ~Reconfig();
     
-    int reconfig(GroupConfig& old_config, uint32_t old_conf_id, GroupConfig& new_config, uint32_t new_conf_id);
+    int reconfig(const GroupConfig& old_config, uint32_t old_conf_id, const GroupConfig& new_config, uint32_t new_conf_id);
+
+    int update_metadata_info(const std::string& key, uint32_t old_confid_id, uint32_t new_confid_id, const std::string& timestamp,
+                             const Placement& p);
 
     int put(const std::string& key, const std::string& value);
     int get(const std::string& key, std::string& value);
@@ -33,16 +36,21 @@ public:
 private:
     Liberasure liberasure;
 
-    int send_reconfig_query(GroupConfig& old_config, uint32_t old_conf_id, const std::string& key, unique_ptr<Timestamp>& ts,
+    int send_reconfig_query(const GroupConfig& old_config, uint32_t old_conf_id, const std::string& key, unique_ptr<Timestamp>& ts,
             std::string& ret_v);
-    int send_reconfig_finalize(GroupConfig& old_config, uint32_t old_conf_id, const std::string& key, unique_ptr<Timestamp>& ts,
+    int send_reconfig_finalize(const GroupConfig& old_config, uint32_t old_conf_id, const std::string& key, unique_ptr<Timestamp>& ts,
                                std::string& ret_v);
-    int send_reconfig_write(GroupConfig& new_config, uint32_t new_conf_id, const std::string& key, unique_ptr<Timestamp>& ret_ts,
+    int send_reconfig_write(const GroupConfig& new_config, uint32_t new_conf_id, const std::string& key, unique_ptr<Timestamp>& ret_ts,
                             const std::string& ret_v);
-    int update_metadata_info(std::string& key, uint32_t old_confid_id, uint32_t new_confid_id, const std::string& timestamp,
-                             const Placement& p);
-    int send_reconfig_finish(GroupConfig& old_config, uint32_t old_conf_id, uint32_t new_conf_id, const std::string& key,
+
+    int send_reconfig_finish(const GroupConfig& old_config, uint32_t old_conf_id, uint32_t new_conf_id, const std::string& key,
                              unique_ptr<Timestamp>& ts);
+
+    int reconfig_one_key(const string& key, const GroupConfig& old_config, uint32_t old_conf_id, const GroupConfig& new_config, uint32_t new_conf_id);
+
+    int update_one_metadata_server(const std::string& metadata_server_ip, uint32_t metadata_server_port, const std::string& key,
+                                   uint32_t old_confid_id, uint32_t new_confid_id, const std::string& timestamp,
+                                   const Placement& p);
 };
 
 #endif /* RECONFIG_H */

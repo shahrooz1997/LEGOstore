@@ -581,42 +581,61 @@ int Controller::generate_client_config(const std::vector<WorkloadConfig*>& input
 int Controller::init_metadata_server(){
 
     assert(prp.groups.size() > 0);
+    vector<future<int>> rets;
+
     auto grp = this->prp.groups[0];
     for(uint i = 0; i < grp->grp_id.size(); i++){
         for(uint j = 0; j < grp->grp_config[i]->keys.size(); j++){
             std::string key = grp->grp_config[i]->keys[j];
             uint32_t conf_id = grp->id;
-            
-            for(uint k = 0; k < prp.datacenters.size(); k++){
-                Connect c(prp.datacenters[k]->metadata_server_ip, prp.datacenters[k]->metadata_server_port);
-                if(!c.is_connected()){
-                    std::cout << "Warn: cannot connect to metadata server" << std::endl;
-                    continue;
-                }
-                fflush(stdout);
-                DataTransfer::sendMsg(*c, DataTransfer::serializeMDS("update",
-                        key + "!" + std::to_string(conf_id) + "!" + std::to_string(conf_id) + "!" + "NULL",
-                        grp->grp_config[i]->placement_p));
-                fflush(stdout);
-                std::string recvd;
-                if(DataTransfer::recvMsg(*c, recvd) == 1){
-                    fflush(stdout);
-                    std::string status;
-                    std::string msg;
-                    DataTransfer::deserializeMDS(recvd, status, msg);
-                    if(status != "WARN"){
-                        std::cout << msg << std::endl;
-                        assert(false);
-                    }
-                    cout << "metadata_server " << prp.datacenters[k]->metadata_server_ip << " initialized." << endl;
-                }
-                else{
-                    DPRINTF(DEBUG_RECONFIG_CONTROL, "Error in receiving msg from Metadata Server\n");
-                    return -1;
-                }
-            }
+            rets.emplace_back(async(launch::async, &Reconfig::update_metadata_info, this->configurer_p.get(), key,
+                                    conf_id, conf_id, "NULL", *(grp->grp_config[i]->placement_p)));
         }
     }
+
+    for(auto it = rets.begin(); it != rets.end(); it++){
+        if(it->get() != S_OK){
+            assert(false);
+        }
+    }
+
+//    assert(prp.groups.size() > 0);
+//    auto grp = this->prp.groups[0];
+//    for(uint i = 0; i < grp->grp_id.size(); i++){
+//        for(uint j = 0; j < grp->grp_config[i]->keys.size(); j++){
+//            std::string key = grp->grp_config[i]->keys[j];
+//            uint32_t conf_id = grp->id;
+//
+//            for(uint k = 0; k < prp.datacenters.size(); k++){
+//                Connect c(prp.datacenters[k]->metadata_server_ip, prp.datacenters[k]->metadata_server_port);
+//                if(!c.is_connected()){
+//                    std::cout << "Warn: cannot connect to metadata server" << std::endl;
+//                    continue;
+//                }
+//                fflush(stdout);
+//                DataTransfer::sendMsg(*c, DataTransfer::serializeMDS("update",
+//                        key + "!" + std::to_string(conf_id) + "!" + std::to_string(conf_id) + "!" + "NULL",
+//                        grp->grp_config[i]->placement_p));
+//                fflush(stdout);
+//                std::string recvd;
+//                if(DataTransfer::recvMsg(*c, recvd) == 1){
+//                    fflush(stdout);
+//                    std::string status;
+//                    std::string msg;
+//                    DataTransfer::deserializeMDS(recvd, status, msg);
+//                    if(status != "WARN"){
+//                        std::cout << msg << std::endl;
+//                        assert(false);
+//                    }
+//                    cout << "metadata_server " << prp.datacenters[k]->metadata_server_ip << " initialized." << endl;
+//                }
+//                else{
+//                    DPRINTF(DEBUG_RECONFIG_CONTROL, "Error in receiving msg from Metadata Server\n");
+//                    return -1;
+//                }
+//            }
+//        }
+//    }
 
     return 0;
 }

@@ -733,6 +733,43 @@ GroupConfig* find_old_configuration(const Properties& prp, uint curr_group_confi
     return nullptr;
 }
 
+int warm_up_one_connection(const string& ip, uint32_t port){
+
+    std::string temp = std::string(WARM_UP_MNEMONIC) + get_random_string();
+    Connect c(ip, port);
+    if(!c.is_connected()){
+        assert(false);
+        return -1;
+    }
+    DataTransfer::sendMsg(*c, temp);
+    string recvd;
+    if(DataTransfer::recvMsg(*c, recvd) == 1){
+        if(!is_warmup_message(recvd)){
+            assert(false);
+        }
+    }
+    else{
+        assert(false);
+    }
+
+    return S_OK;
+}
+
+int warm_up(Controller& master){
+
+    for(auto it = master.prp.datacenters.begin(); it != master.prp.datacenters.end(); it++){
+        warm_up_one_connection((*it)->metadata_server_ip, (*it)->metadata_server_port);
+        std::this_thread::sleep_for(milliseconds(rand() % 2000));
+    }
+
+    for(auto it = master.prp.datacenters.begin(); it != master.prp.datacenters.end(); it++){
+        warm_up_one_connection((*it)->servers[0]->ip, (*it)->servers[0]->port);
+        std::this_thread::sleep_for(milliseconds(rand() % 2000));
+    }
+
+    return S_OK;
+}
+
 // Controller has three main responsibilities: one is to communicate with metadata servers, two is to do reconfiguration,
 // and three is run clients for testing.
 int main(){
@@ -756,12 +793,18 @@ int main(){
             }
         }
     }
-    
-    auto time_point2 = time_point_cast<milliseconds>(system_clock::now());
-    uint64_t startTime = time_point2.time_since_epoch().count();
-    time_point <system_clock, milliseconds> startPoint(milliseconds{startTime});
-    time_point <system_clock, milliseconds> timePoint;
 
+    auto startPoint = time_point_cast<milliseconds>(system_clock::now());
+
+//#ifndef LOCAL_TEST
+    auto warm_up_tp = startPoint;
+    warm_up_tp += seconds(WARM_UP_DELAY);
+    warm_up(master);
+    warm_up(master);
+    std::this_thread::sleep_until(warm_up_tp);
+//#endif
+
+    time_point <system_clock, milliseconds> timePoint;
     for(uint i = 1; i < master.prp.groups.size(); i++){
         auto& grp = master.prp.groups[i];
         timePoint = startPoint + milliseconds{grp->timestamp * 1000};

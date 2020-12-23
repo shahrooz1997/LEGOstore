@@ -197,6 +197,16 @@ int socket_setup(const std::string& port, const std::string* IP){
 //    return S_OK;
 //}
 
+std::string get_random_string(uint32_t size){
+    std::string value;
+    // First figure should not be zero
+    value += rand() % 9 + '1';
+    while(value.size() < size){
+        value += std::to_string(rand() % 10);
+    }
+    return value;
+}
+
 //std::map<std::string, int> Connect::socks;
 //std::map<std::string, std::unique_ptr<std::mutex> > Connect::socks_lock;
 //std::map<std::string, bool> Connect::is_sock_lock;
@@ -280,7 +290,16 @@ Connect::Connect(const std::string& ip, const uint16_t port) : ip(ip), port(port
             int yes = 1;
             int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*) &yes, sizeof(int));
             if(result < 0){
-                print_error("setsockopt error");
+                print_error("setsockopt TCP_NODELAY error");
+                error = true;
+            }
+        }
+
+        if(!error){
+            int yes = 1;
+            int result = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char*) &yes, sizeof(int));
+            if(result < 0){
+                print_error("setsockopt SO_KEEPALIVE error");
                 error = true;
             }
         }
@@ -399,6 +418,15 @@ Connect::Connect(const std::string& ip, const std::string& port) : ip(ip), sock(
             int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*)&yes, sizeof(int));
             if(result < 0){
                 print_error("setsockopt error");
+                error = true;
+            }
+        }
+
+        if(!error){
+            int yes = 1;
+            int result = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char*) &yes, sizeof(int));
+            if(result < 0){
+                print_error("setsockopt SO_KEEPALIVE error");
                 error = true;
             }
         }

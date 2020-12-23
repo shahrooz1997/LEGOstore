@@ -71,4 +71,3 @@ cleandb:
 	rm -rf logs/*
 	rm -rf cont_logs/*
 	rm -rf knossos
-

@@ -1144,14 +1144,11 @@ int main(int argc, char* argv[]){
 
     write_setup_config();
 
-    // cleans_up();
+    // clean_up();
 
     // get_pairwise_latency();
 
-    config_machines(false);
-
-
-
+    config_machines(true);
 
 
 
@@ -1178,6 +1175,7 @@ int main(int argc, char* argv[]){
     command += run_type;
     command += ".txt 2>&1";
     system(command.c_str());
+    getchar();
 
     sleep(2);
 
@@ -1186,7 +1184,7 @@ int main(int argc, char* argv[]){
     retrieve_sum(all_servers, run_type);
 
 
-    // retrieve_data(run_type);
+    retrieve_data(run_type);
 
 
 

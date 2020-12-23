@@ -43,13 +43,17 @@ def start_all_servers(zones):
 	for thread in threads:
 		thread.join()
 
+def main(zones_file_name="zones.txt"):
+	zones = read_zones(zones_file_name)
+
+	start_all_servers(zones)
+
+	
+
 if __name__ == "__main__":
 	if(len(sys.argv) == 2):
 		zones_file_name = sys.argv[1]
 	else:
 		zones_file_name = "zones.txt"
-	zones = read_zones(zones_file_name)
-
-	start_all_servers(zones)
-
+	main(zones_file_name)
 	print("Done")

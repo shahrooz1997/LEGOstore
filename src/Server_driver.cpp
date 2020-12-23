@@ -96,6 +96,14 @@ void server_connection(int connection, DataServer& dataserver, int portid){
             DPRINTF(DEBUG_METADATA_SERVER, "one connection closed.\n");
             return;
         }
+        if(is_warmup_message(recvd)){
+            std::string temp = std::string(WARM_UP_MNEMONIC) + get_random_string();
+            result = DataTransfer::sendMsg(connection, temp);
+            if(result != 1){
+                DataTransfer::sendMsg(connection, DataTransfer::serialize({"Failure", "Server Response failed"}));
+            }
+            continue;
+        }
         message_handler(connection, dataserver, portid, recvd);
     }
 }

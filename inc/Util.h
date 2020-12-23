@@ -49,7 +49,7 @@ using namespace std::chrono;
 #define MAX_LINGER_BEFORE_SOCK_CLOSE 50
 
 //#define No_GET_OPTIMIZED
-#define LOCAL_TEST
+//#define LOCAL_TEST
 
 #ifdef LOCAL_TEST
 #define NUMBER_OF_OPS_FOR_WARM_UP 2
@@ -119,6 +119,8 @@ private:
 #define EASY_LOG() EASY_LOGGER_INSTANCE_NAME(__LINE__)
 //#define EASY_LOG_INIT_M(M) Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, M)
 #define EASY_LOG_M(M) EASY_LOGGER_INSTANCE_NAME(__LINE__, M)
+
+#define TRANC_STR(X) X.substr(0, 3) + "...[" + to_string(X.size()) + " bytes]"
 
 
 typedef std::vector <std::string> strVec;
@@ -304,6 +306,23 @@ public:
 private:
 
 };
+
+#ifdef LOCAL_TEST
+#define WARM_UP_DELAY 30
+#define WARM_UP_SIZE (1024)
+#else
+#define WARM_UP_DELAY 300
+#define WARM_UP_SIZE (512 * 1024)
+#endif
+
+#define WARM_UP_MNEMONIC "__WARMUP__256844678425__"
+
+inline bool is_warmup_message(const std::string& msg){
+    std::string temp(WARM_UP_MNEMONIC);
+    return msg.substr(0, temp.size()) == temp;
+}
+
+std::string get_random_string(uint32_t size = WARM_UP_SIZE);
 
 std::string construct_key(const std::string& key, const std::string& protocol, const uint32_t conf_id,
         const std::string& timestamp);

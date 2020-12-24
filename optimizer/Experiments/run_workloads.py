@@ -4,8 +4,8 @@ import os, sys, time, json
 from collections import OrderedDict
 
 availability_targets = [1, 2]
-baselines = [OrderedDict([("ABD", "-b -t abd"), ("CAS", "-b -t cas"), ("fixed_CAS", "-b -t cas -m 3 -k 1")]),
-             OrderedDict([("ABD", "-b -t abd"), ("CAS", "-b -t cas"), ("fixed_CAS", "-b -t cas -m 5 -k 1")])]
+baselines = [OrderedDict([("ABD", "-b -t abd"), ("CAS", "-b -t cas"), ("fixed_CAS", "-b -t cas -m 4 -k 2")]),
+             OrderedDict([("ABD", "-b -t abd"), ("CAS", "-b -t cas"), ("fixed_CAS", "-b -t cas -m 6 -k 2")])]
 
 run_baseline = True
 

@@ -312,7 +312,7 @@ private:
 #define WARM_UP_SIZE (1024)
 #else
 #define WARM_UP_DELAY 300
-#define WARM_UP_SIZE (512 * 1024)
+#define WARM_UP_SIZE (2 * 1024)
 #endif
 
 #define WARM_UP_MNEMONIC "__WARMUP__256844678425__"

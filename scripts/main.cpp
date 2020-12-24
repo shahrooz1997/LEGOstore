@@ -1148,7 +1148,7 @@ int main(int argc, char* argv[]){
 
     // get_pairwise_latency();
 
-    config_machines(true);
+    // config_machines(true);
 
 
 
@@ -1175,7 +1175,7 @@ int main(int argc, char* argv[]){
     command += run_type;
     command += ".txt 2>&1";
     system(command.c_str());
-    getchar();
+    // getchar();
 
     sleep(2);
 

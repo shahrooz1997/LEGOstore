@@ -5,9 +5,9 @@ rm -rf project.tar.gz
 mkdir project
 cd project
 mkdir logs
+mkdir lib
 cd ../
 cp -r ../inc ./project/
-# cp -r ../lib ./project/
 cp -r ../src ./project/
 cp -r ../config ./project/
 rm -f ./project/src/gbuffer.pb.cpp ./project/inc/gbuffer.pb.h

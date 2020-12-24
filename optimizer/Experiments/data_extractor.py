@@ -65,7 +65,7 @@ def print_configurations(configurations, configuration_cost):
 # Default values
 # availability_target_default  = 2
 client_dist_default          = "uniform" #[1/9 for _ in range(9)]
-object_size_default          = "1KB"#1*2**10 / 2**30 # in GB
+object_size_default          = "10KB"#1*2**10 / 2**30 # in GB
 # metadata_size_default        = 1 / 2**30 # in GB
 # num_objects_default          = 1000000
 arrival_rate_default         = "200"
@@ -272,6 +272,6 @@ def extractor_type2():
 
 if __name__ == "__main__":
 
-    extractor_type2()
+    extractor_type1()
 
 

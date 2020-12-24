@@ -24,7 +24,7 @@ SLO_reads = [750, 1000]
 # Default values
 availability_target_default  = 2
 client_dist_default          = [1/9 for _ in range(9)]
-object_size_default          = 1*2**10 / 2**30 # in GB
+object_size_default          = 100*2**10 / 2**30 # in GB
 metadata_size_default        = 1 / 2**30 # in GB
 num_objects_default          = 1000000
 arrival_rate_default         = 200
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     #     exit(1)
 
     # directory = sys.argv[1]
-    directory = "worklaods/"
+    directory = "workloads/"
     for f in availability_targets:
         os.mkdir(directory + "f=" + str(f))
         files_path = directory + "f=" + str(f) + "/"

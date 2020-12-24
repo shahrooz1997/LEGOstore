@@ -369,7 +369,7 @@ int run_session(uint req_idx){
     // WARM UP THE SOCKETS
 //    warm_up(clt, file_logger);
     warm_up();
-    warm_up();
+//    warm_up();
 
     DPRINTF(DEBUG_CAS_Client, "AAAAAAAAAAAAAAAAA8\n");
 

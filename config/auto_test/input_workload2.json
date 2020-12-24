@@ -1,0 +1,41 @@
+{
+  "workload_config": [
+    {
+      "timestamp": 2,
+      "id": 1,
+      "grp_id": [
+        2
+      ],
+      "grp_workload": [
+        {
+          "availability_target": 2,
+          "client_dist": [
+            0.1111111111,
+            0.1111111111,
+            0.1111111111,
+            0.1111111111,
+            0.1111111111,
+            0.1111111111,
+            0.1111111111,
+            0.1111111111,
+            0.1111111111
+          ],
+          "object_size": 1024,
+          "metadata_size": 1e-09,
+          "num_objects": 10001,
+          "arrival_rate": 100,
+          "read_ratio": 0.9,
+          "write_ratio": 0.1,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 30,
+          "time_to_decode": 0.00028,
+          "keys": [
+            "20", "21", "22", "23", "24", "25", "26", "27", "28", "29"
+          ]
+        }
+      ]
+    }
+  ]
+}
+

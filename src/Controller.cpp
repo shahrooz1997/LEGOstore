@@ -85,7 +85,7 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
 //            test->m = 9; // m should be total number of datacenters in the system
 //            test->k = 0; // k should be zero for ABD
 
-            //ABD2 failure 2
+//            //ABD2 failure 2
 //            test->protocol = ABD_PROTOCOL_NAME;
 //            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6,7,8}); // All the servers participating in this placement
 //            test->Q1.insert(test->Q1.begin(), {0,1,2,3,4});
@@ -96,17 +96,28 @@ int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Plac
 //            test->m = 9; // m should be total number of datacenters in the system
 //            test->k = 0; // k should be zero for ABD
 
-            // Failures
-            //CAS
-            test->protocol = CAS_PROTOCOL_NAME;
-            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6}); // All the servers participating in this placement
-            test->Q1.insert(test->Q1.begin(), {0,1,2,3,4});
-            test->Q2.insert(test->Q2.begin(), {0,1,2,3,4,5});
-            test->Q3.insert(test->Q3.begin(), {4,5,6});
-            test->Q4.insert(test->Q4.begin(), {2,3,4,5,6});
+            //ABD2 optimizer
+            test->protocol = ABD_PROTOCOL_NAME;
+            test->servers.insert(test->servers.begin(), {2,5,8}); // All the servers participating in this placement
+            test->Q1.insert(test->Q1.begin(), {2,5});
+            test->Q2.insert(test->Q2.begin(), {2,5});
+            test->Q3.clear();
+            test->Q4.clear();
             test->f = 1;
             test->m = 9; // m should be total number of datacenters in the system
-            test->k = 4;
+            test->k = 0; // k should be zero for ABD
+
+            // Failures
+            //CAS
+//            test->protocol = CAS_PROTOCOL_NAME;
+//            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6}); // All the servers participating in this placement
+//            test->Q1.insert(test->Q1.begin(), {0,1,2,3,4});
+//            test->Q2.insert(test->Q2.begin(), {0,1,2,3,4,5});
+//            test->Q3.insert(test->Q3.begin(), {4,5,6});
+//            test->Q4.insert(test->Q4.begin(), {2,3,4,5,6});
+//            test->f = 1;
+//            test->m = 9; // m should be total number of datacenters in the system
+//            test->k = 4;
 
 
             // HARD
@@ -484,12 +495,13 @@ Controller::Controller(uint32_t retry, uint32_t metadata_timeout, uint32_t timeo
     prp.retry_attempts = retry;
     prp.metadata_server_timeout = metadata_timeout;
     prp.timeout_per_request = timeout_per_req;
+    prp.local_datacenter_id = 1;
     
     if(read_detacenters_info(setupFile) == 1){
         std::cout << "Constructor failed !! " << std::endl;
     }
 
-    configurer_p = unique_ptr<Reconfig>(new Reconfig(0, 1, retry, metadata_timeout, timeout_per_req, prp.datacenters));
+    configurer_p = unique_ptr<Reconfig>(new Reconfig(0, prp.local_datacenter_id, retry, metadata_timeout, timeout_per_req, prp.datacenters));
 }
 
 //Returns 0 on success
@@ -664,8 +676,6 @@ int Controller::init_setup(const std::string& configFile){
         }
         inp.clear();
     }
-
-    prp.local_datacenter_id = 1;
     
     init_metadata_server();
     
@@ -777,7 +787,7 @@ int main(){
 #ifdef LOCAL_TEST
     Controller master(2, 10000, 10000, "./config/local_config.json");
 #else
-    Controller master(2, 10000, 10000, "./scripts/project/config/auto_test/datacenters_access_info.json");
+    Controller master(2, 10000, 10000, "./scripts/setup_config.json");
 #endif
 //    DPRINTF(DEBUG_RECONFIG_CONTROL, "controller created\n");
     master.init_setup("./config/auto_test/input_workload.json");
@@ -787,6 +797,7 @@ int main(){
     std::vector<std::thread> clients_thread;
     for(uint i = 0; i < master.prp.groups[0]->grp_id.size(); i++){
         for(uint j = 0; j < master.prp.datacenters.size(); j++){
+//            DPRINTF(DEBUG_RECONFIG_CONTROL, "aaaa %s\n", master.prp.datacenters[j]->metadata_server_ip.c_str());
             if(master.prp.groups[0]->grp_config[i]->client_dist[j] != 0){
                 clients_thread.emplace_back(&Controller::run_client, &master, master.prp.datacenters[j]->id, 1,
                                             master.prp.groups[0]->grp_id[i]);
@@ -800,7 +811,7 @@ int main(){
     auto warm_up_tp = startPoint;
     warm_up_tp += seconds(WARM_UP_DELAY);
     warm_up(master);
-    warm_up(master);
+//    warm_up(master);
     std::this_thread::sleep_until(warm_up_tp);
 //#endif
 
@@ -822,32 +833,6 @@ int main(){
             master.configurer_p->reconfig(*old, old_conf_id, *curr, grp->id);
             auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
             std::cout << "reconfiguration latency: " << (double)(epoch2 - epoch) / 1000000. << std::endl;
-
-
-//            std::vector <std::thread> pool;
-//
-            // Do the reconfiguration for each key in the group
-//            for(uint i = 0; i < curr->keys.size(); i++){
-//                std::string key(curr->keys[i]);
-//                if(master.reconfig_p->get_metadata_info(key, &old) == 0 &&
-//                        !compare_placement(old->placement_p, curr->placement_p)){
-//                    int old_desc = 0, new_desc = 0;
-////                    update_desc_info(open_desc, old->placement_p, curr->placement_p, old_desc, new_desc);
-//                    std::cout << "Starting the reconfig protocol for key " << key << std::endl;
-//                    pool.emplace_back(&Reconfig::start_reconfig, master.reconfig_p, &master.prp, std::ref(*old),
-//                            std::ref(*curr), key, old_desc, new_desc);
-//                }
-//                else{// Else NO need for reconfig protocol as this is a new key
-//                    // or the placement is same as before
-//
-//                    master.reconfig_p->update_metadata_info(key, curr);
-//                }
-//            }
-            
-            //Waiting for all reconfig to finish for this group
-//            for(auto& it: pool){
-//                it.join();
-//            }
             
         }
         

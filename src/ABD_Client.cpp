@@ -243,7 +243,7 @@ int ABD_Client::get_timestamp(const string& key, unique_ptr<Timestamp>& timestam
 
     vector<strVec> ret;
     DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
-    op_status = ABD_helper::failure_support_optimized("get_timestamp", key, "", "", this->retry_attempts, p.Q1, p.servers, p.m,
+    op_status = ABD_helper::failure_support_optimized("get_timestamp", key, "", "", this->retry_attempts, p.quorums[this->local_datacenter_id].Q1, p.servers, p.m,
                                                  this->datacenters, this->current_class, parent->get_conf_id(key),
                                                  this->timeout_per_request, ret);
 
@@ -327,7 +327,7 @@ int ABD_Client::put(const string& key, const string& value){
     vector<strVec> ret;
 
     DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
-    op_status = ABD_helper::failure_support_optimized("put", key, timestamp_p->get_string(), value, this->retry_attempts, p.Q2, p.servers, p.m,
+    op_status = ABD_helper::failure_support_optimized("put", key, timestamp_p->get_string(), value, this->retry_attempts, p.quorums[this->local_datacenter_id].Q2, p.servers, p.m,
                                                              this->datacenters, this->current_class, parent->get_conf_id(key),
                                                              this->timeout_per_request, ret);
 
@@ -393,22 +393,22 @@ int ABD_Client::get(const string& key, string& value){
 
     DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
 #ifndef No_GET_OPTIMIZED
-    if(p.Q1.size() < p.Q2.size()) {
-        op_status = ABD_helper::failure_support_optimized("get", key, "", "", this->retry_attempts, p.Q2,
+    if(p.quorums[this->local_datacenter_id].Q1.size() < p.quorums[this->local_datacenter_id].Q2.size()) {
+        op_status = ABD_helper::failure_support_optimized("get", key, "", "", this->retry_attempts, p.quorums[this->local_datacenter_id].Q2,
                                                                  p.servers, p.m,
                                                                  this->datacenters, this->current_class,
                                                                  parent->get_conf_id(key),
                                                                  this->timeout_per_request, ret);
     }
     else{
-        op_status = ABD_helper::failure_support_optimized("get", key, "", "", this->retry_attempts, p.Q1,
+        op_status = ABD_helper::failure_support_optimized("get", key, "", "", this->retry_attempts, p.quorums[this->local_datacenter_id].Q1,
                                                                  p.servers, p.m,
                                                                  this->datacenters, this->current_class,
                                                                  parent->get_conf_id(key),
                                                                  this->timeout_per_request, ret);
     }
 #else
-    op_status = ABD_helper::failure_support_optimized("get", key, "", "", this->retry_attempts, p.Q1, p.servers, p.m,
+    op_status = ABD_helper::failure_support_optimized("get", key, "", "", this->retry_attempts, p.quorums[this->local_datacenter_id].Q1, p.servers, p.m,
                                                              this->datacenters, this->current_class, parent->get_conf_id(key),
                                                              this->timeout_per_request, ret);
 #endif
@@ -456,7 +456,7 @@ int ABD_Client::get(const string& key, string& value){
         if(tss[i] == tss[idx])
             resp_counter++;
     }
-    if(resp_counter >= p.Q2.size()){
+    if(resp_counter >= p.quorums[this->local_datacenter_id].Q2.size()){
         if(vs[idx] == "init"){
             value = "__Uninitiliazed";
         }
@@ -470,7 +470,7 @@ int ABD_Client::get(const string& key, string& value){
 #endif
 
     // Put
-    op_status = ABD_helper::failure_support_optimized("put", key, tss[idx].get_string(), vs[idx], this->retry_attempts, p.Q2,
+    op_status = ABD_helper::failure_support_optimized("put", key, tss[idx].get_string(), vs[idx], this->retry_attempts, p.quorums[this->local_datacenter_id].Q2,
                                                              p.servers, p.m, this->datacenters, this->current_class,
                                                              parent->get_conf_id(key),
                                                              this->timeout_per_request, ret);

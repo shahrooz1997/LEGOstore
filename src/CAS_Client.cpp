@@ -243,15 +243,15 @@ int CAS_Client::get_timestamp(const string& key, unique_ptr<Timestamp>& timestam
     
     DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");
 #ifndef No_GET_OPTIMIZED
-    if(p.Q1.size() < p.Q4.size()) {
-        op_status = CAS_helper::failure_support_optimized("get_timestamp", key, "", vector<string>(p.m, ""), this->retry_attempts, p.Q4,
+    if(p.quorums[this->local_datacenter_id].Q1.size() < p.quorums[this->local_datacenter_id].Q4.size()) {
+        op_status = CAS_helper::failure_support_optimized("get_timestamp", key, "", vector<string>(p.m, ""), this->retry_attempts, p.quorums[this->local_datacenter_id].Q4,
                                                                  p.servers, p.m,
                                                                  this->datacenters, this->current_class,
                                                                  parent->get_conf_id(key),
                                                                  this->timeout_per_request, ret);
     }
     else{
-        op_status = CAS_helper::failure_support_optimized("get_timestamp", key, "", vector<string>(p.m, ""), this->retry_attempts, p.Q1,
+        op_status = CAS_helper::failure_support_optimized("get_timestamp", key, "", vector<string>(p.m, ""), this->retry_attempts, p.quorums[this->local_datacenter_id].Q1,
                                                                  p.servers, p.m,
                                                                  this->datacenters, this->current_class,
                                                                  parent->get_conf_id(key),
@@ -259,7 +259,7 @@ int CAS_Client::get_timestamp(const string& key, unique_ptr<Timestamp>& timestam
     }
 #else
     op_status = CAS_helper::failure_support_optimized("get_timestamp", key, "", vector<string>(p.m, ""), this->retry_attempts,
-                                                      p.Q1, p.servers, p.m,
+                                                      p.quorums[this->local_datacenter_id].Q1, p.servers, p.m,
                                                      this->datacenters, this->current_class, parent->get_conf_id(key),
                                                      this->timeout_per_request, ret);
 #endif
@@ -300,7 +300,7 @@ int CAS_Client::get_timestamp(const string& key, unique_ptr<Timestamp>& timestam
                 resp_counter++;
         }
 
-        if(resp_counter >= p.Q4.size()){
+        if(resp_counter >= p.quorums[this->local_datacenter_id].Q4.size()){
             op_status = 10; // 10 means the get operation can be done in one phase
         }
 #endif
@@ -385,7 +385,7 @@ int CAS_Client::put(const string& key, const string& value){
     vector<strVec> ret;
 
     DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");
-    op_status = CAS_helper::failure_support_optimized("put", key, timestamp_p->get_string(), chunks, this->retry_attempts, p.Q2,
+    op_status = CAS_helper::failure_support_optimized("put", key, timestamp_p->get_string(), chunks, this->retry_attempts, p.quorums[this->local_datacenter_id].Q2,
                                                       p.servers, p.m,
                                                      this->datacenters, this->current_class, parent->get_conf_id(key),
                                                      this->timeout_per_request, ret);
@@ -425,7 +425,7 @@ int CAS_Client::put(const string& key, const string& value){
 
     DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");
     op_status = CAS_helper::failure_support_optimized("put_fin", key, timestamp_p->get_string(), vector<string>(p.m, ""),
-                                                        this->retry_attempts, p.Q3, p.servers, p.m,
+                                                        this->retry_attempts, p.quorums[this->local_datacenter_id].Q3, p.servers, p.m,
                                                         this->datacenters, this->current_class, parent->get_conf_id(key),
                                                         this->timeout_per_request, ret);
 
@@ -518,7 +518,7 @@ int CAS_Client::get(const string& key, string& value){
     vector<string> chunks;
 
     op_status = CAS_helper::failure_support_optimized("get", key, timestamp_p->get_string(), vector<string>(p.m, ""),
-                                                             this->retry_attempts, p.Q4,
+                                                             this->retry_attempts, p.quorums[this->local_datacenter_id].Q4,
                                                              p.servers, p.m, this->datacenters, this->current_class,
                                                              parent->get_conf_id(key),
                                                              this->timeout_per_request, ret);

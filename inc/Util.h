@@ -166,7 +166,7 @@ struct Placement{
     uint32_t k; // The number of chunks necessary for decoding data, For ABD k = 0
     std::vector<Quorums> quorums; // It is a map from the id of datacenter to its optimized placement Todo: change it to map
     
-    Placement();
+//    Placement();
 };
 
 //struct GroupWorkload{
@@ -355,11 +355,6 @@ private:
 };
 
 void print_time();
-
-int
-request_placement(const std::string& metadata_server_ip, const std::string& metadata_server_port,
-        const std::string& key, const uint32_t conf_id, std::string& status, std::string& msg, Placement& p,
-        uint32_t retry_attempts, uint32_t metadata_server_timeout);
 
 int ask_metadata(const std::string& metadata_server_ip, const std::string& metadata_server_port,
         const std::string& key, const uint32_t conf_id, uint32_t& requested_conf_id, uint32_t& new_conf_id,

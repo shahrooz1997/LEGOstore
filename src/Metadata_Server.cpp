@@ -21,7 +21,7 @@
 #include <vector>
 #include <thread>
 #include <mutex>
-#include "Data_Transfer.h"
+#include "../inc/Data_Transfer.h"
 #include <cstdlib>
 #include <utility>
 #include <sstream>
@@ -44,7 +44,13 @@ using namespace std;
  * if no reconfiguration has happened on key!confid, newconfid will be confid and timestamp will be ""
  */
 
-std::map<std::string, pair<string, Placement> > key_info;
+struct Value{
+    uint32_t newconfid;
+    std::string timestamp; // reconfiguration happened on old_confid to new_confid with timestamp timestamp
+    Placement placement;
+};
+
+std::map<std::string, Value> key_info;
 std::mutex lock_t;
 
 inline std::string construct_key_metadata(const std::string& key, const std::string& conf_id){
@@ -54,11 +60,9 @@ inline std::string construct_key_metadata(const std::string& key, const std::str
     ret += conf_id;
     return ret;
 }
-
 inline std::string construct_key_metadata(const std::string& key, const uint32_t conf_id){
     return construct_key_metadata(key, to_string(conf_id));
 }
-
 inline std::string construct_confid_timestamp(const std::string& confid, const std::string& timestamp){
     return confid + "!" + timestamp;
 }
@@ -69,26 +73,23 @@ string ask(const string& key, const string& confid){ // respond with (requested_
     
     if(confid == "0"){ // exception case.
         auto it = key_info.find(construct_key_metadata(key, confid));
-        
-        uint32_t saved_conf_id = stoul(it->second.first.substr(0, it->second.first.find("!")));
-        
+
+        uint32_t saved_conf_id = it->second.newconfid; //stoui(it->second.first.substr(0, it->second.first.find("!")));
+
         auto it2 = key_info.find(construct_key_metadata(key, saved_conf_id));
-        return DataTransfer::serializeMDS("OK", to_string(saved_conf_id) + "!" + it->second.first,
-                &(it2->second.second));
+        return DataTransfer::serializeMDS("OK", "", key, stoui(saved_conf_id), stoui(it2->second.newconfid), it2->second.timestamp, it2->second.placement);
     }
     
     auto it = key_info.find(construct_key_metadata(key, confid));
     
     if(it == key_info.end()){ // Not found!
-        return DataTransfer::serializeMDS("ERROR", "key with that conf_id does not exist", nullptr);
+        return DataTransfer::serializeMDS("ERROR", "key with that conf_id does not exist");
     }
-    
-    
-    return DataTransfer::serializeMDS("OK", confid + "!" + it->second.first, &(it->second.second));
+
+    return DataTransfer::serializeMDS("OK", "", key, stoui(confid), stoui(it->second.newconfid), it->second.timestamp, it->second.placement);
 }
 
-string
-update(const string& key, const string& old_confid, const string& new_confid, const string& timestamp, Placement* p){
+string update(const string& key, const string& old_confid, const string& new_confid, const string& timestamp, const Placement& p){
     auto it = key_info.find(construct_key_metadata(key, old_confid));
     
     DPRINTF(DEBUG_METADATA_SERVER, "key: %s, old_conf: %s, new_conf: %s\n", key.c_str(), old_confid.c_str(),
@@ -96,74 +97,84 @@ update(const string& key, const string& old_confid, const string& new_confid, co
     
     if(it == key_info.end()){ // Not found!
         if(old_confid != new_confid){
-            return DataTransfer::serializeMDS("ERROR", "key does not exist and cannot be initialized", nullptr);
+            return DataTransfer::serializeMDS("ERROR", "key does not exist and cannot be initialized");
         }
-        key_info[construct_key_metadata(key, 0)] = std::pair<string, Placement>(
-                construct_confid_timestamp(old_confid, "NULL"), *p);
-        key_info[construct_key_metadata(key, old_confid)] = std::pair<string, Placement>(
-                construct_confid_timestamp(new_confid, "NULL"), *p);
-        return DataTransfer::serializeMDS("WARN", "key does not exist, initialization...", nullptr);
+        key_info[construct_key_metadata(key, 0)].newconfid = old_confid;
+        key_info[construct_key_metadata(key, 0)].timestamp = "";
+        key_info[construct_key_metadata(key, 0)].placement = Placement();
+//        key_info[construct_key_metadata(key, 0)] = std::pair<string, Placement>(
+//                construct_confid_timestamp(old_confid, "NULL"), *p);
+
+
+//        key_info[construct_key_metadata(key, old_confid)] = std::pair<string, Placement>(
+//                construct_confid_timestamp(new_confid, "NULL"), *p);
+//        return DataTransfer::serializeMDS("WARN", "key does not exist, initialization...", nullptr);
     }
-    
-    if(old_confid == new_confid){
-        return DataTransfer::serializeMDS("WARN", "repetitive message", nullptr);
+    else{
+        if(old_confid == new_confid){
+            return DataTransfer::serializeMDS("WARN", "repetitive message", nullptr);
+        }
     }
-    
-    if(timestamp.find("-") >= timestamp.size()){
+
+    if(timestamp.find("-") == string::npos && timestamp.size() != 0){
         assert(false);
     }
+
+    key_info[construct_key_metadata(key, old_confid)].newconfid = new_confid;
+    key_info[construct_key_metadata(key, old_confid)].timestamp = timestamp;
+
+    key_info[construct_key_metadata(key, new_confid)].newconfid = new_confid;
+    key_info[construct_key_metadata(key, new_confid)].timestamp = "";
+    key_info[construct_key_metadata(key, new_confid)].placement = p;
     
-    it->second.first = construct_confid_timestamp(new_confid,
-            timestamp); // reconfiguration happened on old_confid to new_confid with timestamp timestamp
-    
-    key_info[construct_key_metadata(key, new_confid)] = pair<string, Placement>(
-            construct_confid_timestamp(new_confid, "NULL"), *p);
-    
-    return DataTransfer::serializeMDS("OK", "key updated", nullptr);
+    return DataTransfer::serializeMDS("OK", "key updated");
 }
 
 void message_handler(int connection, int portid, std::string& recvd){
-    string status;
-    string msg;
+    std::string status;
+    std::string msg;
+    std::string key;
+    uint32_t curr_conf_id;
+    uint32_t new_conf_id;
+    std::string timestamp;
     int result =1;
     
-    Placement p = DataTransfer::deserializeMDS(recvd, status, msg);
+    Placement p = DataTransfer::deserializeMDS(recvd, status, msg, key, curr_conf_id, new_conf_id, timestamp);
     std::string& method = status; // Method: ask/update, key, conf_id
-    
-    
+
     std::unique_lock <std::mutex> lock(lock_t);
     if(method == "ask"){
         DPRINTF(DEBUG_METADATA_SERVER, "The method ask is called. The msg is %s, server port is %u\n", msg.c_str(),
                 portid);
-        std::size_t pos = msg.find("!");
-        if(pos >= msg.size()){
-            std::stringstream pmsg; // thread safe printing
-            pmsg << "BAD FORMAT: " << msg << std::endl;
-            std::cerr << pmsg.str();
-            assert(0);
-        }
-        string key = msg.substr(0, pos);
-        string conf_id = msg.substr(pos + 1);
-        result = DataTransfer::sendMsg(connection, ask(key, conf_id));
+//        std::size_t pos = msg.find("!");
+//        if(pos >= msg.size()){
+//            std::stringstream pmsg; // thread safe printing
+//            pmsg << "BAD FORMAT: " << msg << std::endl;
+//            std::cerr << pmsg.str();
+//            assert(0);
+//        }
+//        string key = msg.substr(0, pos);
+//        string conf_id = msg.substr(pos + 1);
+        result = DataTransfer::sendMsg(connection, ask(key, to_string(curr_conf_id)));
     }
     else if(method == "update"){
         DPRINTF(DEBUG_METADATA_SERVER, "The method update is called. The msg is %s, server port is %u\n", msg.c_str(),
                 portid);
-        std::size_t pos = msg.find("!");
-        std::size_t pos2 = msg.find("!", pos + 1);
-        std::size_t pos3 = msg.find("!", pos2 + 1);
-        if(pos >= msg.size() || pos2 >= msg.size() || pos3 >= msg.size()){
-            std::stringstream pmsg; // thread safe printing
-            pmsg << "BAD FORMAT: " << msg << std::endl;
-            std::cerr << pmsg.str();
-            assert(0);
-        }
-        string key = msg.substr(0, pos);
-        string old_confid = msg.substr(pos + 1, pos2 - pos - 1);
-        string new_confid = msg.substr(pos2 + 1, pos3 - pos2 - 1);
-        string timestamp = msg.substr(pos3 + 1);
+//        std::size_t pos = msg.find("!");
+//        std::size_t pos2 = msg.find("!", pos + 1);
+//        std::size_t pos3 = msg.find("!", pos2 + 1);
+//        if(pos >= msg.size() || pos2 >= msg.size() || pos3 >= msg.size()){
+//            std::stringstream pmsg; // thread safe printing
+//            pmsg << "BAD FORMAT: " << msg << std::endl;
+//            std::cerr << pmsg.str();
+//            assert(0);
+//        }
+//        string key = msg.substr(0, pos);
+//        string old_confid = msg.substr(pos + 1, pos2 - pos - 1);
+//        string new_confid = msg.substr(pos2 + 1, pos3 - pos2 - 1);
+//        string timestamp = msg.substr(pos3 + 1);
         
-        result = DataTransfer::sendMsg(connection, update(key, old_confid, new_confid, timestamp, p));
+        result = DataTransfer::sendMsg(connection, update(key, to_string(curr_conf_id), to_string(new_conf_id), timestamp, p));
     }
     else{
         DataTransfer::sendMsg(connection, DataTransfer::serializeMDS("ERROR", "Unknown method is called"));

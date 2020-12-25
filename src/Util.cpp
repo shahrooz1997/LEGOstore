@@ -552,11 +552,11 @@ Datacenter::~Datacenter(){
     this->servers.clear();
 }
 
-Placement::Placement(){
-    m = -1;
-    k = -1;
-    f = -1;
-}
+//Placement::Placement(){
+//    m = -1;
+//    k = -1;
+//    f = -1;
+//}
 
 WorkloadConfig::~WorkloadConfig(){
     for(auto& it: grp) {
@@ -841,41 +841,30 @@ std::string construct_key(const std::string& key, const std::string& protocol, c
     return ret;
 }
 
-int request_placement(const std::string& metadata_server_ip, const std::string& metadata_server_port,
-        const std::string& key, const uint32_t conf_id, std::string& status, std::string& msg, Placement& p,
-        uint32_t retry_attempts, uint32_t metadata_server_timeout){
-    
+int ask_metadata(const std::string& metadata_server_ip, const std::string& metadata_server_port,
+        const std::string& key, const uint32_t conf_id, uint32_t& requested_conf_id, uint32_t& new_conf_id,
+        std::string& timestamp, Placement& p, uint32_t retry_attempts, uint32_t metadata_server_timeout){
     DPRINTF(DEBUG_CLIENT_NODE, "started\n");
     int ret = 0;
+    std::string status, msg;
 
     DPRINTF(DEBUG_CLIENT_NODE, "metadata_server_ip port is %s %s\n", metadata_server_ip.c_str(), metadata_server_port.c_str());
-    fflush(stdout);
     Connect c(metadata_server_ip, metadata_server_port);
     if(!c.is_connected()){
         DPRINTF(DEBUG_CLIENT_NODE, "connection error\n");
         return -1;
     }
 
-//    std::string status;
-    msg = key;
-    msg += "!";
-    msg += std::to_string(conf_id);
-    
-    p = Placement();
-
-
-//    DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", msg));
     std::string recvd;
     uint32_t RAs = retry_attempts;
     std::chrono::milliseconds span(metadata_server_timeout);
-    
     bool flag = false;
     while(RAs--){
-        std::promise <std::string> data_set;
-        std::future <std::string> data_set_fut = data_set.get_future();
-        DataTransfer::sendMsg(*c, DataTransfer::serializeMDS("ask", msg));
+        std::promise<std::string> data_set;
+        std::future<std::string> data_set_fut = data_set.get_future();
+        DataTransfer::sendMsg(*c, DataTransfer::serializeMDS("ask", "", key, conf_id));
         std::future<int> fut = std::async(std::launch::async, DataTransfer::recvMsg_async, *c, std::move(data_set));
-        
+
         if(data_set_fut.valid()){
 //            DPRINTF(DEBUG_CLIENT_NODE, "data_set_fut is valid\n");
             std::future_status aaa = data_set_fut.wait_for(span);
@@ -895,47 +884,20 @@ int request_placement(const std::string& metadata_server_ip, const std::string& 
         }
     }
 
-//    c.unlock();
-    
     if(flag){
+        status.clear();
         msg.clear();
-        p = DataTransfer::deserializeMDS(recvd, status, msg);
+        std::string rec_key;
+
+        p = DataTransfer::deserializeMDS(recvd, status, msg, rec_key, requested_conf_id, new_conf_id, timestamp);
+
+        assert(key == rec_key);
+        assert(status == "OK");
     }
     else{
         ret = -2;
         DPRINTF(DEBUG_CLIENT_NODE, "Metadata server timeout for request: %s\n", msg.c_str());
     }
-    
-    return ret;
-}
-
-int ask_metadata(const std::string& metadata_server_ip, const std::string& metadata_server_port,
-        const std::string& key, const uint32_t conf_id, uint32_t& requested_conf_id, uint32_t& new_conf_id,
-        std::string& timestamp, Placement& p, uint32_t retry_attempts, uint32_t metadata_server_timeout){
-    int ret = 0;
-    
-    std::string status, msg;
-//    Placement* p;
-
-//    DPRINTF(DEBUG_CAS_Client, "calling request_placement....\n");
-    
-    ret = request_placement(metadata_server_ip, metadata_server_port, key, conf_id, status, msg, p, retry_attempts,
-            metadata_server_timeout);
-    
-    assert(ret == 0);
-    assert(status == "OK");
-    
-    std::size_t pos = msg.find("!");
-    std::size_t pos2 = msg.find("!", pos + 1);
-    if(pos >= msg.size() || pos2 >= msg.size()){
-        std::stringstream pmsg; // thread safe printing
-        pmsg << "BAD FORMAT: " << msg << std::endl;
-        std::cerr << pmsg.str();
-        assert(0);
-    }
-    requested_conf_id = stoul(msg.substr(0, pos));
-    new_conf_id = stoul(msg.substr(pos + 1, pos2 - pos - 1));
-    timestamp = msg.substr(pos2 + 1);
     
     return ret;
 }

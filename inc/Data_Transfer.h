@@ -49,11 +49,8 @@ public:
                                     const uint32_t& curr_conf_id, const uint32_t& new_conf_id, const std::string& timestamp,
                                     const Placement& placement);
 
-    static Placement serializeMDS(const std::string& data, const std::string& status, const std::string& msg, const std::string& key,
-                                    const uint32_t& curr_conf_id, const uint32_t& new_conf_id, const std::string& timestamp,
-                                    const Placement& placement);
-    
-    static Placement deserializeMDS(const std::string& data, std::string& status, std::string& msg);
+    static Placement deserializeMDS(const std::string& data, std::string& status, std::string& msg, std::string& key,
+                                    uint32_t& curr_conf_id, uint32_t& new_conf_id, std::string& timestamp);
     
 };
 

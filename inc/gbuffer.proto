@@ -20,10 +20,10 @@ message Datacenter{
 }
 
 message Quorums{
-	repeated uint32 Q1 = 1;
-	repeated uint32 Q2 = 2;
-	repeated uint32 Q3 = 3;
-	repeated uint32 Q4 = 4;
+	repeated uint32 q1 = 1;
+	repeated uint32 q2 = 2;
+	repeated uint32 q3 = 3;
+	repeated uint32 q4 = 4;
 }
 
 message Placement{

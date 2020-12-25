@@ -169,31 +169,6 @@ struct Placement{
 //    Placement();
 };
 
-//struct GroupWorkload{
-//    uint32_t availability_target;
-//    std::vector<double> client_dist;
-//    uint32_t object_size;
-//    uint32_t metadata_size;
-//    uint64_t num_objects;
-//    double arrival_rate;
-//    double read_ratio;
-//    double write_ratio;
-//    double slo_read;
-//    double slo_write;
-//    uint64_t duration;
-//    double time_to_decode;
-//    std::vector <std::string> keys;        // No need to send to optimizer
-//};
-
-//struct WorkloadConfig{
-//    uint64_t timestamp;
-//    uint32_t id;
-//    std::vector <uint32_t> grp_id;
-//    std::vector<GroupWorkload*> grp;
-//
-//    ~WorkloadConfig();
-//};
-
 struct Group{
     uint32_t id;
     uint32_t availability_target;
@@ -225,43 +200,6 @@ struct Properties{
     
     ~Properties();
 };
-
-//struct Reconfig_key_info{
-//    uint32_t curr_conf_id;
-//    Placement* curr_placement;
-//    int reconfig_state; // 0: never reconfigured, 1: blocked, 2: reconfiguration completed
-//    std::string timestamp;
-//    uint32_t next_conf_id;
-//    Placement* next_placement;
-//
-//    Reconfig_key_info();
-//
-//    Reconfig_key_info(const std::string& in);
-//
-//    ~Reconfig_key_info();
-//
-//    std::string get_string();
-//};
-//
-//class Data_handler{
-//    std::string value;
-//    std::string protocol;
-//    std::string timestamp;
-//    Reconfig_key_info* reconfig_info;
-//    bool fin;
-//
-//    ~Data_handler();
-//};
-//
-//struct Request{
-//    int sock;
-//    std::string function;
-//    std::string key;
-//    uint32_t conf_id;
-//    std::string value;
-//    std::string timestamp;
-//    std::string protocol;
-//};
 
 #ifdef LOCAL_TEST
 #define WARM_UP_DELAY 30
@@ -303,10 +241,6 @@ inline uint16_t stous(const std::string& s){
 }
 
 int socket_setup(const std::string& port, const std::string* IP = nullptr);
-
-//int socket_cnt(int& sock, uint16_t port, const std::string& IP = "0.0.0.0");
-
-//int client_cnt(int& sock, Server* server);
 
 // Todo: use this connection throughout the project
 // socket connect upgrade

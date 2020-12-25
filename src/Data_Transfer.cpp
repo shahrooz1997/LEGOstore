@@ -516,10 +516,10 @@ std::string DataTransfer::serializeMDS(const std::string& status, const std::str
     return str_out;
 }
 
-static std::string serializeMDS(const std::string& status, const std::string& msg, const std::string& key,
+std::string DataTransfer::serializeMDS(const std::string& status, const std::string& msg, const std::string& key,
                                 const uint32_t& curr_conf_id, const uint32_t& new_conf_id, const std::string& timestamp){
     Placement p;
-    this->serializeMDS(status, msg, key, curr_conf_id, new_conf_id, timestamp, p);
+    return DataTransfer::serializeMDS(status, msg, key, curr_conf_id, new_conf_id, timestamp, p);
 }
 
 Placement DataTransfer::deserializeMDS(const std::string& data, std::string& status, std::string& msg, std::string& key,
@@ -572,3 +572,10 @@ Placement DataTransfer::deserializeMDS(const std::string& data, std::string& sta
     return p;
 }
 
+Placement DataTransfer::deserializeMDS(const std::string& data, std::string& status, std::string& msg){
+    std::string key;
+    uint32_t curr_conf_id;
+    uint32_t new_conf_id;
+    std::string timestamp;
+    return DataTransfer::deserializeMDS(data, status, msg, key, curr_conf_id, new_conf_id, timestamp);
+}

@@ -349,9 +349,8 @@ int Reconfig::update_one_metadata_server(const std::string& metadata_server_ip, 
         DPRINTF(DEBUG_RECONFIG_CONTROL, "Warn: cannot connect to metadata server\n");
         return -2;
     }
-    DataTransfer::sendMsg(*c, DataTransfer::serializeMDS("update",
-                                                         key + "!" + to_string(old_confid_id) + "!" + to_string(new_confid_id) + "!" + timestamp,
-                                                         &p));
+    DataTransfer::sendMsg(*c, DataTransfer::serializeMDS("update", "", key, old_confid_id, new_confid_id, timestamp, p));
+
     string recvd;
     if(DataTransfer::recvMsg(*c, recvd) == 1){
         string status;
@@ -410,7 +409,7 @@ int Reconfig::send_reconfig_query(const Group& old_config, uint32_t old_conf_id,
         EASY_LOG_M("calling failure_support_optimized.");
 
         op_status = ABD_helper_recon::failure_support_optimized("reconfig_query", key, "", "", this->retry_attempts,
-                                                                old_config.placement.servers.size() - old_config.placement.Q2.size() + 1, old_config.placement.servers,
+                                                                old_config.placement.servers.size() - old_config.placement.quorums[this->local_datacenter_id].Q2.size() + 1, old_config.placement.servers,
                                                                 old_config.placement.m, this->datacenters, old_config.placement.protocol, old_conf_id,
                                                                 this->timeout_per_request, ret);
 
@@ -449,7 +448,7 @@ int Reconfig::send_reconfig_query(const Group& old_config, uint32_t old_conf_id,
         DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");
         EASY_LOG_M("calling failure_support_optimized.");
 
-        op_status = CAS_helper_recon::failure_support_optimized("reconfig_query", key, "", vector<string>(old_config.placement.m, ""), this->retry_attempts, max(old_config.placement.servers.size() - old_config.placement.Q3.size() + 1, old_config.placement.servers.size() - old_config.placement.Q4.size() + 1),
+        op_status = CAS_helper_recon::failure_support_optimized("reconfig_query", key, "", vector<string>(old_config.placement.m, ""), this->retry_attempts, max(old_config.placement.servers.size() - old_config.placement.quorums[this->local_datacenter_id].Q3.size() + 1, old_config.placement.servers.size() - old_config.placement.quorums[this->local_datacenter_id].Q4.size() + 1),
                                                                 old_config.placement.servers, old_config.placement.m, this->datacenters, old_config.placement.protocol, old_conf_id,
                                                                 this->timeout_per_request, ret);
 
@@ -503,7 +502,7 @@ int Reconfig::send_reconfig_finalize(const Group& old_config, uint32_t old_conf_
 
     EASY_LOG_M("calling failure_support_optimized.");
     op_status = CAS_helper_recon::failure_support_optimized("reconfig_finalize", key, ts->get_string(), vector<string>(old_config.placement.m, ""), this->retry_attempts,
-                                                      old_config.placement.Q4.size(), old_config.placement.servers, old_config.placement.m,
+                                                      old_config.placement.quorums[this->local_datacenter_id].Q4.size(), old_config.placement.servers, old_config.placement.m,
                                                       this->datacenters, old_config.placement.protocol, old_conf_id,
                                                       this->timeout_per_request, ret);
 
@@ -582,7 +581,7 @@ int Reconfig::send_reconfig_write(const Group& new_config, uint32_t new_conf_id,
         DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
         EASY_LOG_M("calling failure_support_optimized.");
         op_status = ABD_helper_recon::failure_support_optimized("reconfig_write", key, ts->get_string(), value, this->retry_attempts,
-                                                                new_config.placement.Q2.size(), new_config.placement.servers,
+                                                                new_config.placement.quorums[this->local_datacenter_id].Q2.size(), new_config.placement.servers,
                                                                 new_config.placement.m, this->datacenters, new_config.placement.protocol, new_conf_id,
                                                           this->timeout_per_request, ret);
 
@@ -613,7 +612,7 @@ int Reconfig::send_reconfig_write(const Group& new_config, uint32_t new_conf_id,
         EASY_LOG_M("calling failure_support_optimized.");
         DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");
         op_status = CAS_helper_recon::failure_support_optimized("reconfig_write", key, ts->get_string(), chunks, this->retry_attempts,
-                                                                max(new_config.placement.Q2.size(), new_config.placement.Q3.size()), new_config.placement.servers,
+                                                                max(new_config.placement.quorums[this->local_datacenter_id].Q2.size(), new_config.placement.quorums[this->local_datacenter_id].Q3.size()), new_config.placement.servers,
                                                                 new_config.placement.m, this->datacenters,
                                                                 new_config.placement.protocol, new_conf_id,
                                                                 this->timeout_per_request, ret);

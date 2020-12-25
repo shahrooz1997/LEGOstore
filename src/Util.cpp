@@ -558,15 +558,15 @@ Datacenter::~Datacenter(){
 //    f = -1;
 //}
 
-WorkloadConfig::~WorkloadConfig(){
-    for(auto& it: grp) {
-        if(it != nullptr){
-            delete it;
-            it = nullptr;
-        }
-    }
-    this->grp.clear();
-}
+//WorkloadConfig::~WorkloadConfig(){
+//    for(auto& it: grp) {
+//        if(it != nullptr){
+//            delete it;
+//            it = nullptr;
+//        }
+//    }
+//    this->grp.clear();
+//}
 
 //GroupConfig::GroupConfig(){
 //    object_size = 0;
@@ -621,13 +621,6 @@ Properties::~Properties(){
         }
     }
     this->datacenters.clear();
-    for(auto& it: groups) {
-        if(it != nullptr){
-            delete it;
-            it = nullptr;
-        }
-    }
-    this->groups.clear();
 }
 
 //Reconfig_key_info::Reconfig_key_info(){
@@ -892,7 +885,7 @@ int ask_metadata(const std::string& metadata_server_ip, const std::string& metad
         p = DataTransfer::deserializeMDS(recvd, status, msg, rec_key, requested_conf_id, new_conf_id, timestamp);
 
         assert(key == rec_key);
-        assert(status == "OK");
+        assert(status == "OK" || status == "WARN");
     }
     else{
         ret = -2;
@@ -902,16 +895,16 @@ int ask_metadata(const std::string& metadata_server_ip, const std::string& metad
     return ret;
 }
 
-template<typename T>
-void set_intersection(const Placement& p, std::unordered_set <T>& res){
-    res.clear();
-    res.insert(p.Q1.begin(), p.Q1.end());
-    res.insert(p.Q2.begin(), p.Q2.end());
-    res.insert(p.Q3.begin(), p.Q3.end());
-    res.insert(p.Q4.begin(), p.Q4.end());
-}
-
-template void set_intersection(const Placement& p, std::unordered_set <unsigned int>& res);
+//template<typename T>
+//void set_intersection(const Quorums& quo, std::unordered_set <T>& res){
+//    res.clear();
+//    res.insert(quo.Q1.begin(), quo.Q1.end());
+//    res.insert(quo.Q2.begin(), quo.Q2.end());
+//    res.insert(quo.Q3.begin(), quo.Q3.end());
+//    res.insert(quo.Q4.begin(), quo.Q4.end());
+//}
+//
+//template void set_intersection(const Placement& p, std::unordered_set <unsigned int>& res);
 
 Logger::Logger(const std::string& file_name, const std::string& function_name, const int& line_number, bool logging_on) :
                         file_name(file_name), function_name(function_name), logging_on(logging_on){

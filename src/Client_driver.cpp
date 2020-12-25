@@ -5,6 +5,7 @@
 #include <sys/wait.h>
 #include <cmath>
 #include "Client_Node.h"
+#include "../inc/Util.h"
 #include <chrono>
 #include <map>
 #include <cstring>
@@ -21,7 +22,6 @@ using namespace std;
 using std::cout;
 using std::endl;
 using namespace std::chrono;
-using millis = duration<uint64_t, std::milli>;
 using json = nlohmann::json;
 
 static uint32_t datacenter_id;
@@ -124,66 +124,48 @@ std::string get_random_value(uint32_t size = object_size){
 int read_keys(const std::string& file){
     std::ifstream cfg(file);
     json j;
-    
     if(cfg.is_open()){
         cfg >> j;
         if(j.is_null()){
-            std::cout << __func__ << " : Failed to read the config file " << std::endl;
-            return 1;
+            DPRINTF(DEBUG_CONTROLLER, "Failed to read the config file\n");
+            return -1;
         }
     }
     else{
-        std::cout << __func__ << " : Couldn't open the config file  :  " << strerror(errno) << std::endl;
-        return 1;
+        DPRINTF(DEBUG_CONTROLLER, "Couldn't open the config file: %s\n", file.c_str());
+        return -1;
     }
-    
+
     bool keys_set = false;
     j = j["workload_config"];
     for(auto& element: j){
         if(keys_set)
             break;
-        WorkloadConfig* wkl = new WorkloadConfig;
-        element["timestamp"].get_to(wkl->timestamp);
-        element["id"].get_to(wkl->id);
-        element["grp_id"].get_to(wkl->grp_id);
-        if(wkl->id != conf_id){
-            mydelete(wkl);
+        Group_config grpcon;
+        element["timestamp"].get_to(grpcon.timestamp);
+        element["id"].get_to(grpcon.id);
+        if(grpcon.id != conf_id){
             continue;
         }
 
-//        DPRINTF(DEBUG_CAS_Client, "AAAAA : %lu\n", wkl->grp_id.size());
-        
-        bool flag = false;
-        uint indx = 0;
-        for(; indx < wkl->grp_id.size(); indx++){
-            if(wkl->grp_id[indx] == grp_id){
-                flag = true;
-                break;
-            }
-        }
-        if(flag){
-            uint iindx = 0;
-            for(auto& it: element["grp_workload"]){
-                if(iindx != indx){
-                    iindx++;
-                    continue;
-                }
-                GroupWorkload* gwkl = new GroupWorkload;
-                it["keys"].get_to(gwkl->keys);
-                keys = gwkl->keys;
+        uint32_t counter = 0; // Todo: get rid of this counter
+        for(auto& it: element["grp_workload"]){
+            Group grp;
+            grp.id = counter++;
+
+            if(grp.id == grp_id){
+                it["keys"].get_to(grp.keys);
+                keys = grp.keys;
                 keys_set = true;
-                mydelete(gwkl);
-                mydelete(wkl);
                 break;
             }
         }
-        else{
-            mydelete(wkl);
-            assert(false);
-        }
-//        input.push_back(wkl);
+        if(keys_set)
+            break;
     }
     cfg.close();
+
+    assert(keys_set);
 
     return 0;
 }
@@ -236,7 +218,7 @@ int warm_up(){
 //
 //            if(j == NUMBER_OF_OPS_FOR_WARM_UP - 1) {
 //                auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
-//                timePoint2 += millis{rand() % 1000};
+//                timePoint2 += milliseconds{rand() % 1000};
 //                std::this_thread::sleep_until(timePoint2);
 //
 //                // Last write must be logged for testing linearizability purposes
@@ -255,7 +237,7 @@ int warm_up(){
 //#endif
 //
 //            auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
-//            timePoint2 += millis{rand() % 1000};
+//            timePoint2 += milliseconds{rand() % 1000};
 //            std::this_thread::sleep_until(timePoint2);
 //            std::string val = get_random_value(8 * 1024);
 //            result = clt.put(keys[i], val);
@@ -270,7 +252,7 @@ int warm_up(){
 //    for(uint i = 0; i < keys.size(); i++){ // GETS
 //        for(int j = 0; j < NUMBER_OF_OPS_FOR_WARM_UP; j++){
 //            auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
-//            timePoint2 += millis{rand() % 1000};
+//            timePoint2 += milliseconds{rand() % 1000};
 //            std::this_thread::sleep_until(timePoint2);
 //            std::string read_value;
 //            result = clt.get(keys[i], read_value);
@@ -284,9 +266,9 @@ int warm_up(){
 //    // Wait until all the warmup operations are finished
 ////    auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
 ////#ifdef DEBUGGING
-////    timePoint2 += millis{3000};
+////    timePoint2 += milliseconds{3000};
 ////#else
-////    timePoint2 += millis{15000};
+////    timePoint2 += milliseconds{15000};
 ////#endif
 ////    std::this_thread::sleep_until(timePoint2);
 //
@@ -354,12 +336,12 @@ int run_session(uint req_idx){
     DPRINTF(DEBUG_CAS_Client, "AAAAAAAAAAAAAAAAA5\n");
 
     auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
-    timePoint2 += millis{rand() % 2000};
+    timePoint2 += milliseconds{rand() % 2000};
     std::this_thread::sleep_until(timePoint2);
 
     DPRINTF(DEBUG_CAS_Client, "AAAAAAAAAAAAAAAAA6\n");
 
-    timePoint3 += millis{WARM_UP_DELAY * 1000};
+    timePoint3 += milliseconds{WARM_UP_DELAY * 1000};
 
     // logging
     File_logger file_logger(clt.get_id());
@@ -380,10 +362,10 @@ int run_session(uint req_idx){
 //    DPRINTF(DEBUG_CAS_Client, "datacenter port: %u\n", datacenters[datacenter_id]->metadata_server_port);
     
     auto timePoint = time_point_cast<milliseconds>(system_clock::now());
-    timePoint += millis{run_session_duration * 1000};
+    timePoint += milliseconds{run_session_duration * 1000};
 //    std::this_thread::sleep_until(timePoint);
     
-    time_point <system_clock, millis> tp = time_point_cast<milliseconds>(system_clock::now());
+    time_point <system_clock, milliseconds> tp = time_point_cast<milliseconds>(system_clock::now());
     
     while(system_clock::now() < timePoint){ // for duration amount of time
         cnt += 1;
@@ -427,9 +409,9 @@ int run_session(uint req_idx){
         }
 
 #ifdef DEBUGGING
-        tp += millis{next_event("poisson")};
+        tp += milliseconds{next_event("poisson")};
 #else
-        tp += millis{next_event("poisson") * 2};
+        tp += milliseconds{next_event("poisson") * 2};
 #endif
         std::this_thread::sleep_until(tp);
     }
@@ -487,37 +469,37 @@ int request_generator_for_groupconfig(){
     return avg;
 }
 
-int read_detacenters_info(const std::string& configFile){
-    std::ifstream cfg(configFile, ios::in);
+int read_detacenters_info(const std::string& file){
+    std::ifstream cfg(file);
     json j;
     if(cfg.is_open()){
         cfg >> j;
         if(j.is_null()){
-            std::cout << __func__ << " : Failed to read the config file " << std::endl;
-            return 1;
+            DPRINTF(DEBUG_CONTROLLER, "Failed to read the config file\n");
+            return -1;
         }
     }
     else{
-        std::cout << __func__ << " : Couldn't open the config file  :  " << strerror(errno) << std::endl;
-        return 1;
+        DPRINTF(DEBUG_CONTROLLER, "Couldn't open the config file: %s\n", file.c_str());
+        return -1;
     }
-    
+
     for(auto& it : j.items()){
         DC* dc = new DC;
         dc->id = stoui(it.key());
         it.value()["metadata_server"]["host"].get_to(dc->metadata_server_ip);
         dc->metadata_server_port = stoui(it.value()["metadata_server"]["port"].get<std::string>());
-        
+
         for(auto& server : it.value()["servers"].items()){
             Server* sv = new Server;
             sv->id = stoui(server.key());
             server.value()["host"].get_to(sv->ip);
-            
+
             sv->port = stoui(server.value()["port"].get<std::string>());
             sv->datacenter = dc;
             dc->servers.push_back(sv);
         }
-        
+
         datacenters.push_back(dc);
     }
     cfg.close();
@@ -546,8 +528,12 @@ int main(int argc, char* argv[]){
     read_ratio = stod(argv[9]);
     run_session_duration = stoull(argv[10]);
     num_objects = stoul(argv[11]);
-    
+
+#ifdef LOCAL_TEST
+    assert(read_detacenters_info("./config/local_config.json") == 0);
+#else
     assert(read_detacenters_info("./config/auto_test/datacenters_access_info.json") == 0);
+#endif
     assert(read_keys("./config/auto_test/input_workload.json") == 0);
 
 //    for(auto it = datacenters.begin(); it != datacenters.end(); it++){

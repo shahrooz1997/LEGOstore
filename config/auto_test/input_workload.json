@@ -3,9 +3,6 @@
     {
       "timestamp": 2,
       "id": 1,
-      "grp_id": [
-        2, 3, 5
-      ],
       "grp_workload": [
         {
           "availability_target": 2,

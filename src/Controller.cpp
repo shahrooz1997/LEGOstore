@@ -27,6 +27,8 @@ Controller::Controller(uint32_t retry, uint32_t metadata_timeout, uint32_t timeo
     assert(read_placements(placements_file) == 0);
 
     reconfigurer_p = unique_ptr<Reconfig>(new Reconfig(0, properties.local_datacenter_id, retry, metadata_timeout, timeout_per_req, properties.datacenters));
+
+    init_metadata_server();
 }
 
 int Controller::read_detacenters_info(const std::string& file){
@@ -110,7 +112,7 @@ int Controller::read_input_workload(const std::string& file){
 //            it["SLO_write"].get_to(gwkl->slo_write);
             uint16_t dur_temp;
             it["duration"].get_to(dur_temp);
-            grp.duration = milliseconds(dur_temp);
+            grp.duration = seconds(dur_temp);
 //            it["time_to_decode"].get_to(gwkl->time_to_decode);
             it["keys"].get_to(grp.keys);
 //            (wkl->grp).push_back(gwkl);
@@ -146,9 +148,17 @@ int Controller::read_placements(const std::string &file){
 
         element["id"].get_to(grp.id);
         element["protocol"].get_to(grp.placement.protocol);
+        if(grp.placement.protocol == "replication" || grp.placement.protocol == "cas"){
+            grp.placement.protocol = CAS_PROTOCOL_NAME;
+        }
+        else{
+            grp.placement.protocol = ABD_PROTOCOL_NAME;
+        }
 //        element["m"].get_to(grp.placement.m); // Todo: m should show the number of datacenters instead of the number of servers in the currenct placement
         grp.placement.m = TOTAL_NUMBER_OF_DCS_IN_SYSTEM;
-        element["k"].get_to(grp.placement.k);
+        if(grp.placement.protocol != ABD_PROTOCOL_NAME){
+            element["k"].get_to(grp.placement.k);
+        }
         element["selected_dcs"].get_to(grp.placement.servers);
 
         json client_placement_info = element["client_placement_info"];
@@ -157,7 +167,7 @@ int Controller::read_placements(const std::string &file){
             uint32_t datacenter_id = stoui(it.key());
             it.value()["Q1"].get_to(grp.placement.quorums[datacenter_id].Q1);
             it.value()["Q2"].get_to(grp.placement.quorums[datacenter_id].Q2);
-            if(grp.placement.protocol != "abd"){
+            if(grp.placement.protocol != ABD_PROTOCOL_NAME){
                 it.value()["Q3"].get_to(grp.placement.quorums[datacenter_id].Q3);
                 it.value()["Q4"].get_to(grp.placement.quorums[datacenter_id].Q4);
             }
@@ -167,72 +177,6 @@ int Controller::read_placements(const std::string &file){
     cfg.close();
     return 0;
 }
-
-//Input : A vector of key groups
-// Returns the placement for each key group
-//int CostBenefitAnalysis(std::vector<GroupWorkload*>& gworkload, std::vector<Placement*>& placement){
-//    static int temp = 0;
-//    //For testing purposes
-//    for(uint i = 0; i < gworkload.size(); i++){
-//        Placement* test = new Placement;
-//        // Controller trial(1, 120, 120, "./config/setup_config.json");
-//        // std::vector<DC*> dcs = trial.prp.datacenters;
-//
-//        if(temp){
-//
-//            //CAS
-//            test->protocol = CAS_PROTOCOL_NAME;
-//            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6,7,8}); // All the servers participating in this placement
-//            test->Q1.insert(test->Q1.begin(), {0,1,2,3,4});
-//            test->Q2.insert(test->Q2.begin(), {0,1,2,3,4,5});
-//            test->Q3.insert(test->Q3.begin(), {4,5,6,7,8});
-//            test->Q4.insert(test->Q4.begin(), {2,3,4,5,6,7,8});
-//            test->f = 2;
-//            test->m = 9; // m should be total number of datacenters in the system
-//            test->k = 4;
-//
-//
-//            // ABD HARD NO F
-////            test->protocol = ABD_PROTOCOL_NAME;
-////            test->servers.insert(test->servers.begin(), {0,1,2,3,4}); // All the servers participating in this placement
-////            test->Q1.insert(test->Q1.begin(), {2,3,4});
-////            test->Q2.insert(test->Q2.begin(), {0,1,2});
-////            test->Q3.clear();
-////            test->Q4.clear();
-////            test->f = 0;
-////            test->m = 9; // m should be total number of datacenters in the system
-////            test->k = 0; // k should be zero for ABD
-//        }
-//        else{
-//
-////            //ABD2 failure 2
-////            test->protocol = ABD_PROTOCOL_NAME;
-////            test->servers.insert(test->servers.begin(), {0,1,2,3,4,5,6,7,8}); // All the servers participating in this placement
-////            test->Q1.insert(test->Q1.begin(), {0,1,2,3,4});
-////            test->Q2.insert(test->Q2.begin(), {4,5,6,7,8});
-////            test->Q3.clear();
-////            test->Q4.clear();
-////            test->f = 2;
-////            test->m = 9; // m should be total number of datacenters in the system
-////            test->k = 0; // k should be zero for ABD
-//
-//            //ABD2 optimizer
-//            test->protocol = ABD_PROTOCOL_NAME;
-//            test->servers.insert(test->servers.begin(), {2,5,8}); // All the servers participating in this placement
-//            test->Q1.insert(test->Q1.begin(), {2,5});
-//            test->Q2.insert(test->Q2.begin(), {2,5});
-//            test->Q3.clear();
-//            test->Q4.clear();
-//            test->f = 1;
-//            test->m = 9; // m should be total number of datacenters in the system
-//            test->k = 0; // k should be zero for ABD
-//
-//        }
-//        placement.push_back(test);
-//    }
-//    temp +=1;
-//    return 0;
-//}
 
 int execute(const char* command, const std::vector<std::string>& args, std::string& output){
     
@@ -392,8 +336,8 @@ int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t gr
 //    DPRINTF(DEBUG_RECONFIG_CONTROL, "5555555555555555\n");
     uint group_indx = 0;
     bool config_group_found = false;
-    for(; group_indx < properties.group_configs[configuration_indx].grp_id.size(); group_indx++){
-        if(properties.group_configs[configuration_indx].grp_id[group_indx] == group_id){
+    for(; group_indx < properties.group_configs[configuration_indx].groups.size(); group_indx++){
+        if(properties.group_configs[configuration_indx].groups[group_indx].id == group_id){
             config_group_found = true;
             break;
         }
@@ -402,7 +346,7 @@ int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t gr
 
     uint datacenter_indx = 0;
     bool datacenter_indx_found = false;
-    for(; datacenter_indx < prppropertiesdatacenters.size(); datacenter_indx++){
+    for(; datacenter_indx < properties.datacenters.size(); datacenter_indx++){
         if(properties.datacenters[datacenter_indx]->id == datacenter_id){
             datacenter_indx_found = true;
             break;
@@ -410,12 +354,12 @@ int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t gr
     }
     assert(datacenter_indx_found);
 
-    const GroupConfig* gc = properties.group_configs[configuration_indx].grp_config[group_indx];
-    args.push_back(std::to_string(gc->object_size));
-    args.push_back(std::to_string(gc->arrival_rate * gc->client_dist[datacenter_indx]));
-    args.push_back(std::to_string(gc->read_ratio));
-    args.push_back(std::to_string(gc->duration));
-    args.push_back(std::to_string(gc->keys.size()));
+    const Group& gc = properties.group_configs[configuration_indx].groups[group_indx];
+    args.push_back(std::to_string(gc.object_size));
+    args.push_back(std::to_string(gc.arrival_rate * gc.client_dist[datacenter_indx]));
+    args.push_back(std::to_string(gc.read_ratio));
+    args.push_back(std::to_string(duration_cast<seconds>(gc.duration).count()));
+    args.push_back(std::to_string(gc.keys.size()));
 
     int status = execute(command.c_str(), args, output);
 
@@ -486,7 +430,7 @@ int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t gr
     command += std::to_string(gc.object_size)+ " ";
     command += std::to_string(gc.arrival_rate * gc.client_dist[datacenter_indx])+ " ";
     command += std::to_string(gc.read_ratio)+ " ";
-    command += std::to_string(duration_cast<seconds>(gc.duration).count())+ " ";
+    command += std::to_string(duration_cast<seconds>(gc.duration).count()) + " ";
     command += std::to_string(gc.keys.size());
 //    DPRINTF(DEBUG_RECONFIG_CONTROL, "333333333333\n");
 
@@ -518,73 +462,6 @@ int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t gr
 #endif
 }
 
-//int Controller::generate_client_config(const std::vector<WorkloadConfig*>& input){
-//
-//    for(auto it: input){
-//        Group* grp = new Group;
-//        grp->timestamp = it->timestamp;
-//        grp->id = it->id;
-//        grp->grp_id = it->grp_id;
-//
-//        // Memory allocation has to happen inside function call
-//        std::vector<Placement*> placement;
-//        if(CostBenefitAnalysis(it->grp, placement) == 1){
-//            std::cout << "Cost Benefit analysis failed for timestamp : " << it->timestamp << std::endl;
-//            return 1;
-//        }
-//
-//        std::cout << __func__ << "Adding , size " << it->grp.size() << std::endl;
-//        assert(it->grp.size() == placement.size());
-//        for(uint i = 0; i < placement.size(); i++){
-//            GroupConfig* gcfg = new GroupConfig;
-//            gcfg->object_size = it->grp[i]->object_size;
-//            gcfg->num_objects = it->grp[i]->num_objects;
-//            gcfg->arrival_rate = it->grp[i]->arrival_rate;
-//            gcfg->read_ratio = it->grp[i]->read_ratio;
-//            gcfg->duration = it->grp[i]->duration;
-//            gcfg->keys = std::move(it->grp[i]->keys);
-//            gcfg->client_dist = std::move(it->grp[i]->client_dist);
-//            gcfg->placement_p = placement[i];
-//            (grp->grp_config).push_back(gcfg);
-//        }
-//
-//        prp.groups.push_back(grp);
-//    }
-//
-//    return 0;
-//}
-//
-//int Controller::init_setup(const std::string& configFile){
-//
-//    std::vector<WorkloadConfig*> inp;
-//    if(read_input_workload(configFile, inp) == 1){
-//        return 1;
-//    }
-//
-//    // Add workload to the prp of the controller
-//    if(generate_client_config(inp) == 1){
-//        std::cout << "Client Config generation failed!! " << std::endl;
-//        return 1;
-//    }
-//
-//    //Free "inp" data structure
-//    if(!inp.empty()){
-//        for(auto& it: inp) {
-//            if(it != nullptr){
-//                delete it;
-//                it = nullptr;
-//            }
-//        }
-//        inp.clear();
-//    }
-//
-//    init_metadata_server();
-//
-//    cout << "!!!!!!!!!!" << endl;
-//
-//    return 0;
-//}
-
 int Controller::init_metadata_server(){
     assert(properties.group_configs.size() > 0);
     vector<future<int>> rets;
@@ -595,7 +472,7 @@ int Controller::init_metadata_server(){
             std::string key = gc.groups[i].keys[j];
             uint32_t conf_id = gc.id;
             rets.emplace_back(async(launch::async, &Reconfig::update_metadata_info, this->reconfigurer_p.get(), key,
-                                    conf_id, conf_id, "NULL", gc.groups[i].placement));
+                                    conf_id, conf_id, "", gc.groups[i].placement));
         }
     }
 
@@ -760,22 +637,20 @@ int main(){
     Controller master(2, 10000, 10000, "./scripts/setup_config.json",
                       "./config/auto_test/input_workload.json", "./config/auto_test/optimizer_output.json");
 #endif
-//    DPRINTF(DEBUG_RECONFIG_CONTROL, "controller created\n");
-//    master.init_setup("./config/auto_test/input_workload.json");
-//    master.init_metadata_server();
     master.run_all_clients();
     DPRINTF(DEBUG_RECONFIG_CONTROL, "controller created\n");
 
-//#ifndef LOCAL_TEST
     auto warm_up_tp = time_point_cast<milliseconds>(system_clock::now());;
     warm_up_tp += seconds(WARM_UP_DELAY);
     master.warm_up();
-//    warm_up(master);
     std::this_thread::sleep_until(warm_up_tp);
-//#endif
 
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "run_reconfigurer\n");
     master.run_reconfigurer();
 
+    master.wait_for_clients();
+
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "Connect::close_all()\n");
     Connect::close_all();
     return 0;
 }

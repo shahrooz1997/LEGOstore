@@ -73,6 +73,7 @@ extern bool DEBUG_ABD_Client;
 extern bool DEBUG_CAS_Server;
 extern bool DEBUG_ABD_Server;
 extern bool DEBUG_RECONFIG_CONTROL;
+extern bool DEBUG_CONTROLLER;
 extern bool DEBUG_METADATA_SERVER;
 extern bool DEBUG_UTIL;
 
@@ -150,79 +151,67 @@ typedef struct Datacenter{
     ~Datacenter();
 } DC;
 
+struct Quorums{
+    std::vector<uint32_t> Q1;
+    std::vector<uint32_t> Q2;
+    std::vector<uint32_t> Q3;
+    std::vector<uint32_t> Q4;
+};
 
-struct Placement{ // For ABD, you can use just the first portion of this struct.
+struct Placement{
     std::string protocol;
-    std::vector <uint32_t> servers;
-    std::vector <uint32_t> Q1;
-    std::vector <uint32_t> Q2;
+    std::vector<uint32_t> servers;
     uint32_t f; // The number of failures this placement can tolerate.
     uint32_t m; // Total number of servers
-    uint32_t k; // The number of chunks necessary for decoding data
-    std::vector <uint32_t> Q3;
-    std::vector <uint32_t> Q4;
+    uint32_t k; // The number of chunks necessary for decoding data, For ABD k = 0
+    std::vector<Quorums> quorums; // It is a map from the id of datacenter to its optimized placement Todo: change it to map
     
     Placement();
 };
 
+//struct GroupWorkload{
+//    uint32_t availability_target;
+//    std::vector<double> client_dist;
+//    uint32_t object_size;
+//    uint32_t metadata_size;
+//    uint64_t num_objects;
+//    double arrival_rate;
+//    double read_ratio;
+//    double write_ratio;
+//    double slo_read;
+//    double slo_write;
+//    uint64_t duration;
+//    double time_to_decode;
+//    std::vector <std::string> keys;        // No need to send to optimizer
+//};
 
-//TODO:: to add arrival process decription, but first need to
-//confirm if optimizer has such a field
-//Also, do we need to specify type of optimization in these structs
-//Or C/B analysis takes care of that
-struct GroupWorkload{
+//struct WorkloadConfig{
+//    uint64_t timestamp;
+//    uint32_t id;
+//    std::vector <uint32_t> grp_id;
+//    std::vector<GroupWorkload*> grp;
+//
+//    ~WorkloadConfig();
+//};
+
+struct Group{
+    uint32_t id;
     uint32_t availability_target;
     std::vector<double> client_dist;
     uint32_t object_size;
-    uint32_t metadata_size;
-    uint64_t num_objects;
-    double arrival_rate;
-    double read_ratio;
-    double write_ratio;
-    double slo_read;
-    double slo_write;
-    uint64_t duration;
-    double time_to_decode;
-    std::vector <std::string> keys;        // No need to send to optimizer
-};
-
-struct WorkloadConfig{
-    uint64_t timestamp;
-    uint32_t id;
-    std::vector <uint32_t> grp_id;
-    std::vector<GroupWorkload*> grp;
-    
-    ~WorkloadConfig();
-};
-
-struct GroupConfig{
-    uint32_t object_size;
-    uint64_t num_objects;
+    uint64_t num_objects; // Not used in the project
     double arrival_rate; // Combined arrival rate
     double read_ratio;
-    uint64_t duration;
+    std::chrono::milliseconds duration;
     std::vector <std::string> keys;
-    std::vector<double> client_dist;
-    Placement* placement_p;
-    
-    GroupConfig();
-    
-    GroupConfig(const GroupConfig& orig);
-    
-    ~GroupConfig();
+
+    Placement placement;
 };
 
-struct Group{
-    uint64_t timestamp;
+struct Group_config{
+    uint64_t timestamp; // Start time of this configuration
     uint32_t id; // conf_id
-    std::vector <uint32_t> grp_id;
-    std::vector<GroupConfig*> grp_config;
-    
-    Group();
-    
-    Group(const Group& orig);
-    
-    ~Group();
+    std::vector<Group> groups;
 };
 
 struct Properties{
@@ -230,82 +219,49 @@ struct Properties{
     uint32_t retry_attempts;
     uint32_t metadata_server_timeout;
     uint32_t timeout_per_request;
-    uint64_t start_time;
+
     std::vector<DC*> datacenters;
-    std::vector<Group*> groups;
+    std::vector<Group_config> group_configs;
     
     ~Properties();
 };
 
-struct Reconfig_key_info{
-    uint32_t curr_conf_id;
-    Placement* curr_placement;
-    int reconfig_state; // 0: never reconfigured, 1: blocked, 2: reconfiguration completed
-    std::string timestamp;
-    uint32_t next_conf_id;
-    Placement* next_placement;
-    
-    Reconfig_key_info();
-    
-    Reconfig_key_info(const std::string& in);
-    
-    ~Reconfig_key_info();
-    
-    std::string get_string();
-};
-
-class Data_handler{
-    std::string value;
-    std::string protocol;
-    std::string timestamp;
-    Reconfig_key_info* reconfig_info;
-    bool fin;
-    
-    ~Data_handler();
-};
-
-struct Request{
-    int sock;
-    std::string function;
-    std::string key;
-    uint32_t conf_id;
-    std::string value;
-    std::string timestamp;
-    std::string protocol;
-};
-
-// Todo: remove the two following functions
-//returns the liberasure desc
-inline int create_liberasure_instance(Placement* pp){
-    struct ec_args null_args;
-    null_args.k = pp->k;
-    null_args.m = pp->m - pp->k;
-    null_args.w = 16; // ToDo: what must it be?
-    null_args.ct = CHKSUM_NONE;
-    //EC_BACKEND_LIBERASURECODE_RS_VAND
-    //EC_BACKEND_JERASURE_RS_VAND
-    return liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, &null_args);
-}
-
-inline int destroy_liberasure_instance(int desc){
-    if(liberasurecode_instance_destroy(desc) != 0){
-        fprintf(stderr, "Liberasure instance destory failed! Will lead to memory leaks..");
-    }
-    return 0;
-}
-
-
-class JSON_Reader{
-public:
-    JSON_Reader();
-    
-    JSON_Reader(const JSON_Reader& orig) = delete;
-    
-    virtual ~JSON_Reader();
-
-private:
-
-};
+//struct Reconfig_key_info{
+//    uint32_t curr_conf_id;
+//    Placement* curr_placement;
+//    int reconfig_state; // 0: never reconfigured, 1: blocked, 2: reconfiguration completed
+//    std::string timestamp;
+//    uint32_t next_conf_id;
+//    Placement* next_placement;
+//
+//    Reconfig_key_info();
+//
+//    Reconfig_key_info(const std::string& in);
+//
+//    ~Reconfig_key_info();
+//
+//    std::string get_string();
+//};
+//
+//class Data_handler{
+//    std::string value;
+//    std::string protocol;
+//    std::string timestamp;
+//    Reconfig_key_info* reconfig_info;
+//    bool fin;
+//
+//    ~Data_handler();
+//};
+//
+//struct Request{
+//    int sock;
+//    std::string function;
+//    std::string key;
+//    uint32_t conf_id;
+//    std::string value;
+//    std::string timestamp;
+//    std::string protocol;
+//};
 
 #ifdef LOCAL_TEST
 #define WARM_UP_DELAY 30
@@ -402,12 +358,12 @@ void print_time();
 
 int
 request_placement(const std::string& metadata_server_ip, const std::string& metadata_server_port,
-        const std::string& key, const uint32_t conf_id, std::string& status, std::string& msg, Placement*& p,
+        const std::string& key, const uint32_t conf_id, std::string& status, std::string& msg, Placement& p,
         uint32_t retry_attempts, uint32_t metadata_server_timeout);
 
 int ask_metadata(const std::string& metadata_server_ip, const std::string& metadata_server_port,
         const std::string& key, const uint32_t conf_id, uint32_t& requested_conf_id, uint32_t& new_conf_id,
-        std::string& timestamp, Placement*& p, uint32_t retry_attempts, uint32_t metadata_server_timeout);
+        std::string& timestamp, Placement& p, uint32_t retry_attempts, uint32_t metadata_server_timeout);
 
 template<typename T>
 void set_intersection(const Placement& p, std::unordered_set <T>& res);

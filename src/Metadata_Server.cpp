@@ -127,7 +127,7 @@ void message_handler(int connection, int portid, std::string& recvd){
     string msg;
     int result =1;
     
-    Placement* p = DataTransfer::deserializeMDS(recvd, status, msg);
+    Placement p = DataTransfer::deserializeMDS(recvd, status, msg);
     std::string& method = status; // Method: ask/update, key, conf_id
     
     

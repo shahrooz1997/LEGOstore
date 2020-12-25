@@ -33,16 +33,11 @@ bool DEBUG_ABD_Client = true;
 bool DEBUG_CAS_Server = true;
 bool DEBUG_ABD_Server = true;
 bool DEBUG_RECONFIG_CONTROL = true;
+bool DEBUG_CONTROLLER = true;
 bool DEBUG_METADATA_SERVER = true;
 bool DEBUG_UTIL = true;
 #endif
 
-
-JSON_Reader::JSON_Reader(){
-}
-
-JSON_Reader::~JSON_Reader(){
-}
 
 void print_time(){
     auto timenow = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -573,54 +568,50 @@ WorkloadConfig::~WorkloadConfig(){
     this->grp.clear();
 }
 
-GroupConfig::GroupConfig(){
-    object_size = 0;
-    num_objects = 0;
-    arrival_rate = 0; // Combined arrival rate
-    read_ratio = 0;
-    duration = 0;
-    placement_p = nullptr;
-}
+//GroupConfig::GroupConfig(){
+//    object_size = 0;
+//    num_objects = 0;
+//    arrival_rate = 0; // Combined arrival rate
+//    read_ratio = 0;
+//    duration = 0;
+//    placement_p = nullptr;
+//}
 
-GroupConfig::GroupConfig(const GroupConfig& orig){
-    object_size = orig.object_size;
-    num_objects = orig.num_objects;
-    arrival_rate = orig.arrival_rate; // Combined arrival rate
-    read_ratio = orig.read_ratio;
-    duration = orig.duration;
-    keys = orig.keys;
-    client_dist = orig.client_dist;
-    placement_p = new Placement(*(orig.placement_p));
-}
+//GroupConfig::GroupConfig(const GroupConfig& orig){
+//    object_size = orig.object_size;
+//    num_objects = orig.num_objects;
+//    arrival_rate = orig.arrival_rate; // Combined arrival rate
+//    read_ratio = orig.read_ratio;
+//    duration = orig.duration;
+//    keys = orig.keys;
+//    client_dist = orig.client_dist;
+//    placement_p = new Placement(*(orig.placement_p));
+//}
 
-GroupConfig::~GroupConfig(){
-    if(placement_p != nullptr){
-        delete placement_p;
-        placement_p = nullptr;
-    }
-}
+//GroupConfig::~GroupConfig(){
+//    if(placement_p != nullptr){
+//        delete placement_p;
+//        placement_p = nullptr;
+//    }
+//}
 
-Group::Group(){
-    timestamp = -1;
-}
+//Group_config::Group_config(const Group_config& orig){
+//    timestamp = orig.timestamp;
+//    grp_id = orig.grp_id;
+//    for(auto gc: orig.grp_config){
+//        this->grp_config.push_back(new GroupConfig(*(gc)));
+//    }
+//}
 
-Group::Group(const Group& orig){
-    timestamp = orig.timestamp;
-    grp_id = orig.grp_id;
-    for(auto gc: orig.grp_config){
-        this->grp_config.push_back(new GroupConfig(*(gc)));
-    }
-}
-
-Group::~Group(){
-    for(auto& it: grp_config) {
-        if(it != nullptr){
-            delete it;
-            it = nullptr;
-        }
-    }
-    this->grp_config.clear();
-}
+//Group_config::~Group_config(){
+//    for(auto& it: grp_config) {
+//        if(it != nullptr){
+//            delete it;
+//            it = nullptr;
+//        }
+//    }
+//    this->grp_config.clear();
+//}
 
 Properties::~Properties(){
     for(auto& it: datacenters) {
@@ -639,193 +630,193 @@ Properties::~Properties(){
     this->groups.clear();
 }
 
-Reconfig_key_info::Reconfig_key_info(){
-    curr_conf_id = -1;
-    curr_placement = nullptr;
-    reconfig_state = 0;
-    timestamp = "";
-    next_conf_id = -1;
-    next_placement = nullptr;
-}
-
-Reconfig_key_info::Reconfig_key_info(const std::string& in){
-    uint32_t cc = 0;
-
-//    DPRINTF(DEBUG_UTIL, "111111\n");
-    
-    if(cc + sizeof(uint32_t) > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&(this->curr_conf_id)))[i] = in[cc++];
-    }
-
-//    DPRINTF(DEBUG_UTIL, "curr_conf_id is %u\n", curr_conf_id);
-
-//    DPRINTF(DEBUG_UTIL, "22222\n");
-    
-    // current placement
-    uint32_t temp = 0;
-    if(cc + sizeof(uint32_t) > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&(temp)))[i] = in[cc++];
-    }
-//    DPRINTF(DEBUG_UTIL, "size for curr_placement is %u\n", temp);
-    
-    if(temp != 0){
-        this->curr_placement = DataTransfer::deserializePlacement(in.substr(cc, temp));
-        cc += temp;
-    }
-    else{
-        this->curr_placement = nullptr;
-    }
-
-//    DPRINTF(DEBUG_UTIL, "33333\n");
-    
-    if(cc + sizeof(int) > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < sizeof(int) && cc < in.size(); i++){
-        ((char*)(&(this->reconfig_state)))[i] = in[cc++];
-    }
-//    DPRINTF(DEBUG_UTIL, "reconfig_state is %u\n", reconfig_state);
-
-//    DPRINTF(DEBUG_UTIL, "444444\n");
-    
-    if(reconfig_state != 0){
-
-//        DPRINTF(DEBUG_UTIL, "DOOMED\n");
-        
-        // timestamp
-        temp = 0;
-        if(cc + sizeof(uint32_t) > in.size()){
-            DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-        }
-        for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-            ((char*)(&(temp)))[i] = in[cc++];
-        }
-        if(temp != 0){
-            for(uint32_t i = 0; i < temp && cc < in.size(); i++){
-                this->timestamp.push_back(in[cc++]);
-            }
-        }
-        else{
-            this->timestamp = "";
-        }
-        
-        
-        if(cc + sizeof(uint32_t) > in.size()){
-            DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-        }
-        for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-            ((char*)(&(this->next_conf_id)))[i] = in[cc++];
-        }
-        
-        // next placement
-        temp = 0;
-        if(cc + sizeof(uint32_t) > in.size()){
-            DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-        }
-        for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-            ((char*)(&(temp)))[i] = in[cc++];
-        }
-        if(temp != 0){
-            this->curr_placement = DataTransfer::deserializePlacement(in.substr(cc, temp));
-            cc += temp;
-        }
-        else{
-            this->next_placement = nullptr;
-        }
-    }
-    else{
-        this->next_placement = nullptr;
-    }
-
-//    DPRINTF(DEBUG_UTIL, "55555\n");
-    
-}
-
-Reconfig_key_info::~Reconfig_key_info(){
-    if(curr_placement != nullptr){
-        delete curr_placement;
-        curr_placement = nullptr;
-    }
-    if(next_placement != nullptr){
-        delete next_placement;
-        next_placement = nullptr;
-    }
-}
-
-std::string Reconfig_key_info::get_string(){
-    std::string ret;
-    for(uint i = 0; i < sizeof(uint32_t); i++){
-        ret.push_back(((char*)(&curr_conf_id))[i]);
-    }
-    
-    uint32_t size;
-    if(this->curr_placement != nullptr){
-        std::string pl_s = DataTransfer::serializePlacement(*(this->curr_placement));
-        size = pl_s.size();
-        for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-            ret.push_back(((char*)(&size))[i]);
-        }
-        ret += pl_s;
-//        DPRINTF(DEBUG_UTIL, "curr_placement size is %u\n", size);
-    }
-    else{
-        size = 0;
-        for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-            ret.push_back(((char*)(&size))[i]);
-        }
-    }
-    
-    for(uint i = 0; i < sizeof(int); i++){
-        ret.push_back(((char*)(&reconfig_state))[i]);
-    }
-
-//    DPRINTF(DEBUG_UTIL, "reconfig_state is %u\n", reconfig_state);
-    
-    if(reconfig_state != 0){
-        // Timestamp
-        uint32_t size = this->timestamp.size();
-        for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-            ret.push_back(((char*)(&size))[i]);
-        }
-        for(uint32_t i = 0; i < size; i++){
-            ret.push_back(this->timestamp[i]);
-        }
-        
-        for(uint i = 0; i < sizeof(uint32_t); i++){
-            ret.push_back(((char*)(&next_conf_id))[i]);
-        }
-        
-        if(this->next_placement != nullptr){
-            std::string pl_s = DataTransfer::serializePlacement(*(this->next_placement));
-            size = pl_s.size();
-            for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-                ret.push_back(((char*)(&size))[i]);
-            }
-            ret += pl_s;
-        }
-        else{
-            size = 0;
-            for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-                ret.push_back(((char*)(&size))[i]);
-            }
-        }
-    }
-    
-    return ret;
-}
-
-Data_handler::~Data_handler(){
-    if(reconfig_info != nullptr){
-        delete reconfig_info;
-        reconfig_info = nullptr;
-    }
-}
+//Reconfig_key_info::Reconfig_key_info(){
+//    curr_conf_id = -1;
+//    curr_placement = nullptr;
+//    reconfig_state = 0;
+//    timestamp = "";
+//    next_conf_id = -1;
+//    next_placement = nullptr;
+//}
+//
+//Reconfig_key_info::Reconfig_key_info(const std::string& in){
+//    uint32_t cc = 0;
+//
+////    DPRINTF(DEBUG_UTIL, "111111\n");
+//
+//    if(cc + sizeof(uint32_t) > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&(this->curr_conf_id)))[i] = in[cc++];
+//    }
+//
+////    DPRINTF(DEBUG_UTIL, "curr_conf_id is %u\n", curr_conf_id);
+//
+////    DPRINTF(DEBUG_UTIL, "22222\n");
+//
+//    // current placement
+//    uint32_t temp = 0;
+//    if(cc + sizeof(uint32_t) > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&(temp)))[i] = in[cc++];
+//    }
+////    DPRINTF(DEBUG_UTIL, "size for curr_placement is %u\n", temp);
+//
+//    if(temp != 0){
+//        this->curr_placement = DataTransfer::deserializePlacement(in.substr(cc, temp));
+//        cc += temp;
+//    }
+//    else{
+//        this->curr_placement = nullptr;
+//    }
+//
+////    DPRINTF(DEBUG_UTIL, "33333\n");
+//
+//    if(cc + sizeof(int) > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < sizeof(int) && cc < in.size(); i++){
+//        ((char*)(&(this->reconfig_state)))[i] = in[cc++];
+//    }
+////    DPRINTF(DEBUG_UTIL, "reconfig_state is %u\n", reconfig_state);
+//
+////    DPRINTF(DEBUG_UTIL, "444444\n");
+//
+//    if(reconfig_state != 0){
+//
+////        DPRINTF(DEBUG_UTIL, "DOOMED\n");
+//
+//        // timestamp
+//        temp = 0;
+//        if(cc + sizeof(uint32_t) > in.size()){
+//            DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//        }
+//        for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//            ((char*)(&(temp)))[i] = in[cc++];
+//        }
+//        if(temp != 0){
+//            for(uint32_t i = 0; i < temp && cc < in.size(); i++){
+//                this->timestamp.push_back(in[cc++]);
+//            }
+//        }
+//        else{
+//            this->timestamp = "";
+//        }
+//
+//
+//        if(cc + sizeof(uint32_t) > in.size()){
+//            DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//        }
+//        for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//            ((char*)(&(this->next_conf_id)))[i] = in[cc++];
+//        }
+//
+//        // next placement
+//        temp = 0;
+//        if(cc + sizeof(uint32_t) > in.size()){
+//            DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//        }
+//        for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//            ((char*)(&(temp)))[i] = in[cc++];
+//        }
+//        if(temp != 0){
+//            this->curr_placement = DataTransfer::deserializePlacement(in.substr(cc, temp));
+//            cc += temp;
+//        }
+//        else{
+//            this->next_placement = nullptr;
+//        }
+//    }
+//    else{
+//        this->next_placement = nullptr;
+//    }
+//
+////    DPRINTF(DEBUG_UTIL, "55555\n");
+//
+//}
+//
+//Reconfig_key_info::~Reconfig_key_info(){
+//    if(curr_placement != nullptr){
+//        delete curr_placement;
+//        curr_placement = nullptr;
+//    }
+//    if(next_placement != nullptr){
+//        delete next_placement;
+//        next_placement = nullptr;
+//    }
+//}
+//
+//std::string Reconfig_key_info::get_string(){
+//    std::string ret;
+//    for(uint i = 0; i < sizeof(uint32_t); i++){
+//        ret.push_back(((char*)(&curr_conf_id))[i]);
+//    }
+//
+//    uint32_t size;
+//    if(this->curr_placement != nullptr){
+//        std::string pl_s = DataTransfer::serializePlacement(*(this->curr_placement));
+//        size = pl_s.size();
+//        for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+//            ret.push_back(((char*)(&size))[i]);
+//        }
+//        ret += pl_s;
+////        DPRINTF(DEBUG_UTIL, "curr_placement size is %u\n", size);
+//    }
+//    else{
+//        size = 0;
+//        for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+//            ret.push_back(((char*)(&size))[i]);
+//        }
+//    }
+//
+//    for(uint i = 0; i < sizeof(int); i++){
+//        ret.push_back(((char*)(&reconfig_state))[i]);
+//    }
+//
+////    DPRINTF(DEBUG_UTIL, "reconfig_state is %u\n", reconfig_state);
+//
+//    if(reconfig_state != 0){
+//        // Timestamp
+//        uint32_t size = this->timestamp.size();
+//        for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+//            ret.push_back(((char*)(&size))[i]);
+//        }
+//        for(uint32_t i = 0; i < size; i++){
+//            ret.push_back(this->timestamp[i]);
+//        }
+//
+//        for(uint i = 0; i < sizeof(uint32_t); i++){
+//            ret.push_back(((char*)(&next_conf_id))[i]);
+//        }
+//
+//        if(this->next_placement != nullptr){
+//            std::string pl_s = DataTransfer::serializePlacement(*(this->next_placement));
+//            size = pl_s.size();
+//            for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+//                ret.push_back(((char*)(&size))[i]);
+//            }
+//            ret += pl_s;
+//        }
+//        else{
+//            size = 0;
+//            for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+//                ret.push_back(((char*)(&size))[i]);
+//            }
+//        }
+//    }
+//
+//    return ret;
+//}
+//
+//Data_handler::~Data_handler(){
+//    if(reconfig_info != nullptr){
+//        delete reconfig_info;
+//        reconfig_info = nullptr;
+//    }
+//}
 
 std::string construct_key(const std::string& key, const std::string& protocol, const uint32_t conf_id,
         const std::string& timestamp){
@@ -851,7 +842,7 @@ std::string construct_key(const std::string& key, const std::string& protocol, c
 }
 
 int request_placement(const std::string& metadata_server_ip, const std::string& metadata_server_port,
-        const std::string& key, const uint32_t conf_id, std::string& status, std::string& msg, Placement*& p,
+        const std::string& key, const uint32_t conf_id, std::string& status, std::string& msg, Placement& p,
         uint32_t retry_attempts, uint32_t metadata_server_timeout){
     
     DPRINTF(DEBUG_CLIENT_NODE, "started\n");
@@ -870,7 +861,7 @@ int request_placement(const std::string& metadata_server_ip, const std::string& 
     msg += "!";
     msg += std::to_string(conf_id);
     
-    p = nullptr;
+    p = Placement();
 
 
 //    DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", msg));
@@ -920,7 +911,7 @@ int request_placement(const std::string& metadata_server_ip, const std::string& 
 
 int ask_metadata(const std::string& metadata_server_ip, const std::string& metadata_server_port,
         const std::string& key, const uint32_t conf_id, uint32_t& requested_conf_id, uint32_t& new_conf_id,
-        std::string& timestamp, Placement*& p, uint32_t retry_attempts, uint32_t metadata_server_timeout){
+        std::string& timestamp, Placement& p, uint32_t retry_attempts, uint32_t metadata_server_timeout){
     int ret = 0;
     
     std::string status, msg;

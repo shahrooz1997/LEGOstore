@@ -302,7 +302,7 @@ Reconfig::Reconfig(uint32_t id, uint32_t local_datacenter_id, uint32_t retry_att
 Reconfig::~Reconfig(){
 }
 
-int Reconfig::reconfig_one_key(const string& key, const GroupConfig& old_config, uint32_t old_conf_id, const GroupConfig& new_config, uint32_t new_conf_id){
+int Reconfig::reconfig_one_key(const string& key, const Group& old_config, uint32_t old_conf_id, const Group& new_config, uint32_t new_conf_id){
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
     EASY_LOG_INIT_M(string("from ") + to_string(old_conf_id) + " to " + to_string(new_conf_id) + " for key " + key);
 
@@ -310,14 +310,14 @@ int Reconfig::reconfig_one_key(const string& key, const GroupConfig& old_config,
     string ret_v;
     assert(Reconfig::send_reconfig_query(old_config, old_conf_id, key, ret_ts, ret_v) == 0);
     EASY_LOG_M("send_reconfig_query done");
-    if(old_config.placement_p->protocol == CAS_PROTOCOL_NAME){
+    if(old_config.placement.protocol == CAS_PROTOCOL_NAME){
         assert(Reconfig::send_reconfig_finalize(old_config, old_conf_id, key, ret_ts, ret_v) == 0);
         EASY_LOG_M("send_reconfig_finalize done");
     }
     EASY_LOG_M("ret_ts: " + ret_ts->get_string() + ", ret_v: " + TRANC_STR(ret_v));
     assert(Reconfig::send_reconfig_write(new_config, new_conf_id, key, ret_ts, ret_v) == 0);
     EASY_LOG_M("send_reconfig_write done");
-    assert(update_metadata_info(key, old_conf_id, new_conf_id, ret_ts->get_string(), *new_config.placement_p) == 0);
+    assert(update_metadata_info(key, old_conf_id, new_conf_id, ret_ts->get_string(), new_config.placement) == 0);
     EASY_LOG_M("update_metadata_info done");
     assert(Reconfig::send_reconfig_finish(old_config, old_conf_id, new_conf_id, key, ret_ts) == 0);
     EASY_LOG_M("send_reconfig_finish done");
@@ -325,7 +325,7 @@ int Reconfig::reconfig_one_key(const string& key, const GroupConfig& old_config,
     return S_OK;
 }
 
-int Reconfig::reconfig(const GroupConfig& old_config, uint32_t old_conf_id, const GroupConfig& new_config, uint32_t new_conf_id){
+int Reconfig::reconfig(const Group& old_config, uint32_t old_conf_id, const Group& new_config, uint32_t new_conf_id){
 
     vector<future<int>> rets;
     for(auto it = old_config.keys.begin(); it != old_config.keys.end(); it++){
@@ -354,7 +354,6 @@ int Reconfig::update_one_metadata_server(const std::string& metadata_server_ip, 
                                                          &p));
     string recvd;
     if(DataTransfer::recvMsg(*c, recvd) == 1){
-        fflush(stdout);
         string status;
         string msg;
         DataTransfer::deserializeMDS(recvd, status, msg);
@@ -392,7 +391,7 @@ int Reconfig::update_metadata_info(const string& key, uint32_t old_confid_id, ui
     return S_OK;
 }
 
-int Reconfig::send_reconfig_query(const GroupConfig& old_config, uint32_t old_conf_id, const string& key, unique_ptr<Timestamp>& ret_ts,
+int Reconfig::send_reconfig_query(const Group& old_config, uint32_t old_conf_id, const string& key, unique_ptr<Timestamp>& ret_ts,
         string& ret_v){
     
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started on key \"%s\"\n", key.c_str());
@@ -402,7 +401,7 @@ int Reconfig::send_reconfig_query(const GroupConfig& old_config, uint32_t old_co
     int op_status = 0;
     vector<strVec> ret;
 
-    if(old_config.placement_p->protocol == ABD_PROTOCOL_NAME){
+    if(old_config.placement.protocol == ABD_PROTOCOL_NAME){
         vector <Timestamp> tss;
         vector <string> vs;
         uint32_t idx = -1;
@@ -411,8 +410,8 @@ int Reconfig::send_reconfig_query(const GroupConfig& old_config, uint32_t old_co
         EASY_LOG_M("calling failure_support_optimized.");
 
         op_status = ABD_helper_recon::failure_support_optimized("reconfig_query", key, "", "", this->retry_attempts,
-                                                                old_config.placement_p->servers.size() - old_config.placement_p->Q2.size() + 1, old_config.placement_p->servers,
-                                                                old_config.placement_p->m, this->datacenters, old_config.placement_p->protocol, old_conf_id,
+                                                                old_config.placement.servers.size() - old_config.placement.Q2.size() + 1, old_config.placement.servers,
+                                                                old_config.placement.m, this->datacenters, old_config.placement.protocol, old_conf_id,
                                                                 this->timeout_per_request, ret);
 
         DPRINTF(DEBUG_ABD_Client, "op_status: %d.\n", op_status);
@@ -444,14 +443,14 @@ int Reconfig::send_reconfig_query(const GroupConfig& old_config, uint32_t old_co
             EASY_LOG_M("Operation Failed");
         }
     }
-    else if(old_config.placement_p->protocol == CAS_PROTOCOL_NAME){
+    else if(old_config.placement.protocol == CAS_PROTOCOL_NAME){
         vector <Timestamp> tss;
 
         DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");
         EASY_LOG_M("calling failure_support_optimized.");
 
-        op_status = CAS_helper_recon::failure_support_optimized("reconfig_query", key, "", vector<string>(old_config.placement_p->m, ""), this->retry_attempts, max(old_config.placement_p->servers.size() - old_config.placement_p->Q3.size() + 1, old_config.placement_p->servers.size() - old_config.placement_p->Q4.size() + 1),
-                                                                old_config.placement_p->servers, old_config.placement_p->m, this->datacenters, old_config.placement_p->protocol, old_conf_id,
+        op_status = CAS_helper_recon::failure_support_optimized("reconfig_query", key, "", vector<string>(old_config.placement.m, ""), this->retry_attempts, max(old_config.placement.servers.size() - old_config.placement.Q3.size() + 1, old_config.placement.servers.size() - old_config.placement.Q4.size() + 1),
+                                                                old_config.placement.servers, old_config.placement.m, this->datacenters, old_config.placement.protocol, old_conf_id,
                                                                 this->timeout_per_request, ret);
 
         DPRINTF(DEBUG_CAS_Client, "op_status: %d.\n", op_status);
@@ -491,7 +490,7 @@ int Reconfig::send_reconfig_query(const GroupConfig& old_config, uint32_t old_co
     return op_status;
 }
 
-int Reconfig::send_reconfig_finalize(const GroupConfig& old_config, uint32_t old_conf_id, const string& key, unique_ptr<Timestamp>& ts,
+int Reconfig::send_reconfig_finalize(const Group& old_config, uint32_t old_conf_id, const string& key, unique_ptr<Timestamp>& ts,
         string& ret_v){
     
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started on key \"%s\"\n", key.c_str());
@@ -503,9 +502,9 @@ int Reconfig::send_reconfig_finalize(const GroupConfig& old_config, uint32_t old
     vector<string> chunks;
 
     EASY_LOG_M("calling failure_support_optimized.");
-    op_status = CAS_helper_recon::failure_support_optimized("reconfig_finalize", key, ts->get_string(), vector<string>(old_config.placement_p->m, ""), this->retry_attempts,
-                                                      old_config.placement_p->Q4.size(), old_config.placement_p->servers, old_config.placement_p->m,
-                                                      this->datacenters, old_config.placement_p->protocol, old_conf_id,
+    op_status = CAS_helper_recon::failure_support_optimized("reconfig_finalize", key, ts->get_string(), vector<string>(old_config.placement.m, ""), this->retry_attempts,
+                                                      old_config.placement.Q4.size(), old_config.placement.servers, old_config.placement.m,
+                                                      this->datacenters, old_config.placement.protocol, old_conf_id,
                                                       this->timeout_per_request, ret);
 
     DPRINTF(DEBUG_CAS_Client, "op_status: %d.\n", op_status);
@@ -540,7 +539,7 @@ int Reconfig::send_reconfig_finalize(const GroupConfig& old_config, uint32_t old
     }
 
     if(!uninitialized_key){
-        if(chunks.size() < old_config.placement_p->k){
+        if(chunks.size() < old_config.placement.k){
             op_status = -9;
             DPRINTF(DEBUG_CAS_Client, "chunks.size() < p.k key : %s\n", key.c_str());
             EASY_LOG_M("chunks.size() < p.k");
@@ -559,7 +558,7 @@ int Reconfig::send_reconfig_finalize(const GroupConfig& old_config, uint32_t old
         //        bbuf_i += sprintf(bbuf + bbuf_i, "\n");
         //    }
         //    printf("%s", bbuf);
-        assert(liberasure.decode(ret_v, chunks, old_config.placement_p->m, old_config.placement_p->k) == 0);
+        assert(liberasure.decode(ret_v, chunks, old_config.placement.m, old_config.placement.k) == 0);
         EASY_LOG_M("value is " + ret_v);
     }
     else{
@@ -570,7 +569,7 @@ int Reconfig::send_reconfig_finalize(const GroupConfig& old_config, uint32_t old
     return op_status;
 }
 
-int Reconfig::send_reconfig_write(const GroupConfig& new_config, uint32_t new_conf_id, const string& key, unique_ptr<Timestamp>& ts,
+int Reconfig::send_reconfig_write(const Group& new_config, uint32_t new_conf_id, const string& key, unique_ptr<Timestamp>& ts,
         const string& value){
     
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started on key \"%s\"\n", key.c_str());
@@ -579,12 +578,12 @@ int Reconfig::send_reconfig_write(const GroupConfig& new_config, uint32_t new_co
     int op_status = 0;
     vector<strVec> ret;
 
-    if(new_config.placement_p->protocol == ABD_PROTOCOL_NAME){
+    if(new_config.placement.protocol == ABD_PROTOCOL_NAME){
         DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
         EASY_LOG_M("calling failure_support_optimized.");
         op_status = ABD_helper_recon::failure_support_optimized("reconfig_write", key, ts->get_string(), value, this->retry_attempts,
-                                                                new_config.placement_p->Q2.size(), new_config.placement_p->servers,
-                                                                new_config.placement_p->m, this->datacenters, new_config.placement_p->protocol, new_conf_id,
+                                                                new_config.placement.Q2.size(), new_config.placement.servers,
+                                                                new_config.placement.m, this->datacenters, new_config.placement.protocol, new_conf_id,
                                                           this->timeout_per_request, ret);
 
         DPRINTF(DEBUG_ABD_Client, "op_status: %d.\n", op_status);
@@ -604,19 +603,19 @@ int Reconfig::send_reconfig_write(const GroupConfig& new_config, uint32_t new_co
             }
         }
     }
-    else if(new_config.placement_p->protocol == CAS_PROTOCOL_NAME){
+    else if(new_config.placement.protocol == CAS_PROTOCOL_NAME){
         vector <string> chunks;
 
         assert(value.size() > 3);
         EASY_LOG_M("calling liberasure.encode for value " + value.substr(0, 3) + "...[" + to_string(value.size()) + " bytes]");
-        assert(this->liberasure.encode(value, chunks, new_config.placement_p->m, new_config.placement_p->k) == 0);
+        assert(this->liberasure.encode(value, chunks, new_config.placement.m, new_config.placement.k) == 0);
 
         EASY_LOG_M("calling failure_support_optimized.");
         DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");
         op_status = CAS_helper_recon::failure_support_optimized("reconfig_write", key, ts->get_string(), chunks, this->retry_attempts,
-                                                                max(new_config.placement_p->Q2.size(), new_config.placement_p->Q3.size()), new_config.placement_p->servers,
-                                                                new_config.placement_p->m, this->datacenters,
-                                                                new_config.placement_p->protocol, new_conf_id,
+                                                                max(new_config.placement.Q2.size(), new_config.placement.Q3.size()), new_config.placement.servers,
+                                                                new_config.placement.m, this->datacenters,
+                                                                new_config.placement.protocol, new_conf_id,
                                                                 this->timeout_per_request, ret);
 
         DPRINTF(DEBUG_CAS_Client, "op_status: %d.\n", op_status);
@@ -643,7 +642,7 @@ int Reconfig::send_reconfig_write(const GroupConfig& new_config, uint32_t new_co
     return op_status;
 }
 
-int Reconfig::send_reconfig_finish(const GroupConfig& old_config, uint32_t old_conf_id, uint32_t new_conf_id, const string& key,
+int Reconfig::send_reconfig_finish(const Group& old_config, uint32_t old_conf_id, uint32_t new_conf_id, const string& key,
                                    unique_ptr<Timestamp>& ts){
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started on key \"%s\"\n", key.c_str());
@@ -652,12 +651,12 @@ int Reconfig::send_reconfig_finish(const GroupConfig& old_config, uint32_t old_c
     int op_status = 0;
     vector<strVec> ret;
 
-    if(old_config.placement_p->protocol == ABD_PROTOCOL_NAME){
+    if(old_config.placement.protocol == ABD_PROTOCOL_NAME){
         DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
         EASY_LOG_M("calling failure_support_optimized.");
         op_status = ABD_helper_recon::failure_support_optimized("finish_reconfig", key, ts->get_string(), to_string(new_conf_id), this->retry_attempts,
-                                                                old_config.placement_p->servers.size(), old_config.placement_p->servers, old_config.placement_p->m,
-                                                                this->datacenters, old_config.placement_p->protocol, old_conf_id,
+                                                                old_config.placement.servers.size(), old_config.placement.servers, old_config.placement.m,
+                                                                this->datacenters, old_config.placement.protocol, old_conf_id,
                                                                 this->timeout_per_request, ret);
 
         DPRINTF(DEBUG_ABD_Client, "op_status: %d.\n", op_status);
@@ -677,12 +676,12 @@ int Reconfig::send_reconfig_finish(const GroupConfig& old_config, uint32_t old_c
             }
         }
     }
-    else if(old_config.placement_p->protocol == CAS_PROTOCOL_NAME){
+    else if(old_config.placement.protocol == CAS_PROTOCOL_NAME){
         DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");
         EASY_LOG_M("calling failure_support_optimized.");
-        op_status = CAS_helper_recon::failure_support_optimized("finish_reconfig", key, ts->get_string(), vector<string>(old_config.placement_p->m, to_string(new_conf_id)), this->retry_attempts,
-                                                                old_config.placement_p->servers.size(), old_config.placement_p->servers, old_config.placement_p->m, this->datacenters,
-                                                                old_config.placement_p->protocol, old_conf_id,
+        op_status = CAS_helper_recon::failure_support_optimized("finish_reconfig", key, ts->get_string(), vector<string>(old_config.placement.m, to_string(new_conf_id)), this->retry_attempts,
+                                                                old_config.placement.servers.size(), old_config.placement.servers, old_config.placement.m, this->datacenters,
+                                                                old_config.placement.protocol, old_conf_id,
                                                                 this->timeout_per_request, ret);
 
         DPRINTF(DEBUG_CAS_Client, "op_status: %d.\n", op_status);

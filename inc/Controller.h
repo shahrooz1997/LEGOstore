@@ -8,33 +8,33 @@
 #include <thread>
 #include <iostream>
 
-using json = nlohmann::json;
-
 class Controller{
-
 public:
-    Controller(uint32_t retry, uint32_t metadata_timeout, uint32_t timeout_per_req, std::string setupFile);
-    
-    int read_detacenters_info(std::string& configFile);
-    
-    int read_input_workload(const std::string& configFile, std::vector<WorkloadConfig*>& input);
-    
-    int generate_client_config(const std::vector<WorkloadConfig*>& input);
-    
-    int init_setup(const std::string& configFile);
-    
-//    int read_deployment_info(std::string& filePath, std::vector <std::pair<std::string, uint16_t>>& info);
-    
-//    int send_config_group_to_client(uint32_t group_number);
+    Controller(uint32_t retry, uint32_t metadata_timeout, uint32_t timeout_per_req, const std::string& detacenters_info_file,
+               const std::string& workload_file, const std::string &placements_file);
+    Controller(const Controller& orig) = delete;
+    virtual ~Controller() = default;
     
     int init_metadata_server();
-    
-    int run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t group_id);
-    
-    Properties prp;
-    unique_ptr<Reconfig> configurer_p;
-private:
 
+    int run_all_clients();
+
+    int wait_for_clients();
+
+    int run_reconfigurer();
+
+    int warm_up();
+
+private:
+    Properties properties;
+    unique_ptr<Reconfig> reconfigurer_p;
+    std::vector<std::thread> clients_thread;
+
+    int read_detacenters_info(const std::string& file);
+    int read_input_workload(const std::string& file);
+    int read_placements(const std::string &file);
+
+    int run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t group_id);
 };
 
 

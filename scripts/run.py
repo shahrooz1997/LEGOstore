@@ -29,12 +29,16 @@ def read_zones(zones_file_name='zones.txt'):
     return zones
 
 
+files_lock = threading.Lock()
 def create_project_tar_file():
+    files_lock.acquire()
     os.system("./copy2.sh")
+
 
 
 def delete_project_tar_file():
     os.system("rm -rf project2.tar.gz project")
+    files_lock.release()
 
 
 class Machine:
@@ -48,7 +52,7 @@ class Machine:
         zones = command.read_zones()
         threads = []
         for i, zone in enumerate(zones):
-            name = "s" + str(i + 1)
+            name = "s" + str(i)
             threads.append(
                 threading.Thread(target=(lambda m_name, m_type, m_zone: Machine(name=m_name, type=m_type, zone=m_zone)),
                                  args=[name, "e2-standard-2", zone]))
@@ -75,7 +79,7 @@ class Machine:
         file.write('{\n')
 
         for i in range(0, len(Machine.machines) - 1):
-            machine_name = "s" + str(i + 1)
+            machine_name = "s" + str(i)
             machine = Machine.machines[machine_name]
             machine_info = machine.__str__()
             for line in machine_info.split('\n')[:-1]:
@@ -86,7 +90,7 @@ class Machine:
             file.write(machine_info.split('\n')[-1])
             file.write(',\n')
 
-        machine_name = "s" + str(len(Machine.machines))
+        machine_name = "s" + str(len(Machine.machines) - 1)
         machine = Machine.machines[machine_name]
         machine_info = machine.__str__()
         for line in machine_info.split('\n'):
@@ -97,7 +101,7 @@ class Machine:
         file.write('}')
         file.close()
 
-    def run_all():
+    def run_all(): # if you call this method, you should not call run method anymore. It does not make sense to run twice!
         create_project_tar_file()
         threads = []
         for machine in Machine.machines:
@@ -248,34 +252,29 @@ class Machine:
             self.execute("sudo mv librocksdb.a ../")
             self.execute("sudo touch ../init_config_done")
 
-    def config(self, make_clear=False, force_copy=False):
-        if not force_copy:
-            stdout, stderr = self.execute("ls ./project")
-        else:
+    def config(self, make_clear=False, clear_all=False):
+        if clear_all:
             self.clear()
+        print("sending and compiling the project on machine " + self.name)
+        project_tar_file_created = False
+        if not os.path.exists("project2.tar.gz"):
+            create_project_tar_file()
+            project_tar_file_created = True
+        self.copy_to("project2.tar.gz", "")
+        if project_tar_file_created:
+            delete_project_tar_file()
 
-        if force_copy or stdout.find("No such file or directory") != -1 or stderr.find(
-                "No such file or directory") != -1 or os.system("cd ..; make -q >/dev/null 2>&1") != 0:
-            if os.system("cd ..; pwd; make -j 9") != 0:
-                raise Exception("Executables cannot be built")
-            project_tar_file_created = False
-            if not os.path.exists("project2.tar.gz"):
-                create_project_tar_file()
-                project_tar_file_created = True
-            self.copy_to("project2.tar.gz", "")
-            self.execute("tar -xzf project2.tar.gz")
+        self.execute("tar -xzf project2.tar.gz")
+        stdout, stderr = self.execute("ls project/lib/librocksdb.a")
+        if stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1:
+            self.execute("cp ../librocksdb.a ./project/lib/")
 
-            if force_copy or stdout.find("No such file or directory") != -1 or stderr.find(
-                    "No such file or directory") != -1:
-                self.execute("cp ../librocksdb.a ./project/lib/")
+        if make_clear:
+            self.execute("cd project/; make cleanall; make -j 4 > /dev/null 2>&1")
+        else:
+            self.execute("cd project/; make -j 4 > /dev/null 2>&1")
 
-            if make_clear:
-                self.execute("cd project/; make cleanall; make -j 4 > /dev/null 2>&1")
-            else:
-                self.execute("cd project/; make -j 4 > /dev/null 2>&1")
 
-            if project_tar_file_created:
-                delete_project_tar_file()
 
     def clear(self):
         self.execute("rm -rf *")
@@ -339,8 +338,10 @@ def keyboard_int_handler(signal_received, frame):
         print("Please Wait...")
     else:
         keyboard_int_handler_called = True
-        print("Please wait while I am stopping all the machines...")
+        print("Please wait while I am stopping all the machines and gathering the logs...")
         Machine.stop_all()
+        Machine.gather_summary_all()
+        Machine.gather_logs_all()
         exit(0)
 
 
@@ -349,10 +350,7 @@ def main():
 
     Machine.get_machine_list()
     Machine.dump_machines_ip_info()
-    # Machine.run_all()
-
-    Machine.gather_summary_all()
-    Machine.gather_logs_all()
+    Machine.run_all()
 
 if __name__ == '__main__':
     main()

@@ -30,25 +30,30 @@ public:
     
     static std::string serialize(const strVec& data);
     
-    static std::string serializePrp(const Properties& properties_p);
+//    static std::string serializePrp(const Properties& properties_p);
     
-    static std::string serializePlacement(const Placement& placement);
+//    static std::string serializePlacement(const Placement& placement);
     
     static strVec deserialize(std::string& data);
     
-    static Properties* deserializePrp(std::string& data);
+//    static Properties* deserializePrp(std::string& data);
     
-    static Placement* deserializePlacement(const std::string& data);
+//    static Placement* deserializePlacement(const std::string& data);
     
-    static std::string serializeCFG(const Placement& pp);
+//    static std::string serializeCFG(const Placement& pp);
     
-    static Placement deserializeCFG(std::string& data);
+//    static Placement deserializeCFG(std::string& data);
     
     
-    static std::string
-    serializeMDS(const std::string& status, const std::string& msg, const Placement* placement = nullptr);
+    static std::string serializeMDS(const std::string& status, const std::string& msg, const std::string& key,
+                                    const uint32_t& curr_conf_id, const uint32_t& new_conf_id, const std::string& timestamp,
+                                    const Placement& placement);
+
+    static Placement serializeMDS(const std::string& data, const std::string& status, const std::string& msg, const std::string& key,
+                                    const uint32_t& curr_conf_id, const uint32_t& new_conf_id, const std::string& timestamp,
+                                    const Placement& placement);
     
-    static Placement* deserializeMDS(const std::string& data, std::string& status, std::string& msg);
+    static Placement deserializeMDS(const std::string& data, std::string& status, std::string& msg);
     
 };
 

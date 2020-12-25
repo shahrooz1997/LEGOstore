@@ -19,49 +19,49 @@ message Datacenter{
 	repeated Server servers = 4;
 }
 
+message Quorums{
+	repeated uint32 Q1 = 1;
+	repeated uint32 Q2 = 2;
+	repeated uint32 Q3 = 3;
+	repeated uint32 Q4 = 4;
+}
+
 message Placement{
 	string protocol = 1;
 	repeated uint32 servers = 2;
-	repeated uint32 q1 = 3;
-	repeated uint32 q2 = 4;
-	uint32 f = 5;
-	uint32 m = 6;
-	uint32 k = 7;
-	repeated uint32 q3 = 8;
-	repeated uint32 q4 = 9;
-}
-
-message GroupConfig{
-	uint32 object_size = 1;
-	uint64 num_objects = 2;
-	double arrival_rate = 3;
-	double read_ratio = 4;
-	uint64 duration = 5;
-	repeated bytes keys = 6;
-	repeated double client_dist = 7;
-	Placement placement_p = 8;
-
+	uint32 f = 3;
+	uint32 m = 4;
+	uint32 k = 5;
+	repeated Quorums quorums = 6;
 }
 
 message Group{
-	uint64 timestamp = 1;
-	uint32 id = 2;
-	repeated uint32 grp_id = 3;
-	repeated GroupConfig grp_config = 4;
+	uint32 id = 1;
+	uint32 availability_target = 2;
+	repeated double client_dist = 3;
+	uint32 object_size = 4;
+	uint64 num_objects = 5;
+	double arrival_rate = 6;
+	double read_ratio = 7;
+	uint64 duration = 8;
+	repeated bytes keys = 9;
+	
+	Placement placement = 10;
+
 }
 
-message properties{
-	uint32 local_datacenter_id = 1;
-	uint32 retry_attempts = 2;
-	uint32 metadata_server_timeout = 3;
-	uint32 timeout_per_request = 4;
-	uint64 start_time = 5;
-	repeated Datacenter datacenters = 6;
-	repeated Group groups = 7;
+message Group_config{
+	uint64 timestamp = 1;
+	uint32 id = 2;
+	repeated Group groups = 3;
 }
 
 message MetaDataServer{
 	bytes status = 1;
 	bytes msg = 2;
-	Placement placement_p = 3;
+	bytes key = 3;
+	uint32 curr_conf_id = 4;
+	uint32 new_conf_id = 5;
+	bytes timestamp = 6;
+	Placement placement = 7;
 }

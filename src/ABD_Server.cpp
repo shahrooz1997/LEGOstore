@@ -63,7 +63,7 @@ int ABD_Server::init_key(const std::string& key, const uint32_t conf_id){
     return ret;
 }
 
-std::string ABD_Server::get_timestamp(const std::string& key, uint32_t conf_id){
+std::string ABD_Server::get_timestamp(const std::string& key, uint32_t conf_id, const std::string& extra_configs){
 
     DPRINTF(DEBUG_ABD_Server, "started.\n");
     lock_guard<mutex> lock(*mu_p);
@@ -82,11 +82,12 @@ std::string ABD_Server::get_timestamp(const std::string& key, uint32_t conf_id){
         return DataTransfer::serialize({"OK", data[2]});
     }
     else{ // Key reconfigured
-        return DataTransfer::serialize({"operation_fail", data[4]});
+        return DataTransfer::serialize({"OK", data[2], extra_configs});
     }
 }
 
-std::string ABD_Server::put(const std::string& key, uint32_t conf_id, const std::string& value, const std::string& timestamp){
+std::string ABD_Server::put(const std::string& key, uint32_t conf_id, const std::string& value, const std::string& timestamp,
+                            const std::string& extra_configs){
 
     DPRINTF(DEBUG_ABD_Server, "started.\n");
     lock_guard<mutex> lock(*mu_p);
@@ -111,17 +112,19 @@ std::string ABD_Server::put(const std::string& key, uint32_t conf_id, const std:
         return DataTransfer::serialize({"OK"});
     }
     else{ // Key reconfigured
+        /*
         if(!(Timestamp(timestamp) > Timestamp(data[3]))){
             if(Timestamp(timestamp) > Timestamp(data[2])){
                 data[0] = value;
                 data[2] = timestamp;
                 put_data(con_key, data);
             }
-            return DataTransfer::serialize({"OK"});
-        }
-        else{
-            return DataTransfer::serialize({"operation_fail", data[4]});
-        }
+        */
+        return DataTransfer::serialize({"OK", extra_configs});
+        //}
+        //else{
+        //    return DataTransfer::serialize({"operation_fail", data[4]});
+        //}
     }
 }
 
@@ -145,6 +148,6 @@ std::string ABD_Server::get(const std::string& key, uint32_t conf_id){
         return DataTransfer::serialize({"OK", data[2], data[0]});
     }
     else{ // Key reconfigured
-        return DataTransfer::serialize({"operation_fail", data[4]});
+        return DataTransfer::serialize({"OK", data[2], data[0], extra_configs});
     }
 }

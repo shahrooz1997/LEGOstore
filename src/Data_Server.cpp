@@ -1,4 +1,4 @@
-#include "../inc/Data_Server.h"
+include "../inc/Data_Server.h"
 
 using std::string;
 using std::vector;
@@ -31,42 +31,42 @@ int DataServer::put_data(const std::string& key, const strVec& value){
     return S_OK;
 }
 
-void DataServer::check_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id){
+bool DataServer::check_block_keys(std::vector<std::string>& blocked_keys, const std::string& key, 
+        const std::string& curr_class, uint32_t conf_id){
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
-    std::unique_lock<std::mutex> lock(this->blocked_keys_lock);
 
     // See if the key is in block mode
     string con_key = construct_key(key, curr_class, conf_id);
-    while(find(this->blocked_keys.begin(), this->blocked_keys.end(), con_key) != this->blocked_keys.end()){
-        this->blocked_keys_cv.wait(lock);
+    if(find(blocked_keys.begin(), blocked_keys.end(), con_key) != blocked_keys.end()){
+        return true;
     }
 
+    return false;
+}
+
+void DataServer::add_block_keys(std::vector<std::string>& blocked_keys, const std::string& key,
+            const std::string& curr_class, uint32_t conf_id){
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
+
+    std::string con_key = construct_key(key, curr_class, conf_id);
+    assert(std::find(blocked_keys.begin(), blocked_keys.end(), con_key) == blocked_keys.end());
+    blocked_keys.push_back(con_key);
+
     return;
 }
 
-void DataServer::add_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id){
+void DataServer::remove_block_keys(std::vector<std::string>& blocked_keys, const std::string& key,
+            const std::string& curr_class, uint32_t conf_id){
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
-    std::unique_lock<std::mutex> lock(this->blocked_keys_lock);
 
     std::string con_key = construct_key(key, curr_class, conf_id);
-    assert(std::find(this->blocked_keys.begin(), this->blocked_keys.end(), con_key) == this->blocked_keys.end());
-    this->blocked_keys.push_back(con_key);
+    auto it = std::find(blocked_keys.begin(), blocked_keys.end(), con_key);
 
-    return;
-}
-
-void DataServer::remove_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id){
-    DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
-    std::unique_lock<std::mutex> lock(this->blocked_keys_lock);
-
-    std::string con_key = construct_key(key, curr_class, conf_id);
-    auto it = std::find(this->blocked_keys.begin(), this->blocked_keys.end(), con_key);
-
-    if(it == this->blocked_keys.end()){
+    if(it == blocked_keys.end()){
         DPRINTF(DEBUG_RECONFIG_CONTROL, "WARN: it != this->blocked_keys.end() for con_key: %s\n", con_key.c_str());
     }
-    if(it != this->blocked_keys.end()){
-        this->blocked_keys.erase(it);
+    if(it != blocked_keys.end()){
+        blocked_keys.erase(it);
     }
     return;
 }
@@ -74,13 +74,13 @@ void DataServer::remove_block_keys(const std::string& key, const std::string& cu
 std::string DataServer::reconfig_query(const std::string& key, const std::string& curr_class, uint32_t conf_id){
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
-    add_block_keys(key, curr_class, conf_id);
+    add_block_keys(this->blocked_keys, key, curr_class, conf_id);
 
     if(curr_class == CAS_PROTOCOL_NAME){
         return CAS.get_timestamp(key, conf_id);
     }
     else if(curr_class == ABD_PROTOCOL_NAME){
-        return ABD.get(key, conf_id);
+        return ABD.get(key, conf_id, "");
     }
     else{
         assert(false);
@@ -91,7 +91,7 @@ std::string DataServer::reconfig_query(const std::string& key, const std::string
 std::string DataServer::reconfig_finalize(const std::string& key, const std::string& timestamp, const std::string& curr_class, uint32_t conf_id){
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
-
+    add_block_keys(this->finished_reconfig_keys, key, curr_class, conf_id);
     if(curr_class == CAS_PROTOCOL_NAME){
         return CAS.get(key, conf_id, timestamp);
     }else{
@@ -122,7 +122,7 @@ std::string DataServer::reconfig_write(const std::string& key, const std::string
         return CAS.put_fin(key, conf_id, timestamp);
     }
     else if(curr_class == ABD_PROTOCOL_NAME){
-        return ABD.put(key, conf_id, value, timestamp);
+        return ABD.put(key, conf_id, value, timestamp, "");
     }
     else{
         assert(false);
@@ -138,7 +138,7 @@ std::string DataServer::finish_reconfig(const std::string &key, const std::strin
     std::unique_lock<std::mutex> lock(mu);
     if(curr_class == CAS_PROTOCOL_NAME){
         string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
-        strVec data = get_data(con_key);
+        strvec data = get_data(con_key);
         if(data.empty()){
             CAS.init_key(key, conf_id);
             data = get_data(con_key);
@@ -163,7 +163,8 @@ std::string DataServer::finish_reconfig(const std::string &key, const std::strin
     }
     lock.unlock();
 
-    remove_block_keys(key, curr_class, conf_id);
+    remove_block_keys(this->blocked_keys, key, curr_class, conf_id);
+    remove_block_keys(this->finished_reconfig_keys, key, curr_class, conf_id);
 
     return DataTransfer::serialize({"OK"});
 }
@@ -174,13 +175,28 @@ int DataServer::getSocketDesc(){
 
 std::string DataServer::get_timestamp(const std::string& key, const std::string& curr_class, uint32_t conf_id){
 
-    check_block_keys(key, curr_class, conf_id);
+    bool reconfigFinished = check_block_keys(this->finished_reconfig_keys, key, curr_class, conf_id);
+    bool reconfigInProgress = check_block_keys(this->blocked_keys, key, curr_class, conf_id);
 
     if(curr_class == CAS_PROTOCOL_NAME){
         return CAS.get_timestamp(key, conf_id);
     }
     else if(curr_class == ABD_PROTOCOL_NAME){
-        return ABD.get_timestamp(key, conf_id);
+        if(reconfigFinished) {
+            strvec data = get_data(con_key);
+            return DataTransfer::serialize({"operation_fail", data[4]});
+        else if (reconfigInProgress){
+            strvec data = get_data(con_key);
+            string extra_configs = "extra_configs";
+            string con_key = construct_key(key, curr_class, conf_id);
+            vector<std::string> cfs = this->blocked_keys[con_key];
+            for(auto it = cfs.begin(); it != cfs.end(); it++) {
+                extra_configs += "!" + *it;
+            }
+            return ABD.get_timestamp(key, conf_id, extra_configs);
+        } else {
+            return ABD.get_timestamp(key, conf_id, "");
+        }
     }
     else{
         assert(false);
@@ -189,8 +205,6 @@ std::string DataServer::get_timestamp(const std::string& key, const std::string&
 }
 
 std::string DataServer::put(const std::string& key, const std::string& value, const std::string& timestamp, const std::string& curr_class, uint32_t conf_id){
-
-    check_block_keys(key, curr_class, conf_id);
 
     if(curr_class == CAS_PROTOCOL_NAME){
         DPRINTF(DEBUG_CAS_Client, "ddddd\n");
@@ -209,7 +223,18 @@ std::string DataServer::put(const std::string& key, const std::string& value, co
         return CAS.put(key, conf_id, value, timestamp);
     }
     else if(curr_class == ABD_PROTOCOL_NAME){
-        return ABD.put(key, conf_id, value, timestamp);
+        if (reconfigInProgress){
+            strvec data = get_data(con_key);
+            string extra_configs = "extra_configs";
+            string con_key = construct_key(key, curr_class, conf_id);
+            vector<std::string> cfs = this->blocked_keys[con_key];
+            for(auto it = cfs.begin(); it != cfs.end(); it++) {
+                extra_configs += "!" + *it;
+            }
+            return ABD.put(key, conf_id, value, timestamp, extra_configs);
+        } else {
+            return ABD.put(key, conf_id, value, timestamp, "");
+        }
     }
     else{
         assert(false);
@@ -219,7 +244,7 @@ std::string DataServer::put(const std::string& key, const std::string& value, co
 
 std::string DataServer::put_fin(const std::string& key, const std::string& timestamp, const std::string& curr_class, uint32_t conf_id){
 
-    check_block_keys(key, curr_class, conf_id);
+    check_block_keys(this->blocked_keys, key, curr_class, conf_id);
 
     if(curr_class == CAS_PROTOCOL_NAME){
         return CAS.put_fin(key, conf_id, timestamp);
@@ -227,18 +252,32 @@ std::string DataServer::put_fin(const std::string& key, const std::string& times
     else{
         assert(false);
     }
-    return DataTransfer::serialize({"ERROR", "INTERNAL ERROR"});
+    breturn DataTransfer::serialize({"ERROR", "INTERNAL ERROR"});
 }
 
 std::string DataServer::get(const std::string& key, const std::string& timestamp, const std::string& curr_class, uint32_t conf_id){
 
-    check_block_keys(key, curr_class, conf_id);
+    bool reconfigFinished = check_block_keys(this->finished_reconfig_keys, key, curr_class, conf_id);
+    bool reconfigInProgress = check_block_keys(this->blocked_keys, key, curr_class, conf_id);
 
     if(curr_class == CAS_PROTOCOL_NAME){
         return CAS.get(key, conf_id, timestamp);
     }
     else if(curr_class == ABD_PROTOCOL_NAME){
-        return ABD.get(key, conf_id);
+        if(reconfigFinished) {
+            strvec data = get_data(con_key);
+            return DataTransfer::serialize({"operation_fail", data[4]});
+        } else if(reconfigInProgress) {
+            string extra_configs = "extra_configs";
+            string con_key = construct_key(key, curr_class, conf_id);
+            vector<std::string> cfs = this->blocked_keys[con_key];
+            for(auto it = cfs.begin(); it != cfs.end(); it++) {
+                extra_configs += "!" + *it;
+            }
+            return ABD.get(key, conf_id, extra_configs);
+        } else {
+            return ABD.get(key, conf_id);
+        }
     }
     else{
         assert(false);

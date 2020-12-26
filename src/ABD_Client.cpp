@@ -67,6 +67,26 @@ namespace ABD_helper{
         std::string recvd;
         if(DataTransfer::recvMsg(*c, recvd) == 1){
             data = DataTransfer::deserialize(recvd);
+            if(data[0] == "OK") {
+                string cfs;
+                if(operation == "put"){
+                    cfs = data[1];
+                } else if(operation == "get"){
+                    cfs = data[3];
+                } else if(operation == "get_timestamp"){
+                    cfs = data[2];
+                }
+                    
+                if (cfs.find('!') != std::string::npos) {
+                    while ((pos = cfs.find("!")) != std::string::npos) {
+                        token = cfs.substr(0, pos);
+                        if(find(secondary_configs[key].begin(), secondary_configs[key].end(), (stoul(token))) !=
+                                secondary_configs[key].end()) {
+                            secondary_configs[key].push_back(stoul(token));
+                        }
+                    }
+                }
+            } 
             prm.set_value(std::move(data));
         }
         else{
@@ -77,13 +97,69 @@ namespace ABD_helper{
         DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %u\n", server->port);
         return;
     }
+    
+    int do_operation(const std::string& operation, const std::string& key, const std::string& timestamp, const std::string& value, uint32_t RAs,
+                            std::vector <uint32_t> quorom, std::unordered_set <uint32_t> servers, std::vector<DC*>& datacenters,
+                            const std::string current_class, const uint32_t conf_id, uint32_t timeout_per_request, std::vector<strVec> &ret){
+        DPRINTF(DEBUG_CAS_Client, "Daemon started.\n");
+        std::promise <pair<int, vector<strVec>>> prm;
+        std::future<pair<int, vector<strVec>>> fut = prm.get_future();
+        map<uint32_t, bool> secondary_configs_map;
+        map<uint32_t, std::future<pair<int, vector<strVec>>> future_map;
+        map<uint32_t, std::vector<strVec>> response_map;
+        vector<bool> check_status; 
 
+        std::thread(ABD_helper::&failure_support_optimized, operation, key, timestamp, value, RAs, quorum, servers,
+                                                 datacenters, current_class, conf_id,
+                                                 timeout_per_request, ret, prm).detach();
+        bool config_found = false;
+        while ((secondary_configs.find(key) != secondary_configs.end()) && 
+                (check_status.size() == secondary_configs[key].size()) && 
+                    !(fut.wait_for(std::chrono::seconds(0)) == std::future_status::ready)) {
+            for(auto it = secondary_configs[key].begin(); it != secondary_configs[key].end(); it++){
+                if(!secondary_configs_map[*it]) {
+       
+                    // get placements
+                    const Placement& p = parent->get_placement(key, false, *it);
+                    std::unordered_set <uint32_t> new_servers;
+                    set_intersection(p, new_servers);
+        
+                    std::vector<strVec> newret;
+                    std::promise <pair<int, vector<strVec>>> prm_child;
+                    future_map.emplace(*it, prm_child.get_future());
+                    std::thread(ABD_helper::&failure_support_optimized, "put", key, "", value, RAs, p.Q2, new_servers, 
+                                datacenters, current_class, *it, timeout_per_request, std::ref(newret), prm_child).detach();
+                    secondary_configs_map[*it] = true;             
+                } else if(future_map[*it]->second.valid() && future_map[*it]->second.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready){
+                    pair<int, vector<strVec>> ret_obj = future_map[*it]->second.get();
+                    if(ret_obj.first == -1) {
+                        return ret_obj;
+                    }
+                    if(ret_obj.second[0] == "OK"){
+                        DPRINTF(DEBUG_ABD_Client, "OK received for key : %s\n", key.c_str());
+                    } else if(ret_obj.second[0] == "operation_fail"){
+                        secondary_configs[key].clear();
+                        DPRINTF(DEBUG_ABD_Client, "operation_fail received for key : %s\n", key.c_str());
+                        return -2; // reconfiguration happened on the key
+//            return S_RECFG;
+                    }else{
+                        DPRINTF(DEBUG_ABD_Client, "Bad message received from server for key : %s\n", key.c_str());
+                        return -3; // Bad message received from server
+                    }
+                }
+            }
+        }
+
+        <pair<int, vector<strVec>> parent_op_status = fut.get();
+        return parent_op_status.first; 
+    }
+    
     /* This function will be used for all communication.
      * datacenters just have the information for servers
      */
-    int failure_support_optimized(const std::string& operation, const std::string& key, const std::string& timestamp, const std::string& value, uint32_t RAs,
+    void failure_support_optimized(const std::string& operation, const std::string& key, const std::string& timestamp, const std::string& value, uint32_t RAs,
                                   std::vector <uint32_t> quorom, std::unordered_set <uint32_t> servers, std::vector<DC*>& datacenters,
-                                  const std::string current_class, const uint32_t conf_id, uint32_t timeout_per_request, std::vector<strVec> &ret){
+                                  const std::string current_class, const uint32_t conf_id, uint32_t timeout_per_request, std::vector<strVec> &ret, std::promise <pair<int, vector<strVec>>>&& parent_prm){
         DPRINTF(DEBUG_CAS_Client, "started.\n");
 
         std::map <uint32_t, std::future<strVec> > responses; // server_id, future
@@ -193,7 +269,10 @@ namespace ABD_helper{
                 continue;
             }
         }
-        return op_status;
+        pair<int, vector<strVec>> ret_obj;
+        ret_obj.first = op_status;
+        ret_obj.second = ret;
+        parent_prm.set_value(std::move(op_status));
     }
 }
 
@@ -232,10 +311,14 @@ int ABD_Client::get_timestamp(const std::string& key, Timestamp*& timestamp){
     std::vector<strVec> ret;
 
     DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
-    op_status = ABD_helper::failure_support_optimized("get_timestamp", key, "", "", this->retry_attempts, p.Q1, servers,
+    std::promise <pair<int, vector<strVec>>> prm;
+    std::future<pair<int, vector<strVec>>> fut = prm.get_future();
+    std::thread(ABD_helper::&failure_support_optimized("get_timestamp", key, "", "", this->retry_attempts, p.Q1, servers,
                                                  this->datacenters, this->current_class, parent->get_conf_id(key),
-                                                 this->timeout_per_request, ret);
+                                                 this->timeout_per_request, ret, prm).detach();
 
+    pair<int, vector<strVec>> ret_obj = fut.get();
+    op_status = ret_obj.first;
     DPRINTF(DEBUG_ABD_Client, "op_status: %d.\n", op_status);
     if(op_status == -1) {
         return op_status;
@@ -313,7 +396,7 @@ int ABD_Client::put(const std::string& key, const std::string& value){
     std::vector<strVec> ret;
 
     DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
-    op_status = ABD_helper::failure_support_optimized("put", key, timestamp->get_string(), value, this->retry_attempts, p.Q2, servers,
+    op_status = ABD_helper::do_operation("put", key, timestamp->get_string(), value, this->retry_attempts, p.Q2, servers,
                                                              this->datacenters, this->current_class, parent->get_conf_id(key),
                                                              this->timeout_per_request, ret);
 
@@ -385,27 +468,32 @@ int ABD_Client::get(const std::string& key, std::string& value){
     std::vector<strVec> ret;
 
     DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
+    std::promise <pair<int, vector<strVec>>> prm;
+    std::future<pair<int, vector<strVec>>> fut = prm.get_future();
 #ifndef No_GET_OPTIMIZED
     if(p.Q1.size() < p.Q2.size()) {
-        op_status = ABD_helper::failure_support_optimized("get", key, "", "", this->retry_attempts, p.Q2,
+        std::thread(ABD_helper::&failure_support_optimized("get", key, "", "", this->retry_attempts, p.Q2,
                                                                  servers,
                                                                  this->datacenters, this->current_class,
                                                                  parent->get_conf_id(key),
-                                                                 this->timeout_per_request, ret);
+                                                                 this->timeout_per_request, ret, prm).detach();
     }
     else{
-        op_status = ABD_helper::failure_support_optimized("get", key, "", "", this->retry_attempts, p.Q1,
+        std::thread(ABD_helper::&failure_support_optimized("get", key, "", "", this->retry_attempts, p.Q1,
                                                                  servers,
                                                                  this->datacenters, this->current_class,
                                                                  parent->get_conf_id(key),
-                                                                 this->timeout_per_request, ret);
+                                                                 this->timeout_per_request, ret, prm).detach();
     }
 #else
-    op_status = ABD_helper::failure_support_optimized("get", key, "", "", this->retry_attempts, p.Q1, servers,
+    std::thread(ABD_helper::&failure_support_optimized("get", key, "", "", this->retry_attempts, p.Q1, servers,
                                                              this->datacenters, this->current_class, parent->get_conf_id(key),
-                                                             this->timeout_per_request, ret);
+                                                             this->timeout_per_request, ret, prm).detach();
 #endif
 
+    pair<int, vector<strVec>> ret_obj = fut.get();
+    op_status = ret_obj.first;
+    
     DPRINTF(DEBUG_ABD_Client, "op_status: %d.\n", op_status);
     if(op_status == -1) {
         return op_status;
@@ -470,11 +558,16 @@ int ABD_Client::get(const std::string& key, std::string& value){
 #endif
 
     // Put
-    op_status = ABD_helper::failure_support_optimized("put", key, tss[idx].get_string(), vs[idx], this->retry_attempts, p.Q2,
+    std::promise <pair<int, vector<strVec>>> prm;
+    std::future<pair<int, vector<strVec>>> fut = prm.get_future();
+    std::thread(ABD_helper::&failure_support_optimized("put", key, tss[idx].get_string(), vs[idx], this->retry_attempts, p.Q2,
                                                              servers, this->datacenters, this->current_class,
                                                              parent->get_conf_id(key),
-                                                             this->timeout_per_request, ret);
+                                                             this->timeout_per_request, ret, prm).detach();
 
+    pair<int, vector<strVec>> ret_obj = fut.get();
+    op_status = ret_obj.first();
+    
     DPRINTF(DEBUG_ABD_Client, "op_status: %d.\n", op_status);
     if(op_status == -1) {
         return op_status;

@@ -51,6 +51,7 @@ int Client_Node::update_placement(const std::string& key, const uint32_t conf_id
     uint32_t requested_conf_id;
     uint32_t new_conf_id; // Not usefull for client
     std::string timestamp; // Not usefull for client
+    std::string sec_configs;
     Placement* p = nullptr;
 
     if(this->cas != nullptr){
@@ -61,7 +62,7 @@ int Client_Node::update_placement(const std::string& key, const uint32_t conf_id
     else if(this->abd != nullptr){
         ret = ask_metadata(this->abd->get_metadata_server_ip(), this->abd->get_metadata_server_port(), key,
                            conf_id, requested_conf_id, new_conf_id, timestamp, p, this->abd->get_retry_attempts(),
-                           this->abd->get_metadata_server_timeout());
+                           this->abd->get_metadata_server_timeout(), sec_configs);
     }
     else{
         ret = -1;
@@ -69,7 +70,21 @@ int Client_Node::update_placement(const std::string& key, const uint32_t conf_id
     }
     
     assert(ret == 0);
-    
+   
+    // Update secondary configs list
+    vector<uint32_t> vec;
+    if(sec_configs.length() > 0) {
+        size_t pos = 0;
+        std::string token;
+        std::delimiter = "!";
+        while ((pos = sec_configs.find(delimiter)) != std::string::npos) {
+            token = sec_configs.substr(0, pos);
+            vec.push_back(stoul(token));
+            s.erase(0, pos + delimiter.length());
+        }
+    }
+    this->secondary_configs[key] = vec; 
+
     keys_info[key] = std::pair<uint32_t, Placement>(requested_conf_id, *p);
 //    if(p->protocol == CAS_PROTOCOL_NAME){
 //        if(this->desc != -1){

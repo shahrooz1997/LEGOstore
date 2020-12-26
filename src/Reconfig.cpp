@@ -529,9 +529,43 @@ int Reconfig::update_metadata_info(std::string& key, uint32_t old_confid_id, uin
     return S_OK;
 }
 
+int Reconfig::update_metadata_state(std::string& key, uint32_t old_confid_id, std::string& op, const std::string& timestamp){
+    DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
+    for(uint k = 0; k < datacenters.size(); k++){
+        Connect c(datacenters[k]->metadata_server_ip, datacenters[k]->metadata_server_port);
+        if(!c.is_connected()){
+            DPRINTF(DEBUG_RECONFIG_CONTROL, "Warn: cannot connect to metadata server\n");
+            continue;
+        }
+        DataTransfer::sendMsg(*c, DataTransfer::serializeMDS("state",
+                                                             key + "!" + std::to_string(old_confid_id) + "!" + op + "!" + timestamp));
+        std::string recvd;
+        if(DataTransfer::recvMsg(*c, recvd) == 1){
+            fflush(stdout);
+            std::string status;
+            std::string msg;
+            DataTransfer::deserializeMDS(recvd, status, msg);
+            if(status != "OK"){
+                DPRINTF(DEBUG_RECONFIG_CONTROL, "%s\n", msg.c_str());
+                assert(false);
+            }
+            DPRINTF(DEBUG_RECONFIG_CONTROL, "metadata_server state updated\n");
+        }
+        else{
+            DPRINTF(DEBUG_RECONFIG_CONTROL, "Error in receiving msg from Metadata Server\n");
+            return -1;
+        }
+    }
+
+    return S_OK;
+}
+
 int Reconfig::start_reconfig(GroupConfig& old_config, uint32_t old_conf_id, GroupConfig& new_config, uint32_t new_conf_id){
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
+    std::string& state_ready = "ready";
+    std::string& state_toretire = "toretire";
+    std::string& state_retired = "retired";
 
     for(uint i = 0; i < old_config.keys.size(); i++){
         std::string& key = old_config.keys[i];
@@ -544,10 +578,14 @@ int Reconfig::start_reconfig(GroupConfig& old_config, uint32_t old_conf_id, Grou
         }
         assert(Reconfig::send_reconfig_write(new_config, new_conf_id, key, ret_ts, ret_v) == 0);
 
+        assert(update_metadata_state(key, old_conf_id, "add", ret_ts->get_string()) == 0);
+        
         assert(update_metadata_info(key, old_conf_id, new_conf_id, ret_ts->get_string(), *new_config.placement_p) == 0);
 
         assert(Reconfig::send_reconfig_finish(old_config, old_conf_id, new_conf_id, key, ret_ts) == 0);
 
+        assert(update_metadata_state(key, old_conf_id, "remove", new_conf_id, ret_ts->get_string()) == 0);
+        
         delete ret_ts;
     }
     return S_OK;

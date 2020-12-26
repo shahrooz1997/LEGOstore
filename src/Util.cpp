@@ -892,7 +892,7 @@ int request_placement(const std::string& metadata_server_ip, const std::string& 
 
 int ask_metadata(const std::string& metadata_server_ip, const std::string& metadata_server_port,
         const std::string& key, const uint32_t conf_id, uint32_t& requested_conf_id, uint32_t& new_conf_id,
-        std::string& timestamp, Placement*& p, uint32_t retry_attempts, uint32_t metadata_server_timeout){
+        std::string& timestamp, Placement*& p, uint32_t retry_attempts, uint32_t metadata_server_timeout, std::string& secondary_configs){
     int ret = 0;
     
     std::string status, msg;
@@ -908,7 +908,8 @@ int ask_metadata(const std::string& metadata_server_ip, const std::string& metad
     
     std::size_t pos = msg.find("!");
     std::size_t pos2 = msg.find("!", pos + 1);
-    if(pos >= msg.size() || pos2 >= msg.size()){
+    std::size_t pos3 = msg.find("!", pos2 + 1);
+    if(pos >= msg.size() || pos2 >= msg.size() || pos3 >= msg.size()){
         std::stringstream pmsg; // thread safe printing
         pmsg << "BAD FORMAT: " << msg << std::endl;
         std::cerr << pmsg.str();
@@ -916,8 +917,9 @@ int ask_metadata(const std::string& metadata_server_ip, const std::string& metad
     }
     requested_conf_id = stoul(msg.substr(0, pos));
     new_conf_id = stoul(msg.substr(pos + 1, pos2 - pos - 1));
-    timestamp = msg.substr(pos2 + 1);
-    
+    timestamp = msg.substr(pos2 + 1, pos3 - pos2 - 1);
+    secondary_configs = msg.substr(pos3 + 1);
+     
     return ret;
 }
 

@@ -47,6 +47,9 @@ using namespace std;
 std::map<std::string, pair<string, Placement> > key_info;
 std::mutex lock_t;
 
+// Storing states of configurations
+std::map<std::string, vector<std::string>> secondary_configs; 
+
 inline std::string construct_key_metadata(const std::string& key, const std::string& conf_id){
     std::string ret;
     ret += key;
@@ -66,6 +69,15 @@ inline std::string construct_confid_timestamp(const std::string& confid, const s
 string ask(const string& key, const string& confid){ // respond with (requested_confid!new_confid!timestamp, p)
     
     DPRINTF(DEBUG_METADATA_SERVER, "key: %s, confid: %s\n", key.c_str(), confid.c_str());
+   
+    auto it1 = secondary_configs.find(key);
+    string sec_configs = "";
+    if(it1 != secondary_configs.end()){
+        for (std::vector<std::string>::const_iterator i = it1->second.begin(); i != it1->second.end(); ++i) {
+            if(*i != confid) sec_configs += *i;
+            if(i != it1->second.end()) sec_configs += "!"; 
+        }
+    }
     
     if(confid == "0"){ // exception case.
         auto it = key_info.find(construct_key_metadata(key, confid));
@@ -73,7 +85,7 @@ string ask(const string& key, const string& confid){ // respond with (requested_
         uint32_t saved_conf_id = stoul(it->second.first.substr(0, it->second.first.find("!")));
         
         auto it2 = key_info.find(construct_key_metadata(key, saved_conf_id));
-        return DataTransfer::serializeMDS("OK", to_string(saved_conf_id) + "!" + it->second.first,
+        return DataTransfer::serializeMDS("OK", to_string(saved_conf_id) + "!" + it->second.first + "!" + sec_configs,
                 &(it2->second.second));
     }
     
@@ -82,11 +94,36 @@ string ask(const string& key, const string& confid){ // respond with (requested_
     if(it == key_info.end()){ // Not found!
         return DataTransfer::serializeMDS("ERROR", "key with that conf_id does not exist", nullptr);
     }
-    
-    
-    return DataTransfer::serializeMDS("OK", confid + "!" + it->second.first, &(it->second.second));
+ 
+    return DataTransfer::serializeMDS("OK", confid + "!" + it->second.first + "!" + sec_configs, &(it->second.second));
 }
 
+string
+update_config_state(const string& key, const string& old_confid, const string& op, const string& timestamp){
+    auto it = secondary_configs.find(key);
+    
+    DPRINTF(DEBUG_METADATA_SERVER, "key: %s, old_conf: %s\n", key.c_str(), old_confid.c_str());
+    
+    if(it == secondary_configs.end()){ // Not found!
+        if(op == "add") {
+            vector<std::string> vec;
+            vec.push_back(old_confid);
+            secondary_configs[key] = vec;
+        }    
+    }
+    
+    if(timestamp.find("-") >= timestamp.size()){
+        assert(false);
+    }
+   
+    if(op == "add") {
+        secondary_configs[key].push_back(old_confid);
+    } else {
+        secondary_configs.erase(std::remove(secondary_configs.begin(), secondary_configs.end(), old_config), secondary_configs.end());
+    }
+    return DataTransfer::serializeMDS("OK", "state updated", nullptr);
+}
+ 
 string
 update(const string& key, const string& old_confid, const string& new_confid, const string& timestamp, Placement* p){
     auto it = key_info.find(construct_key_metadata(key, old_confid));
@@ -145,6 +182,26 @@ void message_handler(int connection, int portid, std::string& recvd){
         string key = msg.substr(0, pos);
         string conf_id = msg.substr(pos + 1);
         result = DataTransfer::sendMsg(connection, ask(key, conf_id));
+    }
+    else if(method == "state"){
+        DPRINTF(DEBUG_METADATA_SERVER, "The method state is called. The msg is %s, server port is %u\n", msg.c_str(),
+                portid);
+        std::size_t pos = msg.find("!");
+        std::size_t pos2 = msg.find("!", pos + 1);
+        std::size_t pos3 = msg.find("!", pos2 + 1);
+        
+        if(pos >= msg.size() || pos2 >= msg.size() || pos3 >= msg.size()){
+            std::stringstream pmsg; // thread safe printing
+            pmsg << "BAD FORMAT: " << msg << std::endl;
+            std::cerr << pmsg.str();
+            assert(0);
+        }
+        string key = msg.substr(0, pos);
+        string old_confid = msg.substr(pos + 1, pos2 - pos - 1);
+        string op = msg.substr(pos2 + 1, pos3 - pos2 - 1);
+        string timestamp = msg.substr(pos3 + 1);
+        
+        result = DataTransfer::sendMsg(connection, update_config_state(key, old_confid, op, timestamp));
     }
     else if(method == "update"){
         DPRINTF(DEBUG_METADATA_SERVER, "The method update is called. The msg is %s, server port is %u\n", msg.c_str(),

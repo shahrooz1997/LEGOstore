@@ -301,13 +301,9 @@ inline uint32_t ip_str_to_int(const std::string& ip){
 // This function will create a client and start sending requests
 int run_session(uint req_idx){
 
-    DPRINTF(DEBUG_CAS_Client, "AAAAAAAAAAAAAAAAA\n");
-
     auto timePoint3 = time_point_cast<milliseconds>(system_clock::now());
     int cnt = 0;        // Count the number of requests
     uint32_t client_id = get_unique_client_id(datacenter_id, conf_id, grp_id, req_idx);
-
-    DPRINTF(DEBUG_CAS_Client, "AAAAAAAAAAAAAAAAA2\n");
 
 #ifdef DEBUGGING
     srand(client_id);
@@ -323,41 +319,30 @@ int run_session(uint req_idx){
     if(!datacenter_indx_found){
         DPRINTF(DEBUG_CAS_Client, "wrong local_datacenter_id %d.\n", datacenter_id);
     }
-    DPRINTF(DEBUG_CAS_Client, "AAAAAAAAAAAAAAAAA3\n");
     assert(datacenter_indx_found);
     srand(time(NULL) + client_id + ip_str_to_int(datacenters[datacenter_indx]->servers[0]->ip));
 
-    DPRINTF(DEBUG_CAS_Client, "AAAAAAAAAAAAAAAAA4\n");
 //    srand(client_id);
 #endif
 
     Client_Node clt(client_id, datacenter_id, retry_attempts_number, metadata_server_timeout, timeout_per_request, datacenters);
 
-    DPRINTF(DEBUG_CAS_Client, "AAAAAAAAAAAAAAAAA5\n");
-
     auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
     timePoint2 += milliseconds{rand() % 2000};
     std::this_thread::sleep_until(timePoint2);
-
-    DPRINTF(DEBUG_CAS_Client, "AAAAAAAAAAAAAAAAA6\n");
 
     timePoint3 += milliseconds{WARM_UP_DELAY * 1000};
 
     // logging
     File_logger file_logger(clt.get_id());
 
-    DPRINTF(DEBUG_CAS_Client, "AAAAAAAAAAAAAAAAA7\n");
-
     // WARM UP THE SOCKETS
 //    warm_up(clt, file_logger);
     warm_up();
 //    warm_up();
 
-    DPRINTF(DEBUG_CAS_Client, "AAAAAAAAAAAAAAAAA8\n");
 
     std::this_thread::sleep_until(timePoint3);
-
-    DPRINTF(DEBUG_CAS_Client, "AAAAAAAAAAAAAAAAA9\n");
     
 //    DPRINTF(DEBUG_CAS_Client, "datacenter port: %u\n", datacenters[datacenter_id]->metadata_server_port);
     
@@ -399,7 +384,7 @@ int run_session(uint req_idx){
             }
             auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
             file_logger(Op::put, keys[key_idx], val, epoch, epoch2);
-            DPRINTF(DEBUG_CAS_Client, "put done on key: %s with value: %s\n", keys[key_idx].c_str(), val.c_str());
+            DPRINTF(DEBUG_CAS_Client, "put done on key: %s with value: %s\n", keys[key_idx].c_str(), std::string(TRANC_STR(val)).c_str());
         }
         
         assert(result != S_FAIL);

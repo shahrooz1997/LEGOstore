@@ -634,7 +634,7 @@ int main(){
     Controller master(2, 10000, 10000, "./config/local_config.json",
                       "./config/auto_test/input_workload.json", "./config/auto_test/optimizer_output.json");
 #else
-    Controller master(2, 10000, 10000, "./scripts/setup_config.json",
+    Controller master(2, 10000, 10000, "./config/auto_test/datacenters_access_info.json",
                       "./config/auto_test/input_workload.json", "./config/auto_test/optimizer_output.json");
 #endif
     master.run_all_clients();

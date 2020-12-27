@@ -34,6 +34,7 @@
 #include <map>
 #include <mutex>
 #include <memory>
+#include <random>
 
 using namespace std::chrono;
 
@@ -121,7 +122,7 @@ private:
 //#define EASY_LOG_INIT_M(M) Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, M)
 #define EASY_LOG_M(M) EASY_LOGGER_INSTANCE_NAME(__LINE__, M)
 
-#define TRANC_STR(X) X.substr(0, 3) + "...[" + to_string(X.size()) + " bytes]"
+#define TRUNC_STR(X) X.substr(0, 3) + "...[" + std::to_string(X.size()) + " bytes]"
 
 
 typedef std::vector <std::string> strVec;
@@ -200,6 +201,9 @@ struct Properties{
     
     ~Properties();
 };
+
+int get_random_number_uniform(int min, int max, int seed = std::chrono::system_clock::now().time_since_epoch().count());
+double get_random_real_number_uniform(double min, double max, int seed = std::chrono::system_clock::now().time_since_epoch().count());
 
 #ifdef LOCAL_TEST
 #define WARM_UP_DELAY 30

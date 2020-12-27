@@ -314,7 +314,7 @@ int Reconfig::reconfig_one_key(const string& key, const Group& old_config, uint3
         assert(Reconfig::send_reconfig_finalize(old_config, old_conf_id, key, ret_ts, ret_v) == 0);
         EASY_LOG_M("send_reconfig_finalize done");
     }
-    EASY_LOG_M("ret_ts: " + ret_ts->get_string() + ", ret_v: " + TRANC_STR(ret_v));
+    EASY_LOG_M("ret_ts: " + ret_ts->get_string() + ", ret_v: " + TRUNC_STR(ret_v));
     assert(Reconfig::send_reconfig_write(new_config, new_conf_id, key, ret_ts, ret_v) == 0);
     EASY_LOG_M("send_reconfig_write done");
     assert(update_metadata_info(key, old_conf_id, new_conf_id, ret_ts->get_string(), new_config.placement) == 0);

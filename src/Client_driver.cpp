@@ -99,26 +99,21 @@ inline uint32_t get_unique_client_id(uint datacenter_id, uint conf_id, uint grp_
 }
 
 inline int next_event(const std::string& dist_process){
-    if(dist_process == "uniform"){
-        return 1000;
-    }
-    else if(dist_process == "poisson"){
-        return -log(1 - (double)rand() / (RAND_MAX)) * 1000;
+    if(dist_process == "poisson"){
+        std::default_random_engine generator(system_clock::now().time_since_epoch().count());
+#ifdef DEBUGGING
+        std::exponential_distribution<double> distribution(1);
+#else
+        std::exponential_distribution<double> distribution(.5);
+#endif
+
+        return duration_cast<milliseconds>(duration<double>(distribution(generator))).count();
+//        return -log(1 - (double)rand() / (RAND_MAX)) * 1000;
     }
     else{
         throw std::logic_error("Distribution process specified is unknown !! ");
     }
     return 0;
-}
-
-std::string get_random_value(uint32_t size = object_size){
-    std::string value;
-    // First figure should not be zero
-    value += rand() % 9 + '1';
-    while(value.size() < size){
-        value += std::to_string(rand() % 10);
-    }
-    return value;
 }
 
 int read_keys(const std::string& file){
@@ -155,6 +150,10 @@ int read_keys(const std::string& file){
 
             if(grp.id == grp_id){
                 it["keys"].get_to(grp.keys);
+                DPRINTF(DEBUG_ABD_Client, "2Keys are (%lu):\n", grp.keys.size());
+                for(auto& key: grp.keys){
+                    DPRINTF(DEBUG_ABD_Client, "2A%s \n", key.c_str());
+                }
                 keys = grp.keys;
                 keys_set = true;
                 break;
@@ -166,6 +165,13 @@ int read_keys(const std::string& file){
     cfg.close();
 
     assert(keys_set);
+
+    DPRINTF(DEBUG_ABD_Client, "Keys are (%lu):\n", keys.size());
+    for(auto& key: keys){
+        DPRINTF(DEBUG_ABD_Client, "A%s \n", key.c_str());
+    }
+
+    assert(keys.size() > 0);
 
     return 0;
 }
@@ -196,12 +202,12 @@ int warm_up(){
 
     for(auto it = datacenters.begin(); it != datacenters.end(); it++){
         warm_up_one_connection((*it)->metadata_server_ip, (*it)->metadata_server_port);
-        std::this_thread::sleep_for(milliseconds(rand() % 2000));
+        std::this_thread::sleep_for(milliseconds(get_random_number_uniform(0, 2000)));
     }
 
     for(auto it = datacenters.begin(); it != datacenters.end(); it++){
         warm_up_one_connection((*it)->servers[0]->ip, (*it)->servers[0]->port);
-        std::this_thread::sleep_for(milliseconds(rand() % 2000));
+        std::this_thread::sleep_for(milliseconds(get_random_number_uniform(0, 2000)));
     }
 
     return S_OK;
@@ -222,7 +228,7 @@ int warm_up(){
 //                std::this_thread::sleep_until(timePoint2);
 //
 //                // Last write must be logged for testing linearizability purposes
-//                std::string val = get_random_value(8 * 1024);
+//                std::string val = get_random_string(8 * 1024);
 //                auto epoch = time_point_cast<std::chrono::microseconds>(
 //                        std::chrono::system_clock::now()).time_since_epoch().count();
 //                result = clt.put(keys[i], val);
@@ -239,7 +245,7 @@ int warm_up(){
 //            auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
 //            timePoint2 += milliseconds{rand() % 1000};
 //            std::this_thread::sleep_until(timePoint2);
-//            std::string val = get_random_value(8 * 1024);
+//            std::string val = get_random_string(8 * 1024);
 //            result = clt.put(keys[i], val);
 //            if(result != 0){
 ////                DPRINTF(DEBUG_CAS_Client, "clt.put on key %s, result is %d\n", keys[key_idx].c_str(), result);
@@ -306,7 +312,8 @@ int run_session(uint req_idx){
     uint32_t client_id = get_unique_client_id(datacenter_id, conf_id, grp_id, req_idx);
 
 #ifdef DEBUGGING
-    srand(client_id);
+    get_random_number_uniform(0, 100, client_id);
+//    srand(client_id);
 #else
     uint datacenter_indx = 0;
     bool datacenter_indx_found = false;
@@ -320,15 +327,14 @@ int run_session(uint req_idx){
         DPRINTF(DEBUG_CAS_Client, "wrong local_datacenter_id %d.\n", datacenter_id);
     }
     assert(datacenter_indx_found);
-    srand(time(NULL) + client_id + ip_str_to_int(datacenters[datacenter_indx]->servers[0]->ip));
-
-//    srand(client_id);
+    get_random_number_uniform(0, 100, time(NULL) + client_id + ip_str_to_int(datacenters[datacenter_indx]->servers[0]->ip));
+//    srand(time(NULL) + client_id + ip_str_to_int(datacenters[datacenter_indx]->servers[0]->ip));
 #endif
 
     Client_Node clt(client_id, datacenter_id, retry_attempts_number, metadata_server_timeout, timeout_per_request, datacenters);
 
     auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
-    timePoint2 += milliseconds{rand() % 2000};
+    timePoint2 += milliseconds{get_random_number_uniform(0, 2000)};
     std::this_thread::sleep_until(timePoint2);
 
     timePoint3 += milliseconds{WARM_UP_DELAY * 1000};
@@ -354,12 +360,16 @@ int run_session(uint req_idx){
     
     while(system_clock::now() < timePoint){ // for duration amount of time
         cnt += 1;
-        double random_ratio = (double)(rand() % 100) / 100.00;
-        Op req_type = random_ratio <= read_ratio ? Op::get : Op::put;
+        double random_ratio = get_random_real_number_uniform(0, 1); // ((double)(get_random_number_uniform(0, numeric_limits<int>::max()))) / numeric_limits<int>::max();
+        Op req_type = random_ratio < read_ratio ? Op::get : Op::put;
         int result = S_OK;
         
         //Choose a random key
-        uint key_idx = rand() % (keys.size());
+        DPRINTF(DEBUG_ABD_Client, "Keys are (%lu):\n", keys.size());
+        uint key_idx = (uint)get_random_number_uniform(0, keys.size() - 1);
+        DPRINTF(DEBUG_ABD_Client, "chosen key index is: %u\n", key_idx);
+
+//        key_idx = 0;
         
         if(req_type == Op::get){
             std::string read_value;
@@ -372,10 +382,10 @@ int run_session(uint req_idx){
             auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
             file_logger(Op::get, keys[key_idx], read_value, epoch, epoch2);
             DPRINTF(DEBUG_CAS_Client, "get done on key: %s with value: %s\n", keys[key_idx].c_str(),
-                    read_value.c_str());
+                    (TRUNC_STR(read_value)).c_str());
         }
         else{ // Op::put
-            std::string val = get_random_value();
+            std::string val = get_random_string(object_size);
             auto epoch = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
             result = clt.put(keys[key_idx], val);
             if(result != 0){
@@ -384,7 +394,7 @@ int run_session(uint req_idx){
             }
             auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
             file_logger(Op::put, keys[key_idx], val, epoch, epoch2);
-            DPRINTF(DEBUG_CAS_Client, "put done on key: %s with value: %s\n", keys[key_idx].c_str(), std::string(TRANC_STR(val)).c_str());
+            DPRINTF(DEBUG_CAS_Client, "put done on key: %s with value: %s\n", keys[key_idx].c_str(), std::string(TRUNC_STR(val)).c_str());
         }
         
         assert(result != S_FAIL);
@@ -393,11 +403,7 @@ int run_session(uint req_idx){
             return 1;
         }
 
-#ifdef DEBUGGING
         tp += milliseconds{next_event("poisson")};
-#else
-        tp += milliseconds{next_event("poisson") * 2};
-#endif
         std::this_thread::sleep_until(tp);
     }
     

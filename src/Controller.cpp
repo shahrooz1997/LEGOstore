@@ -615,12 +615,12 @@ int Controller::warm_up(){
 
     for(auto it = properties.datacenters.begin(); it != properties.datacenters.end(); it++){
         warm_up_one_connection((*it)->metadata_server_ip, (*it)->metadata_server_port);
-        std::this_thread::sleep_for(milliseconds(rand() % 2000));
+        std::this_thread::sleep_for(milliseconds(get_random_number_uniform(0, 2000)));
     }
 
     for(auto it = properties.datacenters.begin(); it != properties.datacenters.end(); it++){
         warm_up_one_connection((*it)->servers[0]->ip, (*it)->servers[0]->port);
-        std::this_thread::sleep_for(milliseconds(rand() % 2000));
+        std::this_thread::sleep_for(milliseconds(get_random_number_uniform(0, 2000)));
     }
 
     return S_OK;

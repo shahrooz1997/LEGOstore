@@ -192,12 +192,38 @@ int socket_setup(const std::string& port, const std::string* IP){
 //    return S_OK;
 //}
 
+int get_random_number_uniform(int min, int max, int seed){
+    static bool seed_set = false;
+    static std::default_random_engine generator;
+    if(!seed_set){
+        generator = std::default_random_engine(seed);
+        seed_set = true;
+    }
+
+    std::uniform_int_distribution<int> distribution(min, max);
+
+    return distribution(generator);
+}
+
+double get_random_real_number_uniform(double min, double max, int seed){
+    static bool seed_set = false;
+    static std::default_random_engine generator;
+    if(!seed_set){
+        generator = std::default_random_engine(seed);
+        seed_set = true;
+    }
+
+    std::uniform_real_distribution<double> distribution(min, max);
+
+    return distribution(generator);
+}
+
 std::string get_random_string(uint32_t size){
     std::string value;
     // First figure should not be zero
-    value += rand() % 9 + '1';
+    value += get_random_number_uniform(0, 8) + '1';
     while(value.size() < size){
-        value += std::to_string(rand() % 10);
+        value += std::to_string(get_random_number_uniform(0, 9));
     }
     return value;
 }

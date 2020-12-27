@@ -89,7 +89,7 @@ class Machine:
     def execute_on_all(machines, cmd):
         threads = []
         for machine in machines:
-            threads.append(threading.Thread(target=Machine.execute, args=(machines[machine], cmd)))
+            threads.append(threading.Thread(target=machines[machine].execute, args=(cmd)))
             threads[-1].start()
 
         for thread in threads:
@@ -98,7 +98,7 @@ class Machine:
     def copy_to_all(machines, file, to_file):
         threads = []
         for machine in machines:
-            threads.append(threading.Thread(target=Machine.copy_to, args=(machines[machine], file, to_file)))
+            threads.append(threading.Thread(target=machines[machine].copy_to, args=(file, to_file)))
             threads[-1].start()
 
         for thread in threads:
@@ -137,7 +137,7 @@ class Machine:
         create_project_tar_file()
         threads = []
         for machine in machines:
-            threads.append(threading.Thread(target=Machine.run, args=[machines[machine]]))
+            threads.append(threading.Thread(target=machines[machine].run, args=[]))
             threads[-1].start()
 
         for thread in threads:
@@ -150,7 +150,7 @@ class Machine:
     def stop_all(machines):
         threads = []
         for machine in machines:
-            threads.append(threading.Thread(target=Machine.stop, args=[machines[machine]]))
+            threads.append(threading.Thread(target=machines[machine].stop, args=[]))
             threads[-1].start()
 
         for thread in threads:
@@ -159,7 +159,7 @@ class Machine:
     def clear_all(machines):
         threads = []
         for machine in machines:
-            threads.append(threading.Thread(target=Machine.clear, args=[machines[machine]]))
+            threads.append(threading.Thread(target=machines[machine].clear, args=[]))
             threads[-1].start()
 
         for thread in threads:
@@ -168,7 +168,7 @@ class Machine:
     def delete_all(machines):
         threads = []
         for machine in machines:
-            threads.append(threading.Thread(target=Machine.delete, args=[machines[machine]]))
+            threads.append(threading.Thread(target=machines[machine].delete, args=[]))
             threads[-1].start()
 
         for thread in threads:
@@ -177,7 +177,7 @@ class Machine:
     def gather_summary_all(machines):
         threads = []
         for machine in machines:
-            threads.append(threading.Thread(target=Machine.gather_summary, args=[machines[machine], "CAS_NOF"]))
+            threads.append(threading.Thread(target=machines[machine].gather_summary, args=["CAS_NOF"]))
             threads[-1].start()
 
         for thread in threads:
@@ -186,7 +186,7 @@ class Machine:
     def gather_logs_all(machines):
         threads = []
         for machine in machines:
-            threads.append(threading.Thread(target=Machine.gather_logs, args=[machines[machine], "CAS_NOF"]))
+            threads.append(threading.Thread(target=machines[machine].gather_logs, args=["CAS_NOF"]))
             threads[-1].start()
 
         for thread in threads:
@@ -425,24 +425,23 @@ class Controller(Machine):
         self.copy_from("project/*_output.txt", "data/" + run_name + "/" + self.name + "/")
 
 
-def can_project_be_built():
-    return os.system("cd ..; make -j 9 >/dev/null 2>&1") == 0
-
-def main():
-    # signal(SIGINT, keyboard_int_handler)
-    if not can_project_be_built():
+def make_sure_project_can_be_built():
+    if os.system("cd ..; make -j 9 >/dev/null 2>&1") != 0:
         print("Compile ERROR")
         os.system("cd ..; make")
         exit(-1)
+
+def main():
+    # signal(SIGINT, keyboard_int_handler)
+    make_sure_project_can_be_built()
 
     controller = Controller()
     machines = Machine.get_machine_list()
     Machine.dump_machines_ip_info(machines)
     Machine.run_all(machines)
     controller.run(machines)
-    machines[controller.cont_machine.name] = controller.cont_machine
-    # os.system("cd /home/shahrooz/Desktop/PSU/Research/LEGOstore; ./Controller >aa.txt 2>&1")
-    # print("Please wait while I am stopping all the machines and gathering the logs...")
+    machines[controller.name] = controller
+    print("Project execution finished.\nPlease wait while I am stopping all the machines and gathering the logs...")
     os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
     Machine.stop_all(machines)
     Machine.gather_summary_all(machines)
@@ -454,5 +453,5 @@ if __name__ == '__main__':
 
 
     main()
-    print("Main thread goes to sleep")
-    threading.Event().wait()
+    # print("Main thread goes to sleep")
+    # threading.Event().wait()

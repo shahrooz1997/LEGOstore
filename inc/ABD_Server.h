@@ -32,9 +32,10 @@ public:
     ABD_Server(const ABD_Server& orig) = delete;
     virtual ~ABD_Server();
 
-    std::string get_timestamp(const std::string& key, uint32_t conf_id);
-    std::string put(const std::string& key, uint32_t conf_id, const std::string& value, const std::string& timestamp);
-    std::string get(const std::string& key, uint32_t conf_id);
+    std::string get_timestamp(const std::string& key, uint32_t conf_id, const std::string& extra_configs);
+    std::string put(const std::string& key, uint32_t conf_id, const std::string& value, const std::string& timestamp,
+                    const std::string& extra_configs);
+    std::string get(const std::string& key, uint32_t conf_id, const std::string& extra_configs);
 
     int init_key(const std::string& key, const uint32_t conf_id);
 

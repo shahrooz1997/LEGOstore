@@ -1,4 +1,4 @@
-include "../inc/Data_Server.h"
+#include "../inc/Data_Server.h"
 
 using std::string;
 using std::vector;
@@ -138,7 +138,7 @@ std::string DataServer::finish_reconfig(const std::string &key, const std::strin
     std::unique_lock<std::mutex> lock(mu);
     if(curr_class == CAS_PROTOCOL_NAME){
         string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
-        strvec data = get_data(con_key);
+        strVec data = get_data(con_key);
         if(data.empty()){
             CAS.init_key(key, conf_id);
             data = get_data(con_key);
@@ -183,15 +183,26 @@ std::string DataServer::get_timestamp(const std::string& key, const std::string&
     }
     else if(curr_class == ABD_PROTOCOL_NAME){
         if(reconfigFinished) {
-            strvec data = get_data(con_key);
+            strVec data = get_data(key);
             return DataTransfer::serialize({"operation_fail", data[4]});
-        else if (reconfigInProgress){
-            strvec data = get_data(con_key);
+        } else if (reconfigInProgress){
+            strVec data = get_data(key);
             string extra_configs = "extra_configs";
-            string con_key = construct_key(key, curr_class, conf_id);
-            vector<std::string> cfs = this->blocked_keys[con_key];
-            for(auto it = cfs.begin(); it != cfs.end(); it++) {
-                extra_configs += "!" + *it;
+            string tofind = key + "!" + curr_class;
+            for(auto it = this->blocked_keys.begin(); it != this->blocked_keys.end(); it++){
+                string constructed_key = *it;
+                if(constructed_key.find(tofind) != std::string::npos) {
+                    size_t  pos = 0;
+                    int cnt = 0;
+                    while(cnt != 2) {
+                        pos = constructed_key.find(tofind);
+                        constructed_key.erase(0, pos + 1);
+                        cnt++;
+                    }
+                    pos = constructed_key.find(tofind);
+                    string extracted_config = constructed_key.substr(0, pos);
+                    if(conf_id != stoul(extracted_config)) extra_configs += "!" + extracted_config;
+                }
             }
             return ABD.get_timestamp(key, conf_id, extra_configs);
         } else {
@@ -206,6 +217,7 @@ std::string DataServer::get_timestamp(const std::string& key, const std::string&
 
 std::string DataServer::put(const std::string& key, const std::string& value, const std::string& timestamp, const std::string& curr_class, uint32_t conf_id){
 
+    bool reconfigInProgress = check_block_keys(this->blocked_keys, key, curr_class, conf_id);
     if(curr_class == CAS_PROTOCOL_NAME){
         DPRINTF(DEBUG_CAS_Client, "ddddd\n");
         fflush(stdout);
@@ -224,12 +236,23 @@ std::string DataServer::put(const std::string& key, const std::string& value, co
     }
     else if(curr_class == ABD_PROTOCOL_NAME){
         if (reconfigInProgress){
-            strvec data = get_data(con_key);
+            strVec data = get_data(key);
             string extra_configs = "extra_configs";
-            string con_key = construct_key(key, curr_class, conf_id);
-            vector<std::string> cfs = this->blocked_keys[con_key];
-            for(auto it = cfs.begin(); it != cfs.end(); it++) {
-                extra_configs += "!" + *it;
+            string tofind = key + "!" + curr_class;
+            for(auto it = this->blocked_keys.begin(); it != this->blocked_keys.end(); it++){
+                string constructed_key = *it;
+                if(constructed_key.find(tofind) != std::string::npos) {
+                    size_t  pos = 0;
+                    int cnt = 0;
+                    while(cnt != 2) {
+                        pos = constructed_key.find(tofind);
+                        constructed_key.erase(0, pos + 1);
+                        cnt++;
+                    }
+                    pos = constructed_key.find(tofind);
+                    string extracted_config = constructed_key.substr(0, pos);
+                    if(conf_id != stoul(extracted_config)) extra_configs += "!" + extracted_config;
+                }
             }
             return ABD.put(key, conf_id, value, timestamp, extra_configs);
         } else {
@@ -252,7 +275,7 @@ std::string DataServer::put_fin(const std::string& key, const std::string& times
     else{
         assert(false);
     }
-    breturn DataTransfer::serialize({"ERROR", "INTERNAL ERROR"});
+    return DataTransfer::serialize({"ERROR", "INTERNAL ERROR"});
 }
 
 std::string DataServer::get(const std::string& key, const std::string& timestamp, const std::string& curr_class, uint32_t conf_id){
@@ -265,18 +288,29 @@ std::string DataServer::get(const std::string& key, const std::string& timestamp
     }
     else if(curr_class == ABD_PROTOCOL_NAME){
         if(reconfigFinished) {
-            strvec data = get_data(con_key);
+            strVec data = get_data(key);
             return DataTransfer::serialize({"operation_fail", data[4]});
         } else if(reconfigInProgress) {
             string extra_configs = "extra_configs";
-            string con_key = construct_key(key, curr_class, conf_id);
-            vector<std::string> cfs = this->blocked_keys[con_key];
-            for(auto it = cfs.begin(); it != cfs.end(); it++) {
-                extra_configs += "!" + *it;
+            string tofind = key + "!" + curr_class;
+            for(auto it = this->blocked_keys.begin(); it != this->blocked_keys.end(); it++){
+                string constructed_key = *it;
+                if(constructed_key.find(tofind) != std::string::npos) {
+                    size_t  pos = 0;
+                    int cnt = 0;
+                    while(cnt != 2) {
+                        pos = constructed_key.find(tofind);
+                        constructed_key.erase(0, pos + 1);
+                        cnt++;
+                    }
+                    pos = constructed_key.find(tofind);
+                    string extracted_config = constructed_key.substr(0, pos);
+                    if(conf_id != stoul(extracted_config)) extra_configs += "!" + extracted_config;
+                }
             }
             return ABD.get(key, conf_id, extra_configs);
         } else {
-            return ABD.get(key, conf_id);
+            return ABD.get(key, conf_id, "");
         }
     }
     else{

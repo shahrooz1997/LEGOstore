@@ -358,7 +358,8 @@ request_placement(const std::string& metadata_server_ip, const std::string& meta
 
 int ask_metadata(const std::string& metadata_server_ip, const std::string& metadata_server_port,
         const std::string& key, const uint32_t conf_id, uint32_t& requested_conf_id, uint32_t& new_conf_id,
-        std::string& timestamp, Placement*& p, uint32_t retry_attempts, uint32_t metadata_server_timeout);
+        std::string& timestamp, Placement*& p, uint32_t retry_attempts, uint32_t metadata_server_timeout,
+        std::string& secondary_configs);
 
 template<typename T>
 void set_intersection(const Placement& p, std::unordered_set <T>& res);

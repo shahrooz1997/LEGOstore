@@ -42,7 +42,7 @@ public:
 
     int update_metadata_info(std::string& key, uint32_t old_confid_id, uint32_t new_confid_id, const std::string& timestamp,
                              const Placement& p);
-
+    int update_metadata_state(std::string& key, uint32_t old_confid_id, std::string& op, const std::string& timestamp);
 private:
     
     int send_reconfig_query(GroupConfig& old_config, uint32_t old_conf_id, const std::string& key, Timestamp*& ret_ts,

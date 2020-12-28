@@ -57,7 +57,7 @@ int Client_Node::update_placement(const std::string& key, const uint32_t conf_id
     if(this->cas != nullptr){
         ret = ask_metadata(this->cas->get_metadata_server_ip(), this->cas->get_metadata_server_port(), key,
                            conf_id, requested_conf_id, new_conf_id, timestamp, p, this->cas->get_retry_attempts(),
-                           this->cas->get_metadata_server_timeout());
+                           this->cas->get_metadata_server_timeout(), sec_configs);
     }
     else if(this->abd != nullptr){
         ret = ask_metadata(this->abd->get_metadata_server_ip(), this->abd->get_metadata_server_port(), key,
@@ -72,15 +72,15 @@ int Client_Node::update_placement(const std::string& key, const uint32_t conf_id
     assert(ret == 0);
    
     // Update secondary configs list
-    vector<uint32_t> vec;
+    std::vector<uint32_t> vec;
     if(sec_configs.length() > 0) {
         size_t pos = 0;
         std::string token;
-        std::delimiter = "!";
+        std::string delimiter = "!";
         while ((pos = sec_configs.find(delimiter)) != std::string::npos) {
             token = sec_configs.substr(0, pos);
             vec.push_back(stoul(token));
-            s.erase(0, pos + delimiter.length());
+            sec_configs.erase(0, pos + delimiter.length());
         }
     }
     this->secondary_configs[key] = vec; 

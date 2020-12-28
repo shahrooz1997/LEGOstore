@@ -129,7 +129,7 @@ std::string ABD_Server::put(const std::string& key, uint32_t conf_id, const std:
 }
 
 
-std::string ABD_Server::get(const std::string& key, uint32_t conf_id){
+std::string ABD_Server::get(const std::string& key, uint32_t conf_id, const std::string& extra_configs){
 
     DPRINTF(DEBUG_ABD_Server, "started.\n");
     lock_guard<mutex> lock(*mu_p);

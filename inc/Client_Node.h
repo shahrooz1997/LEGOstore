@@ -33,6 +33,7 @@ public:
     
     // getters
     const uint32_t& get_id() const;
+    std::map <std::string, std::vector<uint32_t>>  secondary_configs;
 
 private:
     // a map from a key to its conf_id and its placement
@@ -41,7 +42,6 @@ private:
     ABD_Client* abd;
     CAS_Client* cas;
     
-    std::map <std::string, std::vector<uint32_t>>  secondary_configs;
     int update_placement(const std::string& key, const uint32_t conf_id = 0);
 };
 

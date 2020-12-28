@@ -536,7 +536,7 @@ Server::Server(const Server& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ip_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (!from._internal_ip().empty()) {
-    ip_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_ip(),
+    ip_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_ip(), 
       GetArena());
   }
   ::memcpy(&id_, &from.id_,
@@ -548,8 +548,9 @@ Server::Server(const Server& from)
 void Server::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_Server_serialize_2eproto.base);
   ip_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&id_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&port_) -
+  ::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+      reinterpret_cast<char*>(&id_) - reinterpret_cast<char*>(this)),
+      0, static_cast<size_t>(reinterpret_cast<char*>(&port_) -
       reinterpret_cast<char*>(&id_)) + sizeof(port_));
 }
 
@@ -585,7 +586,7 @@ void Server::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  ip_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ip_.ClearToEmpty();
   ::memset(&id_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&port_) -
       reinterpret_cast<char*>(&id_)) + sizeof(port_));
@@ -805,7 +806,7 @@ Datacenter::Datacenter(const Datacenter& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   metadata_server_ip_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (!from._internal_metadata_server_ip().empty()) {
-    metadata_server_ip_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_metadata_server_ip(),
+    metadata_server_ip_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_metadata_server_ip(), 
       GetArena());
   }
   ::memcpy(&id_, &from.id_,
@@ -817,8 +818,9 @@ Datacenter::Datacenter(const Datacenter& from)
 void Datacenter::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_Datacenter_serialize_2eproto.base);
   metadata_server_ip_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&id_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&metadata_server_port_) -
+  ::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+      reinterpret_cast<char*>(&id_) - reinterpret_cast<char*>(this)),
+      0, static_cast<size_t>(reinterpret_cast<char*>(&metadata_server_port_) -
       reinterpret_cast<char*>(&id_)) + sizeof(metadata_server_port_));
 }
 
@@ -855,7 +857,7 @@ void Datacenter::Clear() {
   (void) cached_has_bits;
 
   servers_.Clear();
-  metadata_server_ip_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  metadata_server_ip_.ClearToEmpty();
   ::memset(&id_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&metadata_server_port_) -
       reinterpret_cast<char*>(&id_)) + sizeof(metadata_server_port_));
@@ -1110,7 +1112,7 @@ Placement::Placement(const Placement& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   protocol_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (!from._internal_protocol().empty()) {
-    protocol_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_protocol(),
+    protocol_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_protocol(), 
       GetArena());
   }
   ::memcpy(&m_, &from.m_,
@@ -1122,8 +1124,9 @@ Placement::Placement(const Placement& from)
 void Placement::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_Placement_serialize_2eproto.base);
   protocol_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&m_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&f_) -
+  ::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+      reinterpret_cast<char*>(&m_) - reinterpret_cast<char*>(this)),
+      0, static_cast<size_t>(reinterpret_cast<char*>(&f_) -
       reinterpret_cast<char*>(&m_)) + sizeof(f_));
 }
 
@@ -1163,7 +1166,7 @@ void Placement::Clear() {
   q2_.Clear();
   q3_.Clear();
   q4_.Clear();
-  protocol_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  protocol_.ClearToEmpty();
   ::memset(&m_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&f_) -
       reinterpret_cast<char*>(&m_)) + sizeof(f_));
@@ -1568,8 +1571,9 @@ GroupConfig::GroupConfig(const GroupConfig& from)
 
 void GroupConfig::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_GroupConfig_serialize_2eproto.base);
-  ::memset(&placement_p_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&object_size_) -
+  ::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+      reinterpret_cast<char*>(&placement_p_) - reinterpret_cast<char*>(this)),
+      0, static_cast<size_t>(reinterpret_cast<char*>(&object_size_) -
       reinterpret_cast<char*>(&placement_p_)) + sizeof(object_size_));
 }
 
@@ -1959,8 +1963,9 @@ Group::Group(const Group& from)
 
 void Group::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_Group_serialize_2eproto.base);
-  ::memset(&timestamp_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&id_) -
+  ::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+      reinterpret_cast<char*>(&timestamp_) - reinterpret_cast<char*>(this)),
+      0, static_cast<size_t>(reinterpret_cast<char*>(&id_) -
       reinterpret_cast<char*>(&timestamp_)) + sizeof(id_));
 }
 
@@ -2259,8 +2264,9 @@ properties::properties(const properties& from)
 
 void properties::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_properties_serialize_2eproto.base);
-  ::memset(&local_datacenter_id_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&start_time_) -
+  ::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+      reinterpret_cast<char*>(&local_datacenter_id_) - reinterpret_cast<char*>(this)),
+      0, static_cast<size_t>(reinterpret_cast<char*>(&start_time_) -
       reinterpret_cast<char*>(&local_datacenter_id_)) + sizeof(start_time_));
 }
 
@@ -2616,12 +2622,12 @@ MetaDataServer::MetaDataServer(const MetaDataServer& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   status_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (!from._internal_status().empty()) {
-    status_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_status(),
+    status_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_status(), 
       GetArena());
   }
   msg_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (!from._internal_msg().empty()) {
-    msg_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_msg(),
+    msg_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_msg(), 
       GetArena());
   }
   if (from._internal_has_placement_p()) {
@@ -2673,8 +2679,8 @@ void MetaDataServer::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  status_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  msg_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  status_.ClearToEmpty();
+  msg_.ClearToEmpty();
   if (GetArena() == nullptr && placement_p_ != nullptr) {
     delete placement_p_;
   }

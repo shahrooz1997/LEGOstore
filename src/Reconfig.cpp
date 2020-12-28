@@ -563,9 +563,11 @@ int Reconfig::update_metadata_state(std::string& key, uint32_t old_confid_id, st
 int Reconfig::start_reconfig(GroupConfig& old_config, uint32_t old_conf_id, GroupConfig& new_config, uint32_t new_conf_id){
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
-    std::string& state_ready = "ready";
-    std::string& state_toretire = "toretire";
-    std::string& state_retired = "retired";
+    std::string state_ready = "ready";
+    std::string state_toretire = "toretire";
+    std::string state_retired = "retired";
+    std::string op_add = "add";
+    std::string op_remove = "remove";
 
     for(uint i = 0; i < old_config.keys.size(); i++){
         std::string& key = old_config.keys[i];
@@ -578,13 +580,13 @@ int Reconfig::start_reconfig(GroupConfig& old_config, uint32_t old_conf_id, Grou
         }
         assert(Reconfig::send_reconfig_write(new_config, new_conf_id, key, ret_ts, ret_v) == 0);
 
-        assert(update_metadata_state(key, old_conf_id, "add", ret_ts->get_string()) == 0);
+        assert(update_metadata_state(key, old_conf_id, op_add, ret_ts->get_string()) == 0);
         
         assert(update_metadata_info(key, old_conf_id, new_conf_id, ret_ts->get_string(), *new_config.placement_p) == 0);
 
         assert(Reconfig::send_reconfig_finish(old_config, old_conf_id, new_conf_id, key, ret_ts) == 0);
 
-        assert(update_metadata_state(key, old_conf_id, "remove", new_conf_id, ret_ts->get_string()) == 0);
+        assert(update_metadata_state(key, old_conf_id, op_remove, ret_ts->get_string()) == 0);
         
         delete ret_ts;
     }

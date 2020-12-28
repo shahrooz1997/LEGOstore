@@ -56,9 +56,12 @@ private:
     // Handling block mode of keys
     std::vector<std::string> blocked_keys;
     std::vector<std::string> finished_reconfig_keys;
-    void check_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id); // It will block the caller thread until the key is removed from the recon state
-    void add_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id);
-    void remove_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id);
+    bool check_block_keys(std::vector<std::string>& blocked_keys, const std::string& key,
+                            const std::string& curr_class, uint32_t conf_id); // It will block the caller thread until the key is removed from the recon state
+    void add_block_keys(std::vector<std::string>& blocked_keys, const std::string& key,
+                        const std::string& curr_class, uint32_t conf_id);
+    void remove_block_keys(std::vector<std::string>& blocked_keys, const std::string& key, 
+                            const std::string& curr_class, uint32_t conf_id);
 };
 
 #endif

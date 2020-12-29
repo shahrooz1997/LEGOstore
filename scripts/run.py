@@ -10,11 +10,14 @@ from signal import signal, SIGINT
 import urllib.request
 import argparse
 
+# Please note that to use this script you need to install gcloud, login, and set the default project to Legostore.
 
 #Todo: Add command line parser
 def parse_args():
     parser = argparse.ArgumentParser(description="This application automatically runs the Legostore project on Google Cloud Platform")
     # parser.add_argument()
+
+    # Manual run: Run the server on all the machines and initialize the metadata servers
 
     args = parser.parse_args()
     return args
@@ -89,7 +92,7 @@ class Machine:
     def execute_on_all(machines, cmd):
         threads = []
         for machine in machines:
-            threads.append(threading.Thread(target=machines[machine].execute, args=(cmd)))
+            threads.append(threading.Thread(target=machines[machine].execute, args=[cmd]))
             threads[-1].start()
 
         for thread in threads:
@@ -98,7 +101,7 @@ class Machine:
     def copy_to_all(machines, file, to_file):
         threads = []
         for machine in machines:
-            threads.append(threading.Thread(target=machines[machine].copy_to, args=(file, to_file)))
+            threads.append(threading.Thread(target=machines[machine].copy_to, args=[file, to_file]))
             threads[-1].start()
 
         for thread in threads:
@@ -254,7 +257,10 @@ class Machine:
         return ret
 
     def execute(self, cmd):
-        return command.execute(self.name, self.zone, cmd)
+        # print("executing " + cmd + " on server " + self.name)
+        stdout, stderr = command.execute(self.name, self.zone, cmd)
+        # print("output: " + stdout + " || " + stderr)
+        return stdout, stderr
 
     def copy_to(self, file, to_file):
         command.scp_to(self.name, self.zone, file, to_file)
@@ -403,7 +409,7 @@ class Controller(Machine):
             print("Adding access to the clients from server ", self.name)
             self.execute("ssh-keygen -q -t rsa -N '' <<< \"\"$'\n'\"y\" 2>&1 >/dev/null")
             stdout, stderr = self.execute("cat .ssh/id_rsa.pub")
-            Machine.execute_on_all(clients, "echo \"" + stdout + "\" >> .ssh/authorized_keys")
+            Machine.execute_on_all(clients, "echo '" + stdout + "' >>.ssh/authorized_keys")
             self.execute("sudo touch ../access_added")
         self.add_access_done = True
 

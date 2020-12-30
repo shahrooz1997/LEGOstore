@@ -73,7 +73,7 @@ string ask(const string& key, const string& confid){ // respond with (requested_
     auto it1 = secondary_configs.find(key);
     string sec_configs = "";
     if(it1 != secondary_configs.end()){
-        for (std::vector<std::string>::const_iterator i = it1->second.begin(); i != it1->second.end(); ++i) {
+        for (auto i = it1->second.begin(); i != it1->second.end(); ++i) {
             if(*i != confid) sec_configs += *i;
             if(i != it1->second.end()) sec_configs += "!"; 
         }
@@ -101,9 +101,9 @@ string ask(const string& key, const string& confid){ // respond with (requested_
 string
 update_config_state(const string& key, const string& old_confid, const string& op, const string& timestamp){
     auto it = secondary_configs.find(key);
-    
+    string op_add = "add";   
+ 
     DPRINTF(DEBUG_METADATA_SERVER, "key: %s, old_conf: %s\n", key.c_str(), old_confid.c_str());
-    
     if(it == secondary_configs.end()){ // Not found!
         if(op == "add") {
             vector<std::string> vec;
@@ -111,15 +111,16 @@ update_config_state(const string& key, const string& old_confid, const string& o
             secondary_configs[key] = vec;
         }    
     }
-    
+
     if(timestamp.find("-") >= timestamp.size()){
         assert(false);
     }
-   
-    if(op == "add") {
+    
+    if(!op.compare(op_add)) {
         secondary_configs[key].push_back(old_confid);
     } else {
-        secondary_configs.erase(std::remove(secondary_configs.begin(), secondary_configs.end(), old_config), secondary_configs.end());
+        secondary_configs[key].erase(std::remove(secondary_configs[key].begin(), secondary_configs[key].end(),
+                                old_confid), secondary_configs[key].end());
     }
     return DataTransfer::serializeMDS("OK", "state updated", nullptr);
 }

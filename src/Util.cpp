@@ -33,16 +33,11 @@ bool DEBUG_ABD_Client = true;
 bool DEBUG_CAS_Server = true;
 bool DEBUG_ABD_Server = true;
 bool DEBUG_RECONFIG_CONTROL = true;
+bool DEBUG_CONTROLLER = true;
 bool DEBUG_METADATA_SERVER = true;
 bool DEBUG_UTIL = true;
 #endif
 
-
-JSON_Reader::JSON_Reader(){
-}
-
-JSON_Reader::~JSON_Reader(){
-}
 
 void print_time(){
     auto timenow = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -197,6 +192,42 @@ int socket_setup(const std::string& port, const std::string* IP){
 //    return S_OK;
 //}
 
+int get_random_number_uniform(int min, int max, int seed){
+    static bool seed_set = false;
+    static std::default_random_engine generator;
+    if(!seed_set){
+        generator = std::default_random_engine(seed);
+        seed_set = true;
+    }
+
+    std::uniform_int_distribution<int> distribution(min, max);
+
+    return distribution(generator);
+}
+
+double get_random_real_number_uniform(double min, double max, int seed){
+    static bool seed_set = false;
+    static std::default_random_engine generator;
+    if(!seed_set){
+        generator = std::default_random_engine(seed);
+        seed_set = true;
+    }
+
+    std::uniform_real_distribution<double> distribution(min, max);
+
+    return distribution(generator);
+}
+
+std::string get_random_string(uint32_t size){
+    std::string value;
+    // First figure should not be zero
+    value += get_random_number_uniform(0, 8) + '1';
+    while(value.size() < size){
+        value += std::to_string(get_random_number_uniform(0, 9));
+    }
+    return value;
+}
+
 //std::map<std::string, int> Connect::socks;
 //std::map<std::string, std::unique_ptr<std::mutex> > Connect::socks_lock;
 //std::map<std::string, bool> Connect::is_sock_lock;
@@ -280,7 +311,16 @@ Connect::Connect(const std::string& ip, const uint16_t port) : ip(ip), port(port
             int yes = 1;
             int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*) &yes, sizeof(int));
             if(result < 0){
-                print_error("setsockopt error");
+                print_error("setsockopt TCP_NODELAY error");
+                error = true;
+            }
+        }
+
+        if(!error){
+            int yes = 1;
+            int result = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char*) &yes, sizeof(int));
+            if(result < 0){
+                print_error("setsockopt SO_KEEPALIVE error");
                 error = true;
             }
         }
@@ -402,6 +442,15 @@ Connect::Connect(const std::string& ip, const std::string& port) : ip(ip), sock(
                 error = true;
             }
         }
+
+        if(!error){
+            int yes = 1;
+            int result = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char*) &yes, sizeof(int));
+            if(result < 0){
+                print_error("setsockopt SO_KEEPALIVE error");
+                error = true;
+            }
+        }
     
         if(!error){
             serv_addr.sin_family = AF_INET;
@@ -500,7 +549,7 @@ Server::Server(const Server& orig){
     this->id = orig.id;
     this->ip = orig.ip;
     this->port = orig.port;
-    this->datacenter = nullptr;
+    this->datacenter = orig.datacenter;
 }
 
 Datacenter::Datacenter(){
@@ -529,70 +578,66 @@ Datacenter::~Datacenter(){
     this->servers.clear();
 }
 
-Placement::Placement(){
-    m = -1;
-    k = -1;
-    f = -1;
-}
+//Placement::Placement(){
+//    m = -1;
+//    k = -1;
+//    f = -1;
+//}
 
-WorkloadConfig::~WorkloadConfig(){
-    for(auto& it: grp) {
-        if(it != nullptr){
-            delete it;
-            it = nullptr;
-        }
-    }
-    this->grp.clear();
-}
+//WorkloadConfig::~WorkloadConfig(){
+//    for(auto& it: grp) {
+//        if(it != nullptr){
+//            delete it;
+//            it = nullptr;
+//        }
+//    }
+//    this->grp.clear();
+//}
 
-GroupConfig::GroupConfig(){
-    object_size = 0;
-    num_objects = 0;
-    arrival_rate = 0; // Combined arrival rate
-    read_ratio = 0;
-    duration = 0;
-    placement_p = nullptr;
-}
+//GroupConfig::GroupConfig(){
+//    object_size = 0;
+//    num_objects = 0;
+//    arrival_rate = 0; // Combined arrival rate
+//    read_ratio = 0;
+//    duration = 0;
+//    placement_p = nullptr;
+//}
 
-GroupConfig::GroupConfig(const GroupConfig& orig){
-    object_size = orig.object_size;
-    num_objects = orig.num_objects;
-    arrival_rate = orig.arrival_rate; // Combined arrival rate
-    read_ratio = orig.read_ratio;
-    duration = orig.duration;
-    keys = orig.keys;
-    client_dist = orig.client_dist;
-    placement_p = new Placement(*(orig.placement_p));
-}
+//GroupConfig::GroupConfig(const GroupConfig& orig){
+//    object_size = orig.object_size;
+//    num_objects = orig.num_objects;
+//    arrival_rate = orig.arrival_rate; // Combined arrival rate
+//    read_ratio = orig.read_ratio;
+//    duration = orig.duration;
+//    keys = orig.keys;
+//    client_dist = orig.client_dist;
+//    placement_p = new Placement(*(orig.placement_p));
+//}
 
-GroupConfig::~GroupConfig(){
-    if(placement_p != nullptr){
-        delete placement_p;
-        placement_p = nullptr;
-    }
-}
+//GroupConfig::~GroupConfig(){
+//    if(placement_p != nullptr){
+//        delete placement_p;
+//        placement_p = nullptr;
+//    }
+//}
 
-Group::Group(){
-    timestamp = -1;
-}
+//Group_config::Group_config(const Group_config& orig){
+//    timestamp = orig.timestamp;
+//    grp_id = orig.grp_id;
+//    for(auto gc: orig.grp_config){
+//        this->grp_config.push_back(new GroupConfig(*(gc)));
+//    }
+//}
 
-Group::Group(const Group& orig){
-    timestamp = orig.timestamp;
-    grp_id = orig.grp_id;
-    for(auto gc: orig.grp_config){
-        this->grp_config.push_back(new GroupConfig(*(gc)));
-    }
-}
-
-Group::~Group(){
-    for(auto& it: grp_config) {
-        if(it != nullptr){
-            delete it;
-            it = nullptr;
-        }
-    }
-    this->grp_config.clear();
-}
+//Group_config::~Group_config(){
+//    for(auto& it: grp_config) {
+//        if(it != nullptr){
+//            delete it;
+//            it = nullptr;
+//        }
+//    }
+//    this->grp_config.clear();
+//}
 
 Properties::~Properties(){
     for(auto& it: datacenters) {
@@ -602,202 +647,195 @@ Properties::~Properties(){
         }
     }
     this->datacenters.clear();
-    for(auto& it: groups) {
-        if(it != nullptr){
-            delete it;
-            it = nullptr;
-        }
-    }
-    this->groups.clear();
 }
 
-Reconfig_key_info::Reconfig_key_info(){
-    curr_conf_id = -1;
-    curr_placement = nullptr;
-    reconfig_state = 0;
-    timestamp = "";
-    next_conf_id = -1;
-    next_placement = nullptr;
-}
-
-Reconfig_key_info::Reconfig_key_info(const std::string& in){
-    uint32_t cc = 0;
-
-//    DPRINTF(DEBUG_UTIL, "111111\n");
-    
-    if(cc + sizeof(uint32_t) > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&(this->curr_conf_id)))[i] = in[cc++];
-    }
-
-//    DPRINTF(DEBUG_UTIL, "curr_conf_id is %u\n", curr_conf_id);
-
-//    DPRINTF(DEBUG_UTIL, "22222\n");
-    
-    // current placement
-    uint32_t temp = 0;
-    if(cc + sizeof(uint32_t) > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-        ((char*)(&(temp)))[i] = in[cc++];
-    }
-//    DPRINTF(DEBUG_UTIL, "size for curr_placement is %u\n", temp);
-    
-    if(temp != 0){
-        this->curr_placement = DataTransfer::deserializePlacement(in.substr(cc, temp));
-        cc += temp;
-    }
-    else{
-        this->curr_placement = nullptr;
-    }
-
-//    DPRINTF(DEBUG_UTIL, "33333\n");
-    
-    if(cc + sizeof(int) > in.size()){
-        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-    }
-    for(uint32_t i = 0; i < sizeof(int) && cc < in.size(); i++){
-        ((char*)(&(this->reconfig_state)))[i] = in[cc++];
-    }
-//    DPRINTF(DEBUG_UTIL, "reconfig_state is %u\n", reconfig_state);
-
-//    DPRINTF(DEBUG_UTIL, "444444\n");
-    
-    if(reconfig_state != 0){
-
-//        DPRINTF(DEBUG_UTIL, "DOOMED\n");
-        
-        // timestamp
-        temp = 0;
-        if(cc + sizeof(uint32_t) > in.size()){
-            DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-        }
-        for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-            ((char*)(&(temp)))[i] = in[cc++];
-        }
-        if(temp != 0){
-            for(uint32_t i = 0; i < temp && cc < in.size(); i++){
-                this->timestamp.push_back(in[cc++]);
-            }
-        }
-        else{
-            this->timestamp = "";
-        }
-        
-        
-        if(cc + sizeof(uint32_t) > in.size()){
-            DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-        }
-        for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-            ((char*)(&(this->next_conf_id)))[i] = in[cc++];
-        }
-        
-        // next placement
-        temp = 0;
-        if(cc + sizeof(uint32_t) > in.size()){
-            DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
-        }
-        for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
-            ((char*)(&(temp)))[i] = in[cc++];
-        }
-        if(temp != 0){
-            this->curr_placement = DataTransfer::deserializePlacement(in.substr(cc, temp));
-            cc += temp;
-        }
-        else{
-            this->next_placement = nullptr;
-        }
-    }
-    else{
-        this->next_placement = nullptr;
-    }
-
-//    DPRINTF(DEBUG_UTIL, "55555\n");
-    
-}
-
-Reconfig_key_info::~Reconfig_key_info(){
-    if(curr_placement != nullptr){
-        delete curr_placement;
-        curr_placement = nullptr;
-    }
-    if(next_placement != nullptr){
-        delete next_placement;
-        next_placement = nullptr;
-    }
-}
-
-std::string Reconfig_key_info::get_string(){
-    std::string ret;
-    for(uint i = 0; i < sizeof(uint32_t); i++){
-        ret.push_back(((char*)(&curr_conf_id))[i]);
-    }
-    
-    uint32_t size;
-    if(this->curr_placement != nullptr){
-        std::string pl_s = DataTransfer::serializePlacement(*(this->curr_placement));
-        size = pl_s.size();
-        for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-            ret.push_back(((char*)(&size))[i]);
-        }
-        ret += pl_s;
-//        DPRINTF(DEBUG_UTIL, "curr_placement size is %u\n", size);
-    }
-    else{
-        size = 0;
-        for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-            ret.push_back(((char*)(&size))[i]);
-        }
-    }
-    
-    for(uint i = 0; i < sizeof(int); i++){
-        ret.push_back(((char*)(&reconfig_state))[i]);
-    }
-
-//    DPRINTF(DEBUG_UTIL, "reconfig_state is %u\n", reconfig_state);
-    
-    if(reconfig_state != 0){
-        // Timestamp
-        uint32_t size = this->timestamp.size();
-        for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-            ret.push_back(((char*)(&size))[i]);
-        }
-        for(uint32_t i = 0; i < size; i++){
-            ret.push_back(this->timestamp[i]);
-        }
-        
-        for(uint i = 0; i < sizeof(uint32_t); i++){
-            ret.push_back(((char*)(&next_conf_id))[i]);
-        }
-        
-        if(this->next_placement != nullptr){
-            std::string pl_s = DataTransfer::serializePlacement(*(this->next_placement));
-            size = pl_s.size();
-            for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-                ret.push_back(((char*)(&size))[i]);
-            }
-            ret += pl_s;
-        }
-        else{
-            size = 0;
-            for(uint32_t i = 0; i < sizeof(uint32_t); i++){
-                ret.push_back(((char*)(&size))[i]);
-            }
-        }
-    }
-    
-    return ret;
-}
-
-Data_handler::~Data_handler(){
-    if(reconfig_info != nullptr){
-        delete reconfig_info;
-        reconfig_info = nullptr;
-    }
-}
+//Reconfig_key_info::Reconfig_key_info(){
+//    curr_conf_id = -1;
+//    curr_placement = nullptr;
+//    reconfig_state = 0;
+//    timestamp = "";
+//    next_conf_id = -1;
+//    next_placement = nullptr;
+//}
+//
+//Reconfig_key_info::Reconfig_key_info(const std::string& in){
+//    uint32_t cc = 0;
+//
+////    DPRINTF(DEBUG_UTIL, "111111\n");
+//
+//    if(cc + sizeof(uint32_t) > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&(this->curr_conf_id)))[i] = in[cc++];
+//    }
+//
+////    DPRINTF(DEBUG_UTIL, "curr_conf_id is %u\n", curr_conf_id);
+//
+////    DPRINTF(DEBUG_UTIL, "22222\n");
+//
+//    // current placement
+//    uint32_t temp = 0;
+//    if(cc + sizeof(uint32_t) > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//        ((char*)(&(temp)))[i] = in[cc++];
+//    }
+////    DPRINTF(DEBUG_UTIL, "size for curr_placement is %u\n", temp);
+//
+//    if(temp != 0){
+//        this->curr_placement = DataTransfer::deserializePlacement(in.substr(cc, temp));
+//        cc += temp;
+//    }
+//    else{
+//        this->curr_placement = nullptr;
+//    }
+//
+////    DPRINTF(DEBUG_UTIL, "33333\n");
+//
+//    if(cc + sizeof(int) > in.size()){
+//        DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//    }
+//    for(uint32_t i = 0; i < sizeof(int) && cc < in.size(); i++){
+//        ((char*)(&(this->reconfig_state)))[i] = in[cc++];
+//    }
+////    DPRINTF(DEBUG_UTIL, "reconfig_state is %u\n", reconfig_state);
+//
+////    DPRINTF(DEBUG_UTIL, "444444\n");
+//
+//    if(reconfig_state != 0){
+//
+////        DPRINTF(DEBUG_UTIL, "DOOMED\n");
+//
+//        // timestamp
+//        temp = 0;
+//        if(cc + sizeof(uint32_t) > in.size()){
+//            DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//        }
+//        for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//            ((char*)(&(temp)))[i] = in[cc++];
+//        }
+//        if(temp != 0){
+//            for(uint32_t i = 0; i < temp && cc < in.size(); i++){
+//                this->timestamp.push_back(in[cc++]);
+//            }
+//        }
+//        else{
+//            this->timestamp = "";
+//        }
+//
+//
+//        if(cc + sizeof(uint32_t) > in.size()){
+//            DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//        }
+//        for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//            ((char*)(&(this->next_conf_id)))[i] = in[cc++];
+//        }
+//
+//        // next placement
+//        temp = 0;
+//        if(cc + sizeof(uint32_t) > in.size()){
+//            DPRINTF(DEBUG_UTIL, "BAD FORMAT INPUT\n");
+//        }
+//        for(uint32_t i = 0; i < sizeof(uint32_t) && cc < in.size(); i++){
+//            ((char*)(&(temp)))[i] = in[cc++];
+//        }
+//        if(temp != 0){
+//            this->curr_placement = DataTransfer::deserializePlacement(in.substr(cc, temp));
+//            cc += temp;
+//        }
+//        else{
+//            this->next_placement = nullptr;
+//        }
+//    }
+//    else{
+//        this->next_placement = nullptr;
+//    }
+//
+////    DPRINTF(DEBUG_UTIL, "55555\n");
+//
+//}
+//
+//Reconfig_key_info::~Reconfig_key_info(){
+//    if(curr_placement != nullptr){
+//        delete curr_placement;
+//        curr_placement = nullptr;
+//    }
+//    if(next_placement != nullptr){
+//        delete next_placement;
+//        next_placement = nullptr;
+//    }
+//}
+//
+//std::string Reconfig_key_info::get_string(){
+//    std::string ret;
+//    for(uint i = 0; i < sizeof(uint32_t); i++){
+//        ret.push_back(((char*)(&curr_conf_id))[i]);
+//    }
+//
+//    uint32_t size;
+//    if(this->curr_placement != nullptr){
+//        std::string pl_s = DataTransfer::serializePlacement(*(this->curr_placement));
+//        size = pl_s.size();
+//        for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+//            ret.push_back(((char*)(&size))[i]);
+//        }
+//        ret += pl_s;
+////        DPRINTF(DEBUG_UTIL, "curr_placement size is %u\n", size);
+//    }
+//    else{
+//        size = 0;
+//        for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+//            ret.push_back(((char*)(&size))[i]);
+//        }
+//    }
+//
+//    for(uint i = 0; i < sizeof(int); i++){
+//        ret.push_back(((char*)(&reconfig_state))[i]);
+//    }
+//
+////    DPRINTF(DEBUG_UTIL, "reconfig_state is %u\n", reconfig_state);
+//
+//    if(reconfig_state != 0){
+//        // Timestamp
+//        uint32_t size = this->timestamp.size();
+//        for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+//            ret.push_back(((char*)(&size))[i]);
+//        }
+//        for(uint32_t i = 0; i < size; i++){
+//            ret.push_back(this->timestamp[i]);
+//        }
+//
+//        for(uint i = 0; i < sizeof(uint32_t); i++){
+//            ret.push_back(((char*)(&next_conf_id))[i]);
+//        }
+//
+//        if(this->next_placement != nullptr){
+//            std::string pl_s = DataTransfer::serializePlacement(*(this->next_placement));
+//            size = pl_s.size();
+//            for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+//                ret.push_back(((char*)(&size))[i]);
+//            }
+//            ret += pl_s;
+//        }
+//        else{
+//            size = 0;
+//            for(uint32_t i = 0; i < sizeof(uint32_t); i++){
+//                ret.push_back(((char*)(&size))[i]);
+//            }
+//        }
+//    }
+//
+//    return ret;
+//}
+//
+//Data_handler::~Data_handler(){
+//    if(reconfig_info != nullptr){
+//        delete reconfig_info;
+//        reconfig_info = nullptr;
+//    }
+//}
 
 std::string construct_key(const std::string& key, const std::string& protocol, const uint32_t conf_id,
         const std::string& timestamp){
@@ -822,41 +860,30 @@ std::string construct_key(const std::string& key, const std::string& protocol, c
     return ret;
 }
 
-int request_placement(const std::string& metadata_server_ip, const std::string& metadata_server_port,
-        const std::string& key, const uint32_t conf_id, std::string& status, std::string& msg, Placement*& p,
-        uint32_t retry_attempts, uint32_t metadata_server_timeout){
-    
+int ask_metadata(const std::string& metadata_server_ip, const std::string& metadata_server_port,
+        const std::string& key, const uint32_t conf_id, uint32_t& requested_conf_id, uint32_t& new_conf_id,
+        std::string& timestamp, Placement& p, uint32_t retry_attempts, uint32_t metadata_server_timeout, std::string& secondary_configs){
     DPRINTF(DEBUG_CLIENT_NODE, "started\n");
     int ret = 0;
+    std::string status, msg;
 
     DPRINTF(DEBUG_CLIENT_NODE, "metadata_server_ip port is %s %s\n", metadata_server_ip.c_str(), metadata_server_port.c_str());
-    fflush(stdout);
     Connect c(metadata_server_ip, metadata_server_port);
     if(!c.is_connected()){
         DPRINTF(DEBUG_CLIENT_NODE, "connection error\n");
         return -1;
     }
 
-//    std::string status;
-    msg = key;
-    msg += "!";
-    msg += std::to_string(conf_id);
-    
-    p = nullptr;
-
-
-//    DataTransfer::sendMsg(*c,DataTransfer::serializeMDS("ask", msg));
     std::string recvd;
     uint32_t RAs = retry_attempts;
     std::chrono::milliseconds span(metadata_server_timeout);
-    
     bool flag = false;
     while(RAs--){
-        std::promise <std::string> data_set;
-        std::future <std::string> data_set_fut = data_set.get_future();
-        DataTransfer::sendMsg(*c, DataTransfer::serializeMDS("ask", msg));
+        std::promise<std::string> data_set;
+        std::future<std::string> data_set_fut = data_set.get_future();
+        DataTransfer::sendMsg(*c, DataTransfer::serializeMDS("ask", "", key, conf_id));
         std::future<int> fut = std::async(std::launch::async, DataTransfer::recvMsg_async, *c, std::move(data_set));
-        
+
         if(data_set_fut.valid()){
 //            DPRINTF(DEBUG_CLIENT_NODE, "data_set_fut is valid\n");
             std::future_status aaa = data_set_fut.wait_for(span);
@@ -876,11 +903,15 @@ int request_placement(const std::string& metadata_server_ip, const std::string& 
         }
     }
 
-//    c.unlock();
-    
     if(flag){
+        status.clear();
         msg.clear();
-        p = DataTransfer::deserializeMDS(recvd, status, msg);
+        std::string rec_key;
+
+        p = DataTransfer::deserializeMDS(recvd, status, msg, rec_key, requested_conf_id, new_conf_id, timestamp, secondary_configs);
+
+        assert(key == rec_key);
+        assert(status == "OK" || status == "WARN");
     }
     else{
         ret = -2;
@@ -890,46 +921,46 @@ int request_placement(const std::string& metadata_server_ip, const std::string& 
     return ret;
 }
 
-int ask_metadata(const std::string& metadata_server_ip, const std::string& metadata_server_port,
-        const std::string& key, const uint32_t conf_id, uint32_t& requested_conf_id, uint32_t& new_conf_id,
-        std::string& timestamp, Placement*& p, uint32_t retry_attempts, uint32_t metadata_server_timeout,
-        std::string& secondary_configs){
-    int ret = 0;
-    
-    std::string status, msg;
-//    Placement* p;
+Logger::Logger(const std::string& file_name, const std::string& function_name, const int& line_number, bool logging_on) :
+        file_name(file_name), function_name(function_name), logging_on(logging_on){
+    output << "Time " << std::setw(10) << time(nullptr) << " - Thread: " << pthread_self() << " : [" << this->file_name << "]"
+           << "[" << this->function_name << "]:\n";
 
-//    DPRINTF(DEBUG_CAS_Client, "calling request_placement....\n");
-    
-    ret = request_placement(metadata_server_ip, metadata_server_port, key, conf_id, status, msg, p, retry_attempts,
-            metadata_server_timeout);
-    
-    assert(ret == 0);
-    assert(status == "OK");
-    
-    std::size_t pos = msg.find("!");
-    std::size_t pos2 = msg.find("!", pos + 1);
-    std::size_t pos3 = msg.find("!", pos2 + 1);
-    if(pos >= msg.size() || pos2 >= msg.size() || pos3 >= msg.size()){
-        std::stringstream pmsg; // thread safe printing
-        pmsg << "BAD FORMAT: " << msg << std::endl;
-        std::cerr << pmsg.str();
-        assert(0);
+    timer = time_point_cast<microseconds>(steady_clock::now());
+    last_lapse = timer;
+
+    output << "    " << std::setw(10) << 0 << ":" << std::setfill('0') << std::setw(4) << line_number << ": started\n" << std::setfill(' ');
+}
+
+Logger::Logger(const std::string& file_name, const std::string& function_name, const int& line_number,
+               const std::string& msg, bool logging_on) : file_name(file_name), function_name(function_name), logging_on(logging_on){
+    output << "Time " << std::setw(10) << time(nullptr) << " - Thread: " << pthread_self() << " : [" << this->file_name << "]"
+           << "[" << this->function_name << "]:\n";
+
+    timer = time_point_cast<microseconds>(steady_clock::now());
+    last_lapse = timer;
+
+    output << "    " << std::setw(10) << 0 << ":" << std::setfill('0') << std::setw(4) << line_number << ": started, ";
+    output << msg << "\n" << std::setfill(' ');
+}
+
+Logger::~Logger(){
+    time_point<steady_clock, microseconds> new_lapse = time_point_cast<microseconds>(steady_clock::now());
+    output << "    " << std::setw(10) << (new_lapse - last_lapse).count() << ": finished, " << "elapsed time = " << (new_lapse - timer).count() << "micros\n";
+
+    if(logging_on){
+        std::cout << output.str() << std::flush;
     }
-    requested_conf_id = stoul(msg.substr(0, pos));
-    new_conf_id = stoul(msg.substr(pos + 1, pos2 - pos - 1));
-    timestamp = msg.substr(pos2 + 1, pos3 - pos2 - 1);
-    secondary_configs = msg.substr(pos3 + 1);
-     
-    return ret;
 }
 
-template<typename T>
-void set_intersection(const Placement& p, std::unordered_set <T>& res){
-    res.insert(p.Q1.begin(), p.Q1.end());
-    res.insert(p.Q2.begin(), p.Q2.end());
-    res.insert(p.Q3.begin(), p.Q3.end());
-    res.insert(p.Q4.begin(), p.Q4.end());
+void Logger::operator()(const int& line_number){
+    time_point<steady_clock, microseconds> new_lapse = time_point_cast<microseconds>(steady_clock::now());
+    output << "    " << std::setw(10) << (new_lapse - last_lapse).count() << ":" << std::setfill('0') << std::setw(4) << line_number << "\n" << std::setfill(' ');
+    last_lapse = new_lapse;
 }
 
-template void set_intersection(const Placement& p, std::unordered_set <unsigned int>& res);
+void Logger::operator()(const int& line_number, const std::string& msg){
+    time_point<steady_clock, microseconds> new_lapse = time_point_cast<microseconds>(steady_clock::now());
+    output << "    " << std::setw(10) << (new_lapse - last_lapse).count() << ":" << std::setfill('0') << std::setw(4) << line_number << ": " << msg << "\n" << std::setfill(' ');
+    last_lapse = new_lapse;
+}

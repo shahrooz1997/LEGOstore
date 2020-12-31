@@ -9,7 +9,7 @@ from constants.opt_consts import PLACEMENT_CLASS_MAPPER, DATACENTER, GROUP,\
 
 def parse_args():
     parser = ArgumentParser(description = 'Process cmd args for placements')
-    parser.add_argument('-f','--file-name', dest='file_name', required=True)
+    parser.add_argument('-f','--file-name', dest='file_name', required=True) # Datacenter info
     parser.add_argument('-i','--input-groups', dest='input_groups', required=True)
     parser.add_argument('-o','--out-file', dest='outfile', required=False)
     parser.add_argument('-p','--file-path', dest='file_path', default='',\
@@ -86,11 +86,6 @@ if __name__ == "__main__":
                     if args.file_path else args.file_name
     input_groups = args.file_path + '/' + args.input_groups \
                     if args.file_path else args.input_groups
-    datacenters, groups = process_input(file_name, input_groups)
-    if args.baseline is True:
-        baseline(args, datacenters, groups)
-    else:
-        main(args, datacenters, groups)
     datacenters, groups = process_input(file_name, input_groups)
     if args.baseline is True:
         baseline(args, datacenters, groups)

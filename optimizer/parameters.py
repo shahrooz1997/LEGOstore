@@ -2,32 +2,32 @@ import copy
 
 class single_group:
     def __init__(self,
-      availability_target,
-      client_dist,
-      object_size,
-      metadata_size,
-      num_objects,
-      arrival_rate,
-      read_ratio,
-      write_ratio,
-      SLO_read,
-      SLO_write,
-      duration,
-      time_to_decode):
-        
-      
-      self.availability_target  = availability_target 
-      self.client_dist          = client_dist 
-      self.object_size          = object_size 
-      self.metadata_size        = metadata_size
-      self.num_objects          = num_objects
-      self.arrival_rate         = arrival_rate
-      self.read_ratio           = read_ratio
-      self.write_ratio          = write_ratio
-      self.SLO_read             = SLO_read
-      self.SLO_write            = SLO_write
-      self.duration             = duration
-      self.time_to_decode       = time_to_decode
+        availability_target,
+        client_dist,
+        object_size,
+        metadata_size,
+        num_objects,
+        arrival_rate,
+        read_ratio,
+        write_ratio,
+        SLO_read,
+        SLO_write,
+        duration,
+        time_to_decode):
+
+
+        self.availability_target  = availability_target
+        self.client_dist          = client_dist
+        self.object_size          = object_size
+        self.metadata_size        = metadata_size
+        self.num_objects          = num_objects
+        self.arrival_rate         = arrival_rate
+        self.read_ratio           = read_ratio
+        self.write_ratio          = write_ratio
+        self.SLO_read             = SLO_read
+        self.SLO_write            = SLO_write
+        self.duration             = duration
+        self.time_to_decode       = time_to_decode
 
 
 # vary arrival rate and return the input groups

@@ -15,6 +15,7 @@
 #define UTIL_H
 
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <vector>
 #include <string>
@@ -33,6 +34,7 @@
 #include <map>
 #include <mutex>
 #include <memory>
+#include <random>
 
 using namespace std::chrono;
 
@@ -62,6 +64,7 @@ using namespace std::chrono;
 
 #define CAS_PROTOCOL_NAME "CAS"
 #define ABD_PROTOCOL_NAME "ABD"
+#define MIX_PROTOCOL_NAME "MIX"
 
 //#define DEVELOPMENT
 
@@ -71,6 +74,7 @@ extern bool DEBUG_ABD_Client;
 extern bool DEBUG_CAS_Server;
 extern bool DEBUG_ABD_Server;
 extern bool DEBUG_RECONFIG_CONTROL;
+extern bool DEBUG_CONTROLLER;
 extern bool DEBUG_METADATA_SERVER;
 extern bool DEBUG_UTIL;
 
@@ -84,8 +88,42 @@ extern bool DEBUG_UTIL;
     do{ \
         if(flag) \
             fprintf(stdout, "Time %10li - Thread: %lu : [%s][%s]%d: " fmt, time(nullptr), pthread_self(), __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
-            fflush(stdout); \
+        fflush(stdout); \
     } while(0)
+
+class Logger{
+public:
+    Logger(const std::string& file_name, const std::string& function_name, const int& line_number, bool logging_on = true);
+    Logger(const std::string& file_name, const std::string& function_name, const int& line_number, const std::string& msg, bool logging_on = true);
+    ~Logger();
+
+    void operator()(const int& line_number);
+    void operator()(const int& line_number, const std::string& msg);
+
+private:
+    std::string file_name;
+    std::string function_name;
+    time_point<steady_clock, microseconds> timer;
+    time_point<steady_clock, microseconds> last_lapse;
+    std::stringstream output;
+    bool logging_on;
+};
+
+//// Todo: using variable argument macros try to add message as well. It does not work when there is no arguments in -std=c++11.
+#define GET_MACRO(_1, _2, NAME, ...) NAME
+#define EASY_LOGGER_INSTANCE_NAME __LEGO_log
+#define EASY_LOG_INIT_M1(M) Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, M)
+#define EASY_LOG_INIT_M2(M, O) Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, M, O)
+#define EASY_LOG_INIT_M(...) GET_MACRO(__VA_ARGS__, EASY_LOG_INIT_M2, EASY_LOG_INIT_M1)(__VA_ARGS__)
+
+#define EASY_LOG_INIT() Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__)
+#define EASY_LOG_INIT_OFF() Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, false)
+#define EASY_LOG() EASY_LOGGER_INSTANCE_NAME(__LINE__)
+//#define EASY_LOG_INIT_M(M) Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, M)
+#define EASY_LOG_M(M) EASY_LOGGER_INSTANCE_NAME(__LINE__, M)
+
+#define TRUNC_STR(X) X.substr(0, 3) + "...[" + std::to_string(X.size()) + " bytes]"
+
 
 typedef std::vector <std::string> strVec;
 
@@ -98,7 +136,6 @@ struct Server{
     DC* datacenter;
     
     Server();
-    
     Server(const Server& orig);
 };
 
@@ -115,84 +152,42 @@ typedef struct Datacenter{
     ~Datacenter();
 } DC;
 
+struct Quorums{
+    std::vector<uint32_t> Q1;
+    std::vector<uint32_t> Q2;
+    std::vector<uint32_t> Q3;
+    std::vector<uint32_t> Q4;
+};
 
-struct Placement{ // For ABD, you can use just the first portion of this struct.
+struct Placement{
     std::string protocol;
-    std::vector <uint32_t> Q1;
-    std::vector <uint32_t> Q2;
-    uint32_t m; // Total number of servers
-    uint32_t k; // The number of chunks necessary for decoding data
-    std::vector <uint32_t> Q3;
-    std::vector <uint32_t> Q4;
-//    std::vector<DC*>        N; // The whole servers participating in this placement.
+    std::vector<uint32_t> servers;
     uint32_t f; // The number of failures this placement can tolerate.
+    uint32_t m; // Total number of servers
+    uint32_t k; // The number of chunks necessary for decoding data, For ABD k = 0
+    std::vector<Quorums> quorums; // It is a map from the id of datacenter to its optimized placement Todo: change it to map
     
-    Placement();
-//    Placement(const std::string &in);
-//    Placement(const std::string &in, uint32_t &cc);
-
-//    std::string get_string();
-    
-};
-
-
-//TODO:: to add arrival process decription, but first need to
-//confirm if optimizer has such a field
-//Also, do we need to specify type of optimization in these structs
-//Or C/B analysis takes care of that
-struct GroupWorkload{
-    uint32_t availability_target;
-    std::vector<double> client_dist;
-    uint32_t object_size;
-    uint32_t metadata_size;
-    uint64_t num_objects;
-    double arrival_rate;
-    double read_ratio;
-    double write_ratio;
-    double slo_read;
-    double slo_write;
-    uint64_t duration;
-    double time_to_decode;
-    std::vector <std::string> keys;        // No need to send to optimizer
-};
-
-struct WorkloadConfig{
-    uint64_t timestamp;
-    uint32_t id;
-    std::vector <uint32_t> grp_id;
-    std::vector<GroupWorkload*> grp;
-    
-    ~WorkloadConfig();
-};
-
-struct GroupConfig{
-    uint32_t object_size;
-    uint64_t num_objects;
-    double arrival_rate; // Combined arrival rate
-    double read_ratio;
-    uint64_t duration;
-    std::vector <std::string> keys;
-    std::vector<double> client_dist;
-    Placement* placement_p;
-    
-    GroupConfig();
-    
-    GroupConfig(const GroupConfig& orig);
-    
-    ~GroupConfig();
+//    Placement();
 };
 
 struct Group{
-    uint64_t timestamp;
+    uint32_t id;
+    uint32_t availability_target;
+    std::vector<double> client_dist;
+    uint32_t object_size;
+    uint64_t num_objects; // Not used in the project
+    double arrival_rate; // Combined arrival rate
+    double read_ratio;
+    std::chrono::milliseconds duration;
+    std::vector <std::string> keys;
+
+    Placement placement;
+};
+
+struct Group_config{
+    uint64_t timestamp; // Start time of this configuration
     uint32_t id; // conf_id
-    std::vector <uint32_t> grp_id;
-    std::vector<GroupConfig*> grp_config;
-    
-    Group();
-    
-    Group(const Group& orig);
-    
-    ~Group();
+    std::vector<Group> groups;
 };
 
 struct Properties{
@@ -200,61 +195,32 @@ struct Properties{
     uint32_t retry_attempts;
     uint32_t metadata_server_timeout;
     uint32_t timeout_per_request;
-    uint64_t start_time;
+
     std::vector<DC*> datacenters;
-    std::vector<Group*> groups;
+    std::vector<Group_config> group_configs;
     
     ~Properties();
 };
 
-struct Reconfig_key_info{
-    uint32_t curr_conf_id;
-    Placement* curr_placement;
-    int reconfig_state; // 0: never reconfigured, 1: blocked, 2: reconfiguration completed
-    std::string timestamp;
-    uint32_t next_conf_id;
-    Placement* next_placement;
-    
-    Reconfig_key_info();
-    
-    Reconfig_key_info(const std::string& in);
-    
-    ~Reconfig_key_info();
-    
-    std::string get_string();
-};
+int get_random_number_uniform(int min, int max, int seed = std::chrono::system_clock::now().time_since_epoch().count());
+double get_random_real_number_uniform(double min, double max, int seed = std::chrono::system_clock::now().time_since_epoch().count());
 
-class Data_handler{
-    std::string value;
-    std::string protocol;
-    std::string timestamp;
-    Reconfig_key_info* reconfig_info;
-    bool fin;
-    
-    ~Data_handler();
-};
+#ifdef LOCAL_TEST
+#define WARM_UP_DELAY 30
+#define WARM_UP_SIZE (1024)
+#else
+#define WARM_UP_DELAY 300
+#define WARM_UP_SIZE (2 * 1024)
+#endif
 
-struct Request{
-    int sock;
-    std::string function;
-    std::string key;
-    uint32_t conf_id;
-    std::string value;
-    std::string timestamp;
-    std::string protocol;
-};
+#define WARM_UP_MNEMONIC "__WARMUP__256844678425__"
 
-class JSON_Reader{
-public:
-    JSON_Reader();
-    
-    JSON_Reader(const JSON_Reader& orig) = delete;
-    
-    virtual ~JSON_Reader();
+inline bool is_warmup_message(const std::string& msg){
+    std::string temp(WARM_UP_MNEMONIC);
+    return msg.substr(0, temp.size()) == temp;
+}
 
-private:
-
-};
+std::string get_random_string(uint32_t size = WARM_UP_SIZE);
 
 std::string construct_key(const std::string& key, const std::string& protocol, const uint32_t conf_id,
         const std::string& timestamp);
@@ -279,10 +245,6 @@ inline uint16_t stous(const std::string& s){
 }
 
 int socket_setup(const std::string& port, const std::string* IP = nullptr);
-
-//int socket_cnt(int& sock, uint16_t port, const std::string& IP = "0.0.0.0");
-
-//int client_cnt(int& sock, Server* server);
 
 // Todo: use this connection throughout the project
 // socket connect upgrade
@@ -332,34 +294,9 @@ private:
 
 void print_time();
 
-//returns the liberasure desc
-inline int create_liberasure_instance(const Placement* pp){
-    struct ec_args null_args;
-    null_args.k = pp->k;
-    null_args.m = pp->m - pp->k;
-    null_args.w = 16; // ToDo: what must it be?
-    null_args.ct = CHKSUM_NONE;
-    //EC_BACKEND_LIBERASURECODE_RS_VAND
-    //EC_BACKEND_JERASURE_RS_VAND
-    return liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, &null_args);
-}
-
-inline int destroy_liberasure_instance(int desc){
-    if(liberasurecode_instance_destroy(desc) != 0){
-        fprintf(stderr, "Liberasure instance destory failed! Will lead to memory leaks..");
-    }
-    return 0;
-}
-
-int
-request_placement(const std::string& metadata_server_ip, const std::string& metadata_server_port,
-        const std::string& key, const uint32_t conf_id, std::string& status, std::string& msg, Placement*& p,
-        uint32_t retry_attempts, uint32_t metadata_server_timeout);
-
 int ask_metadata(const std::string& metadata_server_ip, const std::string& metadata_server_port,
         const std::string& key, const uint32_t conf_id, uint32_t& requested_conf_id, uint32_t& new_conf_id,
-        std::string& timestamp, Placement*& p, uint32_t retry_attempts, uint32_t metadata_server_timeout,
-        std::string& secondary_configs);
+        std::string& timestamp, Placement& p, uint32_t retry_attempts, uint32_t metadata_server_timeout, std::string& secondary_configs);
 
 template<typename T>
 void set_intersection(const Placement& p, std::unordered_set <T>& res);

@@ -52,7 +52,7 @@ int Client_Node::update_placement(const std::string& key, const uint32_t conf_id
     uint32_t new_conf_id; // Not usefull for client
     std::string timestamp; // Not usefull for client
     std::string sec_configs;
-    Placement* p = nullptr;
+    Placement p;
 
     if(this->cas != nullptr){
         ret = ask_metadata(this->cas->get_metadata_server_ip(), this->cas->get_metadata_server_port(), key,
@@ -85,7 +85,7 @@ int Client_Node::update_placement(const std::string& key, const uint32_t conf_id
     }
     this->secondary_configs[key] = vec; 
 
-    keys_info[key] = std::pair<uint32_t, Placement>(requested_conf_id, *p);
+    keys_info[key] = std::pair<uint32_t, Placement>(requested_conf_id, p);
 //    if(p->protocol == CAS_PROTOCOL_NAME){
 //        if(this->desc != -1){
 //            destroy_liberasure_instance(((this->desc)));
@@ -96,10 +96,12 @@ int Client_Node::update_placement(const std::string& key, const uint32_t conf_id
 //    }
     ret = 0;
 
-    if(p != nullptr) {
-        delete p;
-        p = nullptr;
-    }
+    assert(p.m != 0);
+
+//    if(p != nullptr) {
+//        delete p;
+//        p = nullptr;
+//    }
     
     DPRINTF(DEBUG_CAS_Client, "finished\n");
     return ret;
@@ -133,6 +135,10 @@ const Placement& Client_Node::get_placement(const std::string& key, const bool f
         }
     }
     
+}
+
+const Placement& Client_Node::get_placement(const std::string& key, const bool force_update, const std::string& conf_id){
+    return this->get_placement(key, force_update, stoul(conf_id));
 }
 
 const uint32_t& Client_Node::get_conf_id(const std::string& key){

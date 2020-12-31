@@ -36,7 +36,7 @@ void message_handler(int connection, DataServer& dataserver, int portid, std::st
     if(method == "put"){
         DPRINTF(DEBUG_RECONFIG_CONTROL,
                 "The method put is called. The key is %s, ts: %s, value: %s, class: %s, server port is %u\n",
-                data[1].c_str(), data[2].c_str(), data[3].c_str(), data[4].c_str(), portid);
+                data[1].c_str(), data[2].c_str(), (TRUNC_STR(data[3])).c_str(), data[4].c_str(), portid);
         result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[3], data[2], data[4], stoul(data[5])));
     }
     else if(method == "get"){
@@ -95,6 +95,14 @@ void server_connection(int connection, DataServer& dataserver, int portid){
             close(connection);
             DPRINTF(DEBUG_METADATA_SERVER, "one connection closed.\n");
             return;
+        }
+        if(is_warmup_message(recvd)){
+            std::string temp = std::string(WARM_UP_MNEMONIC) + get_random_string();
+            result = DataTransfer::sendMsg(connection, temp);
+            if(result != 1){
+                DataTransfer::sendMsg(connection, DataTransfer::serialize({"Failure", "Server Response failed"}));
+            }
+            continue;
         }
         message_handler(connection, dataserver, portid, recvd);
     }

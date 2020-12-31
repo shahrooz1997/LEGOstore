@@ -1,0 +1,130 @@
+﻿{
+  "datacenters": [
+    {
+      "id": 0,
+      "latencies": [0, 32.46, 82.72, 228, 216.2, 148.4, 248.3, 99.72, 93.47],
+      "network_cost": [0.01, 0.05, 0.05, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
+      "provider": "GCP",
+      "name": "Tokyo",
+      "code": "asia-northeast1-b",
+      "details": {
+        "type": "linux",
+        "size": "e2-standard-2",
+        "price": 0.089964,
+        "storage_cost": 0.052
+      }
+    },
+    {
+      "id": 1,
+      "latencies": [33.44, 0, 104.3, 257.1, 244.3, 177, 275.9, 127.1, 119.1],
+      "network_cost": [0.05, 0.01, 0.05, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
+      "provider": "GCP",
+      "name": "Seoul",
+      "code": "asia-northeast3-a",
+      "details": {
+        "type": "linux",
+        "size": "e2-standard-2",
+        "price": 0.089964,
+        "storage_cost": 0.052
+      }
+    },
+    {
+      "id": 2,
+      "latencies": [83.12, 104.4, 0, 201, 202, 257.1, 335.1, 182.5, 210.1],
+      "network_cost": [0.05, 0.05, 0.01, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
+      "provider": "GCP",
+      "name": "Singapore",
+      "code": "asia-southeast1-b",
+      "details": {
+        "type": "linux",
+        "size": "e2-standard-2",
+        "price": 0.086658,
+        "storage_cost": 0.044
+      }
+    },
+    {
+      "id": 3,
+      "latencies": [228.5, 257, 201.4, 0, 13.99, 88.6, 219.2, 153, 141.3],
+      "network_cost": [0.08, 0.08, 0.08, 0.01, 0.02, 0.08, 0.08, 0.08, 0.08],
+      "provider": "GCP",
+      "name": "Frankfurt",
+      "code": "europe-west3-c",
+      "details": {
+        "type": "linux",
+        "size": "e2-standard-2",
+        "price": 0.090334,
+        "storage_cost": 0.048
+      }
+    },
+    {
+      "id": 4,
+      "latencies": [216.2, 244.4, 204.5, 14.51, 0, 78.79, 207.9, 142.6, 128.4],
+      "network_cost": [0.08, 0.08, 0.08, 0.02, 0.01, 0.08, 0.08, 0.08, 0.08],
+      "provider": "GCP",
+      "name": "London",
+      "code": "europe-west2-c",
+      "details": {
+        "type": "linux",
+        "size": "e2-standard-2",
+        "price": 0.090334,
+        "storage_cost": 0.048
+      }
+    },
+    {
+      "id": 5,
+      "latencies": [148, 177.4, 229.2, 88.86, 78.86, 0, 131.1, 67.22, 59.64],
+      "network_cost": [0.08, 0.08, 0.08, 0.08, 0.08, 0.01, 0.08, 0.01, 0.01],
+      "provider": "GCP",
+      "name": "Virginia",
+      "code": "us-east4-c",
+      "details": {
+        "type": "linux",
+        "size": "e2-standard-2",
+        "price": 0.079462,
+        "storage_cost": 0.044
+      }
+    },
+    {
+      "id": 6,
+      "latencies": [248.1, 275.5, 328.1, 219, 208.2, 131.8, 0, 149.1, 171.9],
+      "network_cost": [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.01, 0.08, 0.08],
+      "provider": "GCP",
+      "name": "São Paulo",
+      "code": "southamerica-east1-b",
+      "details": {
+        "type": "linux",
+        "size": "e2-standard-2",
+        "price": 0.110368,
+        "storage_cost": 0.06
+      }
+    },
+    {
+      "id": 7,
+      "latencies": [100.6, 126.9, 183.4, 155.2, 143, 67.54, 149.2, 0, 26.84],
+      "network_cost": [0.08, 0.08, 0.08, 0.08, 0.08, 0.01, 0.08, 0.01, 0.01],
+      "provider": "GCP",
+      "name": "California",
+      "code": "us-west2-a",
+      "details": {
+        "type": "linux",
+        "size": "e2-standard-2",
+        "price": 0.084486,
+        "storage_cost": 0.048
+      }
+    },
+    {
+      "id": 8,
+      "latencies": [92.42, 119.2, 210.8, 141, 128.8, 59.73, 172.2, 26.92, 0],
+      "network_cost": [0.08, 0.08, 0.08, 0.08, 0.08, 0.01, 0.08, 0.01, 0.01],
+      "provider": "GCP",
+      "name": "Oregon",
+      "code": "us-west1-b",
+      "details": {
+        "type": "linux",
+        "size": "e2-standard-2",
+        "price": 0.071006,
+        "storage_cost": 0.04
+      }
+    }
+  ]
+}

@@ -26,7 +26,7 @@
 #define CAS_Client_H
 
 #include "Client.h"
-#include <erasurecode.h>
+#include "Liberasure.h"
 
 class Client_Node;
 
@@ -34,22 +34,18 @@ class CAS_Client : public Client{
 public:
     CAS_Client(uint32_t id, uint32_t local_datacenter_id, uint32_t retry_attempts, uint32_t metadata_server_timeout,
             uint32_t timeout_per_request, std::vector<DC*>& datacenters, Client_Node* parent);
-    
     CAS_Client(const CAS_Client& orig) = delete;
-    
     virtual ~CAS_Client();
     
     int put(const std::string& key, const std::string& value);
     
     int get(const std::string& key, std::string& value);
 
-
 private:
     Client_Node* parent;
-
-    bool can_be_optimized;
+    Liberasure liberasure;
     
-    int get_timestamp(const std::string& key, Timestamp*& timestamp);
+    int get_timestamp(const std::string& key, std::unique_ptr<Timestamp>& timestamp_p); // Returns 10 if the get operation could be done in one phase.
 };
 
 #endif /* CAS_Client_H */

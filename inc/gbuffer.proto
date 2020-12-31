@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package packet;
+
+message msg{
+	repeated bytes value = 1;
+}
+
+message Server{
+	uint32 id = 1;
+	string ip = 2;
+	uint32 port = 3;
+}
+
+message Datacenter{
+	uint32 id = 1;
+	string metadata_server_ip = 2;
+	uint32 metadata_server_port = 3;
+	repeated Server servers = 4;
+}
+
+message Quorums{
+	repeated uint32 q1 = 1;
+	repeated uint32 q2 = 2;
+	repeated uint32 q3 = 3;
+	repeated uint32 q4 = 4;
+}
+
+message Placement{
+	string protocol = 1;
+	repeated uint32 servers = 2;
+	uint32 f = 3;
+	uint32 m = 4;
+	uint32 k = 5;
+	repeated Quorums quorums = 6;
+}
+
+message Group{
+	uint32 id = 1;
+	uint32 availability_target = 2;
+	repeated double client_dist = 3;
+	uint32 object_size = 4;
+	uint64 num_objects = 5;
+	double arrival_rate = 6;
+	double read_ratio = 7;
+	uint64 duration = 8;
+	repeated bytes keys = 9;
+	
+	Placement placement = 10;
+
+}
+
+message Group_config{
+	uint64 timestamp = 1;
+	uint32 id = 2;
+	repeated Group groups = 3;
+}
+
+message MetaDataServer{
+	bytes status = 1;
+	bytes msg = 2;
+	bytes key = 3;
+	uint32 curr_conf_id = 4;
+	uint32 new_conf_id = 5;
+	bytes timestamp = 6;
+	Placement placement = 7;
+	bytes secondary_configs = 8;
+}

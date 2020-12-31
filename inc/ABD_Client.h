@@ -22,9 +22,7 @@ class ABD_Client : public Client{
 public:
     ABD_Client(uint32_t id, uint32_t local_datacenter_id, uint32_t retry_attempts, uint32_t metadata_server_timeout,
             uint32_t timeout_per_request, std::vector<DC*>& datacenters, Client_Node* parent);
-    
     ABD_Client(const ABD_Client& orig) = delete;
-    
     virtual ~ABD_Client();
     
     int put(const std::string& key, const std::string& value);
@@ -33,9 +31,8 @@ public:
 
 private:
     Client_Node* parent;
-    
-    int get_timestamp(const std::string& key, Timestamp*& timestamp);
 
+    int get_timestamp(const std::string& key, std::unique_ptr<Timestamp>& timestamp_p);
 };
 
 #endif /* ABDCLIENT_H */

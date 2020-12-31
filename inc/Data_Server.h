@@ -48,7 +48,7 @@ private:
     std::string metadata_server_ip;
     std::string metadata_server_port;
     
-    std::map <std::string, std::vector<Request>> recon_keys; // Todo: remove it
+//    std::map <std::string, std::vector<Request>> recon_keys; // Todo: remove it
 
     strVec get_data(const std::string& key);
     int put_data(const std::string& key, const strVec& value);

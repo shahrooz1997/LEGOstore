@@ -242,6 +242,7 @@ void server_connection(int connection, int portid){
         if(result != 1){
 //            DataTransfer::sendMsg(connection, DataTransfer::serializeMDS("ERROR", "Error in receiving"));
             close(connection);
+            std::cout << portid << endl;
             DPRINTF(DEBUG_METADATA_SERVER, "one connection closed.\n");
             return;
         }

@@ -1,6 +1,6 @@
 CXX = g++
-CXXFLAGS =-Wall -std=c++11 -Iinc -g `pkg-config --cflags protobuf`
-LDFLAGS = -lm -lerasurecode -lrocksdb -Llib -ldl -lpthread `pkg-config --libs protobuf`
+CXXFLAGS =-Wall -std=c++11 -stdlib=libc++ -Iinc -I/usr/local/Cellar/rocksdb/6.14.6_1/include/rocksdb/ -g `pkg-config --cflags protobuf`
+LDFLAGS = -lm -lerasurecode -L /usr/local/Cellar/rocksdb/6.14.6_1/lib/ -lrocksdb -ldl -lpthread `pkg-config --libs protobuf`
 
 
 src = $(wildcard src/*.cpp)

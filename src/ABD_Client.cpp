@@ -32,7 +32,7 @@ namespace ABD_helper{
                           const Server server, const string current_class, const uint32_t conf_id, const string value = "",
                           const string timestamp = ""){
 
-        DPRINTF(DEBUG_ABD_Client, "started.\n");
+        DPRINTF(DEBUG_ABD_Client, "started..\n", 0);
         EASY_LOG_INIT_M(string("to do ") + operation + " on key " + key + " with conf_id " + to_string(conf_id), DEBUG_ABD_Client);
 
         strVec data;
@@ -85,6 +85,7 @@ namespace ABD_helper{
                 }
                 size_t pos = 0;
                 std::string token;
+                std::cout << "gkc5188: " << cfs << endl;
                 if (cfs.find('!') != std::string::npos) {
                     while ((pos = cfs.find("!")) != std::string::npos) {
                         token = cfs.substr(0, pos);
@@ -118,7 +119,7 @@ namespace ABD_helper{
                                     const uint32_t conf_id, uint32_t timeout_per_request, 
                                     std::vector<strVec> &ret, std::promise <std::pair<int, 
                                     std::vector<strVec>>> && parent_prm){
-        DPRINTF(DEBUG_CAS_Client, "started.\n");
+        DPRINTF(DEBUG_ABD_Client, "started.\n");
 
         EASY_LOG_INIT_M(string("to do ") + operation + " on key " + key + " with quorum size " + to_string(quorom.size()), DEBUG_ABD_Client);
 
@@ -247,7 +248,7 @@ namespace ABD_helper{
                         std::vector<DC*>& datacenters,
                         const std::string current_class, const uint32_t conf_id, uint32_t timeout_per_request, 
                         std::vector<strVec>& ret, Client_Node* parent){
-        DPRINTF(DEBUG_CAS_Client, "Daemon started.\n");
+        DPRINTF(DEBUG_ABD_Client, "Daemon started.\n");
         std::promise <std::pair<int, std::vector<strVec>>> prm;
         std::future<std::pair<int, std::vector<strVec>>> fut = prm.get_future();
         std::map<uint32_t, bool> secondary_configs_map;
@@ -311,6 +312,7 @@ ABD_Client::ABD_Client(uint32_t id, uint32_t local_datacenter_id, uint32_t retry
         timeout_per_request, datacenters), parent(parent){
     assert(parent != nullptr);
     this->current_class = ABD_PROTOCOL_NAME;
+    DPRINTF(DEBUG_ABD_Client, "client with id \"%u\" has been started.\n", this->id);
 }
 
 ABD_Client::~ABD_Client(){

@@ -188,7 +188,6 @@ int execute(const char* command, const std::vector<std::string>& args, std::stri
     }
     cout << "\"...\n";
     
-    
     int pipedes[2];
     if(pipe(pipedes) == -1) {
         perror("pipe");
@@ -314,7 +313,7 @@ int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t gr
 #ifdef LOCAL_TEST
     std::vector<std::string> args;
     std::string output;
-    std::string command = "/home/shahrooz/Desktop/PSU/Research/LEGOstore/Client";
+    std::string command = "/Users/gauravkc/Documents/Nobler/LEGOstore/Client";
 
     args.push_back(command);
     args.push_back(std::to_string(datacenter_id));
@@ -633,17 +632,20 @@ int main(){
 #ifdef LOCAL_TEST
     Controller master(2, 10000, 10000, "./config/local_config.json",
                       "./config/auto_test/input_workload.json", "./config/auto_test/optimizer_output.json");
+
 #else
     Controller master(2, 10000, 10000, "./config/auto_test/datacenters_access_info.json",
                       "./config/auto_test/input_workload.json", "./config/auto_test/optimizer_output.json");
 #endif
     master.run_all_clients();
     DPRINTF(DEBUG_RECONFIG_CONTROL, "controller created\n");
-
+    
+//#ifndef LOCAL_TEST
     auto warm_up_tp = time_point_cast<milliseconds>(system_clock::now());;
     warm_up_tp += seconds(WARM_UP_DELAY);
     master.warm_up();
     std::this_thread::sleep_until(warm_up_tp);
+//#endif
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "run_reconfigurer\n");
     master.run_reconfigurer();

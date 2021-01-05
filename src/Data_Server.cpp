@@ -11,6 +11,7 @@ DataServer::DataServer(string directory, int sock, string metadata_server_ip,
         string metadata_server_port) : sockfd(sock), cache(1000000000), persistent(directory),
         CAS(shared_ptr<Cache>(&cache), shared_ptr<Persistent>(&persistent), shared_ptr<mutex>(&mu)),
         ABD(shared_ptr<Cache>(&cache), shared_ptr<Persistent>(&persistent), shared_ptr<mutex>(&mu)){
+    DPRINTF(true, "DATASERVER constructor\n");
     this->metadata_server_port = metadata_server_port;
     this->metadata_server_ip = metadata_server_ip;
 }
@@ -203,7 +204,7 @@ string DataServer::get_timestamp(const string& key, const string& curr_class, ui
                     }
                     pos = constructed_key.find(tofind);
                     string extracted_config = constructed_key.substr(0, pos);
-                    if(conf_id != stoul(extracted_config)) extra_configs += "!" + extracted_config;
+                    if(std::to_string(conf_id) != extracted_config) extra_configs += "!" + extracted_config;
                 }
             }
             return ABD.get_timestamp(key, conf_id, extra_configs);
@@ -252,7 +253,7 @@ string DataServer::put(const string& key, const string& value, const string& tim
                     }
                     pos = constructed_key.find(tofind);
                     string extracted_config = constructed_key.substr(0, pos);
-                    if(conf_id != stoul(extracted_config)) extra_configs += "!" + extracted_config;
+                    if(std::to_string(conf_id) != extracted_config) extra_configs += "!" + extracted_config;
                 }
             }
             return ABD.put(key, conf_id, value, timestamp, extra_configs);
@@ -306,7 +307,7 @@ string DataServer::get(const string& key, const string& timestamp, const string&
                     }
                     pos = constructed_key.find(tofind);
                     string extracted_config = constructed_key.substr(0, pos);
-                    if(conf_id != stoul(extracted_config)) extra_configs += "!" + extracted_config;
+                    if(std::to_string(conf_id) != extracted_config) extra_configs += "!" + extracted_config;
                 }
             }
             return ABD.get(key, conf_id, extra_configs);

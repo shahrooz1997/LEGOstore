@@ -124,12 +124,14 @@ void runServer(std::string& db_name, std::string& socket_port){
 
 void runServer(const std::string& db_name, const std::string& socket_port, const std::string& socket_ip,
         const std::string& metadata_server_ip, const std::string& metadata_server_port){
-
+    std::cout << "runServer called" << std::endl;
     DataServer* ds = new DataServer(db_name, socket_setup(socket_port, &socket_ip), metadata_server_ip,
             metadata_server_port);
+    std::cout << "db created" << std::endl;
     int portid = stoi(socket_port);
     std::cout << "Alive port " << portid << std::endl;
     while(1){
+        std::cout << "in while loop" << std::endl;
         int new_sock = accept(ds->getSocketDesc(), NULL, 0);
         std::cout << "Received Request!!1  PORT:" << portid << std::endl;
         std::thread cThread([&ds, new_sock, portid](){ server_connection(new_sock, *ds, portid); });
@@ -146,7 +148,7 @@ int main(int argc, char** argv){
     std::vector <std::string> db_list;
     
     if(argc == 1){
-        socket_port = {"10000", "10001", "10002", "10003", "10004", "10005", "10006", "10007", "10008"};
+        socket_port = {"30009", "30001", "30002", "30003", "30004", "30005", "30006", "30007", "30008"};
         db_list = {"db1.temp", "db2.temp", "db3.temp", "db4.temp", "db5.temp", "db6.temp", "db7.temp", "db8.temp",
                 "db9.temp"};
         for(uint i = 0; i < socket_port.size(); i++){
@@ -162,6 +164,7 @@ int main(int argc, char** argv){
                 filename << "server_" << pid << "_output.txt";
                 FILE* out = fopen(filename.str().c_str(), "w");
                 std::setbuf(out, NULL);
+                DPRINTF(true, "started on port %s", socket_port[i].c_str());
                 runServer(db_list[i], socket_port[i]);
                 exit(0);
             }

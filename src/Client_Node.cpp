@@ -73,6 +73,7 @@ int Client_Node::update_placement(const std::string& key, const uint32_t conf_id
    
     // Update secondary configs list
     std::vector<uint32_t> vec;
+    std::cout << "gkc5188, update: " << sec_configs << endl;
     if(sec_configs.length() > 0) {
         size_t pos = 0;
         std::string token;

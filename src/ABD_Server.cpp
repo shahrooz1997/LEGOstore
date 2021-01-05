@@ -79,7 +79,7 @@ std::string ABD_Server::get_timestamp(const std::string& key, uint32_t conf_id, 
     }
 
     if(data[3] == ""){
-        return DataTransfer::serialize({"OK", data[2]});
+        return DataTransfer::serialize({"OK", data[2], extra_configs});
     }
     else{ // Key reconfigured
         return DataTransfer::serialize({"OK", data[2], extra_configs});
@@ -109,7 +109,7 @@ std::string ABD_Server::put(const std::string& key, uint32_t conf_id, const std:
             data[2] = timestamp;
             put_data(con_key, data);
         }
-        return DataTransfer::serialize({"OK"});
+        return DataTransfer::serialize({"OK", extra_configs});
     }
     else{ // Key reconfigured
         /*
@@ -145,7 +145,7 @@ std::string ABD_Server::get(const std::string& key, uint32_t conf_id, const std:
     }
 
     if(data[3] == ""){
-        return DataTransfer::serialize({"OK", data[2], data[0]});
+        return DataTransfer::serialize({"OK", data[2], data[0], extra_configs});
     }
     else{ // Key reconfigured
         return DataTransfer::serialize({"OK", data[2], data[0], extra_configs});

@@ -21,7 +21,7 @@ read_ratios = {"HW": 0.1, "RW": 0.5, "HR": 0.9}
 # Default values
 availability_target  = 2
 client_dist          = [1/9 for _ in range(9)]
-object_size          = 0.000001 # in GB
+object_size          = 0.0001 # in GB
 metadata_size        = 0.000000001 # in GB
 num_objects          = 1000000
 arrival_rate         = 200

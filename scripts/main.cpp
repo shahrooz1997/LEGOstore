@@ -1146,45 +1146,45 @@ int main(int argc, char* argv[]){
 
     // clean_up();
 
-    // get_pairwise_latency();
+    get_pairwise_latency();
 
     // config_machines(true);
 
 
 
-    manual_execute_command(all_servers, "cd project; make cleandb");
+    // manual_execute_command(all_servers, "cd project; make cleandb");
     
-    vector<int> running_servers;
-    cout << "Ready to run server" << endl;
-    if(run_type[run_type.size() - 2] == '2'){
-        running_servers = vector<int>({0,1,2,3,6,7,8});
-    }
-    else{
-        running_servers = vector<int>({0,1,2,3,4,5,6,7,8});
-    }
-    thread(execute_server, running_servers).detach();
+    // vector<int> running_servers;
+    // cout << "Ready to run server" << endl;
+    // if(run_type[run_type.size() - 2] == '2'){
+    //     running_servers = vector<int>({0,1,2,3,6,7,8});
+    // }
+    // else{
+    //     running_servers = vector<int>({0,1,2,3,4,5,6,7,8});
+    // }
+    // thread(execute_server, running_servers).detach();
     
-    thread(execute_metadata_server, all_servers).detach();
+    // thread(execute_metadata_server, all_servers).detach();
 
-    sleep(5);
-    cout << "Servers and metadata servers are running\n" << endl;//Press any key to stop them..." << endl;
-
-
-    cout << "Running the controller...\n" << endl;
-    string command = "cd /home/shahrooz/Desktop/PSU/Research/LEGOstore; make -j9 > /dev/null; ./Controller > cont_output_";
-    command += run_type;
-    command += ".txt 2>&1";
-    system(command.c_str());
-    // getchar();
-
-    sleep(2);
-
-    stop_server(all_servers);
-
-    retrieve_sum(all_servers, run_type);
+    // sleep(5);
+    // cout << "Servers and metadata servers are running\n" << endl;//Press any key to stop them..." << endl;
 
 
-    retrieve_data(run_type);
+    // cout << "Running the controller...\n" << endl;
+    // string command = "cd /home/shahrooz/Desktop/PSU/Research/LEGOstore; make -j9 > /dev/null; ./Controller > cont_output_";
+    // command += run_type;
+    // command += ".txt 2>&1";
+    // system(command.c_str());
+    // // getchar();
+
+    // sleep(2);
+
+    // stop_server(all_servers);
+
+    // retrieve_sum(all_servers, run_type);
+
+
+    // retrieve_data(run_type);
 
 
 

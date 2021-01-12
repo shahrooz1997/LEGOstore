@@ -167,7 +167,7 @@ struct Placement{
     uint32_t k; // The number of chunks necessary for decoding data, For ABD k = 0
     std::vector<Quorums> quorums; // It is a map from the id of datacenter to its optimized placement Todo: change it to map
     
-//    Placement();
+    Placement();
 };
 
 struct Group{

@@ -3,11 +3,11 @@
 import os, sys, time, json
 from collections import OrderedDict
 
-availability_targets = [1, 2]
+availability_targets = [1]
 baselines = [OrderedDict([("ABD", "-b -t abd"), ("CAS", "-b -t cas"), ("fixed_CAS", "-b -t cas -m 4 -k 2")]),
              OrderedDict([("ABD", "-b -t abd"), ("CAS", "-b -t cas"), ("fixed_CAS", "-b -t cas -m 6 -k 2")])]
 
-run_baseline = True
+run_baseline = False
 
 if __name__ == "__main__":
 

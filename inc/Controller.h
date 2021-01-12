@@ -32,7 +32,9 @@ private:
 
     int read_detacenters_info(const std::string& file);
     int read_input_workload(const std::string& file);
-    int read_placements(const std::string &file);
+    int read_placement_one_config(const std::string& file, uint32_t confid);
+    int read_placements(const std::string& file);
+
 
     int run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t group_id);
 };

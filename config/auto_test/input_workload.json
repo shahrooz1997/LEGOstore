@@ -5,6 +5,7 @@
       "id": 1,
       "grp_workload": [
         {
+          "id": 0,
           "availability_target": 2,
           "client_dist": [
             0.1111111111,
@@ -35,4 +36,3 @@
     }
   ]
 }
-

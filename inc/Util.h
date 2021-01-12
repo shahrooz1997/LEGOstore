@@ -50,7 +50,7 @@ using namespace std::chrono;
 #define MAX_LINGER_BEFORE_SOCK_CLOSE 50
 
 //#define No_GET_OPTIMIZED
-//#define LOCAL_TEST
+#define LOCAL_TEST
 
 #ifdef LOCAL_TEST
 #define NUMBER_OF_OPS_FOR_WARM_UP 2
@@ -167,7 +167,7 @@ struct Placement{
     uint32_t k; // The number of chunks necessary for decoding data, For ABD k = 0
     std::vector<Quorums> quorums; // It is a map from the id of datacenter to its optimized placement Todo: change it to map
     
-//    Placement();
+    Placement();
 };
 
 struct Group{

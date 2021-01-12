@@ -8,6 +8,9 @@
 #include <sys/wait.h>
 
 using std::cout;
+using std::string;
+using std::vector;
+using std::to_string;
 using std::endl;
 using std::unique_ptr;
 using namespace std::chrono;
@@ -15,8 +18,8 @@ using json = nlohmann::json;
 
 #define TOTAL_NUMBER_OF_DCS_IN_SYSTEM 9
 
-Controller::Controller(uint32_t retry, uint32_t metadata_timeout, uint32_t timeout_per_req, const std::string& detacenters_info_file,
-                       const std::string& workload_file, const std::string &placements_file){
+Controller::Controller(uint32_t retry, uint32_t metadata_timeout, uint32_t timeout_per_req, const string& detacenters_info_file,
+                       const string& workload_file, const string &placements_file){
     properties.retry_attempts = retry;
     properties.metadata_server_timeout = metadata_timeout;
     properties.timeout_per_request = timeout_per_req;
@@ -31,8 +34,8 @@ Controller::Controller(uint32_t retry, uint32_t metadata_timeout, uint32_t timeo
     init_metadata_server();
 }
 
-int Controller::read_detacenters_info(const std::string& file){
-    std::ifstream cfg(file);
+int Controller::read_detacenters_info(const string& file){
+    ifstream cfg(file);
     json j;
     if(cfg.is_open()){
         cfg >> j;
@@ -50,14 +53,14 @@ int Controller::read_detacenters_info(const std::string& file){
         DC* dc = new DC;
         dc->id = stoui(it.key());
         it.value()["metadata_server"]["host"].get_to(dc->metadata_server_ip);
-        dc->metadata_server_port = stoui(it.value()["metadata_server"]["port"].get<std::string>());
+        dc->metadata_server_port = stoui(it.value()["metadata_server"]["port"].get<string>());
 
         for(auto& server : it.value()["servers"].items()){
             Server* sv = new Server;
             sv->id = stoui(server.key());
             server.value()["host"].get_to(sv->ip);
 
-            sv->port = stoui(server.value()["port"].get<std::string>());
+            sv->port = stoui(server.value()["port"].get<string>());
             sv->datacenter = dc;
             dc->servers.push_back(sv);
         }
@@ -68,8 +71,8 @@ int Controller::read_detacenters_info(const std::string& file){
     return 0;
 }
 
-int Controller::read_input_workload(const std::string& file){
-    std::ifstream cfg(file);
+int Controller::read_input_workload(const string& file){
+    ifstream cfg(file);
     json j;
     if(cfg.is_open()){
         cfg >> j;
@@ -98,6 +101,8 @@ int Controller::read_input_workload(const std::string& file){
             grpcon.groups.emplace_back();
             auto& grp = grpcon.groups.back();
 
+            it["id"].get_to(grp.id);
+
 //            assert(counter < grp_ids.size());
 //            grp.id = grp_ids[counter++]; // ID will be set from the output of the optimizer Todo: is it OK?
             it["availability_target"].get_to(grp.availability_target);
@@ -125,8 +130,12 @@ int Controller::read_input_workload(const std::string& file){
     return 0;
 }
 
-int Controller::read_placements(const std::string &file){
-    std::ifstream cfg(file);
+int Controller::read_placement_one_config(const string& file, uint32_t confid){
+
+    string file_name = file;
+    file_name.insert(file.find(".json"), string("_") + to_string(confid));
+
+    ifstream cfg(file_name);
     json j;
     if(cfg.is_open()){
         cfg >> j;
@@ -136,17 +145,31 @@ int Controller::read_placements(const std::string &file){
         }
     }
     else{
-        DPRINTF(DEBUG_CONTROLLER, "Couldn't open the config file: %s\n", file.c_str());
+        DPRINTF(DEBUG_CONTROLLER, "Couldn't open the config file: %s\n", file_name.c_str());
         return -1;
     }
+
+    //Find group conf index
+    uint groupconf_indx = 0;
+    bool groupconf_indx_found = false;
+    for(; groupconf_indx < properties.group_configs.size(); groupconf_indx++){
+        if(properties.group_configs[groupconf_indx].id == confid){
+            groupconf_indx_found = true;
+            break;
+        }
+    }
+    if(!groupconf_indx_found){
+        DPRINTF(DEBUG_CAS_Client, "wrong groupconf_id %d.\n", confid);
+    }
+    assert(groupconf_indx_found);
 
     j = j["output"];
     uint32_t counter = 0;
     for(auto& element: j){
-        assert(counter < this->properties.group_configs[0].groups.size());
-        auto& grp = this->properties.group_configs[0].groups[counter++]; // Todo: You should change this to support several configuration
+        assert(counter < this->properties.group_configs[groupconf_indx].groups.size());
+        auto& grp = this->properties.group_configs[groupconf_indx].groups[counter++];
 
-        element["id"].get_to(grp.id);
+//        element["id"].get_to(grp.id);
         element["protocol"].get_to(grp.placement.protocol);
         if(grp.placement.protocol == "replication" || grp.placement.protocol == "cas"){
             grp.placement.protocol = CAS_PROTOCOL_NAME;
@@ -154,12 +177,12 @@ int Controller::read_placements(const std::string &file){
         else{
             grp.placement.protocol = ABD_PROTOCOL_NAME;
         }
-//        element["m"].get_to(grp.placement.m); // Todo: m should show the number of datacenters instead of the number of servers in the currenct placement
+//        element["m"].get_to(grp.placement.m); // m should show the number of datacenters instead of the number of servers in the current placement
         grp.placement.m = TOTAL_NUMBER_OF_DCS_IN_SYSTEM;
         if(grp.placement.protocol != ABD_PROTOCOL_NAME){
             element["k"].get_to(grp.placement.k);
         }
-        element["selected_dcs"].get_to(grp.placement.servers);
+        element["selected_dcs"].get_to(grp.placement.servers); // The number of servers here serves the role of m
 
         json client_placement_info = element["client_placement_info"];
         grp.placement.quorums.resize(TOTAL_NUMBER_OF_DCS_IN_SYSTEM);
@@ -175,10 +198,24 @@ int Controller::read_placements(const std::string &file){
 
     }
     cfg.close();
+
+    // Make sure all the key groups are set
+    for(auto& g: properties.group_configs[groupconf_indx].groups){
+        assert(g.placement.m != 0);
+    }
+
     return 0;
 }
 
-int execute(const char* command, const std::vector<std::string>& args, std::string& output){
+int Controller::read_placements(const string& file){
+    for(auto& gc: properties.group_configs){
+        assert(this->read_placement_one_config(file, gc.id) == 0);
+    }
+    
+    return 0;
+}
+
+int execute(const char* command, const vector<string>& args, string& output){
     
     cout << "Executing \"" << command << " ";
     for(uint i = 1; i < args.size(); i++){
@@ -312,17 +349,17 @@ int execute(const char* command, const std::vector<std::string>& args, std::stri
 int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t group_id){
 
 #ifdef LOCAL_TEST
-    std::vector<std::string> args;
-    std::string output;
-    std::string command = "/home/shahrooz/Desktop/PSU/Research/LEGOstore/Client";
+    vector<string> args;
+    string output;
+    string command = "/home/shahrooz/Desktop/PSU/Research/LEGOstore/Client";
 
     args.push_back(command);
-    args.push_back(std::to_string(datacenter_id));
-    args.push_back(std::to_string(properties.retry_attempts));
-    args.push_back(std::to_string(properties.metadata_server_timeout));
-    args.push_back(std::to_string(properties.timeout_per_request));
-    args.push_back(std::to_string(conf_id)); // Todo: Confid must be determined by the workload file
-    args.push_back(std::to_string(group_id));
+    args.push_back(to_string(datacenter_id));
+    args.push_back(to_string(properties.retry_attempts));
+    args.push_back(to_string(properties.metadata_server_timeout));
+    args.push_back(to_string(properties.timeout_per_request));
+    args.push_back(to_string(conf_id)); // Todo: Confid must be determined by the workload file
+    args.push_back(to_string(group_id));
 
     uint configuration_indx = 0;
     bool configuration_found = false;
@@ -355,11 +392,11 @@ int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t gr
     assert(datacenter_indx_found);
 
     const Group& gc = properties.group_configs[configuration_indx].groups[group_indx];
-    args.push_back(std::to_string(gc.object_size));
-    args.push_back(std::to_string(gc.arrival_rate * gc.client_dist[datacenter_indx]));
-    args.push_back(std::to_string(gc.read_ratio));
-    args.push_back(std::to_string(duration_cast<seconds>(gc.duration).count()));
-    args.push_back(std::to_string(gc.keys.size()));
+    args.push_back(to_string(gc.object_size));
+    args.push_back(to_string(gc.arrival_rate * gc.client_dist[datacenter_indx]));
+    args.push_back(to_string(gc.read_ratio));
+    args.push_back(to_string(duration_cast<seconds>(gc.duration).count()));
+    args.push_back(to_string(gc.keys.size()));
 
     int status = execute(command.c_str(), args, output);
 
@@ -369,28 +406,28 @@ int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t gr
     }
     else{
         if(output != ""){
-            if(output.find("ERROR") != std::string::npos){
-                std::cerr << "error in execution " << command << endl;
-                std::cerr << output << endl;
+            if(output.find("ERROR") != string::npos){
+                cerr << "error in execution " << command << endl;
+                cerr << output << endl;
                 return -4;
             }
         }
         else{
-            std::cerr << "WARN: ret value in execution " << command << " is not zero and output is empty." << endl;
+            cerr << "WARN: ret value in execution " << command << " is not zero and output is empty." << endl;
             return -4;
         }
     }
 
     return 0;
 #else
-    std::string command = "cd project; ./Client ";
+    string command = "cd project; ./Client ";
 
-    command += std::to_string(datacenter_id) + " ";
-    command += std::to_string(properties.retry_attempts)+ " ";
-    command += std::to_string(properties.metadata_server_timeout)+ " ";
-    command += std::to_string(properties.timeout_per_request)+ " ";
-    command += std::to_string(conf_id)+ " "; // Todo: Confid must be determined by the workload file
-    command += std::to_string(group_id)+ " ";
+    command += to_string(datacenter_id) + " ";
+    command += to_string(properties.retry_attempts)+ " ";
+    command += to_string(properties.metadata_server_timeout)+ " ";
+    command += to_string(properties.timeout_per_request)+ " ";
+    command += to_string(conf_id)+ " "; // Todo: Confid must be determined by the workload file
+    command += to_string(group_id)+ " ";
 
 //    DPRINTF(DEBUG_RECONFIG_CONTROL, "11111111111111\n");
     
@@ -427,16 +464,16 @@ int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t gr
 
 //    DPRINTF(DEBUG_RECONFIG_CONTROL, "222222222222\n");
     const Group& gc = properties.group_configs[configuration_indx].groups[group_indx];
-    command += std::to_string(gc.object_size)+ " ";
-    command += std::to_string(gc.arrival_rate * gc.client_dist[datacenter_indx])+ " ";
-    command += std::to_string(gc.read_ratio)+ " ";
-    command += std::to_string(duration_cast<seconds>(gc.duration).count()) + " ";
-    command += std::to_string(gc.keys.size());
+    command += to_string(gc.object_size)+ " ";
+    command += to_string(gc.arrival_rate * gc.client_dist[datacenter_indx])+ " ";
+    command += to_string(gc.read_ratio)+ " ";
+    command += to_string(duration_cast<seconds>(gc.duration).count()) + " ";
+    command += to_string(gc.keys.size());
 //    DPRINTF(DEBUG_RECONFIG_CONTROL, "333333333333\n");
 
 
-    std::vector<std::string> args = {"ssh", "-o", "StrictHostKeyChecking no", "-t", properties.datacenters[datacenter_indx]->servers[0]->ip, command};
-    std::string output;
+    vector<string> args = {"ssh", "-o", "StrictHostKeyChecking no", "-t", properties.datacenters[datacenter_indx]->servers[0]->ip, command};
+    string output;
     int status = execute("/usr/bin/ssh", args, output);
     
     if(status == 0){
@@ -445,14 +482,14 @@ int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t gr
     }
     else{
         if(output != ""){
-            if(output.find("ERROR") != std::string::npos){
-                std::cerr << "error in execution " << command << endl;
-                std::cerr << output << endl;
+            if(output.find("ERROR") != string::npos){
+                cerr << "error in execution " << command << endl;
+                cerr << output << endl;
                 return -4;
             }
         }
         else{
-            std::cerr << "WARN: ret value in execution " << command << " is not zero and output is empty." << endl;
+            cerr << "WARN: ret value in execution " << command << " is not zero and output is empty." << endl;
             return -4;
         }
     }
@@ -469,7 +506,7 @@ int Controller::init_metadata_server(){
     const Group_config& gc = this->properties.group_configs[0];
     for(uint i = 0; i < gc.groups.size(); i++){
         for(uint j = 0; j < gc.groups[i].keys.size(); j++){
-            std::string key = gc.groups[i].keys[j];
+            string key = gc.groups[i].keys[j];
             uint32_t conf_id = gc.id;
             rets.emplace_back(async(launch::async, &Reconfig::update_metadata_info, this->reconfigurer_p.get(), key,
                                     conf_id, conf_id, "", gc.groups[i].placement));
@@ -561,7 +598,7 @@ int Controller::run_reconfigurer(){ //Todo: make it more reliable
     for(uint i = 1; i < properties.group_configs.size(); i++){
         auto& gc = properties.group_configs[i];
         timePoint = startPoint + milliseconds{gc.timestamp * 1000};
-        std::this_thread::sleep_until(timePoint);
+        this_thread::sleep_until(timePoint);
 
         for(uint j = 0; j < gc.groups.size(); j++){
             Group& curr = gc.groups[j];
@@ -571,10 +608,10 @@ int Controller::run_reconfigurer(){ //Todo: make it more reliable
             uint old_conf_id;
             Group& old = find_old_configuration(properties, curr.id, gc.id, old_conf_id);
 
-            auto epoch = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+            auto epoch = time_point_cast<chrono::microseconds>(chrono::system_clock::now()).time_since_epoch().count();
             reconfigurer_p->reconfig(old, old_conf_id, curr, gc.id);
-            auto epoch2 = time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-            std::cout << "reconfiguration latency: " << (double)(epoch2 - epoch) / 1000000. << std::endl;
+            auto epoch2 = time_point_cast<chrono::microseconds>(chrono::system_clock::now()).time_since_epoch().count();
+            cout << "reconfiguration latency: " << (double)(epoch2 - epoch) / 1000000. << endl;
 
         }
 
@@ -591,7 +628,7 @@ int Controller::wait_for_clients(){
 
 int warm_up_one_connection(const string& ip, uint32_t port){
 
-    std::string temp = std::string(WARM_UP_MNEMONIC) + get_random_string();
+    string temp = string(WARM_UP_MNEMONIC) + get_random_string();
     Connect c(ip, port);
     if(!c.is_connected()){
         assert(false);
@@ -615,12 +652,12 @@ int Controller::warm_up(){
 
     for(auto it = properties.datacenters.begin(); it != properties.datacenters.end(); it++){
         warm_up_one_connection((*it)->metadata_server_ip, (*it)->metadata_server_port);
-        std::this_thread::sleep_for(milliseconds(get_random_number_uniform(0, 2000)));
+        this_thread::sleep_for(milliseconds(get_random_number_uniform(0, 2000)));
     }
 
     for(auto it = properties.datacenters.begin(); it != properties.datacenters.end(); it++){
         warm_up_one_connection((*it)->servers[0]->ip, (*it)->servers[0]->port);
-        std::this_thread::sleep_for(milliseconds(get_random_number_uniform(0, 2000)));
+        this_thread::sleep_for(milliseconds(get_random_number_uniform(0, 2000)));
     }
 
     return S_OK;
@@ -643,7 +680,7 @@ int main(){
     auto warm_up_tp = time_point_cast<milliseconds>(system_clock::now());;
     warm_up_tp += seconds(WARM_UP_DELAY);
     master.warm_up();
-    std::this_thread::sleep_until(warm_up_tp);
+    this_thread::sleep_until(warm_up_tp);
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "run_reconfigurer\n");
     master.run_reconfigurer();

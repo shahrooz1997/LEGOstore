@@ -578,11 +578,9 @@ Datacenter::~Datacenter(){
     this->servers.clear();
 }
 
-//Placement::Placement(){
-//    m = -1;
-//    k = -1;
-//    f = -1;
-//}
+Placement::Placement(){
+    m = 0;
+}
 
 //WorkloadConfig::~WorkloadConfig(){
 //    for(auto& it: grp) {

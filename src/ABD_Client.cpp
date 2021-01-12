@@ -16,6 +16,7 @@
 #include "../inc/ABD_Client.h"
 
 std::map <std::string, std::vector<uint32_t>>  additional_configs;
+std::mutex config_list_lock;
 
 namespace ABD_helper{
     inline uint32_t number_of_received_responses(vector<bool>& done){
@@ -89,10 +90,12 @@ namespace ABD_helper{
                 if (cfs.find('!') != std::string::npos) {
                     while ((pos = cfs.find("!")) != std::string::npos) {
                         token = cfs.substr(0, pos);
+                        config_list_lock.lock();
                         if(find(additional_configs[key].begin(), additional_configs[key].end(), (stoul(token))) !=
                                 additional_configs[key].end()) {
                             additional_configs[key].push_back(stoul(token));
                         }
+                        config_list_lock.unlock();
                     }
                 }
             } 
@@ -273,8 +276,9 @@ namespace ABD_helper{
                     newrets.emplace_back();
                     std::promise <std::pair<int, std::vector<strVec>>> prm_child;
                     future_map.emplace(*it, prm_child.get_future());
-                    std::thread(&failure_support_optimized, "put", key, "", value, RAs, p.quorums[local_datacenter_id].Q2, p.servers, p.m,
-                                std::ref(datacenters), current_class, *it, timeout_per_request, std::ref(newrets.back()), std::move(prm_child)).detach();
+                    std::thread(&failure_support_optimized, "put", key, "", value, RAs, p.quorums[local_datacenter_id].Q2, 
+                                p.servers, p.m, std::ref(datacenters), current_class, *it,
+                                timeout_per_request, std::ref(newrets.back()), std::move(prm_child)).detach();
                     secondary_configs_map[*it] = true;             
                 } else if(future_map[*it].valid() && future_map[*it].wait_for(std::chrono::milliseconds(1)) == std::future_status::ready){
                     std::pair<int, std::vector<strVec>> ret_obj = future_map[*it].get();
@@ -287,9 +291,11 @@ namespace ABD_helper{
                             DPRINTF(DEBUG_ABD_Client, "OK received for key : %s\n", key.c_str());
                             
                         } else if((*it2)[0] == "operation_fail"){
+                            config_list_lock.lock();
                             additional_configs[key].clear();
                             DPRINTF(DEBUG_ABD_Client, "operation_fail received for key : %s\n", key.c_str());
                             ret = ret_obj.second;
+                            config_list_lock.unlock();
                             return -2; // reconfiguration happened on the key
                         }else{
                             DPRINTF(DEBUG_ABD_Client, "Bad message received from server for key : %s\n", key.c_str());
@@ -357,9 +363,11 @@ int ABD_Client::get_timestamp(const string& key, unique_ptr<Timestamp>& timestam
         else if((*it)[0] == "operation_fail"){
             DPRINTF(DEBUG_ABD_Client, "operation_fail received for key : %s\n", key.c_str());
             parent->get_placement(key, true, (*it)[1]);
+            config_list_lock.lock();
             additional_configs = parent->secondary_configs;
             op_status = -2; // reconfiguration happened on the key
             timestamp_p.reset();
+            config_list_lock.unlock();
             return S_RECFG;
         }
         else{
@@ -424,10 +432,11 @@ int ABD_Client::put(const string& key, const string& value){
     // put
     vector<strVec> ret;
 
-    DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
-    op_status = ABD_helper::do_operation("put", key, timestamp_p->get_string(), value, this->retry_attempts, p.quorums[this->local_datacenter_id].Q2, p.servers, p.m, this->local_datacenter_id,
-                                                             this->datacenters, this->current_class, parent->get_conf_id(key),
-                                                             this->timeout_per_request, ret, parent);
+    DPRINTF(DEBUG_ABD_Client, "calling do_operation.\n");
+    op_status = ABD_helper::do_operation("put", key, timestamp_p->get_string(), value, this->retry_attempts,
+                                        p.quorums[this->local_datacenter_id].Q2, p.servers, p.m, this->local_datacenter_id,
+                                        this->datacenters, this->current_class, parent->get_conf_id(key),
+                                        this->timeout_per_request, ret, parent);
 
     DPRINTF(DEBUG_ABD_Client, "op_status: %d.\n", op_status);
     if(op_status == -1) {
@@ -442,7 +451,9 @@ int ABD_Client::put(const string& key, const string& value){
         else if((*it)[0] == "operation_fail"){
             DPRINTF(DEBUG_ABD_Client, "operation_fail received for key : %s\n", key.c_str());
             parent->get_placement(key, true, (*it)[1]);
+            config_list_lock.lock();
             additional_configs = parent->secondary_configs;
+            config_list_lock.unlock();
 //            assert(p != nullptr);
 //            op_status = -2; // reconfiguration happened on the key
 //            return S_RECFG;
@@ -533,8 +544,10 @@ int ABD_Client::get(const string& key, string& value){
         else if((*it)[0] == "operation_fail"){
             DPRINTF(DEBUG_ABD_Client, "operation_fail received for key : %s\n", key.c_str());
             parent->get_placement(key, true, (*it)[1]);
+            config_list_lock.lock();
             additional_configs = parent->secondary_configs;
             op_status = -2; // reconfiguration happened on the key
+            config_list_lock.unlock();
 //            return S_RECFG;
             return parent->get(key, value);
         }
@@ -577,16 +590,11 @@ int ABD_Client::get(const string& key, string& value){
 #endif
 
     // Put
-    //std::promise <std::pair<int, std::vector<strVec>>> prm;
-    //std::future<std::pair<int, std::vector<strVec>>> fut = prm.get_future();
-    prm = std::promise <std::pair<int, std::vector<strVec>>>();
-    std::thread(&ABD_helper::failure_support_optimized, "put", key, tss[idx].get_string(), vs[idx], this->retry_attempts, p.quorums[this->local_datacenter_id].Q2,
-                                                                 p.servers, p.m, std::ref(this->datacenters), this->current_class,
-                                                             parent->get_conf_id(key),
-                                                             this->timeout_per_request, std::ref(ret), std::move(prm)).detach();
-
-    ret_obj = fut.get();
-    op_status = ret_obj.first;
+    DPRINTF(DEBUG_ABD_Client, "calling do_operation in get.\n");
+    op_status = ABD_helper::do_operation("put", key, tss[idx].get_string(), vs[idx], this->retry_attempts,
+                                        p.quorums[this->local_datacenter_id].Q2, p.servers, p.m, this->local_datacenter_id,
+                                        this->datacenters, this->current_class, parent->get_conf_id(key),
+                                        this->timeout_per_request, ret, parent);
     
     DPRINTF(DEBUG_ABD_Client, "op_status: %d.\n", op_status);
     if(op_status == -1) {
@@ -600,9 +608,11 @@ int ABD_Client::get(const string& key, string& value){
         else if((*it)[0] == "operation_fail"){
             DPRINTF(DEBUG_ABD_Client, "operation_fail received for key : %s\n", key.c_str());
             parent->get_placement(key, true, (*it)[1]);
+            config_list_lock.lock();
             additional_configs = parent->secondary_configs;
 //            assert(p != nullptr);
             op_status = -2; // reconfiguration happened on the key
+            config_list_lock.unlock();
 //            return S_RECFG;
             return parent->get(key, value);
         }

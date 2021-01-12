@@ -50,15 +50,24 @@ def delete_project_tar_file():
     files_lock.release()
 
 def getting_librocksdb_download_link():
-    headers = {'Referer': 'https://anonfiles.com/',
-               'Host': 'anonfiles.com',
-               'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0'}
-    url = 'https://anonfiles.com/P7Tet126p1/librocksdb_a'
-    req = urllib.request.Request(url, headers=headers)
-    page = urllib.request.urlopen(req).read().decode('utf-8')
-    link = page[page.find('download-url'):page.find('>', page.find('download-url'))]
-    link = link[link.find('href'):]
-    link = link[link.find('"') + 1:link.find('"', link.find('"') + 1)]
+    # Source 1
+    # headers = {'Referer': 'https://anonfiles.com/',
+    #            'Host': 'anonfiles.com',
+    #            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0'}
+    # url = 'https://anonfiles.com/P7Tet126p1/librocksdb_a'
+    # req = urllib.request.Request(url, headers=headers)
+    # page = urllib.request.urlopen(req).read().decode('utf-8')
+    # link = page[page.find('download-url'):page.find('>', page.find('download-url'))]
+    # link = link[link.find('href'):]
+    # link = link[link.find('"') + 1:link.find('"', link.find('"') + 1)]
+
+    # Source 2
+    os.system("rm -f /tmp/LEGOSTORE_LIBROCKSDB_LINK.txt")
+    os.system("curl -Lqs \"https://www.mediafire.com/file/bs5ob9lw3urrm6g/librocksdb.a/file\" | grep \"href.*download.*media.*\" | tail -1 | cut -d '\"' -f 2 > /tmp/LEGOSTORE_LIBROCKSDB_LINK.txt")
+
+    with open("/tmp/LEGOSTORE_LIBROCKSDB_LINK.txt") as link_file:
+        link = link_file.readlines()[0][:-1]
+
     return link
 
 class Machine:
@@ -135,6 +144,22 @@ class Machine:
         file.close()
 
         os.system("cp setup_config.json ../config/auto_test/datacenters_access_info.json")
+
+    def get_pairwise_latencies(machines):
+        os.system("rm -f pairwise_latencies/latencies.txt")
+
+        threads = []
+        for machine in machines:
+            threads.append(threading.Thread(target=machines[machine].get_latencies, args=[machines]))
+            threads[-1].start()
+
+        for thread in threads:
+            thread.join()
+
+        for i in range(0, len(machines)):
+            os.system("cat pairwise_latencies/latencies_from_server_" + str(i) + ".txt >> pairwise_latencies/latencies.txt")
+
+        print("Pairwise latencies are ready in pairwise_latencies/latencies.txt")
 
     def run_all(machines): # if you call this method, you should not call run method anymore. It does not make sense to run twice!
         create_project_tar_file()
@@ -262,7 +287,7 @@ class Machine:
         # print("output: " + stdout + " || " + stderr)
         return stdout, stderr
 
-    def copy_to(self, file, to_file):
+    def copy_to(self, file, to_file=""):
         command.scp_to(self.name, self.zone, file, to_file)
 
     def copy_from(self, file, to_file):
@@ -284,9 +309,14 @@ class Machine:
 
             # self.copy_to("../lib/librocksdb.a", "")
             link = getting_librocksdb_download_link()
-            self.execute("aria2c -x 5 -s 5 " + link + ">/dev/null 2>&1")
-            self.execute("sudo mv librocksdb.a ../")
-            self.execute("sudo touch ../init_config_done")
+            # self.execute("aria2c -x 5 -s 5 " + link + ">/dev/null 2>&1")
+            self.execute("link=$(curl -Lqs \"https://www.mediafire.com/file/bs5ob9lw3urrm6g/librocksdb.a/file\" | grep \"href.*download.*media.*\" | tail -1 | cut -d '\"' -f 2); aria2c -x 5 -s 5 $link")
+            stdout, stderr = self.execute("ls librocksdb.a.aria2")
+            if not (stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1):
+                print("Error in downloading librocksdb.a on server " + self.name)
+            else:
+                self.execute("sudo mv librocksdb.a ../")
+                self.execute("sudo touch ../init_config_done")
 
     def config(self, make_clear=False, clear_all=False):
         if clear_all:
@@ -310,6 +340,18 @@ class Machine:
         else:
             self.execute("cd project/; make -j 4 > /dev/null 2>&1")
 
+    def get_latencies(self, machines):
+        self.copy_to("./myping", "")
+        command = "./myping " + self.name[1:] + " "
+        for i in range(0, len(machines)):
+            machine_name = "s" + str(i)
+            machine = machines[machine_name]
+            command += machine.external_ip + " "
+
+        command = command[:-1]
+        self.execute(command)
+        os.system("rm -f pairwise_latencies/latencies_from_server_" + self.name[1:] + ".txt")
+        self.copy_from("latencies_from_server_" + self.name[1:] + ".txt", "pairwise_latencies")
 
 
     def clear(self):
@@ -430,7 +472,6 @@ class Controller(Machine):
         os.system("mkdir -p data/" + run_name + "/" + self.name)
         self.copy_from("project/*_output.txt", "data/" + run_name + "/" + self.name + "/")
 
-
 def make_sure_project_can_be_built():
     if os.system("cd ..; make -j 9 >/dev/null 2>&1") != 0:
         print("Compile ERROR")
@@ -444,6 +485,7 @@ def main():
     controller = Controller()
     machines = Machine.get_machine_list()
     Machine.dump_machines_ip_info(machines)
+    Machine.get_pairwise_latencies(machines)
     Machine.run_all(machines)
     controller.run(machines)
     machines[controller.name] = controller
@@ -455,8 +497,6 @@ def main():
 
 if __name__ == '__main__':
     # print(can_project_be_built())
-
-
 
     main()
     # print("Main thread goes to sleep")

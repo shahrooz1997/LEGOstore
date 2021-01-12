@@ -200,7 +200,9 @@ def min_cost_abd(datacenters, group, params):
                 _iq2 = [l[0] for l in cost_list[:q2]]
                 # Check if the selection meets latency constraints
                 i = int(datacenter.id)
-                _latencies.append( max([datacenter.latencies[j] for j in _iq1])+\
+
+                if group.client_dist[i] != 0:
+                    _latencies.append( max([datacenter.latencies[j] for j in _iq1])+\
                                      max(datacenter.latencies[k] for k in _iq2))
 
                 this_client_get_cost = group.object_size * sum([datacenters[j].network_cost[i] for j in _iq1]) + \
@@ -249,6 +251,7 @@ def min_cost_abd(datacenters, group, params):
 def min_cost_cas(datacenters, group, params):
     """ Network cost based heuristic
     """
+    # print("STart")
     dc_ids = [int(dc.id) for dc in datacenters]
     mincost = 99999999999
     min_get_cost = 0
@@ -258,7 +261,7 @@ def min_cost_cas(datacenters, group, params):
     selected_placement = None
     selected_full_placement_info = None
     cost_dc_list = [(i, d.network_cost) for i, d in enumerate(datacenters)]
-    cost_dc_list.sort(key=lambda x: x[1])
+    # cost_dc_list.sort(key=lambda x: x[1])
     M, K = 0, 0
     storage_cost, vm_cost = 0, 0
     for m_g, k_g, q1, q2, q3, q4 in params:
@@ -287,9 +290,11 @@ def min_cost_cas(datacenters, group, params):
                 _iq4 = [l[0] for l in cost_list[:q4]]
                 # Check if the selection meets latency constraints
                 i = int(datacenter.id)
-                _get_latencies.append(max([datacenter.latencies[j] for j in _iq1]) + \
-                                        max([datacenter.latencies[k] for k in _iq4]))
-                _put_latencies.append(max([datacenter.latencies[j] for j in _iq1]) + \
+
+                if group.client_dist[i] != 0:
+                    _get_latencies.append(max([datacenter.latencies[j] for j in _iq1]) + \
+                                            max([datacenter.latencies[k] for k in _iq4]))
+                    _put_latencies.append(max([datacenter.latencies[j] for j in _iq1]) + \
                                         max([datacenter.latencies[k] for k in _iq2]) + \
                                             max([datacenter.latencies[m] for m in _iq3]))
 
@@ -311,6 +316,19 @@ def min_cost_cas(datacenters, group, params):
                 full_placement_info.append([dcs, _iq1, _iq2, _iq3, _iq4, this_client_get_cost, this_client_put_cost])
             get_lat = max(_get_latencies)
             put_lat = max(_put_latencies)
+            #debugging
+            # dcs_new_list = list(dcs)
+            # dcs_new_list.sort()
+            # if k_g == 4 and dcs_new_list == [0,1,2,5,7,8] and q1 == 2 and q2 == 5 and q3 == 5 and q4 == 5:
+            #     get_cost = group.read_ratio * group.arrival_rate * _get_cost
+            #     put_cost = group.write_ratio * group.arrival_rate * _put_cost
+            #     _storage_cost = group.num_objects * sum([datacenters[i].details["storage_cost"] / (730 * 3600) \
+            #                                              for i in dcs]) * (group.object_size / k_g)
+            #     _vm_cost = sum([datacenters[i].details["price"] / 3600 for i in dcs])
+            #     tot = (get_cost + put_cost + _storage_cost + _vm_cost) * 3600
+            #     print("get_cost: " + str(get_cost) + ", put_cost: " + str(put_cost) + ", _storage_cost:" + str(_storage_cost) + " _vm_cost: ", str(_vm_cost))
+            #     print("tot: " + str(tot))
+
             if get_lat < group.slo_read and put_lat < group.slo_write:
                 get_cost = group.read_ratio*group.arrival_rate*_get_cost
                 put_cost = group.write_ratio*group.arrival_rate*_put_cost
@@ -327,6 +345,7 @@ def min_cost_cas(datacenters, group, params):
                     selected_placement = combination
                     selected_full_placement_info = full_placement_info
                     M, K = m_g, k_g
+                    # print(selected_full_placement_info)
     # Calculate other costs
     if selected_placement is None:
         return None
@@ -423,7 +442,6 @@ def brute_force_abd(datacenters, group, params):
             iq2[i][j] = 1
     return (m_g, selected_dcs, iq1, iq2, read_lat, write_lat, 
                 min_get_cost, min_put_cost, storage_cost, vm_cost)
-    
 
 def brute_force_cas(datacenters, group, params):
     """ Find placement for CAS using brute force

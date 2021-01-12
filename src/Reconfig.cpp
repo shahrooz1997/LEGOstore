@@ -435,7 +435,7 @@ int Reconfig::send_reconfig_query(const Group& old_config, uint32_t old_conf_id,
             idx = Timestamp::max_timestamp3(tss);
             ret_ts.reset(new Timestamp(tss[idx]));
             ret_v = vs[idx];
-            EASY_LOG_M("timestamp is " + ret_ts->get_string() + " value is " + ret_v);
+            EASY_LOG_M("timestamp is " + ret_ts->get_string() + " value is " + TRUNC_STR(ret_v));
         }
         else{
             DPRINTF(DEBUG_ABD_Client, "Operation Failed.\n");

@@ -4,7 +4,7 @@ import json
 import os, sys, time
 from collections import OrderedDict
 
-availability_targets = [2]
+availability_targets = [sys.argv[1]]
 client_dists = OrderedDict([
     ("uniform", [1/9 for _ in range(9)]),
     #("skewed_single", [0.9, 0.025, 0.025, 0.0, 0.0, 0.0, 0.0, 0.025, 0.025]),

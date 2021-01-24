@@ -107,24 +107,28 @@ update_config_state(const string& key, const string& old_confid, const string& o
  
     DPRINTF(DEBUG_METADATA_SERVER, "key: %s, old_conf: %s\n", key.c_str(), old_confid.c_str());
     if(it == secondary_configs.end()){ // Not found!
-        if(op == "add") {
-            vector<std::string> vec;
-            vec.push_back(old_confid);
-            secondary_configs[key] = vec;
-        }    
+        secondary_configs[key] = {};
     }
 
     if(timestamp.find("-") >= timestamp.size()){
         assert(false);
     }
     
-    if(!op.compare(op_add)) {
+    if(!op.compare(op_add) && std::find(secondary_configs[key].begin(), 
+            secondary_configs[key].end(), old_confid) != secondary_configs[key].end()) { 
         secondary_configs[key].push_back(old_confid);
     } else {
         secondary_configs[key].erase(std::remove(secondary_configs[key].begin(), secondary_configs[key].end(),
                                 old_confid), secondary_configs[key].end());
     }
-    return DataTransfer::serializeMDS("OK", "state updated", nullptr);
+
+    // Checking secondary_configs_list
+    std::cout << "Secondary configs list for the given key: " << endl;
+    for(auto it1 = secondary_configs[key].begin(); it1 != secondary_configs[key].end(); it1++) {
+        cout << *it1 << " ";
+    }
+    std::cout << endl;
+    return DataTransfer::serializeMDS("OK", "state updated");
 }
 
 string update(const string& key, const string& old_confid, const string& new_confid, const string& timestamp, const Placement& p){

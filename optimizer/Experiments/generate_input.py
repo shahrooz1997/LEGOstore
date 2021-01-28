@@ -19,7 +19,7 @@ client_dists = OrderedDict([
 object_sizes = [10 / 2**30, 1*2**10 / 2**30, 10*2**10 / 2**30, 100*2**10 / 2**30]
 arrival_rates = [200, 350, 500]
 read_ratios = OrderedDict([("HW", 0.1), ("RW", 0.5), ("HR", 0.9)])
-SLO_reads = [750, 1000]
+SLO_reads = [200, 350, 500, 650, 800, 950, 1000]
 
 # Default values
 availability_target_default  = 2
@@ -78,48 +78,48 @@ if __name__ == "__main__":
         os.mkdir(directory + "f=" + str(f))
         files_path = directory + "f=" + str(f) + "/"
 
-        # client_dists testcases
-        input_groups = []
-        for cd in client_dists:
-            key_group = Single_group(f, client_dists[cd], object_size_default, metadata_size_default, num_objects_default,
-                                     arrival_rate_default, read_ratio_default, write_ratio_default, SLO_read_default,
-                                     SLO_write_default, duration_default, time_to_decode_default)
-            input_groups.append(key_group.__dict__)
-        FILE_NAME = "client_dists.json"
-        json.dump({"input_groups": input_groups}, open(files_path + FILE_NAME, "w"), indent=4)
-
-        # object_sizes testcases
-        input_groups = []
-        for object_size in object_sizes:
-            key_group = Single_group(f, client_dist_default, object_size, metadata_size_default,
-                                     num_objects_default,
-                                     arrival_rate_default, read_ratio_default, write_ratio_default, SLO_read_default,
-                                     SLO_write_default, duration_default, time_to_decode_default)
-            input_groups.append(key_group.__dict__)
-        FILE_NAME = "object_sizes.json"
-        json.dump({"input_groups": input_groups}, open(files_path + FILE_NAME, "w"), indent=4)
-
-        # arrival_rates testcases
-        input_groups = []
-        for ar in arrival_rates:
-            key_group = Single_group(f, client_dist_default, object_size_default, metadata_size_default,
-                                     num_objects_default,
-                                     ar, read_ratio_default, write_ratio_default, SLO_read_default,
-                                     SLO_write_default, duration_default, time_to_decode_default)
-            input_groups.append(key_group.__dict__)
-        FILE_NAME = "arrival_rates.json"
-        json.dump({"input_groups": input_groups}, open(files_path + FILE_NAME, "w"), indent=4)
-
-        # read_ratios testcases
-        input_groups = []
-        for rr in read_ratios:
-            key_group = Single_group(f, client_dist_default, object_size_default, metadata_size_default,
-                                     num_objects_default,
-                                     arrival_rate_default, read_ratios[rr], float("{:.2f}".format(1 - read_ratios[rr])), SLO_read_default,
-                                     SLO_write_default, duration_default, time_to_decode_default)
-            input_groups.append(key_group.__dict__)
-        FILE_NAME = "read_ratios.json"
-        json.dump({"input_groups": input_groups}, open(files_path + FILE_NAME, "w"), indent=4)
+        # # client_dists testcases
+        # input_groups = []
+        # for cd in client_dists:
+        #     key_group = Single_group(f, client_dists[cd], object_size_default, metadata_size_default, num_objects_default,
+        #                              arrival_rate_default, read_ratio_default, write_ratio_default, SLO_read_default,
+        #                              SLO_write_default, duration_default, time_to_decode_default)
+        #     input_groups.append(key_group.__dict__)
+        # FILE_NAME = "client_dists.json"
+        # json.dump({"input_groups": input_groups}, open(files_path + FILE_NAME, "w"), indent=4)
+        #
+        # # object_sizes testcases
+        # input_groups = []
+        # for object_size in object_sizes:
+        #     key_group = Single_group(f, client_dist_default, object_size, metadata_size_default,
+        #                              num_objects_default,
+        #                              arrival_rate_default, read_ratio_default, write_ratio_default, SLO_read_default,
+        #                              SLO_write_default, duration_default, time_to_decode_default)
+        #     input_groups.append(key_group.__dict__)
+        # FILE_NAME = "object_sizes.json"
+        # json.dump({"input_groups": input_groups}, open(files_path + FILE_NAME, "w"), indent=4)
+        #
+        # # arrival_rates testcases
+        # input_groups = []
+        # for ar in arrival_rates:
+        #     key_group = Single_group(f, client_dist_default, object_size_default, metadata_size_default,
+        #                              num_objects_default,
+        #                              ar, read_ratio_default, write_ratio_default, SLO_read_default,
+        #                              SLO_write_default, duration_default, time_to_decode_default)
+        #     input_groups.append(key_group.__dict__)
+        # FILE_NAME = "arrival_rates.json"
+        # json.dump({"input_groups": input_groups}, open(files_path + FILE_NAME, "w"), indent=4)
+        #
+        # # read_ratios testcases
+        # input_groups = []
+        # for rr in read_ratios:
+        #     key_group = Single_group(f, client_dist_default, object_size_default, metadata_size_default,
+        #                              num_objects_default,
+        #                              arrival_rate_default, read_ratios[rr], float("{:.2f}".format(1 - read_ratios[rr])), SLO_read_default,
+        #                              SLO_write_default, duration_default, time_to_decode_default)
+        #     input_groups.append(key_group.__dict__)
+        # FILE_NAME = "read_ratios.json"
+        # json.dump({"input_groups": input_groups}, open(files_path + FILE_NAME, "w"), indent=4)
 
         # SLO_reads testcases
         input_groups = []

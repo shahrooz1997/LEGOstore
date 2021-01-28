@@ -150,10 +150,10 @@ int read_keys(const std::string& file){
 
             if(grp.id == grp_id){
                 it["keys"].get_to(grp.keys);
-                DPRINTF(DEBUG_ABD_Client, "2Keys are (%lu):\n", grp.keys.size());
-                for(auto& key: grp.keys){
-                    DPRINTF(DEBUG_ABD_Client, "2A%s \n", key.c_str());
-                }
+//                DPRINTF(DEBUG_ABD_Client, "2Keys are (%lu):\n", grp.keys.size());
+//                for(auto& key: grp.keys){
+//                    DPRINTF(DEBUG_ABD_Client, "2A%s \n", key.c_str());
+//                }
                 keys = grp.keys;
                 keys_set = true;
                 break;
@@ -166,10 +166,10 @@ int read_keys(const std::string& file){
 
     assert(keys_set);
 
-    DPRINTF(DEBUG_ABD_Client, "Keys are (%lu):\n", keys.size());
-    for(auto& key: keys){
-        DPRINTF(DEBUG_ABD_Client, "A%s \n", key.c_str());
-    }
+//    DPRINTF(DEBUG_ABD_Client, "Keys are (%lu):\n", keys.size());
+//    for(auto& key: keys){
+//        DPRINTF(DEBUG_ABD_Client, "A%s \n", key.c_str());
+//    }
 
     assert(keys.size() > 0);
 

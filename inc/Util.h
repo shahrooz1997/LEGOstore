@@ -46,7 +46,7 @@ using namespace std::chrono;
 
 // Backlog for socket listen
 #define BACKLOG 1024
-#define CLIENT_PORT 10001
+#define CLIENT_PORT 10001~
 #define MAX_LINGER_BEFORE_SOCK_CLOSE 50
 
 //#define No_GET_OPTIMIZED

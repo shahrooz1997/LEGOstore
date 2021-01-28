@@ -49,6 +49,9 @@ def delete_project_tar_file():
     os.system("rm -rf project2.tar.gz project")
     files_lock.release()
 
+link_lock = threading.Lock()
+link = ""
+link_set = False
 def getting_librocksdb_download_link():
     # Source 1
     # headers = {'Referer': 'https://anonfiles.com/',
@@ -62,11 +65,18 @@ def getting_librocksdb_download_link():
     # link = link[link.find('"') + 1:link.find('"', link.find('"') + 1)]
 
     # Source 2
-    os.system("rm -f /tmp/LEGOSTORE_LIBROCKSDB_LINK.txt")
-    os.system("curl -Lqs \"https://www.mediafire.com/file/bs5ob9lw3urrm6g/librocksdb.a/file\" | grep \"href.*download.*media.*\" | tail -1 | cut -d '\"' -f 2 > /tmp/LEGOSTORE_LIBROCKSDB_LINK.txt")
 
-    with open("/tmp/LEGOSTORE_LIBROCKSDB_LINK.txt") as link_file:
-        link = link_file.readlines()[0][:-1]
+    global link
+    global link_set
+    link_lock.acquire()
+    if not link_set:
+        os.system("rm -f /tmp/LEGOSTORE_LIBROCKSDB_LINK.txt")
+        os.system("curl -Lqs \"https://www.mediafire.com/file/bs5ob9lw3urrm6g/librocksdb.a/file\" | grep \"href.*download.*media.*\" | tail -1 | cut -d '\"' -f 2 > /tmp/LEGOSTORE_LIBROCKSDB_LINK.txt")
+
+        with open("/tmp/LEGOSTORE_LIBROCKSDB_LINK.txt") as link_file:
+            link = link_file.readlines()[0][:-1]
+            link_set = True
+    link_lock.release()
 
     return link
 
@@ -301,22 +311,22 @@ class Machine:
         if stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1:
             print("initializing machine ", self.name)
             self.execute(
-                "sudo apt-get install -y build-essential autoconf automake libtool zlib1g-dev git protobuf-compiler pkg-config psmisc bc aria2 >/dev/null 2>&1")
+                "sudo apt-get install -y build-essential autoconf automake libtool zlib1g-dev git protobuf-compiler pkg-config psmisc bc aria2 librocksdb-dev >/dev/null 2>&1")
             self.execute("git clone https://github.com/openstack/liberasurecode.git >/dev/null 2>&1")
             self.execute(
                 "cd liberasurecode/; ./autogen.sh >/dev/null 2>&1; ./configure --prefix=/usr >/dev/null 2>&1; make -j 4 >/dev/null 2>&1");
             self.execute("cd liberasurecode/; sudo make install >/dev/null 2>&1");
 
             # self.copy_to("../lib/librocksdb.a", "")
-            link = getting_librocksdb_download_link()
+            # link = getting_librocksdb_download_link()
             # self.execute("aria2c -x 5 -s 5 " + link + ">/dev/null 2>&1")
-            self.execute("link=$(curl -Lqs \"https://www.mediafire.com/file/bs5ob9lw3urrm6g/librocksdb.a/file\" | grep \"href.*download.*media.*\" | tail -1 | cut -d '\"' -f 2); aria2c -x 5 -s 5 $link")
-            stdout, stderr = self.execute("ls librocksdb.a.aria2")
-            if not (stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1):
-                print("Error in downloading librocksdb.a on server " + self.name)
-            else:
-                self.execute("sudo mv librocksdb.a ../")
-                self.execute("sudo touch ../init_config_done")
+            # self.execute("link=$(curl -Lqs \"https://www.mediafire.com/file/bs5ob9lw3urrm6g/librocksdb.a/file\" | grep \"href.*download.*media.*\" | tail -1 | cut -d '\"' -f 2); aria2c -x 5 -s 5 $link")
+            # stdout, stderr = self.execute("ls librocksdb.a.aria2")
+            # if not (stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1):
+            #     print("Error in downloading librocksdb.a on server " + self.name)
+            # else:
+            #     self.execute("sudo mv librocksdb.a ../")
+            self.execute("sudo touch ../init_config_done")
 
     def config(self, make_clear=False, clear_all=False):
         if clear_all:
@@ -477,6 +487,8 @@ def make_sure_project_can_be_built():
         print("Compile ERROR")
         os.system("cd ..; make")
         exit(-1)
+    else:
+        print("Project was built successfully")
 
 def main():
     # signal(SIGINT, keyboard_int_handler)
@@ -485,7 +497,9 @@ def main():
     controller = Controller()
     machines = Machine.get_machine_list()
     Machine.dump_machines_ip_info(machines)
-    Machine.get_pairwise_latencies(machines)
+
+    # Machine.get_pairwise_latencies(machines)
+
     Machine.run_all(machines)
     controller.run(machines)
     machines[controller.name] = controller

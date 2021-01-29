@@ -311,11 +311,16 @@ class Machine:
         if stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1:
             print("initializing machine ", self.name)
             self.execute(
-                "sudo apt-get install -y build-essential autoconf automake libtool zlib1g-dev git protobuf-compiler pkg-config psmisc bc aria2 librocksdb-dev >/dev/null 2>&1")
+                "sudo apt-get install -y build-essential autoconf automake libtool zlib1g-dev git protobuf-compiler pkg-config psmisc bc aria2 libgflags-dev cmake >/dev/null 2>&1")
             self.execute("git clone https://github.com/openstack/liberasurecode.git >/dev/null 2>&1")
             self.execute(
                 "cd liberasurecode/; ./autogen.sh >/dev/null 2>&1; ./configure --prefix=/usr >/dev/null 2>&1; make -j 4 >/dev/null 2>&1");
             self.execute("cd liberasurecode/; sudo make install >/dev/null 2>&1");
+
+            self.execute("git clone https://github.com/facebook/rocksdb.git >/dev/null 2>&1")
+            self.execute(
+                "cd rocksdb/; mkdir mybuild; cd mybuild; cmake ../ >/dev/null 2>&1; make USE_RTTI=1 MAKECMDGOALS=release -j 4 >/dev/null 2>&1");
+            self.execute("cd rocksdb/mybuild; sudo make install >/dev/null 2>&1");
 
             # self.copy_to("../lib/librocksdb.a", "")
             # link = getting_librocksdb_download_link()
@@ -326,6 +331,7 @@ class Machine:
             #     print("Error in downloading librocksdb.a on server " + self.name)
             # else:
             #     self.execute("sudo mv librocksdb.a ../")
+
             self.execute("sudo touch ../init_config_done")
 
     def config(self, make_clear=False, clear_all=False):

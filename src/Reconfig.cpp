@@ -330,13 +330,16 @@ int Reconfig::reconfig(const Group& old_config, uint32_t old_conf_id, const Grou
     vector<future<int>> rets;
     for(auto it = old_config.keys.begin(); it != old_config.keys.end(); it++){
         rets.emplace_back(async(launch::async, &Reconfig::reconfig_one_key, this, *it, old_config, old_conf_id, new_config, new_conf_id));
-    }
-
-    for(auto it = rets.begin(); it != rets.end(); it++){
-        if(it->get() != S_OK){
+        if(rets.back().get() != S_OK){
             assert(false);
         }
     }
+
+//    for(auto it = rets.begin(); it != rets.end(); it++){
+//        if(it->get() != S_OK){
+//            assert(false);
+//        }
+//    }
 
     return S_OK;
 }
@@ -558,11 +561,11 @@ int Reconfig::send_reconfig_finalize(const Group& old_config, uint32_t old_conf_
         //    }
         //    printf("%s", bbuf);
         assert(liberasure.decode(ret_v, chunks, old_config.placement.m, old_config.placement.k) == 0);
-        EASY_LOG_M("value is " + ret_v);
+        EASY_LOG_M("value is " + TRUNC_STR(ret_v));
     }
     else{
         ret_v = "__Uninitiliazed";
-        EASY_LOG_M("value is " + ret_v);
+        EASY_LOG_M("value is " + TRUNC_STR(ret_v));
     }
 
     return op_status;

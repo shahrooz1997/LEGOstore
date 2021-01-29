@@ -15,31 +15,13 @@ DataServer::DataServer(string directory, int sock, string metadata_server_ip,
     this->metadata_server_ip = metadata_server_ip;
 }
 
-strVec DataServer::get_data(const string& key){
-    const strVec* ptr = cache.get(key);
-    if(ptr == nullptr){ // Data is not in cache
-        strVec value = persistent.get(key);
-        cache.put(key, value);
-        return value;
-    }
-    else{ // data found in cache
-        return *ptr;
-    }
-}
-
-int DataServer::put_data(const string& key, const strVec& value){
-    cache.put(key, value);
-    persistent.put(key, value);
-    return S_OK;
-}
-
 void DataServer::check_block_keys(const string& key, const string& curr_class, uint32_t conf_id){
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
     unique_lock<mutex> lock(this->blocked_keys_lock);
 
     // See if the key is in block mode
     string con_key = construct_key(key, curr_class, conf_id);
-    while(find(this->blocked_keys.begin(), this->blocked_keys.end(), con_key) != this->blocked_keys.end()){
+    while(this->blocked_keys.find(con_key) != this->blocked_keys.end()){
         this->blocked_keys_cv.wait(lock);
     }
 
@@ -51,8 +33,8 @@ void DataServer::add_block_keys(const string& key, const string& curr_class, uin
     unique_lock<mutex> lock(this->blocked_keys_lock);
 
     string con_key = construct_key(key, curr_class, conf_id);
-    assert(find(this->blocked_keys.begin(), this->blocked_keys.end(), con_key) == this->blocked_keys.end());
-    this->blocked_keys.push_back(con_key);
+//    assert(find(this->blocked_keys.begin(), this->blocked_keys.end(), con_key) == this->blocked_keys.end());
+    this->blocked_keys.insert(con_key);
 
     return;
 }
@@ -62,15 +44,9 @@ void DataServer::remove_block_keys(const string& key, const string& curr_class, 
     unique_lock<mutex> lock(this->blocked_keys_lock);
 
     string con_key = construct_key(key, curr_class, conf_id);
-    auto it = find(this->blocked_keys.begin(), this->blocked_keys.end(), con_key);
-
-    if(it == this->blocked_keys.end()){
-        DPRINTF(DEBUG_RECONFIG_CONTROL, "WARN: it != this->blocked_keys.end() for con_key: %s\n", con_key.c_str());
-    }
-    if(it != this->blocked_keys.end()){
-        this->blocked_keys.erase(it);
-    }
+    assert(this->blocked_keys.erase(con_key) == 1);
     this->blocked_keys_cv.notify_all();
+
     return;
 }
 
@@ -137,33 +113,31 @@ string DataServer::finish_reconfig(const string &key, const string &timestamp, c
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
 
-    //Todo: add the reconfigured timestamp to the persistent storage here.
+    // Add the reconfigured timestamp to the persistent storage here.
     unique_lock<mutex> lock(mu);
-//    if(curr_class == CAS_PROTOCOL_NAME){
-//        string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
-//        strVec data = get_data(con_key);
-//        if(data.empty()){
-//            CAS.init_key(key, conf_id);
-//            data = get_data(con_key);
-//        }
-//        data[1] = timestamp;
-//        data[2] = new_conf_id;
-//        put_data(con_key, data);
-//    }
-//    else if(curr_class == ABD_PROTOCOL_NAME){
-//        string con_key = construct_key(key, ABD_PROTOCOL_NAME, conf_id);
-//        strVec data = get_data(con_key);
-//        if(data.empty()){
-//            ABD.init_key(key, conf_id);
-//            data = get_data(con_key);
-//        }
-//        data[3] = timestamp;
-//        data[4] = new_conf_id;
-//        put_data(con_key, data);
-//    }
-//    else{
-//        assert(false);
-//    }
+    if(curr_class == CAS_PROTOCOL_NAME){
+        string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
+        strVec data = persistent.get(con_key);
+        if(data.empty()){
+            data = CAS.init_key(key, conf_id);
+        }
+
+        vector<string> val{"DataServer::finish_reconfig", CAS_PROTOCOL_NAME, timestamp, new_conf_id};
+        persistent.merge(con_key, val);
+    }
+    else if(curr_class == ABD_PROTOCOL_NAME){
+        string con_key = construct_key(key, ABD_PROTOCOL_NAME, conf_id);
+        strVec data = persistent.get(con_key);
+        if(data.empty()){
+            data = ABD.init_key(key, conf_id);
+        }
+
+        vector<string> val{"DataServer::finish_reconfig", ABD_PROTOCOL_NAME, timestamp, new_conf_id};
+        persistent.merge(con_key, val);
+    }
+    else{
+        assert(false);
+    }
     lock.unlock();
 
     remove_block_keys(key, curr_class, conf_id);
@@ -420,6 +394,24 @@ bool Persistent_merge::Merge(const rocksdb::Slice& key, const rocksdb::Slice* ex
                 *new_value = string(existing_value->data(), existing_value->size());
                 return true;
             }
+        }
+    }
+    else if(operation == "DataServer::finish_reconfig"){
+        if(!existing_value){
+            assert(false);
+        }
+        else{
+            vector<string> data = DataTransfer::deserialize(string(existing_value->data(), existing_value->size()));
+            if(value_vec[0] == ABD_PROTOCOL_NAME){
+                data[3] = value_vec[1];
+                data[4] = value_vec[2];
+            }
+            else{
+                data[1] = value_vec[1];
+                data[2] = value_vec[2];
+            }
+            *new_value = DataTransfer::serialize(data);
+            return true;
         }
     }
     else{

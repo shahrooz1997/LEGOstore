@@ -37,7 +37,6 @@ public:
     std::string finish_reconfig(const std::string &key, const std::string &timestamp, const std::string& new_conf_id, const std::string &curr_class, uint32_t conf_id);
 
 private:
-    
     int sockfd;
     std::mutex mu;
     Cache cache;
@@ -47,14 +46,9 @@ private:
     
     std::string metadata_server_ip;
     std::string metadata_server_port;
-    
-//    std::map <std::string, std::vector<Request>> recon_keys; // Todo: remove it
-
-    strVec get_data(const std::string& key);
-    int put_data(const std::string& key, const strVec& value);
 
     // Handling block mode of keys
-    std::vector<std::string> blocked_keys;
+    std::unordered_set<std::string> blocked_keys;
     std::mutex blocked_keys_lock;
     std::condition_variable blocked_keys_cv;
     void check_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id); // It will block the caller thread until the key is removed from the recon state

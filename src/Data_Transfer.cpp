@@ -72,7 +72,7 @@ int DataTransfer::recvAll(int sock, void* buf, int data_size){
     return 1;
 }
 
-strVec DataTransfer::deserialize(std::string& data){
+strVec DataTransfer::deserialize(const std::string& data){
     
     packet::msg dec;
     strVec out_data;

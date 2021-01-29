@@ -1,19 +1,23 @@
 #include "Cache.h"
+#include "../inc/Cache.h"
 #include <cassert>
 
 
 Cache::Cache(size_t size) : max_size(size), curr_size(0), cache_obj(){
 }
 
-void Cache::put(const std::string& key, const std::vector <std::string>& value){
+void Cache::put(const std::string& key, const std::vector<std::string>& value){
     
     if(value.empty()){
         std::cout << "Error ! emtpy insertion" << std::endl;
-        assert(0);
+        assert(false);
     }
+
+    std::lock_guard<std::mutex> lock(access_lock);
+
     size_t item_size = key.size() + get_size(value);
     if(cache_obj.exists(key)){
-        std::vector <std::string> old_entry = *(cache_obj.get(key));
+        std::vector<std::string> old_entry = *(cache_obj.get(key));
         item_size -= get_size(old_entry);
     }
     
@@ -33,36 +37,16 @@ void Cache::put(const std::string& key, const std::vector <std::string>& value){
     curr_size += item_size;
 }
 
-size_t Cache::get_size(const std::vector <std::string>& value){
+size_t Cache::get_size(const std::vector<std::string>& value){
     size_t _size = 0;
-    
     for(auto it:value){
         _size += it.size();
     }
-    
+
     return _size;
 }
 
-//TODO:: return empty if not found
 const std::vector <std::string>* Cache::get(const std::string& key){
+    std::lock_guard<std::mutex> lock(access_lock);
     return cache_obj.get(key);
-}
-
-bool Cache::exists(const std::string& key){
-    return cache_obj.exists(key);
-}
-
-size_t Cache::get_current_size(){
-    return curr_size;
-}
-
-void Cache::modify_flag(const std::string& key, int label){
-    
-    auto* it = const_cast<std::vector <std::string>* >(cache_obj.get(key));
-    if(it == nullptr){
-        put(key, {std::string(), std::to_string(label)});
-    }
-    else{
-        (*it)[1] = std::to_string(label);
-    }
 }

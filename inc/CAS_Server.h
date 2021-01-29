@@ -38,11 +38,10 @@ public:
     std::string put_fin(const std::string& key, uint32_t conf_id, const std::string& timestamp);
     std::string get(const std::string& key, uint32_t conf_id, const std::string& timestamp);
 
-    int init_key(const std::string& key, const uint32_t conf_id);
+    strVec init_key(const std::string& key, const uint32_t conf_id);
 
 private:
-    strVec get_data(const std::string& key);
-    int put_data(const std::string& key, const strVec& value);
+    bool is_op_failed(const std::string& key, const uint32_t conf_id, const std::string& timestamp, std::string& recon_ts);
 
     std::shared_ptr<Cache> cache_p;
     std::shared_ptr<Persistent> persistent_p;

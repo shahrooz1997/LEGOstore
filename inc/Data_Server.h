@@ -62,4 +62,13 @@ private:
     void remove_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id);
 };
 
+class Persistent_merge : public rocksdb::AssociativeMergeOperator{
+public:
+    virtual bool Merge(const rocksdb::Slice& key, const rocksdb::Slice* existing_value, const rocksdb::Slice& value, std::string* new_value,
+                       rocksdb::Logger* logger) const override;
+
+    virtual const char* Name() const override{ return "Persistent_merge"; }
+
+};
+
 #endif

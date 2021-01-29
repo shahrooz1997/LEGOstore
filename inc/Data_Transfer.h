@@ -34,7 +34,7 @@ public:
     
 //    static std::string serializePlacement(const Placement& placement);
     
-    static strVec deserialize(std::string& data);
+    static strVec deserialize(const std::string& data);
     
 //    static Properties* deserializePrp(std::string& data);
     

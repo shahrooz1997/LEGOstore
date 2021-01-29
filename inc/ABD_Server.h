@@ -25,6 +25,7 @@
 #include "Timestamp.h"
 #include "Data_Transfer.h"
 
+//using namespace rocksdb;
 
 class ABD_Server{
 public:
@@ -36,11 +37,9 @@ public:
     std::string put(const std::string& key, uint32_t conf_id, const std::string& value, const std::string& timestamp);
     std::string get(const std::string& key, uint32_t conf_id);
 
-    int init_key(const std::string& key, const uint32_t conf_id);
+    strVec init_key(const std::string& key, const uint32_t conf_id);
 
 private:
-    strVec get_data(const std::string& key);
-    int put_data(const std::string& key, const strVec& value);
 
     std::shared_ptr<Cache> cache_p;
     std::shared_ptr<Persistent> persistent_p;

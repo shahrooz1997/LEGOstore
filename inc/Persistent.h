@@ -1,30 +1,23 @@
 #ifndef _PERSISTENT_H_
 #define _PERSISTENT_H_
 
-#include "rocksdb/db.h"
+#include <rocksdb/db.h>
+#include <rocksdb/merge_operator.h>
 #include <cassert>
-#include <iostream>
 
 class Persistent{
 
 public:
     Persistent(const std::string& directory);
-    
-    const std::vector<std::string> get(const std::string& key);
-    
-    void put(const std::string& key, std::vector <std::string> value);
-    
-    std::string& encode(std::vector <std::string>& value);
-    
-    std::vector <std::string> decode(const std::string& value);
-    
-    void modify_flag(const std::string& key, int label);
-    
-    bool exists(const std::string& key);
+    Persistent(const Persistent& orig) = delete;
+    ~Persistent();
+
+    std::vector<std::string> get(const std::string& key);
+    void put(const std::string& key, const std::vector<std::string>& value);
+    void merge(const std::string& key, const std::vector<std::string>& value);
 
 private:
     rocksdb::DB* db;
-    
 };
 
 

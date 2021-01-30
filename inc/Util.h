@@ -56,6 +56,7 @@ using namespace std::chrono;
 #define NUMBER_OF_OPS_FOR_WARM_UP 2
 #else
 #define NUMBER_OF_OPS_FOR_WARM_UP 30
+//#define CHANGE_THREAD_PRIORITY
 #endif
 //#define METADATA_SERVER_IP      "127.0.0.1"
 //#define METADATA_SERVER_PORT    "11001"

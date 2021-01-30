@@ -334,7 +334,7 @@ class Machine:
 
             self.execute("sudo touch ../init_config_done")
 
-    def config(self, make_clear=False, clear_all=False):
+    def config(self, make_clear=True, clear_all=False):
         if clear_all:
             self.clear()
         print("sending and compiling the project on machine " + self.name)
@@ -347,12 +347,12 @@ class Machine:
             delete_project_tar_file()
 
         self.execute("tar -xzf project2.tar.gz")
-        stdout, stderr = self.execute("ls project/lib/librocksdb.a")
-        if stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1:
-            self.execute("cp ../librocksdb.a ./project/lib/")
+        # stdout, stderr = self.execute("ls project/lib/librocksdb.a")
+        # if stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1:
+        #     self.execute("cp ../librocksdb.a ./project/lib/")
 
         if make_clear:
-            self.execute("cd project/; make cleanall; make -j 4 > /dev/null 2>&1")
+            self.execute("cd project/; sudo make cleanall; make -j 4 > /dev/null 2>&1")
         else:
             self.execute("cd project/; make -j 4 > /dev/null 2>&1")
 
@@ -374,7 +374,7 @@ class Machine:
         self.execute("rm -rf *")
 
     def make_clear(self):
-        self.execute("cd project/; make cleanall")
+        self.execute("cd project/; sudo make cleanall")
 
     def delete(self):
         command.delete_server(self.name, self.zone)
@@ -382,7 +382,7 @@ class Machine:
     def run(self):
         self.stop()
         self.config()
-        self.execute("cd project/; make cleandb >/dev/null 2>&1")
+        self.execute("cd project/; sudo make cleandb >/dev/null 2>&1")
         server_thread = threading.Thread(target=Machine.execute, args=[self, "cd project/; ./Server " + \
                                                                        self.internal_ip + " 10000 db " + self.internal_ip + " 30000 >server_output.txt 2>&1"])
         server_thread.daemon = True
@@ -394,7 +394,9 @@ class Machine:
         metadata_server_thread.start()
         while (True):
             stdout, stderr = self.execute("ps aux | grep Server | wc -l")
-            if int(stdout) > 7:
+            if int(stdout) > 8:
+                stdout, stderr = self.execute("ps aux | grep Server")
+                print(stdout)
                 raise Exception("Machine is already running")
             if int(stdout) > 5:
                 break;
@@ -409,7 +411,7 @@ class Machine:
         self.execute("killall Metadata_Server")
 
     def stop(self):
-        self.execute("killall Server Metadata_Server Controller")
+        self.execute("sudo killall Server Metadata_Server Controller")
         # self.stop_server()
         # self.stop_metadata_server()
 
@@ -489,7 +491,7 @@ class Controller(Machine):
         self.copy_from("project/*_output.txt", "data/" + run_name + "/" + self.name + "/")
 
 def make_sure_project_can_be_built():
-    if os.system("cd ..; make -j 9 >/dev/null 2>&1") != 0:
+    if os.system("cd ..; make cleanall >/dev/null 2>&1; make -j 9 >/dev/null 2>&1") != 0:
         print("Compile ERROR")
         os.system("cd ..; make")
         exit(-1)

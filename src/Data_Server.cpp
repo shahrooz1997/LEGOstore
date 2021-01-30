@@ -15,6 +15,24 @@ DataServer::DataServer(string directory, int sock, string metadata_server_ip,
     this->metadata_server_ip = metadata_server_ip;
 }
 
+strVec DataServer::get_data(const string& key){
+    const strVec* ptr = cache.get(key);
+    if(ptr == nullptr){ // Data is not in cache
+        strVec value = persistent.get(key);
+        cache.put(key, value);
+        return value;
+    }
+    else{ // data found in cache
+        return *ptr;
+    }
+}
+
+int DataServer::put_data(const string& key, const strVec& value){
+    cache.put(key, value);
+    persistent.put(key, value);
+    return S_OK;
+}
+
 void DataServer::check_block_keys(const string& key, const string& curr_class, uint32_t conf_id){
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
     unique_lock<mutex> lock(this->blocked_keys_lock);
@@ -117,23 +135,23 @@ string DataServer::finish_reconfig(const string &key, const string &timestamp, c
     unique_lock<mutex> lock(mu);
     if(curr_class == CAS_PROTOCOL_NAME){
         string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
-        strVec data = persistent.get(con_key);
+        strVec data = get_data(con_key);
         if(data.empty()){
             data = CAS.init_key(key, conf_id);
         }
-
-        vector<string> val{"DataServer::finish_reconfig", CAS_PROTOCOL_NAME, timestamp, new_conf_id};
-        persistent.merge(con_key, val);
+        data[1] = timestamp;
+        data[2] = new_conf_id;
+        put_data(con_key, data);
     }
     else if(curr_class == ABD_PROTOCOL_NAME){
         string con_key = construct_key(key, ABD_PROTOCOL_NAME, conf_id);
-        strVec data = persistent.get(con_key);
+        strVec data = get_data(con_key);
         if(data.empty()){
             data = ABD.init_key(key, conf_id);
         }
-
-        vector<string> val{"DataServer::finish_reconfig", ABD_PROTOCOL_NAME, timestamp, new_conf_id};
-        persistent.merge(con_key, val);
+        data[3] = timestamp;
+        data[4] = new_conf_id;
+        put_data(con_key, data);
     }
     else{
         assert(false);
@@ -222,200 +240,197 @@ string DataServer::get(const string& key, const string& timestamp, const string&
     return DataTransfer::serialize({"ERROR", "INTERNAL ERROR"});
 }
 
-bool Persistent_merge::Merge(const rocksdb::Slice& key, const rocksdb::Slice* existing_value,
-                                 const rocksdb::Slice& value, std::string* new_value, rocksdb::Logger* logger) const {
-
-    vector<string> value_vec;
-    value_vec = DataTransfer::deserialize(string(value.data(), value.size()));
-    assert(!value_vec.empty());
-    string operation = value_vec[0];
-    value_vec.erase(value_vec.begin());
-
-    if(operation == "ABD_Server::get_timestamp"){
-        if(value_vec[0] == "init"){
-            if(!existing_value){
-                *new_value = DataTransfer::serialize(value_vec);
-                return true;
-            }
-            *new_value = string(existing_value->data(), existing_value->size());
-            return true;
-        }
-        assert(false);
-    }
-    else if(operation == "ABD_Server::put"){
-        if(!existing_value){
-            DPRINTF(DEBUG_ABD_Server, "put new con_key which is %s\n", key.data());
-            vector<string> val{value_vec[0], value_vec[1], value_vec[2], "", ""};
-            *new_value = DataTransfer::serialize(val);
-            return true;
-        }
-        else{
-            vector<string> data = DataTransfer::deserialize(string(existing_value->data(), existing_value->size()));
-            if(data[3] == ""){
-                if(Timestamp(value_vec[2]) > Timestamp(data[2])){
-                    data[0] = value_vec[0];
-                    data[2] = value_vec[2];
-                    *new_value = DataTransfer::serialize(data);
-                    return true;
-                }
-                *new_value = string(existing_value->data(), existing_value->size());
-                return true;
-            }
-            else{ // Key reconfigured
-                if(!(Timestamp(value_vec[2]) > Timestamp(data[3]))){
-                    if(Timestamp(value_vec[2]) > Timestamp(data[2])){
-                        data[0] = value_vec[0];
-                        data[2] = value_vec[2];
-                        *new_value = DataTransfer::serialize(data);
-                        return true;
-                    }
-                }
-                *new_value = string(existing_value->data(), existing_value->size());
-                return true;
-            }
-        }
-    }
-    else if(operation == "ABD_Server::get"){
-        if(value_vec[0] == "init"){
-            if(!existing_value){
-                *new_value = DataTransfer::serialize(value_vec);
-                return true;
-            }
-            *new_value = string(existing_value->data(), existing_value->size());
-            return true;
-        }
-        assert(false);
-    }
-    else if(operation == "CAS_Server::get_timestamp_val"){
-        if(value_vec[0] == "init"){
-            if(!existing_value){
-                *new_value = DataTransfer::serialize(value_vec);
-                return true;
-            }
-            *new_value = string(existing_value->data(), existing_value->size());
-            return true;
-        }
-        assert(false);
-    }
-    else if(operation == "CAS_Server::get_timestamp_ts"){
-        if(!existing_value){
-            *new_value = DataTransfer::serialize(value_vec);
-            return true;
-        }
-        *new_value = string(existing_value->data(), existing_value->size());
-        return true;
-    }
-    else if(operation == "CAS_Server::put"){
-        if(!existing_value){
-            DPRINTF(DEBUG_ABD_Server, "put new con_key which is %s\n", key.data());
-            *new_value = DataTransfer::serialize(value_vec);
-            return true;
-        }
-        else{
-            *new_value = string(existing_value->data(), existing_value->size());
-            DPRINTF(DEBUG_ABD_Server, "repetitive put message for key %s\n", key.data());
+//bool Persistent_merge::Merge(const rocksdb::Slice& key, const rocksdb::Slice* existing_value,
+//                                 const rocksdb::Slice& value, std::string* new_value, rocksdb::Logger* logger) const {
+//
+//    vector<string> value_vec;
+//    value_vec = DataTransfer::deserialize(string(value.data(), value.size()));
+//    assert(!value_vec.empty());
+//    string operation = value_vec[0];
+//    value_vec.erase(value_vec.begin());
+//
+//    if(operation == "ABD_Server::init_key"){
+//        if(!existing_value){
+//            *new_value = DataTransfer::serialize(value_vec);
+//            return true;
+//        }
+//        *new_value = string(existing_value->data(), existing_value->size());
+//        return true;
+//    }
+//    else if(operation == "ABD_Server::put"){
+//        if(!existing_value){
+//            DPRINTF(DEBUG_ABD_Server, "put new con_key which is %s\n", key.data());
+//            vector<string> val{value_vec[0], value_vec[1], value_vec[2], "", ""};
+//            *new_value = DataTransfer::serialize(val);
+//            return true;
+//        }
+//        else{
+//            vector<string> data = DataTransfer::deserialize(string(existing_value->data(), existing_value->size()));
+//            if(data[3] == ""){
+//                if(Timestamp(value_vec[2]) > Timestamp(data[2])){
+//                    data[0] = value_vec[0];
+//                    data[2] = value_vec[2];
+//                    *new_value = DataTransfer::serialize(data);
+//                    return true;
+//                }
+//                *new_value = string(existing_value->data(), existing_value->size());
+//                return true;
+//            }
+//            else{ // Key reconfigured
+//                if(!(Timestamp(value_vec[2]) > Timestamp(data[3]))){
+//                    if(Timestamp(value_vec[2]) > Timestamp(data[2])){
+//                        data[0] = value_vec[0];
+//                        data[2] = value_vec[2];
+//                        *new_value = DataTransfer::serialize(data);
+//                        return true;
+//                    }
+//                }
+//                *new_value = string(existing_value->data(), existing_value->size());
+//                return true;
+//            }
+//        }
+//    }
+//    else if(operation == "ABD_Server::get"){
+//        if(value_vec[0] == "init"){
+//            if(!existing_value){
+//                *new_value = DataTransfer::serialize(value_vec);
+//                return true;
+//            }
+//            *new_value = string(existing_value->data(), existing_value->size());
+//            return true;
+//        }
+//        assert(false);
+//    }
+//    else if(operation == "CAS_Server::get_timestamp_val"){
+//        if(value_vec[0] == "init"){
+//            if(!existing_value){
+//                *new_value = DataTransfer::serialize(value_vec);
+//                return true;
+//            }
+//            *new_value = string(existing_value->data(), existing_value->size());
+//            return true;
+//        }
+//        assert(false);
+//    }
+//    else if(operation == "CAS_Server::get_timestamp_ts"){
+//        if(!existing_value){
+//            *new_value = DataTransfer::serialize(value_vec);
+//            return true;
+//        }
+//        *new_value = string(existing_value->data(), existing_value->size());
+//        return true;
+//    }
+//    else if(operation == "CAS_Server::put"){
+//        if(!existing_value){
+//            DPRINTF(DEBUG_ABD_Server, "put new con_key which is %s\n", key.data());
+//            *new_value = DataTransfer::serialize(value_vec);
+//            return true;
+//        }
+//        else{
+//            *new_value = string(existing_value->data(), existing_value->size());
+//            DPRINTF(DEBUG_ABD_Server, "repetitive put message for key %s\n", key.data());
+////            assert(false);
+//            return true;
+//        }
+//    }
+//    else if(operation == "CAS_Server::put_fin_val"){
+//        if(!existing_value){
+//            DPRINTF(DEBUG_ABD_Server, "put new con_key which is %s\n", key.data());
+//            *new_value = DataTransfer::serialize(value_vec);
+//            return true;
+//        }
+//        else{
+//            *new_value = string(existing_value->data(), existing_value->size());
+//            return true;
+//        }
+//    }
+//    else if(operation == "CAS_Server::put_fin_ts"){
+//        if(!existing_value){
 //            assert(false);
-            return true;
-        }
-    }
-    else if(operation == "CAS_Server::put_fin_val"){
-        if(!existing_value){
-            DPRINTF(DEBUG_ABD_Server, "put new con_key which is %s\n", key.data());
-            *new_value = DataTransfer::serialize(value_vec);
-            return true;
-        }
-        else{
-            *new_value = string(existing_value->data(), existing_value->size());
-            return true;
-        }
-    }
-    else if(operation == "CAS_Server::put_fin_ts"){
-        if(!existing_value){
-            assert(false);
-        }
-        else{
-            vector<string> data = DataTransfer::deserialize(string(existing_value->data(), existing_value->size()));
-            if(data[1] == ""){
-                if(Timestamp(value_vec[0]) > Timestamp(data[0])){
-                    data[0] = value_vec[0];
-                    *new_value = DataTransfer::serialize(data);
-                    return true;
-                }
-                *new_value = string(existing_value->data(), existing_value->size());
-                return true;
-            }
-            else{ // Key reconfigured
-                if(!(Timestamp(value_vec[0]) > Timestamp(data[1]))){
-                    if(Timestamp(value_vec[0]) > Timestamp(data[0])){
-                        data[0] = value_vec[0];
-                        *new_value = DataTransfer::serialize(data);
-                        return true;
-                    }
-                }
-                *new_value = string(existing_value->data(), existing_value->size());
-                return true;
-            }
-        }
-    }
-    else if(operation == "CAS_Server::get_val"){
-        if(!existing_value){
-            DPRINTF(DEBUG_ABD_Server, "put new con_key which is %s\n", key.data());
-            *new_value = DataTransfer::serialize(value_vec);
-            return true;
-        }
-        else{
-            *new_value = string(existing_value->data(), existing_value->size());
-            return true;
-        }
-    }
-    else if(operation == "CAS_Server::get_ts"){
-        if(!existing_value){
-            assert(false);
-        }
-        else{
-            vector<string> data = DataTransfer::deserialize(string(existing_value->data(), existing_value->size()));
-            if(data[1] == ""){
-                if(Timestamp(value_vec[0]) > Timestamp(data[0])){
-                    data[0] = value_vec[0];
-                    *new_value = DataTransfer::serialize(data);
-                    return true;
-                }
-                *new_value = string(existing_value->data(), existing_value->size());
-                return true;
-            }
-            else{ // Key reconfigured
-                if(!(Timestamp(value_vec[0]) > Timestamp(data[1]))){
-                    if(Timestamp(value_vec[0]) > Timestamp(data[0])){
-                        data[0] = value_vec[0];
-                        *new_value = DataTransfer::serialize(data);
-                        return true;
-                    }
-                }
-                *new_value = string(existing_value->data(), existing_value->size());
-                return true;
-            }
-        }
-    }
-    else if(operation == "DataServer::finish_reconfig"){
-        if(!existing_value){
-            assert(false);
-        }
-        else{
-            vector<string> data = DataTransfer::deserialize(string(existing_value->data(), existing_value->size()));
-            if(value_vec[0] == ABD_PROTOCOL_NAME){
-                data[3] = value_vec[1];
-                data[4] = value_vec[2];
-            }
-            else{
-                data[1] = value_vec[1];
-                data[2] = value_vec[2];
-            }
-            *new_value = DataTransfer::serialize(data);
-            return true;
-        }
-    }
-    else{
-        DPRINTF(DEBUG_ABD_Server, "Operation was not found: %s\n", operation.c_str());
-        assert(false);
-    }
-}
+//        }
+//        else{
+//            vector<string> data = DataTransfer::deserialize(string(existing_value->data(), existing_value->size()));
+//            if(data[1] == ""){
+//                if(Timestamp(value_vec[0]) > Timestamp(data[0])){
+//                    data[0] = value_vec[0];
+//                    *new_value = DataTransfer::serialize(data);
+//                    return true;
+//                }
+//                *new_value = string(existing_value->data(), existing_value->size());
+//                return true;
+//            }
+//            else{ // Key reconfigured
+//                if(!(Timestamp(value_vec[0]) > Timestamp(data[1]))){
+//                    if(Timestamp(value_vec[0]) > Timestamp(data[0])){
+//                        data[0] = value_vec[0];
+//                        *new_value = DataTransfer::serialize(data);
+//                        return true;
+//                    }
+//                }
+//                *new_value = string(existing_value->data(), existing_value->size());
+//                return true;
+//            }
+//        }
+//    }
+//    else if(operation == "CAS_Server::get_val"){
+//        if(!existing_value){
+//            DPRINTF(DEBUG_ABD_Server, "put new con_key which is %s\n", key.data());
+//            *new_value = DataTransfer::serialize(value_vec);
+//            return true;
+//        }
+//        else{
+//            *new_value = string(existing_value->data(), existing_value->size());
+//            return true;
+//        }
+//    }
+//    else if(operation == "CAS_Server::get_ts"){
+//        if(!existing_value){
+//            assert(false);
+//        }
+//        else{
+//            vector<string> data = DataTransfer::deserialize(string(existing_value->data(), existing_value->size()));
+//            if(data[1] == ""){
+//                if(Timestamp(value_vec[0]) > Timestamp(data[0])){
+//                    data[0] = value_vec[0];
+//                    *new_value = DataTransfer::serialize(data);
+//                    return true;
+//                }
+//                *new_value = string(existing_value->data(), existing_value->size());
+//                return true;
+//            }
+//            else{ // Key reconfigured
+//                if(!(Timestamp(value_vec[0]) > Timestamp(data[1]))){
+//                    if(Timestamp(value_vec[0]) > Timestamp(data[0])){
+//                        data[0] = value_vec[0];
+//                        *new_value = DataTransfer::serialize(data);
+//                        return true;
+//                    }
+//                }
+//                *new_value = string(existing_value->data(), existing_value->size());
+//                return true;
+//            }
+//        }
+//    }
+//    else if(operation == "DataServer::finish_reconfig"){
+//        if(!existing_value){
+//            assert(false);
+//        }
+//        else{
+//            vector<string> data = DataTransfer::deserialize(string(existing_value->data(), existing_value->size()));
+//            if(value_vec[0] == ABD_PROTOCOL_NAME){
+//                data[3] = value_vec[1];
+//                data[4] = value_vec[2];
+//            }
+//            else{
+//                data[1] = value_vec[1];
+//                data[2] = value_vec[2];
+//            }
+//            *new_value = DataTransfer::serialize(data);
+//            return true;
+//        }
+//    }
+//    else{
+//        DPRINTF(DEBUG_ABD_Server, "Operation was not found: %s\n", operation.c_str());
+//        assert(false);
+//    }
+//}

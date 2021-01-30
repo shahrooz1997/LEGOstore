@@ -23,7 +23,7 @@ using std::mutex;
  * VALUE1 = latest_timestamp, reconfig_timestamp, new_conf_id
  *
  * KEY2 = key!CAS_PROTOCOL_NAME!conf_id!timestamp
- * VALUE2 = value, CAS_PROTOCOL_NAME, timestamp, "PRE"/"FIN"
+ * VALUE2 = value, CAS_PROTOCOL_NAME, timestamp
  * We save KEY->VALUE in the storages
  *
  */
@@ -35,55 +35,49 @@ CAS_Server::CAS_Server(const std::shared_ptr<Cache>& cache_p, const std::shared_
 CAS_Server::~CAS_Server(){
 }
 
+strVec CAS_Server::get_data(const std::string& key){
+    const strVec* ptr = cache_p->get(key);
+    if(ptr == nullptr){ // Data is not in cache
+        strVec data = persistent_p->get(key);
+        return data;
+    }
+    else{ // data found in cache
+        return *ptr;
+    }
+}
+
+int CAS_Server::put_data(const std::string& key, const strVec& value){
+    cache_p->put(key, value);
+    persistent_p->put(key, value);
+    return S_OK;
+}
+
 strVec CAS_Server::init_key(const string& key, const uint32_t conf_id){
 
     DPRINTF(DEBUG_CAS_Server, "started.\n");
 
+    std::string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
     std::string con_key2 = construct_key(key, CAS_PROTOCOL_NAME, conf_id, "0-0");
-    std::vector<std::string> init_value2{"CAS_Server::get_timestamp_val", "init", CAS_PROTOCOL_NAME, "0-0"};
-    persistent_p->merge(con_key2, init_value2);
 
-    std::string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id); // Construct the unique id for the key
-    std::vector<std::string> init_value{"CAS_Server::get_timestamp_ts", "0-0", "", ""};
-    persistent_p->merge(con_key, init_value);
+    std::vector <std::string> value{"0-0", "", ""};
+    std::vector <std::string> value2{"init", CAS_PROTOCOL_NAME, "0-0"};
+    put_data(con_key, value);
+    put_data(con_key2, value2);
 
     return strVec{"0-0", "", ""};
-}
-
-bool CAS_Server::is_op_failed(const std::string& key, const uint32_t conf_id, const string& timestamp, string& recon_ts){
-    DPRINTF(DEBUG_CAS_Server, "started.\n");
-
-    string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
-    recon_ts.clear();
-
-    strVec data = persistent_p->get(con_key);
-    if(data.empty()){
-        DPRINTF(DEBUG_CAS_Server, "WARN: Key %s with confid %d was not found! Initializing...\n", key.c_str(), conf_id);
-        data = init_key(key, conf_id);
-        assert(!data.empty());
-    }
-
-    if(data[1] != ""){ // Key reconfigured
-        if(Timestamp(timestamp) > Timestamp(data[1])){
-            recon_ts = data[2];
-            return true;
-        }
-    }
-    return false;
 }
 
 std::string CAS_Server::get_timestamp(const std::string& key, uint32_t conf_id){
 
     DPRINTF(DEBUG_CAS_Server, "started.\n");
+    lock_guard<mutex> lock(*mu_p);
     std::string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id); // Construct the unique id for the key
-
     DPRINTF(DEBUG_CAS_Server, "get_timestamp started and the key is %s\n", con_key.c_str());
 
-    strVec data = persistent_p->get(con_key);
+    strVec data = get_data(con_key);
     if(data.empty()){
         DPRINTF(DEBUG_CAS_Server, "WARN: Key %s with confid %d was not found! Initializing...\n", key.c_str(), conf_id);
         data = init_key(key, conf_id);
-        assert(!data.empty());
     }
 
     if(data[1] == ""){
@@ -97,40 +91,57 @@ std::string CAS_Server::get_timestamp(const std::string& key, uint32_t conf_id){
 std::string CAS_Server::put(const std::string& key, uint32_t conf_id, const std::string& value, const std::string& timestamp){
 
     DPRINTF(DEBUG_CAS_Server, "started.\n");
-//    lock_guard<mutex> lock(*mu_p);
+    lock_guard<mutex> lock(*mu_p);
 
-    string recon_ts;
-    if(is_op_failed(key, conf_id, timestamp, recon_ts)){
-        return DataTransfer::serialize({"operation_fail", recon_ts});
+    string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
+    strVec data = get_data(con_key);
+    if(data.empty()){
+        DPRINTF(DEBUG_CAS_Server, "WARN: Key %s with confid %d was not found! Initializing...\n", key.c_str(), conf_id);
+        data = init_key(key, conf_id);
+    }
+    if(data[1] != ""){ // Key reconfigured
+        if(Timestamp(timestamp) > Timestamp(data[1])){
+            return DataTransfer::serialize({"operation_fail", data[2]});
+        }
     }
 
     string con_key2 = construct_key(key, CAS_PROTOCOL_NAME, conf_id, timestamp);
     DPRINTF(DEBUG_CAS_Server, "con_key2 is %s\n", con_key2.c_str());
 
-    vector<string> val2{"CAS_Server::put", value, CAS_PROTOCOL_NAME, timestamp};
-    persistent_p->merge(con_key2, val2);
+    data = get_data(con_key2);
+    if(data.empty()){
+        DPRINTF(DEBUG_CAS_Server, "put new con_key which is %s\n", con_key.c_str());
+        strVec val2{value, CAS_PROTOCOL_NAME, timestamp};
+        put_data(con_key2, val2);
+        return DataTransfer::serialize({"OK"});
+    }
 
+    // Ignore repetitive messages
     return DataTransfer::serialize({"OK"});
 }
 
 std::string CAS_Server::put_fin(const std::string& key, uint32_t conf_id, const std::string& timestamp){
 
     DPRINTF(DEBUG_CAS_Server, "started.\n");
-
-    string recon_ts;
-    if(is_op_failed(key, conf_id, timestamp, recon_ts)){
-        return DataTransfer::serialize({"operation_fail", recon_ts});
-    }
-
-    string con_key2 = construct_key(key, CAS_PROTOCOL_NAME, conf_id, timestamp);
-    DPRINTF(DEBUG_CAS_Server, "con_key2 is %s\n", con_key2.c_str());
-
-    vector<string> val2{"CAS_Server::put_fin_val", "", CAS_PROTOCOL_NAME, timestamp};
-    persistent_p->merge(con_key2, val2);
+    lock_guard<mutex> lock(*mu_p);
 
     string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
-    vector<string> val{"CAS_Server::put_fin_ts", timestamp};
-    persistent_p->merge(con_key, val);
+    strVec data = get_data(con_key);
+    if(data.empty()){
+        DPRINTF(DEBUG_CAS_Server, "WARN: Key %s with confid %d was not found! Initializing...\n", key.c_str(), conf_id);
+        data = init_key(key, conf_id);
+    }
+    if(data[1] != ""){ // Key reconfigured
+        if(Timestamp(timestamp) > Timestamp(data[1])){
+            return DataTransfer::serialize({"operation_fail", data[2]});
+        }
+    }
+
+    // Put fin
+    if(Timestamp(timestamp) > Timestamp(data[0])){
+        data[0] = timestamp;
+        put_data(con_key, data);
+    }
 
     return DataTransfer::serialize({"OK"});
 }
@@ -138,27 +149,35 @@ std::string CAS_Server::put_fin(const std::string& key, uint32_t conf_id, const 
 std::string CAS_Server::get(const std::string& key, uint32_t conf_id, const std::string& timestamp){
 
     DPRINTF(DEBUG_CAS_Server, "started.\n");
-
-    string recon_ts;
-    if(is_op_failed(key, conf_id, timestamp, recon_ts)){
-        return DataTransfer::serialize({"operation_fail", recon_ts});
-    }
-
-    string con_key2 = construct_key(key, CAS_PROTOCOL_NAME, conf_id, timestamp);
-    DPRINTF(DEBUG_CAS_Server, "con_key2 is %s\n", con_key2.c_str());
-
-    vector<string> val2{"CAS_Server::get_val", "", CAS_PROTOCOL_NAME, timestamp};
-    persistent_p->merge(con_key2, val2);
+    lock_guard<mutex> lock(*mu_p);
 
     string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
-    vector<string> val{"CAS_Server::get_ts", timestamp};
-    persistent_p->merge(con_key, val);
+    strVec data = get_data(con_key);
+    if(data.empty()){
+        DPRINTF(DEBUG_CAS_Server, "WARN: Key %s with confid %d was not found! Initializing...\n", key.c_str(), conf_id);
+        data = init_key(key, conf_id);
+    }
+    if(data[1] != ""){ // Key reconfigured
+        if(Timestamp(timestamp) > Timestamp(data[1])){
+            return DataTransfer::serialize({"operation_fail", data[2]});
+        }
+    }
 
-    strVec data = persistent_p->get(con_key2);
-    if(data[0] != ""){
-        return DataTransfer::serialize({"OK", data[0]});
+    // Put fin
+    if(Timestamp(timestamp) > Timestamp(data[0])){
+        data[0] = timestamp;
+        put_data(con_key, data);
+    }
+
+    std::string con_key2 = construct_key(key, CAS_PROTOCOL_NAME, conf_id, timestamp);
+    DPRINTF(DEBUG_CAS_Server, "con_key2 is %s\n", con_key2.c_str());
+    data = get_data(con_key2);
+
+    if(data.empty()){
+        return DataTransfer::serialize({"OK", "Ack"});
     }
     else{
-        return DataTransfer::serialize({"OK", "Ack"});
+        assert(data[0] != "");
+        return DataTransfer::serialize({"OK", data[0]});
     }
 }

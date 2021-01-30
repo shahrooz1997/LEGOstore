@@ -47,6 +47,9 @@ private:
     std::string metadata_server_ip;
     std::string metadata_server_port;
 
+    strVec get_data(const std::string& key);
+    int put_data(const std::string& key, const strVec& value);
+
     // Handling block mode of keys
     std::unordered_set<std::string> blocked_keys;
     std::mutex blocked_keys_lock;
@@ -56,13 +59,13 @@ private:
     void remove_block_keys(const std::string& key, const std::string& curr_class, uint32_t conf_id);
 };
 
-class Persistent_merge : public rocksdb::AssociativeMergeOperator{
-public:
-    virtual bool Merge(const rocksdb::Slice& key, const rocksdb::Slice* existing_value, const rocksdb::Slice& value, std::string* new_value,
-                       rocksdb::Logger* logger) const override;
-
-    virtual const char* Name() const override{ return "Persistent_merge"; }
-
-};
+//class Persistent_merge : public rocksdb::AssociativeMergeOperator{
+//public:
+//    virtual bool Merge(const rocksdb::Slice& key, const rocksdb::Slice* existing_value, const rocksdb::Slice& value, std::string* new_value,
+//                       rocksdb::Logger* logger) const override;
+//
+//    virtual const char* Name() const override{ return "Persistent_merge"; }
+//
+//};
 
 #endif

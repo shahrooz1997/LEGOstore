@@ -11,9 +11,9 @@ import urllib.request
 import argparse
 import matplotlib.pyplot as plt
 
-keys = ["222221", "222222", "222223", "222224", "222225", "222226", "222227", "222228", "222229", "222230"]#, "222222", "222223"]
+keys = ["222221"] #, "222222", "222223", "222224", "222225", "222226", "222227", "222228", "222229", "222230"]#, "222222", "222223"]
 
-file1 = open('data/CAS_NOF_highduration/logs/logfile_403177472.txt', 'r')
+file1 = open('data/CAS_NOF/logs/logfile_403177472.txt', 'r')
 # file1 = open('data/CAS_NOF/logs/logfile_403177472.txt', 'r')
 lines = file1.readlines()
 
@@ -23,7 +23,7 @@ for key in keys:
     y = []
     for line in lines:
         words = line.split()
-        if(words[1][:-1] != "put"):
+        if(words[1][:-1] != "get"):
             continue
         if(words[2][:-1] != key):
             continue

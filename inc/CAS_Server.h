@@ -41,11 +41,12 @@ public:
     strVec init_key(const std::string& key, const uint32_t conf_id);
 
 private:
-    bool is_op_failed(const std::string& key, const uint32_t conf_id, const std::string& timestamp, std::string& recon_ts);
-
     std::shared_ptr<Cache> cache_p;
     std::shared_ptr<Persistent> persistent_p;
     std::shared_ptr<std::mutex> mu_p;
+
+    strVec get_data(const std::string& key);
+    int put_data(const std::string& key, const strVec& value);
 };
 
 #endif /* CAS_Server_H */

@@ -9,7 +9,7 @@ Persistent::Persistent(const std::string& directory){
     // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
     options.IncreaseParallelism();
     options.OptimizeLevelStyleCompaction();
-    options.merge_operator.reset(new Persistent_merge);
+//    options.merge_operator.reset(new Persistent_merge);
     options.create_if_missing = true;
     rocksdb::Status status = rocksdb::DB::Open(options, directory, &db);
     assert(status.ok());

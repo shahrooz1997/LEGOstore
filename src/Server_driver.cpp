@@ -8,6 +8,30 @@
 #include <fcntl.h>
 #include <fstream>
 #include <netinet/tcp.h>
+#include "../inc/Util.h"
+#include <iostream>
+
+void increase_thread_priority(bool increase=true){ // true: increase the priority of the caller thread, false: priority default
+    static int default_policy;
+    static sched_param default_sch_params;
+    static bool default_set = false;
+
+    if(!default_set){
+        default_set = true;
+        assert(pthread_getschedparam(pthread_self(), &default_policy, &default_sch_params) == 0);
+    }
+
+    if(increase){
+        sched_param sch_params;
+        int policy = SCHED_FIFO;
+        sch_params.sched_priority = 2;
+//    std::cout << "RRRRRRRRRR: " << pthread_setschedparam(pthread_self(), policy, &sch_params) << std::endl;
+        assert(pthread_setschedparam(pthread_self(), policy, &sch_params) == 0);
+    }
+    else{
+        assert(pthread_setschedparam(pthread_self(), default_policy, &default_sch_params) == 0);
+    }
+}
 
 void message_handler(int connection, DataServer& dataserver, int portid, std::string& recvd){
     int le_counter = 0;
@@ -60,13 +84,19 @@ void message_handler(int connection, DataServer& dataserver, int portid, std::st
     else if(method == "put_fin"){
         result = DataTransfer::sendMsg(connection, dataserver.put_fin(data[1], data[2], data[3], stoul(data[4])));
     }else if(method == "reconfig_query"){
-            result = DataTransfer::sendMsg(connection, dataserver.reconfig_query(data[1], data[2], stoul(data[3])));
+#ifdef CHANGE_THREAD_PRIORITY
+        increase_thread_priority();
+#endif
+        result = DataTransfer::sendMsg(connection, dataserver.reconfig_query(data[1], data[2], stoul(data[3])));
     }else if(method == "reconfig_finalize"){
-            result = DataTransfer::sendMsg(connection, dataserver.reconfig_finalize(data[1], data[2], data[3], stoul(data[4])));
+        result = DataTransfer::sendMsg(connection, dataserver.reconfig_finalize(data[1], data[2], data[3], stoul(data[4])));
     }else if(method == "reconfig_write"){
-            result = DataTransfer::sendMsg(connection, dataserver.reconfig_write(data[1], data[3], data[2], data[4], stoul(data[5])));
+        result = DataTransfer::sendMsg(connection, dataserver.reconfig_write(data[1], data[3], data[2], data[4], stoul(data[5])));
     }else if(method == "finish_reconfig"){
-            result = DataTransfer::sendMsg(connection, dataserver.finish_reconfig(data[1], data[2], data[3], data[4], stoul(data[5])));
+        result = DataTransfer::sendMsg(connection, dataserver.finish_reconfig(data[1], data[2], data[3], data[4], stoul(data[5])));
+#ifdef CHANGE_THREAD_PRIORITY
+        increase_thread_priority(false);
+#endif
     }
     else{
         DataTransfer::sendMsg(connection, DataTransfer::serialize({"MethodNotFound", "Unknown method is called"}));

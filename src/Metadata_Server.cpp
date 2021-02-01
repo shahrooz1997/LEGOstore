@@ -104,6 +104,7 @@ string
 update_config_state(const string& key, const string& old_confid, const string& op, const string& timestamp){
     auto it = secondary_configs.find(key);
     string op_add = "add";   
+    string op_remove = "remove";   
  
     DPRINTF(DEBUG_METADATA_SERVER, "key: %s, old_conf: %s\n", key.c_str(), old_confid.c_str());
     if(it == secondary_configs.end()){ // Not found!
@@ -114,16 +115,16 @@ update_config_state(const string& key, const string& old_confid, const string& o
         assert(false);
     }
     
-    if(!op.compare(op_add) && std::find(secondary_configs[key].begin(), 
-            secondary_configs[key].end(), old_confid) != secondary_configs[key].end()) { 
+    if(op == op_add && std::find(secondary_configs[key].begin(), 
+            secondary_configs[key].end(), old_confid) == secondary_configs[key].end()) { 
         secondary_configs[key].push_back(old_confid);
-    } else {
+    } else if (op == op_remove) {
         secondary_configs[key].erase(std::remove(secondary_configs[key].begin(), secondary_configs[key].end(),
                                 old_confid), secondary_configs[key].end());
     }
 
     // Checking secondary_configs_list
-    std::cout << "Secondary configs list for the given key: " << endl;
+    std::cout << "OP: " << op << " Secondary configs list for the given key: " << endl;
     for(auto it1 = secondary_configs[key].begin(); it1 != secondary_configs[key].end(); it1++) {
         cout << *it1 << " ";
     }

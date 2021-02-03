@@ -4,22 +4,31 @@ import command
 import subprocess
 from subprocess import PIPE
 import threading
-import os
+import os, shutil
 from time import sleep
 from signal import signal, SIGINT
 import urllib.request
 import argparse
+import run_optimizer as optimizer
 
 # Please note that to use this script you need to install gcloud, login, and set the default project to Legostore.
 
 #Todo: Add command line parser
 def parse_args():
     parser = argparse.ArgumentParser(description="This application automatically runs the Legostore project on Google Cloud Platform")
-    parser.add_argument('-c','--only-create', dest='only_create', action='store_false', required=False)
+    parser.add_argument('-c','--only-create', dest='only_create', action='store_true', required=False)
+    parser.add_argument('-o', '--run-optimizer', dest='run_optimizer', action='store_true', required=False)
+    parser.add_argument('-l', '--only-latency', dest='only_latency', action='store_true', required=False)
+    parser.add_argument('-g', '--only-gather-data', dest='only_gather_data', action='store_true', required=False)
 
     # Manual run: Run the server on all the machines and initialize the metadata servers
 
     args = parser.parse_args()
+    if args.only_latency or args.only_gather_data:
+        args.only_create = True
+
+    if args.only_gather_data:
+        args.run_optimizer = False
     return args
 
 # Reading zones to create the servers
@@ -214,6 +223,11 @@ class Machine:
 
     def gather_summary_all(machines):
         threads = []
+        os.system("mkdir -p data/" + "CAS_NOF")
+        if not os.path.exists("/tmp/LEGOSTORE_AUTORUN/config"):
+            print("Warn: /tmp/LEGOSTORE_AUTORUN/config directory does not exist.")
+        else:
+            shutil.copytree("/tmp/LEGOSTORE_AUTORUN/config", "./data/CAS_NOF/config")
         for machine in machines:
             threads.append(threading.Thread(target=machines[machine].gather_summary, args=["CAS_NOF"]))
             threads[-1].start()
@@ -503,11 +517,15 @@ def main(args):
     if not args.only_create:
         make_sure_project_can_be_built()
 
+    if args.run_optimizer:
+        optimizer.main()
+
     controller = Controller()
     machines = Machine.get_machine_list()
     Machine.dump_machines_ip_info(machines)
 
-    # Machine.get_pairwise_latencies(machines)
+    if args.only_latency:
+        Machine.get_pairwise_latencies(machines)
 
     if not args.only_create:
         Machine.run_all(machines)
@@ -516,6 +534,13 @@ def main(args):
         print("Project execution finished.\nPlease wait while I am stopping all the machines and gathering the logs...")
         os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
         Machine.stop_all(machines)
+        Machine.gather_summary_all(machines)
+        Machine.gather_logs_all(machines)
+
+    if args.only_gather_data:
+        print("Please wait while I am gathering the logs...")
+        os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
+        machines[controller.name] = controller
         Machine.gather_summary_all(machines)
         Machine.gather_logs_all(machines)
 

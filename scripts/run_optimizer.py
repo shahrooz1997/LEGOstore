@@ -27,16 +27,19 @@ class Input_groups:
         group = Input_groups.Single_group()
         for key, val in json_dict.items():
             group.__dict__[key] = val
+        group.num_objects = len(group.keys)
+        group.object_size /= 1024 * 1024 * 1024
         del group.keys
+        del group.id
         self.input_groups.append(group.__dict__)
 
     def dump(self):
         FILE_NAME = "optimizer_input_" + str(self.confid) + ".json"
-        json.dump({"input_groups": self.input_groups}, open("./config/auto_test/" + FILE_NAME, "w"), indent=4)
+        json.dump({"input_groups": self.input_groups}, open("../config/auto_test/" + FILE_NAME, "w"), indent=4)
 
 
 def convert_workload_to_input():
-    with open("./config/auto_test/input_workload.json", "r") as f:
+    with open("../config/auto_test/input_workload.json", "r") as f:
         workload = json.load(f)
     group_configs = workload["workload_config"]
     global confs
@@ -49,14 +52,15 @@ def convert_workload_to_input():
         input_groups.dump()
     
 def run_optimizer(file_name):
-    result_file_name = "res_" + file_name
-    print("running", result_file_name, "...")
-    os.system("python3 ./optimizer/placement.py -f ./optimizer/tests/inputtests/dc_gcp.json -i " + os.path.join(
-        "./config/auto_test", file_name) + " -o " + os.path.join("./config/auto_test", result_file_name) +
+    result_file_name = file_name.replace("input", "output")
+    print("creating", result_file_name + "...")
+    os.system("python3 ../optimizer/placement.py -f ../optimizer/tests/inputtests/dc_gcp.json -i " + os.path.join(
+        "../config/auto_test", file_name) + " -o " + os.path.join("../config/auto_test", result_file_name) +
               " -H min_cost -v")
     # print("python3 ./optimizer/placement.py -f ./optimizer/tests/inputtests/dc_gcp.json -i " + os.path.join(
     #     "./config/auto_test", file_name) + " -o " + os.path.join("./config/auto_test", result_file_name) +
     #       " -H min_cost -v")
+    os.remove(os.path.join("../config/auto_test", file_name))
     print("finishehd", result_file_name)
         
 def main():

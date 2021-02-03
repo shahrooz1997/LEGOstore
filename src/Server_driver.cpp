@@ -11,6 +11,9 @@
 #include "../inc/Util.h"
 #include <iostream>
 
+using std::string;
+using std::to_string;
+
 void increase_thread_priority(bool increase=true){ // true: increase the priority of the caller thread, false: priority default
     static int default_policy;
     static sched_param default_sch_params;
@@ -34,6 +37,7 @@ void increase_thread_priority(bool increase=true){ // true: increase the priorit
 }
 
 void message_handler(int connection, DataServer& dataserver, int portid, std::string& recvd){
+    EASY_LOG_INIT_M(string("started") + " with port " + to_string(portid));
     int le_counter = 0;
     uint64_t le_init = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
     DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
@@ -58,12 +62,15 @@ void message_handler(int connection, DataServer& dataserver, int portid, std::st
 //    }
 
     if(method == "put"){
+        EASY_LOG_M("put");
         DPRINTF(DEBUG_RECONFIG_CONTROL,
                 "The method put is called. The key is %s, ts: %s, value: %s, class: %s, server port is %u\n",
                 data[1].c_str(), data[2].c_str(), (TRUNC_STR(data[3])).c_str(), data[4].c_str(), portid);
         result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[3], data[2], data[4], stoul(data[5])));
+        EASY_LOG_M("put finished");
     }
     else if(method == "get"){
+        EASY_LOG_M("get");
         if(data[3] == CAS_PROTOCOL_NAME){
             DPRINTF(DEBUG_RECONFIG_CONTROL,
                     "The method get is called. The key is %s, ts: %s, class: %s, server port is %u\n", data[1].c_str(),
@@ -74,36 +81,53 @@ void message_handler(int connection, DataServer& dataserver, int portid, std::st
             std::string phony_timestamp;
             result = DataTransfer::sendMsg(connection, dataserver.get(data[1], phony_timestamp, data[2], stoul(data[3])));
         }
+        EASY_LOG_M("get finished");
     }
     else if(method == "get_timestamp"){
+        EASY_LOG_M("get_timestamp");
         DPRINTF(DEBUG_RECONFIG_CONTROL,
                 "The method get_timestamp is called. The key is %s, class: %s, server port is %u\n", data[1].c_str(),
                 data[2].c_str(), portid);
         result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2], stoul(data[3])));
+        EASY_LOG_M("get_timestamp finished");
     }
     else if(method == "put_fin"){
+        EASY_LOG_M("put_fin");
         result = DataTransfer::sendMsg(connection, dataserver.put_fin(data[1], data[2], data[3], stoul(data[4])));
-    }else if(method == "reconfig_query"){
+        EASY_LOG_M("put_fin finished");
+    }
+    else if(method == "reconfig_query"){
+        EASY_LOG_M("reconfig_query");
 #ifdef CHANGE_THREAD_PRIORITY
         increase_thread_priority();
 #endif
         result = DataTransfer::sendMsg(connection, dataserver.reconfig_query(data[1], data[2], stoul(data[3])));
+        EASY_LOG_M("reconfig_query finished");
     }else if(method == "reconfig_finalize"){
+        EASY_LOG_M("reconfig_finalize");
         result = DataTransfer::sendMsg(connection, dataserver.reconfig_finalize(data[1], data[2], data[3], stoul(data[4])));
+        EASY_LOG_M("reconfig_finalize finished");
     }else if(method == "reconfig_write"){
+        EASY_LOG_M("reconfig_write");
         result = DataTransfer::sendMsg(connection, dataserver.reconfig_write(data[1], data[3], data[2], data[4], stoul(data[5])));
+        EASY_LOG_M("reconfig_write finished");
     }else if(method == "finish_reconfig"){
+        EASY_LOG_M("finish_reconfig");
         result = DataTransfer::sendMsg(connection, dataserver.finish_reconfig(data[1], data[2], data[3], data[4], stoul(data[5])));
 #ifdef CHANGE_THREAD_PRIORITY
         increase_thread_priority(false);
 #endif
+        EASY_LOG_M("finish_reconfig finished");
     }
     else{
+        EASY_LOG_M("MethodNotFound");
         DataTransfer::sendMsg(connection, DataTransfer::serialize({"MethodNotFound", "Unknown method is called"}));
+        EASY_LOG_M("MethodNotFound sent");
     }
 
     if(result != 1){
         DataTransfer::sendMsg(connection, DataTransfer::serialize({"Failure", "Server Response failed"}));
+        EASY_LOG_M("Failure: Server Response failed");
     }
 
     DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);

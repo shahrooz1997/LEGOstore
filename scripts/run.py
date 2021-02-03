@@ -15,7 +15,7 @@ import argparse
 #Todo: Add command line parser
 def parse_args():
     parser = argparse.ArgumentParser(description="This application automatically runs the Legostore project on Google Cloud Platform")
-    # parser.add_argument()
+    parser.add_argument('-c','--only-create', dest='only_create', action='store_false', required=False)
 
     # Manual run: Run the server on all the machines and initialize the metadata servers
 
@@ -498,9 +498,10 @@ def make_sure_project_can_be_built():
     else:
         print("Project was built successfully")
 
-def main():
+def main(args):
     # signal(SIGINT, keyboard_int_handler)
-    make_sure_project_can_be_built()
+    if not args.only_create:
+        make_sure_project_can_be_built()
 
     controller = Controller()
     machines = Machine.get_machine_list()
@@ -508,18 +509,20 @@ def main():
 
     # Machine.get_pairwise_latencies(machines)
 
-    Machine.run_all(machines)
-    controller.run(machines)
-    machines[controller.name] = controller
-    print("Project execution finished.\nPlease wait while I am stopping all the machines and gathering the logs...")
-    os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
-    Machine.stop_all(machines)
-    Machine.gather_summary_all(machines)
-    Machine.gather_logs_all(machines)
+    if not args.only_create:
+        Machine.run_all(machines)
+        controller.run(machines)
+        machines[controller.name] = controller
+        print("Project execution finished.\nPlease wait while I am stopping all the machines and gathering the logs...")
+        os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
+        Machine.stop_all(machines)
+        Machine.gather_summary_all(machines)
+        Machine.gather_logs_all(machines)
 
 if __name__ == '__main__':
+    args = parse_args()
     # print(can_project_be_built())
 
-    main()
+    main(args)
     # print("Main thread goes to sleep")
     # threading.Event().wait()

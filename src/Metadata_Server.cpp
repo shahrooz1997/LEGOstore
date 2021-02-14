@@ -170,11 +170,14 @@ void server_connection(int connection, int portid){
 //        assert(false);
 //    }
 
+#ifdef USE_TCP_NODELAY
     int yes = 1;
     int result = setsockopt(connection, IPPROTO_TCP, TCP_NODELAY, (char*) &yes, sizeof(int));
     if(result < 0){
+        DPRINTF(DEBUG_METADATA_SERVER, "Error in setsockopt(TCP_NODELAY): %d\n", result);
         assert(false);
     }
+#endif
 
     while(true){
         std::string recvd;
@@ -202,12 +205,17 @@ void runServer(const std::string& socket_port, const std::string& socket_ip){
     
     int sock = socket_setup(socket_port, &socket_ip);
     DPRINTF(DEBUG_METADATA_SERVER, "Alive port is %s\n", socket_port.c_str());
-    
+
+    int portid = stoi(socket_port);
     while(1){
-        int portid = stoi(socket_port);
         int new_sock = accept(sock, NULL, 0);
-        std::thread cThread([new_sock, portid](){ server_connection(new_sock, portid); });
-        cThread.detach();
+        if(new_sock < 0){
+            DPRINTF(DEBUG_CAS_Client, "Error: accept: %d, errno is %d\n", new_sock, errno);
+        }
+        else{
+            std::thread cThread([new_sock, portid](){ server_connection(new_sock, portid); });
+            cThread.detach();
+        }
     }
     
     close(sock);

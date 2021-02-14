@@ -112,7 +112,7 @@ namespace CAS_helper{
                         current_class, conf_id, values[*it], timestamp).detach();
         }
 
-        EASY_LOG_M("requests were sent to Quorum");
+        EASY_LOG_M(string("requests were sent to Quorum with size of ") + to_string(quorom.size()));
 
         chrono::system_clock::time_point end = chrono::system_clock::now() +
                                                     chrono::milliseconds(timeout_per_request);

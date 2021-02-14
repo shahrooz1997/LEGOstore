@@ -51,7 +51,7 @@ def mean_server_response_time(server):
     log_files_names = [os.path.join(log_path, f) for f in os.listdir(log_path) if
                        os.path.isfile(os.path.join(log_path, f))]
     for file in log_files_names:
-        if file.find("server_") != -1 and file.find("_output.txt", file.find("server_") + 7):
+        if file.find("server_") != -1 and file.find("_output.txt", file.find("server_") + 7) != -1:
             log_file = file
             break
 
@@ -273,12 +273,12 @@ if __name__ == "__main__":
     # plot_one_key_one_server(keys[1], "s5")
     # plot_one_key_one_server(keys[1], "s6")
 
-    print_one_key_one_server(keys[0], "s6")
+    # print_one_key_one_server(keys[0], "s6")
 
-    # mean_server_response_time("s2")
+    mean_server_response_time("s2")
 
-    plot_per_datacenter_opration("config/auto_test/optimizer_output_1.json")
-    plot_per_datacenter_opration("config/auto_test/optimizer_output_2.json")
-    plot_total_cost_per_configuration(["config/auto_test/optimizer_output_1.json", "config/auto_test/optimizer_output_2.json"])
+    # plot_per_datacenter_opration("config/auto_test/optimizer_output_1.json")
+    # plot_per_datacenter_opration("config/auto_test/optimizer_output_2.json")
+    # plot_total_cost_per_configuration(["config/auto_test/optimizer_output_1.json", "config/auto_test/optimizer_output_2.json"])
 
     plt.show()

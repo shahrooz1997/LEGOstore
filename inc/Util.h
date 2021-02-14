@@ -51,6 +51,8 @@ using namespace std::chrono;
 
 //#define No_GET_OPTIMIZED
 //#define LOCAL_TEST
+//#define USE_TCP_NODELAY
+//#define DO_WARM_UP
 
 #ifdef LOCAL_TEST
 #define NUMBER_OF_OPS_FOR_WARM_UP 2
@@ -199,6 +201,9 @@ struct Properties{
 
     std::vector<DC*> datacenters;
     std::vector<Group_config> group_configs;
+
+    // Todo: add it to the Datacenter struct
+    std::vector<std::string> clients;
     
     ~Properties();
 };

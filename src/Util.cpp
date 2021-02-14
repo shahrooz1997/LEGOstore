@@ -306,7 +306,8 @@ Connect::Connect(const std::string& ip, const uint16_t port) : ip(ip), port(port
             print_error("Socket creation error");
             error = true;
         }
-    
+
+#ifdef USE_TCP_NODELAY
         if(!error){
             int yes = 1;
             int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*) &yes, sizeof(int));
@@ -315,6 +316,7 @@ Connect::Connect(const std::string& ip, const uint16_t port) : ip(ip), port(port
                 error = true;
             }
         }
+#endif
 
         if(!error){
             int yes = 1;
@@ -433,7 +435,8 @@ Connect::Connect(const std::string& ip, const std::string& port) : ip(ip), sock(
                 error = true;
             }
         }
-    
+
+#ifdef USE_TCP_NODELAY
         if(!error){
             int yes = 1;
             int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*)&yes, sizeof(int));
@@ -442,6 +445,7 @@ Connect::Connect(const std::string& ip, const std::string& port) : ip(ip), sock(
                 error = true;
             }
         }
+#endif
 
         if(!error){
             int yes = 1;

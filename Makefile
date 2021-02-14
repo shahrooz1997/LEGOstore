@@ -19,6 +19,10 @@ obj4 = $(filter-out obj/Client_driver.o obj/Server_driver.o obj/Controller.o obj
 .PHONY: all
 all: obj client server controller metadata_Server
 
+.PHONY: debug
+debug: CXXFLAGS += -g -O0 -D_GLIBCXX_DEBUG # debug flags
+debug: all
+
 LEGOStore: $(obj) 
 	$(CXX) -o $@ $^ $(LDFLAGS)
 

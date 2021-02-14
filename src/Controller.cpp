@@ -65,6 +65,12 @@ int Controller::read_detacenters_info(const string& file){
             dc->servers.push_back(sv);
         }
 
+        for(auto& client : it.value()["clients"].items()){
+            string temp;
+            client.value()["host"].get_to(temp);
+            properties.clients.push_back(temp);
+        }
+
         this->properties.datacenters.push_back(dc);
     }
     cfg.close();
@@ -472,7 +478,7 @@ int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t gr
 //    DPRINTF(DEBUG_RECONFIG_CONTROL, "333333333333\n");
 
 
-    vector<string> args = {"ssh", "-o", "StrictHostKeyChecking no", "-t", properties.datacenters[datacenter_indx]->servers[0]->ip, command};
+    vector<string> args = {"ssh", "-o", "StrictHostKeyChecking no", "-t", properties.clients[datacenter_indx], command};
     string output;
     int status = execute("/usr/bin/ssh", args, output);
     
@@ -677,10 +683,12 @@ int main(){
     master.run_all_clients();
     DPRINTF(DEBUG_RECONFIG_CONTROL, "controller created\n");
 
+#ifdef DO_WARM_UP
     auto warm_up_tp = time_point_cast<milliseconds>(system_clock::now());;
     warm_up_tp += seconds(WARM_UP_DELAY);
     master.warm_up();
     this_thread::sleep_until(warm_up_tp);
+#endif
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "run_reconfigurer\n");
     master.run_reconfigurer();

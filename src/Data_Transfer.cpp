@@ -58,10 +58,10 @@ int DataTransfer::recvAll(int sock, void* buf, int data_size){
     while(data_size > 0){
         if((bytes_read = recv(sock, iter, data_size, 0)) < 1){
             if(bytes_read == -1){
-                DPRINTF(DEBUG_CAS_Client, "WARN: error in host socket.\n");
+                DPRINTF(DEBUG_CAS_Client, "Error: host socket, errno is %d\n", errno);
             }
             else if(bytes_read == 0){
-                DPRINTF(DEBUG_CAS_Client, "WARN: error in remote socket.\n");
+                DPRINTF(DEBUG_CAS_Client, "Warn: remote socket closed\n");
             }
             return bytes_read;
         }

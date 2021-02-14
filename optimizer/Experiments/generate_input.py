@@ -19,7 +19,7 @@ client_dists = OrderedDict([
 object_sizes = [10 / 2**30, 1*2**10 / 2**30, 10*2**10 / 2**30, 100*2**10 / 2**30]
 arrival_rates = [200, 350, 500]
 read_ratios = OrderedDict([("HW", 0.1), ("RW", 0.5), ("HR", 0.9)])
-SLO_reads = [200, 350, 500, 650, 800, 950, 1000]
+SLO_reads = [500, 750, 1000]
 
 # Default values
 availability_target_default  = 2

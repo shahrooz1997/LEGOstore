@@ -104,7 +104,6 @@ def min_latency_abd(datacenters, group, params):
     return (m_g, selected_dcs, selected_full_placement_info, read_lat, write_lat,
                 selected_get_cost, selected_put_cost, storage_cost, vm_cost)
 
-
 def min_latency_cas(datacenters, group, params):
     """ Latency based heuristic
     """

@@ -10,6 +10,7 @@ from signal import signal, SIGINT
 import urllib.request
 import argparse
 import run_optimizer as optimizer
+from collections import OrderedDict
 
 # Please note that to use this script you need to install gcloud, login, and set the default project to Legostore.
 
@@ -99,28 +100,38 @@ class Machine:
             machines[m_name] = Machine(name=m_name, type=m_type, zone=m_zone)
         zones = command.read_zones()
         threads = []
-        machines = {} # [None] * number_of_machines
+        servers = OrderedDict()
+        clients = OrderedDict()
         for i, zone in enumerate(zones):
             if(i >= number_of_machines):
                 break;
             name = "s" + str(i)
-            threads.append(
-                # threading.Thread(target=(lambda m_name, m_type, m_zone: Machine(name=m_name, type=m_type, zone=m_zone)),
-                #                  args=[name, "e2-standard-2", zone]))
-                threading.Thread(target=create_machine_thread_helper, args=[machines, name, "e2-standard-2", zone]))
+            threads.append(threading.Thread(target=create_machine_thread_helper, args=[servers, name, "e2-standard-2", zone]))
+            threads[-1].start()
 
+            name = "s" + str(i) + "c"
+            threads.append(threading.Thread(target=create_machine_thread_helper, args=[clients, name, "e2-standard-2", zone]))
             threads[-1].start()
 
         for thread in threads:
             thread.join()
 
+        servers = list(servers.items())
+        servers.sort(key=lambda x: x[0])
+        servers = OrderedDict(servers)
+
+        clients = list(clients.items())
+        clients.sort(key=lambda x: x[0])
+        clients = OrderedDict(clients)
+
         print("All machines are ready to use")
-        return machines
+        return servers, clients
 
     def execute_on_all(machines, cmd):
+        # print("Executing " + cmd)
         threads = []
-        for machine in machines:
-            threads.append(threading.Thread(target=machines[machine].execute, args=[cmd]))
+        for name, machine in machines.items():
+            threads.append(threading.Thread(target=machine.execute, args=[cmd]))
             threads[-1].start()
 
         for thread in threads:
@@ -128,63 +139,75 @@ class Machine:
 
     def copy_to_all(machines, file, to_file):
         threads = []
-        for machine in machines:
-            threads.append(threading.Thread(target=machines[machine].copy_to, args=[file, to_file]))
+        for name, machine in machines.items():
+            threads.append(threading.Thread(target=machine.copy_to, args=[file, to_file]))
             threads[-1].start()
 
         for thread in threads:
             thread.join()
 
-    def dump_machines_ip_info(machines):
+    def dump_machines_ip_info(servers, clients):
         file = open('setup_config.json', 'w')
         file.write('{\n')
 
-        for i in range(0, len(machines) - 1):
-            machine_name = "s" + str(i)
-            machine = machines[machine_name]
-            machine_info = machine.__str__()
-            for line in machine_info.split('\n')[:-1]:
-                file.write('    ')
-                file.write(line)
-                file.write('\n')
-            file.write('    ')
-            file.write(machine_info.split('\n')[-1])
-            file.write(',\n')
-
-        machine_name = "s" + str(len(machines) - 1)
-        machine = machines[machine_name]
-        machine_info = machine.__str__()
-        for line in machine_info.split('\n'):
-            file.write('    ')
-            file.write(line)
-            file.write('\n')
+        for i in range(0, len(servers)):
+            server_name = "s" + str(i)
+            client_name = server_name + "c"
+            server = servers[server_name]
+            client = clients[client_name]
+            ret = ""
+            ret += '    "' + server.name[1] + '": {\n'
+            ret += '        "metadata_server": {\n'
+            ret += '            "host": "' + server.external_ip + '",\n'
+            ret += '            "port": "30000"\n'
+            ret += '        },\n'
+            ret += '        "servers": {\n'
+            ret += '            "1": {\n'
+            ret += '                "host": "' + server.external_ip + '",\n'
+            ret += '                "port": "10000"\n'
+            ret += '            }\n'
+            ret += '        },\n'
+            ret += '        "clients": {\n'
+            ret += '            "1": {\n'
+            ret += '                "host": "' + client.external_ip + '"\n'
+            ret += '            }\n'
+            ret += '        }\n'
+            if i != len(servers) - 1:
+                ret += '    },\n'
+            else:
+                ret += '    }\n'
+            file.write(ret)
 
         file.write('}')
         file.close()
 
         os.system("cp setup_config.json ../config/auto_test/datacenters_access_info.json")
 
-    def get_pairwise_latencies(machines):
+    def get_pairwise_latencies(servers, clients):
         os.system("rm -f pairwise_latencies/latencies.txt")
 
         threads = []
-        for machine in machines:
-            threads.append(threading.Thread(target=machines[machine].get_latencies, args=[machines]))
+        for name, client in clients.items():
+            threads.append(threading.Thread(target=client.get_latencies, args=[servers]))
             threads[-1].start()
 
         for thread in threads:
             thread.join()
 
-        for i in range(0, len(machines)):
+        for i in range(0, len(clients)):
             os.system("cat pairwise_latencies/latencies_from_server_" + str(i) + ".txt >> pairwise_latencies/latencies.txt")
 
         print("Pairwise latencies are ready in pairwise_latencies/latencies.txt")
 
-    def run_all(machines): # if you call this method, you should not call run method anymore. It does not make sense to run twice!
+    def run_all(servers, clients): # if you call this method, you should not call run method anymore. It does not make sense to run twice!
         create_project_tar_file()
         threads = []
-        for machine in machines:
-            threads.append(threading.Thread(target=machines[machine].run, args=[]))
+        for name, server in servers.items():
+            threads.append(threading.Thread(target=server.run, args=[]))
+            threads[-1].start()
+
+        for name, client in clients.items():
+            threads.append(threading.Thread(target=client.config, args=[]))
             threads[-1].start()
 
         for thread in threads:
@@ -196,8 +219,8 @@ class Machine:
 
     def stop_all(machines):
         threads = []
-        for machine in machines:
-            threads.append(threading.Thread(target=machines[machine].stop, args=[]))
+        for name, machine in machines.items():
+            threads.append(threading.Thread(target=machine.stop, args=[]))
             threads[-1].start()
 
         for thread in threads:
@@ -205,8 +228,8 @@ class Machine:
 
     def clear_all(machines):
         threads = []
-        for machine in machines:
-            threads.append(threading.Thread(target=machines[machine].clear, args=[]))
+        for name, machine in machines.items():
+            threads.append(threading.Thread(target=machine.clear, args=[]))
             threads[-1].start()
 
         for thread in threads:
@@ -214,31 +237,31 @@ class Machine:
 
     def delete_all(machines):
         threads = []
-        for machine in machines:
-            threads.append(threading.Thread(target=machines[machine].delete, args=[]))
+        for name, machine in machines.items():
+            threads.append(threading.Thread(target=machine.delete, args=[]))
             threads[-1].start()
 
         for thread in threads:
             thread.join()
 
-    def gather_summary_all(machines):
+    def gather_summary_all(clients):
         threads = []
         os.system("mkdir -p data/" + "CAS_NOF")
         if not os.path.exists("/tmp/LEGOSTORE_AUTORUN/config"):
             print("Warn: /tmp/LEGOSTORE_AUTORUN/config directory does not exist.")
         else:
             shutil.copytree("/tmp/LEGOSTORE_AUTORUN/config", "./data/CAS_NOF/config")
-        for machine in machines:
-            threads.append(threading.Thread(target=machines[machine].gather_summary, args=["CAS_NOF"]))
+        for name, client in clients.items():
+            threads.append(threading.Thread(target=client.gather_summary, args=["CAS_NOF"]))
             threads[-1].start()
 
         for thread in threads:
             thread.join()
 
-    def gather_logs_all(machines):
+    def gather_logs_all(clients):
         threads = []
-        for machine in machines:
-            threads.append(threading.Thread(target=machines[machine].gather_logs, args=["CAS_NOF"]))
+        for name, client in clients.items():
+            threads.append(threading.Thread(target=client.gather_logs, args=["CAS_NOF"]))
             threads[-1].start()
 
         for thread in threads:
@@ -291,20 +314,6 @@ class Machine:
 
         print("Machine " + self.name + " is ready to use")
 
-    def __str__(self):
-        ret = ""
-        ret += '"'
-        ret += self.name[1]
-        ret += '": {\n'
-        ret += '    "metadata_server": {\n'
-        ret += '        "host": "'
-        ret += self.external_ip
-        ret += '",\n'
-        ret += '        "port": "30000"\n    },\n    "servers": {\n        "1": {\n            "host": "'
-        ret += self.external_ip
-        ret += '",\n            "port": "10000"\n        }\n    }\n}'
-        return ret
-
     def execute(self, cmd):
         # print("executing " + cmd + " on server " + self.name)
         stdout, stderr = command.execute(self.name, self.zone, cmd)
@@ -323,18 +332,18 @@ class Machine:
     def init_config(self):
         stdout, stderr = self.execute("ls ../init_config_done")
         if stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1:
-            print("initializing machine ", self.name)
+            print("Installing prerequisites on machine", self.name + "...")
             self.execute(
-                "sudo apt-get install -y build-essential autoconf automake libtool zlib1g-dev git protobuf-compiler pkg-config psmisc bc aria2 libgflags-dev cmake >/dev/null 2>&1")
+                "sudo apt-get install -y build-essential autoconf automake libtool zlib1g-dev git protobuf-compiler pkg-config psmisc bc aria2 libgflags-dev cmake librocksdb-dev >/dev/null 2>&1")
             self.execute("git clone https://github.com/openstack/liberasurecode.git >/dev/null 2>&1")
             self.execute(
                 "cd liberasurecode/; ./autogen.sh >/dev/null 2>&1; ./configure --prefix=/usr >/dev/null 2>&1; make -j 4 >/dev/null 2>&1");
             self.execute("cd liberasurecode/; sudo make install >/dev/null 2>&1");
 
-            self.execute("git clone https://github.com/facebook/rocksdb.git >/dev/null 2>&1")
-            self.execute(
-                "cd rocksdb/; mkdir mybuild; cd mybuild; cmake ../ >/dev/null 2>&1; make USE_RTTI=1 MAKECMDGOALS=release -j 4 >/dev/null 2>&1");
-            self.execute("cd rocksdb/mybuild; sudo make install >/dev/null 2>&1");
+            # self.execute("git clone https://github.com/facebook/rocksdb.git >/dev/null 2>&1")
+            # self.execute(
+            #     "cd rocksdb/; mkdir mybuild; cd mybuild; cmake ../ >/dev/null 2>&1; make USE_RTTI=1 MAKECMDGOALS=release -j 4 >/dev/null 2>&1");
+            # self.execute("cd rocksdb/mybuild; sudo make install >/dev/null 2>&1");
 
             # self.copy_to("../lib/librocksdb.a", "")
             # link = getting_librocksdb_download_link()
@@ -346,9 +355,12 @@ class Machine:
             # else:
             #     self.execute("sudo mv librocksdb.a ../")
 
+            # increase the number of open files per user
+            self.execute("sudo bash -c 'printf \"* hard nofile 97816\\n* soft nofile 97816\\n\" >> /etc/security/limits.conf'")
             self.execute("sudo touch ../init_config_done")
 
     def config(self, make_clear=True, clear_all=False):
+        self.stop()
         if clear_all:
             self.clear()
         print("sending and compiling the project on machine " + self.name)
@@ -373,9 +385,7 @@ class Machine:
     def get_latencies(self, machines):
         self.copy_to("./myping", "")
         command = "./myping " + self.name[1:] + " "
-        for i in range(0, len(machines)):
-            machine_name = "s" + str(i)
-            machine = machines[machine_name]
+        for name, machine in machines.items():
             command += machine.external_ip + " "
 
         command = command[:-1]
@@ -425,20 +435,22 @@ class Machine:
         self.execute("killall Metadata_Server")
 
     def stop(self):
-        self.execute("sudo killall Server Metadata_Server Controller")
+        self.execute("sudo killall Server Metadata_Server Controller Client")
         # self.stop_server()
         # self.stop_metadata_server()
 
     def gather_summary(self, run_name):
         self.execute("cd project/; ./summarize.sh " + run_name + " >sum.txt 2>&1")
-        os.system("mkdir -p data/" + run_name + "/" + self.name)
-        self.copy_from("project/sum.txt", "data/" + run_name + "/" + self.name + "/")
+        os.system("mkdir -p data/" + run_name + "/" + self.name if self.name[-1] != 'c' else self.name[:-1])
+        self.copy_from("project/sum.txt", "data/" + run_name + "/" + self.name if self.name[-1] != 'c' else self.name[:-1] + "/")
+
+        os.system("mkdir -p data/" + run_name + "/" + self.name if self.name[-1] != 'c' else self.name[:-1] + "/logs")
+        self.copy_from("project/logs/*", "data/" + run_name + "/" + self.name if self.name[-1] != 'c' else self.name[:-1] + "/logs/")
 
     def gather_logs(self, run_name):
-        os.system("mkdir -p data/" + run_name + "/" + self.name)
-        self.copy_from("project/*_output.txt", "data/" + run_name + "/" + self.name + "/")
-        os.system("mkdir -p data/" + run_name + "/" + self.name + "/logs")
-        self.copy_from("project/logs/*", "data/" + run_name + "/" + self.name + "/logs/")
+        os.system("mkdir -p data/" + run_name + "/" + self.name if self.name[-1] != 'c' else self.name[:-1])
+        self.copy_from("project/*_output.txt", "data/" + run_name + "/" + self.name if self.name[-1] != 'c' else self.name[:-1] + "/")
+
 
 
 # Signal handlers
@@ -456,11 +468,8 @@ def keyboard_int_handler(signal_received, frame):
         Machine.gather_logs_all()
         exit(0)
 
-
 class Controller(Machine):
     def __init__(self):
-        # Machine.__init__(self, name='s7-cont', zone='us-west2-a')
-        # self.cont_machine = None
         self.created = False
         self.add_access_done = False
         def create_controller(self):
@@ -480,7 +489,7 @@ class Controller(Machine):
         self.is_created()
         stdout, stderr = self.execute("ls ../access_added")
         if stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1:
-            print("Adding access to the clients from server ", self.name)
+            print("Adding access to the clients from server", self.name)
             self.execute("ssh-keygen -q -t rsa -N '' <<< \"\"$'\n'\"y\" 2>&1 >/dev/null")
             stdout, stderr = self.execute("cat .ssh/id_rsa.pub")
             Machine.execute_on_all(clients, "echo '" + stdout + "' >>.ssh/authorized_keys")
@@ -491,7 +500,6 @@ class Controller(Machine):
         self.is_created()
         if not self.add_access_done:
             self.add_access_to_clients(clients)
-        self.stop()
         self.config()
         self.execute("cd project/; make cleandb >/dev/null 2>&1")
         print("Controller is running on " + self.name)
@@ -502,7 +510,7 @@ class Controller(Machine):
 
     def gather_logs(self, run_name):
         os.system("mkdir -p data/" + run_name + "/" + self.name)
-        self.copy_from("project/*_output.txt", "data/" + run_name + "/" + self.name + "/")
+        self.copy_from("project/controller_output.txt", "data/" + run_name + "/" + self.name + "/")
 
 def make_sure_project_can_be_built():
     if os.system("cd ..; make cleanall >/dev/null 2>&1; make -j 9 >/dev/null 2>&1") != 0:
@@ -521,27 +529,26 @@ def main(args):
         optimizer.main()
 
     controller = Controller()
-    machines = Machine.get_machine_list()
-    Machine.dump_machines_ip_info(machines)
+    servers, clients = Machine.get_machine_list()
+    Machine.dump_machines_ip_info(servers, clients)
+    machines = OrderedDict(list(servers.items()) + list(clients.items()) + list([(controller.name, controller)]))
 
     if args.only_latency:
-        Machine.get_pairwise_latencies(machines)
+        Machine.get_pairwise_latencies(servers, clients)
 
     if not args.only_create:
-        Machine.run_all(machines)
-        controller.run(machines)
-        machines[controller.name] = controller
+        Machine.run_all(servers, clients)
+        controller.run(clients)
         print("Project execution finished.\nPlease wait while I am stopping all the machines and gathering the logs...")
         os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
         Machine.stop_all(machines)
-        Machine.gather_summary_all(machines)
+        Machine.gather_summary_all(clients)
         Machine.gather_logs_all(machines)
 
     if args.only_gather_data:
         print("Please wait while I am gathering the logs...")
         os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
-        machines[controller.name] = controller
-        Machine.gather_summary_all(machines)
+        Machine.gather_summary_all(clients)
         Machine.gather_logs_all(machines)
 
 if __name__ == '__main__':
@@ -549,5 +556,6 @@ if __name__ == '__main__':
     # print(can_project_be_built())
 
     main(args)
+
     # print("Main thread goes to sleep")
     # threading.Event().wait()

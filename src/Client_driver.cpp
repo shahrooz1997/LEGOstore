@@ -307,7 +307,7 @@ inline uint32_t ip_str_to_int(const std::string& ip){
 // This function will create a client and start sending requests
 int run_session(uint req_idx){
 
-    auto timePoint3 = time_point_cast<milliseconds>(system_clock::now());
+    auto start_point = time_point_cast<milliseconds>(system_clock::now());
     int cnt = 0;        // Count the number of requests
     uint32_t client_id = get_unique_client_id(datacenter_id, conf_id, grp_id, req_idx);
 
@@ -337,28 +337,20 @@ int run_session(uint req_idx){
     timePoint2 += milliseconds{get_random_number_uniform(0, 2000)};
     std::this_thread::sleep_until(timePoint2);
 
-    timePoint3 += milliseconds{WARM_UP_DELAY * 1000};
-
     // logging
     File_logger file_logger(clt.get_id());
 
+#ifdef DO_WARM_UP
     // WARM UP THE SOCKETS
-//    warm_up(clt, file_logger);
+    auto timePoint3 += start_point + seconds(WARM_UP_DELAY);
     warm_up();
-//    warm_up();
-
-
     std::this_thread::sleep_until(timePoint3);
+#endif
     
-//    DPRINTF(DEBUG_CAS_Client, "datacenter port: %u\n", datacenters[datacenter_id]->metadata_server_port);
-    
-    auto timePoint = time_point_cast<milliseconds>(system_clock::now());
-    timePoint += milliseconds{run_session_duration * 1000};
-//    std::this_thread::sleep_until(timePoint);
+    auto end_point = start_point + seconds(run_session_duration);
     
     time_point <system_clock, milliseconds> tp = time_point_cast<milliseconds>(system_clock::now());
-    
-    while(system_clock::now() < timePoint){ // for duration amount of time
+    while(system_clock::now() < end_point){ // for duration amount of time
         cnt += 1;
         double random_ratio = get_random_real_number_uniform(0, 1); // ((double)(get_random_number_uniform(0, numeric_limits<int>::max()))) / numeric_limits<int>::max();
         Op req_type = random_ratio < read_ratio ? Op::get : Op::put;

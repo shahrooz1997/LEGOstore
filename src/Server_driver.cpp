@@ -135,11 +135,13 @@ void message_handler(int connection, DataServer& dataserver, int portid, std::st
 
 void server_connection(int connection, DataServer& dataserver, int portid){
 
+#ifdef USE_TCP_NODELAY
     int yes = 1;
     int result = setsockopt(connection, IPPROTO_TCP, TCP_NODELAY, (char*) &yes, sizeof(int));
     if(result < 0){
         assert(false);
     }
+#endif
 
     while(true){
         std::string recvd;
@@ -167,12 +169,15 @@ void runServer(std::string& db_name, std::string& socket_port){
     
     DataServer* ds = new DataServer(db_name, socket_setup(socket_port));
     int portid = stoi(socket_port);
-    std::cout << "Alive port " << portid << std::endl;
     while(1){
         int new_sock = accept(ds->getSocketDesc(), NULL, 0);
-        std::cout << "Received Request!!1  PORT:" << portid << std::endl;
-        std::thread cThread([&ds, new_sock, portid](){ server_connection(new_sock, *ds, portid); });
-        cThread.detach();
+        if(new_sock < 0){
+            DPRINTF(DEBUG_CAS_Client, "Error: accept: %d, errno is %d\n", new_sock, errno);
+        }
+        else{
+            std::thread cThread([&ds, new_sock, portid](){ server_connection(new_sock, *ds, portid); });
+            cThread.detach();
+        }
     }
 }
 
@@ -182,12 +187,15 @@ void runServer(const std::string& db_name, const std::string& socket_port, const
     DataServer* ds = new DataServer(db_name, socket_setup(socket_port, &socket_ip), metadata_server_ip,
             metadata_server_port);
     int portid = stoi(socket_port);
-    std::cout << "Alive port " << portid << std::endl;
     while(1){
         int new_sock = accept(ds->getSocketDesc(), NULL, 0);
-        std::cout << "Received Request!!1  PORT:" << portid << std::endl;
-        std::thread cThread([&ds, new_sock, portid](){ server_connection(new_sock, *ds, portid); });
-        cThread.detach();
+        if(new_sock < 0){
+            DPRINTF(DEBUG_CAS_Client, "Error: accept: %d, errno is %d\n", new_sock, errno);
+        }
+        else{
+            std::thread cThread([&ds, new_sock, portid](){ server_connection(new_sock, *ds, portid); });
+            cThread.detach();
+        }
     }
     
 }

@@ -64,8 +64,8 @@ void message_handler(int connection, DataServer& dataserver, int portid, std::st
     if(method == "put"){
         EASY_LOG_M("put");
         DPRINTF(DEBUG_RECONFIG_CONTROL,
-                "The method put is called. The key is %s, ts: %s, value: %s, class: %s, server port is %u\n",
-                data[1].c_str(), data[2].c_str(), (TRUNC_STR(data[3])).c_str(), data[4].c_str(), portid);
+                "The method put is called. The key is %s, ts: %s, value_size: %lu, class: %s, server port is %u\n",
+                data[1].c_str(), data[2].c_str(), data[3].size(), data[4].c_str(), portid);
         result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[3], data[2], data[4], stoul(data[5])));
         EASY_LOG_M("put finished");
     }

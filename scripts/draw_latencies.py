@@ -71,8 +71,8 @@ def mean_server_response_time(server):
                 data.append(val)
             if flag > 0 and val < 1000:
                 flag -= 1
-            # if(data[-1] > 1000):
-            #     print(data[-1])
+            if(data[-1] > 1000):
+                print(data[-1])
 
         # print(flag)
 
@@ -275,7 +275,7 @@ if __name__ == "__main__":
 
     # print_one_key_one_server(keys[0], "s6")
 
-    mean_server_response_time("s2")
+    mean_server_response_time("s7")
 
     # plot_per_datacenter_opration("config/auto_test/optimizer_output_1.json")
     # plot_per_datacenter_opration("config/auto_test/optimizer_output_2.json")

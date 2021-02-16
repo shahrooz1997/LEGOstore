@@ -12,6 +12,10 @@ import argparse
 import run_optimizer as optimizer
 from collections import OrderedDict
 
+server_type = "e2-standard-4"
+client_type = "e2-standard-2"
+controller_type = "e2-standard-4"
+
 # Please note that to use this script you need to install gcloud, login, and set the default project to Legostore.
 
 #Todo: Add command line parser
@@ -106,11 +110,11 @@ class Machine:
             if(i >= number_of_machines):
                 break;
             name = "s" + str(i)
-            threads.append(threading.Thread(target=create_machine_thread_helper, args=[servers, name, "e2-standard-2", zone]))
+            threads.append(threading.Thread(target=create_machine_thread_helper, args=[servers, name, server_type, zone]))
             threads[-1].start()
 
             name = "s" + str(i) + "c"
-            threads.append(threading.Thread(target=create_machine_thread_helper, args=[clients, name, "e2-standard-2", zone]))
+            threads.append(threading.Thread(target=create_machine_thread_helper, args=[clients, name, client_type, zone]))
             threads[-1].start()
 
         for thread in threads:
@@ -258,10 +262,10 @@ class Machine:
         for thread in threads:
             thread.join()
 
-    def gather_logs_all(clients):
+    def gather_logs_all(machines):
         threads = []
-        for name, client in clients.items():
-            threads.append(threading.Thread(target=client.gather_logs, args=["CAS_NOF"]))
+        for name, machine in machines.items():
+            threads.append(threading.Thread(target=machine.gather_logs, args=["CAS_NOF"]))
             threads[-1].start()
 
         for thread in threads:
@@ -269,7 +273,7 @@ class Machine:
 
     def __init__(self, **kwargs):  # Retrieve info if machine exists, create OW
         self.name = kwargs['name']
-        self.type = "e2-standard-2"
+        self.type = kwargs['type']
         self.zone = kwargs['zone']
 
         Machine.existing_info_lock.acquire()
@@ -441,15 +445,15 @@ class Machine:
 
     def gather_summary(self, run_name):
         self.execute("cd project/; ./summarize.sh " + run_name + " >sum.txt 2>&1")
-        os.system("mkdir -p data/" + run_name + "/" + self.name if self.name[-1] != 'c' else self.name[:-1])
-        self.copy_from("project/sum.txt", "data/" + run_name + "/" + self.name if self.name[-1] != 'c' else self.name[:-1] + "/")
+        os.system("mkdir -p data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]))
+        self.copy_from("project/sum.txt", "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
 
-        os.system("mkdir -p data/" + run_name + "/" + self.name if self.name[-1] != 'c' else self.name[:-1] + "/logs")
-        self.copy_from("project/logs/*", "data/" + run_name + "/" + self.name if self.name[-1] != 'c' else self.name[:-1] + "/logs/")
+        os.system("mkdir -p data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/logs")
+        self.copy_from("project/logs/*", "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/logs/")
 
     def gather_logs(self, run_name):
-        os.system("mkdir -p data/" + run_name + "/" + self.name if self.name[-1] != 'c' else self.name[:-1])
-        self.copy_from("project/*_output.txt", "data/" + run_name + "/" + self.name if self.name[-1] != 'c' else self.name[:-1] + "/")
+        os.system("mkdir -p data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]))
+        self.copy_from("project/*_output.txt", "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
 
 
 
@@ -473,7 +477,7 @@ class Controller(Machine):
         self.created = False
         self.add_access_done = False
         def create_controller(self):
-            Machine.__init__(self, name='s7-cont', zone='us-west2-a')
+            Machine.__init__(self, name='s7-cont', type=controller_type, zone='us-west2-a')
             # self.cont_machine = Machine(name='s7-cont', zone='us-west2-a')
         self.creator_thread = threading.Thread(target=create_controller, args=[self])
         self.creator_thread.start()
@@ -548,6 +552,7 @@ def main(args):
     if args.only_gather_data:
         print("Please wait while I am gathering the logs...")
         os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
+        Machine.stop_all(machines)
         Machine.gather_summary_all(clients)
         Machine.gather_logs_all(machines)
 

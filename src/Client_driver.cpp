@@ -53,20 +53,23 @@ public:
         file = fopen(log_filename.c_str(), "w");
         assert(file != nullptr);
         client_id = id;
+
+        number_of_ignore = NUMBER_OF_OPS_TO_IGNORE;
     }
     
     void operator()(Op op, const std::string& key, const std::string& value, uint64_t call_time,
     uint64_t return_time){
         assert(file != 0);
-        
+        if(number_of_ignore > 0){
+            number_of_ignore--;
+            if(number_of_ignore == 0){
+                DPRINTF(DEBUG_CONTROLLER, "Ignoring ops finished\n");
+            }
+            return;
+        }
+
         fprintf(file, "%u, %s, %s, %s, %lu, %lu\n", client_id, op == Op::get ? "get" : "put", key.c_str(),
                 value.c_str(), call_time, return_time);
-    }
-
-    void operator()(double val){
-        assert(file != 0);
-
-        fprintf(file, "%lf\n", val);
     }
     
     ~File_logger(){
@@ -77,6 +80,7 @@ private:
     std::string log_filename;
     FILE* file;
     uint32_t client_id;
+    uint32_t number_of_ignore;
 };
 
 template<typename T>

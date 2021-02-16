@@ -51,13 +51,15 @@ using namespace std::chrono;
 
 //#define No_GET_OPTIMIZED
 //#define LOCAL_TEST
-//#define USE_TCP_NODELAY
+#define USE_TCP_NODELAY
 //#define DO_WARM_UP
 
 #ifdef LOCAL_TEST
 #define NUMBER_OF_OPS_FOR_WARM_UP 2
+#define NUMBER_OF_OPS_TO_IGNORE 0
 #else
 #define NUMBER_OF_OPS_FOR_WARM_UP 30
+#define NUMBER_OF_OPS_TO_IGNORE 10
 //#define CHANGE_THREAD_PRIORITY
 #endif
 //#define METADATA_SERVER_IP      "127.0.0.1"

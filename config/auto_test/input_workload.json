@@ -21,12 +21,12 @@
           "object_size": 30,
           "metadata_size": 9.313225746154785e-10,
           "num_objects": 1000000,
-          "arrival_rate": 200,
+          "arrival_rate": 2000,
           "read_ratio": 0.9,
           "write_ratio": 0.1,
           "SLO_read": 1000,
           "SLO_write": 1000,
-          "duration": 60,
+          "duration": 600,
           "time_to_decode": 0.00028,
           "keys": [
             "222221", "222222", "222223", "222224", "222225", "222226", "222227", "222228", "222229", "222230"

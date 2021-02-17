@@ -15,7 +15,7 @@ import json
 from collections import OrderedDict
 from pylab import *
 
-path = "data/CAS_NOF"
+path = "data/High_dur/CAS_NOF_3000"
 
 
 keys = ["222221", "222222", "222223", "222224", "222225", "222226", "222227", "222228", "222229", "222230"]#, "222222", "222223"]
@@ -29,6 +29,7 @@ def read_operation_for_key(key, log_path):
         log = open(file, 'r')
         lines = log.readlines()
         for line in lines:
+            print(file, line)
             words = line.split()
             if (words[2][:-1] != key):
                 continue
@@ -267,15 +268,15 @@ def main():
 if __name__ == "__main__":
     # main()
 
-    plot_reconfiguration_latencies()
+    # plot_reconfiguration_latencies()
 
-    # plot_one_key_one_server(keys[1], "s4")
-    # plot_one_key_one_server(keys[1], "s5")
-    # plot_one_key_one_server(keys[1], "s6")
+    plot_one_key_one_server(keys[1], "s4")
+    plot_one_key_one_server(keys[1], "s5")
+    plot_one_key_one_server(keys[1], "s6")
 
     # print_one_key_one_server(keys[0], "s6")
 
-    mean_server_response_time("s7")
+    # mean_server_response_time("s7")
 
     # plot_per_datacenter_opration("config/auto_test/optimizer_output_1.json")
     # plot_per_datacenter_opration("config/auto_test/optimizer_output_2.json")

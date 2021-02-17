@@ -13,7 +13,7 @@ cp -r ../config ./project/
 rm -f ./project/src/gbuffer.pb.cpp ./project/inc/gbuffer.pb.h
 cp ./setup_config.json ./project/config/auto_test/datacenters_access_info.json
 cp ../Makefile ./project/
-cp ./summarize.sh ./project
+cp ./summarize.py ./project
 mkdir -p /tmp/LEGOSTORE_AUTORUN
 cp -r ../config /tmp/LEGOSTORE_AUTORUN
 

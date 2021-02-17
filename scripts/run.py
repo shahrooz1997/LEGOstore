@@ -94,6 +94,9 @@ def getting_librocksdb_download_link():
 
     return link
 
+def summarize():
+    os.system("cd data; ./summarize.py >CAS_NOF/summary.txt 2>&1; cat CAS_NOF/summary.txt")
+
 class Machine:
 
     existing_info = ''
@@ -444,7 +447,7 @@ class Machine:
         # self.stop_metadata_server()
 
     def gather_summary(self, run_name):
-        self.execute("cd project/; ./summarize.sh " + run_name + " >sum.txt 2>&1")
+        self.execute("cd project/; ./summarize.py " + run_name + " >sum.txt 2>&1")
         os.system("mkdir -p data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]))
         self.copy_from("project/sum.txt", "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
 
@@ -453,7 +456,9 @@ class Machine:
 
     def gather_logs(self, run_name):
         os.system("mkdir -p data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]))
-        self.copy_from("project/*_output.txt", "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
+        self.copy_from("project/server*_output.txt", "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
+        # self.copy_from("project/client*_output.txt", "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
+        # self.copy_from("project/metadata*_output.txt", "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
 
 
 
@@ -537,6 +542,12 @@ def main(args):
     Machine.dump_machines_ip_info(servers, clients)
     machines = OrderedDict(list(servers.items()) + list(clients.items()) + list([(controller.name, controller)]))
 
+    # Machine.execute_on_all(machines, "cd project; grep -R -i \"Error\" >aaa.txt 2>&1")
+    # for name, machine in machines.items():
+    #     machine.copy_from("project/aaa.txt", "CAS_NOF/" + machine.name)
+    #
+    # return
+
     if args.only_latency:
         Machine.get_pairwise_latencies(servers, clients)
 
@@ -547,14 +558,16 @@ def main(args):
         os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
         Machine.stop_all(machines)
         Machine.gather_summary_all(clients)
-        Machine.gather_logs_all(machines)
+        # Machine.gather_logs_all(machines)
+        summarize()
 
     if args.only_gather_data:
         print("Please wait while I am gathering the logs...")
         os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
         Machine.stop_all(machines)
         Machine.gather_summary_all(clients)
-        Machine.gather_logs_all(machines)
+        # Machine.gather_logs_all(machines)
+        summarize()
 
 if __name__ == '__main__':
     args = parse_args()

@@ -60,6 +60,7 @@ using namespace std::chrono;
 #else
 #define NUMBER_OF_OPS_FOR_WARM_UP 30
 #define NUMBER_OF_OPS_TO_IGNORE 10
+#define DO_NOT_WRITE_VALUE_IN_LOGS
 //#define CHANGE_THREAD_PRIORITY
 #endif
 //#define METADATA_SERVER_IP      "127.0.0.1"

@@ -50,7 +50,7 @@ def execute(name, zone, cmd):
     proc = subprocess.run([gcloud, "compute", "ssh", name, "--zone", zone, "--command", cmd], stdout=PIPE, stderr=PIPE)
     if proc.stderr.decode("utf-8").find("ERROR") != -1 or proc.stdout.decode("utf-8").find("ERROR") != -1:
         print(proc.stdout.decode("utf-8"), "\n---\n", proc.stderr.decode("utf-8"))
-        raise Exception("Error in gathering information ")
+        raise Exception("Error in executing", cmd)
     return proc.stdout.decode("utf-8"), proc.stderr.decode("utf-8")
 
 

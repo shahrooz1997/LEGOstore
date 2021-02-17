@@ -48,8 +48,9 @@ class File_logger{
 public:
     File_logger(uint32_t id){
         file = nullptr;
+        int pid = getpid();
         log_filename = "logs/logfile_";
-        log_filename += std::to_string(id) + ".txt";
+        log_filename += std::to_string(pid) + ".txt";
         file = fopen(log_filename.c_str(), "w");
         assert(file != nullptr);
         client_id = id;
@@ -68,8 +69,13 @@ public:
             return;
         }
 
+#ifdef DO_NOT_WRITE_VALUE_IN_LOGS
+        fprintf(file, "%u, %s, %s, %s, %lu, %lu\n", client_id, op == Op::get ? "get" : "put", key.c_str(),
+                "0", call_time, return_time);
+#else
         fprintf(file, "%u, %s, %s, %s, %lu, %lu\n", client_id, op == Op::get ? "get" : "put", key.c_str(),
                 value.c_str(), call_time, return_time);
+#endif
     }
     
     ~File_logger(){

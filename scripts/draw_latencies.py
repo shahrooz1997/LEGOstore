@@ -15,7 +15,7 @@ import json
 from collections import OrderedDict
 from pylab import *
 
-path = "data/High_dur/CAS_NOF_3000"
+path = "data/High_dur/CAS_NOF_200"
 
 
 keys = ["222221", "222222", "222223", "222224", "222225", "222226", "222227", "222228", "222229", "222230"]#, "222222", "222223"]
@@ -77,7 +77,9 @@ def mean_server_response_time(server):
 
         # print(flag)
 
-    print("mean_server_response_time without recon: " + str(sum(data) / len(data) / 1000) + "ms")
+    print("mean_server_response_time without recon: " + str(sum(data) / float(len(data)) / 1000.) + "ms")
+    print("max_server_response_time without recon: " + str(max(data) / 1000.) + "ms")
+    print("min_server_response_time without recon: " + str(min(data) / 1000.) + "ms")
 
 
 def plot_one_key_one_server(key, server):
@@ -270,13 +272,13 @@ if __name__ == "__main__":
 
     # plot_reconfiguration_latencies()
 
-    plot_one_key_one_server(keys[1], "s4")
-    plot_one_key_one_server(keys[1], "s5")
-    plot_one_key_one_server(keys[1], "s6")
+    # plot_one_key_one_server(keys[1], "s4")
+    # plot_one_key_one_server(keys[1], "s5")
+    # plot_one_key_one_server(keys[1], "s6")
 
     # print_one_key_one_server(keys[0], "s6")
 
-    # mean_server_response_time("s7")
+    mean_server_response_time("s2")
 
     # plot_per_datacenter_opration("config/auto_test/optimizer_output_1.json")
     # plot_per_datacenter_opration("config/auto_test/optimizer_output_2.json")

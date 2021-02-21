@@ -260,8 +260,8 @@ int CAS_Client::get_timestamp(const string& key, unique_ptr<Timestamp>& timestam
 #else
     op_status = CAS_helper::failure_support_optimized("get_timestamp", key, "", vector<string>(p.m, ""), this->retry_attempts,
                                                       p.quorums[this->local_datacenter_id].Q1, p.servers, p.m,
-                                                     this->datacenters, this->current_class, parent->get_conf_id(key),
-                                                     this->timeout_per_request, ret);
+                                                      this->datacenters, this->current_class, parent->get_conf_id(key),
+                                                      this->timeout_per_request, ret);
 #endif
 
     DPRINTF(DEBUG_CAS_Client, "op_status: %d.\n", op_status);
@@ -320,8 +320,8 @@ int CAS_Client::put(const string& key, const string& value){
     DPRINTF(DEBUG_CAS_Client, "started on key %s\n", key.c_str());
     EASY_LOG_INIT_M(string("on key ") + key);
 
-    Key_gaurd(this, key);
-    EASY_LOG_M("lock for the key granted");
+//    Key_gaurd(this, key);
+//    EASY_LOG_M("lock for the key granted");
     
     int le_counter = 0;
     uint64_t le_init = time_point_cast<chrono::milliseconds>(chrono::system_clock::now()).time_since_epoch().count();
@@ -470,8 +470,8 @@ int CAS_Client::get(const string& key, string& value){
 
     EASY_LOG_INIT_M(string("on key ") + key);
 
-    Key_gaurd(this, key);
-    EASY_LOG_M("lock for the key granted");
+//    Key_gaurd(this, key);
+//    EASY_LOG_M("lock for the key granted");
 
     static map<string, string> cache_optimized_get; // key!timestamp -> value
     

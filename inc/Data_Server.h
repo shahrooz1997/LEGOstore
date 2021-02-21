@@ -7,6 +7,7 @@
 #include "ABD_Server.h"
 #include <unordered_map>
 #include <mutex>
+#include <memory>
 #include <condition_variable>
 #include "Timestamp.h"
 
@@ -38,7 +39,7 @@ public:
 
 private:
     int sockfd;
-    std::mutex mu;
+    std::vector<std::unique_ptr<std::mutex>> mu_p_vec;
     Cache cache;
     Persistent persistent;
     CAS_Server CAS;

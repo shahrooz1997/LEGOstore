@@ -29,7 +29,8 @@ using std::mutex;
  */
 
 CAS_Server::CAS_Server(const std::shared_ptr<Cache>& cache_p, const std::shared_ptr<Persistent>& persistent_p,
-                       const std::shared_ptr<std::mutex>& mu_p) : cache_p(cache_p), persistent_p(persistent_p), mu_p(mu_p){
+                       const std::shared_ptr<std::vector<std::unique_ptr<std::mutex>>>& mu_p_vec_p) : cache_p(cache_p),
+                       persistent_p(persistent_p), mu_p_vec_p(mu_p_vec_p){
 }
 
 CAS_Server::~CAS_Server(){
@@ -69,8 +70,10 @@ strVec CAS_Server::init_key(const string& key, const uint32_t conf_id){
 
 std::string CAS_Server::get_timestamp(const std::string& key, uint32_t conf_id){
 
-    DPRINTF(DEBUG_CAS_Server, "started.\n");
-    lock_guard<mutex> lock(*mu_p);
+    DPRINTF(DEBUG_CAS_Server, "started. %s, %u\n", key.c_str(), stoui(key));
+    //    lock_guard<mutex> lock(*mu_p);
+    lock_guard<mutex> lock(*(mu_p_vec_p->at(stoui(key))));
+
     std::string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id); // Construct the unique id for the key
     DPRINTF(DEBUG_CAS_Server, "get_timestamp started and the key is %s\n", con_key.c_str());
 
@@ -91,7 +94,8 @@ std::string CAS_Server::get_timestamp(const std::string& key, uint32_t conf_id){
 std::string CAS_Server::put(const std::string& key, uint32_t conf_id, const std::string& value, const std::string& timestamp){
 
     DPRINTF(DEBUG_CAS_Server, "started.\n");
-    lock_guard<mutex> lock(*mu_p);
+    //    lock_guard<mutex> lock(*mu_p);
+    lock_guard<mutex> lock(*(mu_p_vec_p->at(stoui(key))));
 
     string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
     strVec data = get_data(con_key);
@@ -123,7 +127,8 @@ std::string CAS_Server::put(const std::string& key, uint32_t conf_id, const std:
 std::string CAS_Server::put_fin(const std::string& key, uint32_t conf_id, const std::string& timestamp){
 
     DPRINTF(DEBUG_CAS_Server, "started.\n");
-    lock_guard<mutex> lock(*mu_p);
+    //    lock_guard<mutex> lock(*mu_p);
+    lock_guard<mutex> lock(*(mu_p_vec_p->at(stoui(key))));
 
     string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
     strVec data = get_data(con_key);
@@ -149,7 +154,8 @@ std::string CAS_Server::put_fin(const std::string& key, uint32_t conf_id, const 
 std::string CAS_Server::get(const std::string& key, uint32_t conf_id, const std::string& timestamp){
 
     DPRINTF(DEBUG_CAS_Server, "started.\n");
-    lock_guard<mutex> lock(*mu_p);
+    //    lock_guard<mutex> lock(*mu_p);
+    lock_guard<mutex> lock(*(mu_p_vec_p->at(stoui(key))));
 
     string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
     strVec data = get_data(con_key);

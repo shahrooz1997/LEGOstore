@@ -29,7 +29,8 @@
 
 class CAS_Server{
 public:
-    CAS_Server(const std::shared_ptr<Cache>& cache_p, const std::shared_ptr<Persistent>& persistent_p, const std::shared_ptr<std::mutex>& mu_p);
+    CAS_Server(const std::shared_ptr<Cache>& cache_p, const std::shared_ptr<Persistent>& persistent_p,
+               const std::shared_ptr<std::vector<std::unique_ptr<std::mutex>>>& mu_p_vec_p);
     CAS_Server(const CAS_Server& orig) = delete;
     virtual ~CAS_Server();
 
@@ -43,7 +44,7 @@ public:
 private:
     std::shared_ptr<Cache> cache_p;
     std::shared_ptr<Persistent> persistent_p;
-    std::shared_ptr<std::mutex> mu_p;
+    std::shared_ptr<std::vector<std::unique_ptr<std::mutex>>> mu_p_vec_p;
 
     strVec get_data(const std::string& key);
     int put_data(const std::string& key, const strVec& value);

@@ -15,10 +15,11 @@ import json
 from collections import OrderedDict
 from pylab import *
 
-path = "data/High_dur/CAS_NOF_200"
+#path = "data/CAS_NOF"
+path = "data/arrival_rate/HR/CAS_NOF"
 
 
-keys = ["222221", "222222", "222223", "222224", "222225", "222226", "222227", "222228", "222229", "222230"]#, "222222", "222223"]
+keys = ["2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010"]#, "222222", "222223"]
 servers = ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]
 
 def read_operation_for_key(key, log_path):
@@ -29,7 +30,7 @@ def read_operation_for_key(key, log_path):
         log = open(file, 'r')
         lines = log.readlines()
         for line in lines:
-            print(file, line)
+            # print(file, line)
             words = line.split()
             if (words[2][:-1] != key):
                 continue
@@ -41,6 +42,9 @@ def read_operation_for_key(key, log_path):
             if (words[1][:-1] == "put"):
                 latency = (int(words[5]) - int(words[4][:-1])) / 1000
                 put_operations.append([int(words[4][:-1]), latency, file])
+
+            if latency > 5000:
+                print(file, line)
 
     get_operations.sort(key=lambda x: x[0])
     put_operations.sort(key=lambda x: x[0])
@@ -113,11 +117,13 @@ def print_one_key_one_server(key, server):
     get_operations, put_operations = read_operation_for_key(key, log_path)
 
     for op in get_operations:
-        if op[1] > 750:
+        if op[1] > 1000:
             print(op[0], op[1], op[2])
 
-    # for op in put_operations:
-    #     print(op[0], op[1], op[2])
+    for op in put_operations:
+        if op[1] > 1000:
+            print(op[0], op[1], op[2])
+
 
 def plot_reconfiguration_latencies():
     log_path = os.path.join(path, "s7-cont")
@@ -228,6 +234,68 @@ def plot_total_cost_per_configuration(configs):
     plt.ylabel('cost($)')
     plt.grid(True)
 
+def draw_latencies_based_on_arrival_rate_for_server(server):
+    arrival_rates = list(range(20, 101, 20))
+
+    put_avg = []
+    get_avg = []
+
+    put_tail_95 = []
+    get_tail_95 = []
+
+    put_tail_99 = []
+    get_tail_99 = []
+
+    put_tail_100 = []
+    get_tail_100 = []
+
+    for ar in arrival_rates:
+        dir = path + "_" + str(ar)
+        summary_file = os.path.join(dir, "summary.txt")
+        f = open(summary_file, "r")
+        lines = f.readlines()
+        server_data_is_reached = False
+        for line in lines:
+            if line.find("latencies for") != -1 and server_data_is_reached:
+                break
+            if line.find("latencies for") != -1 and line.find(server) != -1:
+                server_data_is_reached = True
+                continue
+            if server_data_is_reached:
+                if line.find("put average latency") != -1:
+                    put_avg.append(float(line[21:line.find("ms")]))
+                elif line.find("get average latency") != -1:
+                    get_avg.append(float(line[21:line.find("ms")]))
+                elif line.find("put tail latency(95%)") != -1:
+                    put_tail_95.append(float(line[23:line.find("ms")]))
+                elif line.find("get tail latency(95%)") != -1:
+                    get_tail_95.append(float(line[23:line.find("ms")]))
+                elif line.find("put tail latency(99%)") != -1:
+                    put_tail_99.append(float(line[23:line.find("ms")]))
+                elif line.find("get tail latency(99%)") != -1:
+                    get_tail_99.append(float(line[23:line.find("ms")]))
+                elif line.find("put tail latency(100%)") != -1:
+                    put_tail_100.append(float(line[24:line.find("ms")]))
+                elif line.find("get tail latency(100%)") != -1:
+                    get_tail_100.append(float(line[24:line.find("ms")]))
+
+    plt.figure()
+    x = arrival_rates
+    plt.plot(x, put_avg, color="b", linewidth=4.0)
+    plt.plot(x, put_tail_95, color="c", linewidth=4.0)
+    plt.plot(x, put_tail_99, color="darkslateblue", linewidth=4.0)
+    plt.plot(x, get_avg, color="r", linewidth=4.0)
+    plt.plot(x, get_tail_95, color="tab:pink", linewidth=4.0)
+    plt.plot(x, get_tail_99, color="lime", linewidth=4.0)
+    legs = plt.legend(["put_avg", "put_tail_95", "put_tail_99", "get_avg", "get_tail_95", "get_tail_99"])
+    for leg in legs.get_lines():
+        leg.set_linewidth(4)
+    # plt.plot(y, '.-g')
+    plt.title(server + "")
+    plt.xlabel('arrival_rate(req/sec)')
+    plt.ylabel('latency(ms)')
+    plt.grid(True)
+
 def main():
     file1 = open('data/CAS_NOF/logs/logfile_403177472.txt', 'r')
     # file1 = open('data/CAS_NOF/logs/logfile_403177472.txt', 'r')
@@ -272,16 +340,21 @@ if __name__ == "__main__":
 
     # plot_reconfiguration_latencies()
 
-    # plot_one_key_one_server(keys[1], "s4")
-    # plot_one_key_one_server(keys[1], "s5")
-    # plot_one_key_one_server(keys[1], "s6")
+    # plot_one_key_one_server(keys[1], "s0")
+    # plot_one_key_one_server(keys[1], "s1")
+    # plot_one_key_one_server(keys[1], "s3")
 
-    # print_one_key_one_server(keys[0], "s6")
+    # for key in keys:
+    #     for server in servers:
+    #         print_one_key_one_server(key, server)
 
-    mean_server_response_time("s2")
+    # mean_server_response_time("s2")
 
     # plot_per_datacenter_opration("config/auto_test/optimizer_output_1.json")
     # plot_per_datacenter_opration("config/auto_test/optimizer_output_2.json")
     # plot_total_cost_per_configuration(["config/auto_test/optimizer_output_1.json", "config/auto_test/optimizer_output_2.json"])
+
+    for server in servers:
+        draw_latencies_based_on_arrival_rate_for_server(server)
 
     plt.show()

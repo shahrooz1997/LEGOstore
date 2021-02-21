@@ -28,13 +28,13 @@ def latency(files):
         for line in lines:
             if line.find("put") != -1:
                 words = line.split()
-                temp = int(words[5]) - int(words[4][:-1])
+                temp = round((int(words[5]) - int(words[4][:-1])) / 1000.)
                 put_total += temp
                 put_count += 1
                 puts.append((f, i, temp))
             if line.find("get") != -1:
                 words = line.split()
-                temp = int(words[5]) - int(words[4][:-1])
+                temp = round((int(words[5]) - int(words[4][:-1])) / 1000.)
                 get_total += temp
                 get_count += 1
                 gets.append((f, i, temp))

@@ -68,6 +68,8 @@ using namespace std::chrono;
 //#define DEFAULT_RET_ATTEMPTS    2
 //#define DEFAULT_METASER_TO      10000
 
+#define MAX_KEY_NUMBER 10000
+
 #define CAS_PROTOCOL_NAME "CAS"
 #define ABD_PROTOCOL_NAME "ABD"
 #define MIX_PROTOCOL_NAME "MIX"

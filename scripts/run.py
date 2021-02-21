@@ -11,10 +11,11 @@ import urllib.request
 import argparse
 import run_optimizer as optimizer
 from collections import OrderedDict
+import json
 
-server_type = "e2-standard-4"
-client_type = "e2-standard-2"
-controller_type = "e2-standard-4"
+server_type = "e2-standard-2"
+client_type = "e2-standard-8"
+controller_type = "e2-standard-2"
 
 # Please note that to use this script you need to install gcloud, login, and set the default project to Legostore.
 
@@ -25,6 +26,7 @@ def parse_args():
     parser.add_argument('-o', '--run-optimizer', dest='run_optimizer', action='store_true', required=False)
     parser.add_argument('-l', '--only-latency', dest='only_latency', action='store_true', required=False)
     parser.add_argument('-g', '--only-gather-data', dest='only_gather_data', action='store_true', required=False)
+    parser.add_argument('-b', '--no-build', dest='no_build', action='store_true', required=False)
 
     # Manual run: Run the server on all the machines and initialize the metadata servers
 
@@ -201,9 +203,7 @@ class Machine:
         for thread in threads:
             thread.join()
 
-        for i in range(0, len(clients)):
-            os.system("cat pairwise_latencies/latencies_from_server_" + str(i) + ".txt >> pairwise_latencies/latencies.txt")
-
+        os.system("pairwise_latencies/combine.sh")
         print("Pairwise latencies are ready in pairwise_latencies/latencies.txt")
 
     def run_all(servers, clients): # if you call this method, you should not call run method anymore. It does not make sense to run twice!
@@ -456,9 +456,14 @@ class Machine:
 
     def gather_logs(self, run_name):
         os.system("mkdir -p data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]))
-        self.copy_from("project/server*_output.txt", "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
-        # self.copy_from("project/client*_output.txt", "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
-        # self.copy_from("project/metadata*_output.txt", "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
+        if self.name[-1] != 'c':
+            self.copy_from("project/server*_output.txt",
+                           "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
+            self.copy_from("project/metadata*_output.txt",
+                           "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
+        else:
+            self.copy_from("project/client*_output.txt",
+                           "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
 
 
 
@@ -529,9 +534,15 @@ def make_sure_project_can_be_built():
     else:
         print("Project was built successfully")
 
+def should_gather_outputs(controller):
+    stdout, stderr = controller.execute("cat controller_output.txt | grep \"Child temination status 0\"")
+    if stdout != "":
+        return True
+    return False
+
 def main(args):
     # signal(SIGINT, keyboard_int_handler)
-    if not args.only_create:
+    if not args.only_create and not args.no_build:
         make_sure_project_can_be_built()
 
     if args.run_optimizer:
@@ -558,22 +569,49 @@ def main(args):
         os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
         Machine.stop_all(machines)
         Machine.gather_summary_all(clients)
-        # Machine.gather_logs_all(machines)
         summarize()
+        if should_gather_outputs(controller):
+            print("WARN: There has been an error in at least on client. Gathering logs...")
+            Machine.gather_logs_all(machines)
 
     if args.only_gather_data:
         print("Please wait while I am gathering the logs...")
         os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
         Machine.stop_all(machines)
         Machine.gather_summary_all(clients)
-        # Machine.gather_logs_all(machines)
         summarize()
+        if should_gather_outputs(controller):
+            print("WARN: There has been an error in at least on client. Gathering logs...")
+            Machine.gather_logs_all(machines)
+
+
+def arrival_rate_test(args):
+    arrival_rates = [40, 60, 80, 100] #list(range(20, 101, 20))
+    read_ratios = OrderedDict([("HW", 0.1), ("RW", 0.5), ("HR", 0.9)])
+
+    if not args.only_create:
+        make_sure_project_can_be_built()
+    args.no_build = True
+
+    for ar in arrival_rates:
+        workload = json.load(open("../config/auto_test/input_workload.json", "r"), object_pairs_hook=OrderedDict)["workload_config"]
+        for grp_con in workload:
+            groups = grp_con["grp_workload"]
+            for grp in groups:
+                grp["arrival_rate"] = ar
+
+        json.dump({"workload_config": workload}, open("../config/auto_test/input_workload.json", "w"), indent=2)
+
+        main(args)
+        os.system("mv data/CAS_NOF data/arrival_rate/HR/CAS_NOF_" + str(ar))
+
 
 if __name__ == '__main__':
     args = parse_args()
     # print(can_project_be_built())
 
-    main(args)
+    # main(args)
+    arrival_rate_test(args)
 
     # print("Main thread goes to sleep")
     # threading.Event().wait()

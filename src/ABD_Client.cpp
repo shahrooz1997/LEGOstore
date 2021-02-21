@@ -293,8 +293,8 @@ int ABD_Client::put(const string& key, const string& value){
 
     EASY_LOG_INIT_M(string("on key ") + key);
 
-    Key_gaurd(this, key);
-    EASY_LOG_M("lock for the key granted");
+//    Key_gaurd(this, key);
+//    EASY_LOG_M("lock for the key granted");
 
     int le_counter = 0;
     uint64_t le_init = time_point_cast<chrono::milliseconds>(chrono::system_clock::now()).time_since_epoch().count();
@@ -373,8 +373,8 @@ int ABD_Client::get(const string& key, string& value){
 
     EASY_LOG_INIT_M(string("on key ") + key);
 
-    Key_gaurd(this, key);
-    EASY_LOG_M("lock for the key granted");
+//    Key_gaurd(this, key);
+//    EASY_LOG_M("lock for the key granted");
 
     int le_counter = 0;
     uint64_t le_init = time_point_cast<chrono::milliseconds>(chrono::system_clock::now()).time_since_epoch().count();

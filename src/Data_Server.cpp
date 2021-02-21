@@ -3,16 +3,23 @@
 using std::string;
 using std::vector;
 using std::shared_ptr;
+using std::unique_ptr;
 using std::mutex;
 using std::unique_lock;
 using std::find;
 
 DataServer::DataServer(string directory, int sock, string metadata_server_ip,
-        string metadata_server_port) : sockfd(sock), cache(1000000000), persistent(directory),
-        CAS(shared_ptr<Cache>(&cache), shared_ptr<Persistent>(&persistent), shared_ptr<mutex>(&mu)),
-        ABD(shared_ptr<Cache>(&cache), shared_ptr<Persistent>(&persistent), shared_ptr<mutex>(&mu)){
+        string metadata_server_port) : sockfd(sock), mu_p_vec(MAX_KEY_NUMBER), cache(1000000000), persistent(directory),
+        CAS(shared_ptr<Cache>(&cache), shared_ptr<Persistent>(&persistent), shared_ptr<vector<unique_ptr<mutex>>>(&mu_p_vec)),
+        ABD(shared_ptr<Cache>(&cache), shared_ptr<Persistent>(&persistent), shared_ptr<vector<unique_ptr<mutex>>>(&mu_p_vec)){
     this->metadata_server_port = metadata_server_port;
     this->metadata_server_ip = metadata_server_ip;
+
+    DPRINTF(DEBUG_CAS_Server, "Creating mutexes for keys\n");
+    for(int i = 0; i < MAX_KEY_NUMBER; i++){
+        mu_p_vec[i].reset(new mutex);
+    }
+DPRINTF(DEBUG_CAS_Server, "mutexes created\n");
 }
 
 strVec DataServer::get_data(const string& key){
@@ -132,7 +139,9 @@ string DataServer::finish_reconfig(const string &key, const string &timestamp, c
     DPRINTF(DEBUG_RECONFIG_CONTROL, "started\n");
 
     // Add the reconfigured timestamp to the persistent storage here.
-    unique_lock<mutex> lock(mu);
+    //    unique_lock<mutex> lock(mu);
+    unique_lock<mutex> lock(*(mu_p_vec.at(stoui(key))));
+
     if(curr_class == CAS_PROTOCOL_NAME){
         string con_key = construct_key(key, CAS_PROTOCOL_NAME, conf_id);
         strVec data = get_data(con_key);

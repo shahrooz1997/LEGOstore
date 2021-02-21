@@ -15,6 +15,7 @@ cp ./setup_config.json ./project/config/auto_test/datacenters_access_info.json
 cp ../Makefile ./project/
 cp ./summarize.py ./project
 mkdir -p /tmp/LEGOSTORE_AUTORUN
+rm -rf /tmp/LEGOSTORE_AUTORUN/config
 cp -r ../config /tmp/LEGOSTORE_AUTORUN
 
 tar -czf project2.tar.gz project/

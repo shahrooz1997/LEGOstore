@@ -26,7 +26,8 @@ using std::mutex;
  */
 
 ABD_Server::ABD_Server(const std::shared_ptr<Cache>& cache_p, const std::shared_ptr<Persistent>& persistent_p,
-                       const std::shared_ptr<std::mutex>& mu_p) : cache_p(cache_p), persistent_p(persistent_p), mu_p(mu_p){
+                       const std::shared_ptr<std::vector<std::unique_ptr<std::mutex>>>& mu_p_vec_p) : cache_p(cache_p),
+                       persistent_p(persistent_p), mu_p_vec_p(mu_p_vec_p){
 }
 
 ABD_Server::~ABD_Server(){
@@ -63,7 +64,9 @@ strVec ABD_Server::init_key(const std::string& key, const uint32_t conf_id){
 std::string ABD_Server::get_timestamp(const std::string& key, uint32_t conf_id){
 
     DPRINTF(DEBUG_ABD_Server, "started.\n");
-    lock_guard<mutex> lock(*mu_p);
+//    lock_guard<mutex> lock(*mu_p);
+    lock_guard<mutex> lock(*(mu_p_vec_p->at(stoui(key))));
+
     string con_key = construct_key(key, ABD_PROTOCOL_NAME, conf_id); // Construct the unique id for the key
 
     DPRINTF(DEBUG_ABD_Server, "get_timestamp started and the key is %s\n", con_key.c_str());
@@ -85,7 +88,8 @@ std::string ABD_Server::get_timestamp(const std::string& key, uint32_t conf_id){
 std::string ABD_Server::put(const std::string& key, uint32_t conf_id, const std::string& value, const std::string& timestamp){
 
     DPRINTF(DEBUG_ABD_Server, "started.\n");
-    lock_guard<mutex> lock(*mu_p);
+//    lock_guard<mutex> lock(*mu_p);
+    lock_guard<mutex> lock(*(mu_p_vec_p->at(stoui(key))));
 
     string con_key = construct_key(key, ABD_PROTOCOL_NAME, conf_id);
     DPRINTF(DEBUG_ABD_Server, "con_key is %s\n", con_key.c_str());
@@ -124,7 +128,9 @@ std::string ABD_Server::put(const std::string& key, uint32_t conf_id, const std:
 std::string ABD_Server::get(const std::string& key, uint32_t conf_id){
 
     DPRINTF(DEBUG_ABD_Server, "started.\n");
-    lock_guard<mutex> lock(*mu_p);
+    //    lock_guard<mutex> lock(*mu_p);
+    lock_guard<mutex> lock(*(mu_p_vec_p->at(stoui(key))));
+
     string con_key = construct_key(key, ABD_PROTOCOL_NAME, conf_id); // Construct the unique id for the key
     DPRINTF(DEBUG_ABD_Server, "get started and the key is %s\n", con_key.c_str());
 

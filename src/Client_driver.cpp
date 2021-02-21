@@ -48,9 +48,8 @@ class File_logger{
 public:
     File_logger(uint32_t id){
         file = nullptr;
-        int pid = getpid();
         log_filename = "logs/logfile_";
-        log_filename += std::to_string(pid) + ".txt";
+        log_filename += std::to_string(id) + ".txt";
         file = fopen(log_filename.c_str(), "w");
         assert(file != nullptr);
         client_id = id;

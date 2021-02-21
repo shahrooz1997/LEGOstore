@@ -198,7 +198,7 @@ int main(int argc, char* argv[]){
 
 	ofstream out(string("latencies_from_server_") + argv[1] + ".txt", ios::out);
 	for (uint i = 0; i < latencies.size() - 1; ++i){
-		out << latencies[i] << " ";
+		out << latencies[i] << ", ";
 	}
 	out << latencies.back() << endl;
 	out.close();

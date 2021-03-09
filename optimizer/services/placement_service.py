@@ -11,6 +11,8 @@ def min_latency_abd(datacenters, group, params):
     """
     dc_ids = [int(dc.id) for dc in datacenters]
     mincost = 99999999999
+    min_lat = 99999999999
+    # min_get_lat = 99999999999
     selected_get_cost = 0
     selected_put_cost = 0
     read_lat = 0
@@ -79,8 +81,9 @@ def min_latency_abd(datacenters, group, params):
                                 sum([datacenters[i].details["storage_cost"]/(730*3600) for i in dcs])*\
                                     group.object_size
                 _vm_cost = sum([datacenters[i].details["price"] for i in dcs])/3600
-                if group.duration*(get_cost+put_cost+_storage_cost + _vm_cost) < mincost:
+                if latency < min_lat: # group.duration*(get_cost+put_cost+_storage_cost + _vm_cost) < mincost:
                     mincost = group.duration*(get_cost+put_cost+_storage_cost + _vm_cost)#+_vm_cost)
+                    min_lat = latency
                     storage_cost, vm_cost = _storage_cost, _vm_cost
                     selected_get_cost, selected_put_cost = get_cost, put_cost
                     selected_placement = combination
@@ -109,6 +112,8 @@ def min_latency_cas(datacenters, group, params):
     """
     dc_ids = [int(dc.id) for dc in datacenters]
     mincost = 99999999999
+    min_put_lat = 99999999999
+    min_get_lat = 99999999999
     selected_get_cost = 0
     selected_put_cost = 0
     read_lat = 0
@@ -186,8 +191,10 @@ def min_latency_cas(datacenters, group, params):
                 _storage_cost = group.num_objects*sum([datacenters[i].details["storage_cost"]/(730*3600) \
                                                         for i in dcs])*(group.object_size/k_g)
                 _vm_cost = sum([datacenters[i].details["price"]/3600 for i in dcs])
-                if group.duration*(get_cost+put_cost+_storage_cost + _vm_cost) < mincost:
+                if put_lat <= min_put_lat and get_lat <= min_get_lat: # group.duration*(get_cost+put_cost+_storage_cost + _vm_cost) < mincost:
                     mincost = group.duration*(get_cost+put_cost+_storage_cost + _vm_cost)#+_vm_cost)
+                    put_lat = min_put_lat
+                    get_lat = min_get_lat
                     selected_get_cost, selected_put_cost = get_cost, put_cost
                     storage_cost, vm_cost = _storage_cost, _vm_cost
                     read_lat, write_lat = get_lat, put_lat

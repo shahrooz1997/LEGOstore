@@ -15,8 +15,10 @@ import json
 from collections import OrderedDict
 from pylab import *
 
-#path = "data/CAS_NOF"
-path = "data/arrival_rate/HR/CAS_NOF"
+path = "data/CAS_NOF"
+# path = "data/arrival_rate/HR/CAS_NOF"
+# path = "data/object_number/RW/CAS_NOF"
+# path = "data/Findlimits/CAS_NOF_600_Success"
 
 
 keys = ["2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010"]#, "222222", "222223"]
@@ -46,6 +48,8 @@ def read_operation_for_key(key, log_path):
             if latency > 5000:
                 print(file, line)
 
+        log.close()
+
     get_operations.sort(key=lambda x: x[0])
     put_operations.sort(key=lambda x: x[0])
 
@@ -61,6 +65,7 @@ def mean_server_response_time(server):
             break
 
     # log_file = os.path.join(log_path, server_file)
+    print(log_file)
 
     data = []
     log = open(log_file, 'r')
@@ -70,21 +75,21 @@ def mean_server_response_time(server):
         if(lines[i].find("[src/Data_Server.cpp][reconfig_query]73: started") != -1):
             flag = 5
         if (lines[i].find("[src/Server_driver.cpp][message_handler]") != -1 and \
-                lines[i + 1].find(":0040: started") != -1):
+                lines[i + 1].find(": started") != -1):
+            # print(lines[i + 4])
             val = int(lines[i + 4][lines[i + 4].find("elapsed time = ") + 15:-7])
-            if flag <= 0:
-                data.append(val)
-            if flag > 0 and val < 1000:
-                flag -= 1
-            if(data[-1] > 1000):
-                print(data[-1])
+            # if flag <= 0:
+            data.append(val)
+            # if flag > 0 and val < 1000:
+            #     flag -= 1
+            # if(data[-1] > 1000):
+            #     print(data[-1])
 
         # print(flag)
 
     print("mean_server_response_time without recon: " + str(sum(data) / float(len(data)) / 1000.) + "ms")
     print("max_server_response_time without recon: " + str(max(data) / 1000.) + "ms")
     print("min_server_response_time without recon: " + str(min(data) / 1000.) + "ms")
-
 
 def plot_one_key_one_server(key, server):
     log_path = os.path.join(path, server)
@@ -123,7 +128,6 @@ def print_one_key_one_server(key, server):
     for op in put_operations:
         if op[1] > 1000:
             print(op[0], op[1], op[2])
-
 
 def plot_reconfiguration_latencies():
     log_path = os.path.join(path, "s7-cont")
@@ -296,6 +300,68 @@ def draw_latencies_based_on_arrival_rate_for_server(server):
     plt.ylabel('latency(ms)')
     plt.grid(True)
 
+def draw_latencies_based_on_object_number_for_server(server):
+    object_number = [1, 5, 25, 125]
+
+    put_avg = []
+    get_avg = []
+
+    put_tail_95 = []
+    get_tail_95 = []
+
+    put_tail_99 = []
+    get_tail_99 = []
+
+    put_tail_100 = []
+    get_tail_100 = []
+
+    for on in object_number:
+        dir = path + "_" + str(on)
+        summary_file = os.path.join(dir, "summary.txt")
+        f = open(summary_file, "r")
+        lines = f.readlines()
+        server_data_is_reached = False
+        for line in lines:
+            if line.find("latencies for") != -1 and server_data_is_reached:
+                break
+            if line.find("latencies for") != -1 and line.find(server) != -1:
+                server_data_is_reached = True
+                continue
+            if server_data_is_reached:
+                if line.find("put average latency") != -1:
+                    put_avg.append(float(line[21:line.find("ms")]))
+                elif line.find("get average latency") != -1:
+                    get_avg.append(float(line[21:line.find("ms")]))
+                elif line.find("put tail latency(95%)") != -1:
+                    put_tail_95.append(float(line[23:line.find("ms")]))
+                elif line.find("get tail latency(95%)") != -1:
+                    get_tail_95.append(float(line[23:line.find("ms")]))
+                elif line.find("put tail latency(99%)") != -1:
+                    put_tail_99.append(float(line[23:line.find("ms")]))
+                elif line.find("get tail latency(99%)") != -1:
+                    get_tail_99.append(float(line[23:line.find("ms")]))
+                elif line.find("put tail latency(100%)") != -1:
+                    put_tail_100.append(float(line[24:line.find("ms")]))
+                elif line.find("get tail latency(100%)") != -1:
+                    get_tail_100.append(float(line[24:line.find("ms")]))
+
+    plt.figure()
+    x = object_number
+    plt.plot(x, put_avg, '-o', color="b", linewidth=4.0)
+    plt.plot(x, put_tail_95, '-o', color="c", linewidth=4.0)
+    plt.plot(x, put_tail_99, '-o', color="darkslateblue", linewidth=4.0)
+    plt.plot(x, get_avg, '-o', color="r", linewidth=4.0)
+    plt.plot(x, get_tail_95, '-o', color="tab:pink", linewidth=4.0)
+    plt.plot(x, get_tail_99, '-o', color="lime", linewidth=4.0)
+    legs = plt.legend(["put_avg", "put_tail_95", "put_tail_99", "get_avg", "get_tail_95", "get_tail_99"])
+    for leg in legs.get_lines():
+        leg.set_linewidth(4)
+    # plt.plot(y, '.-g')
+    plt.title(server + "")
+    plt.xlabel('object_number')
+    plt.ylabel('latency(ms)')
+    plt.grid(True)
+
 def main():
     file1 = open('data/CAS_NOF/logs/logfile_403177472.txt', 'r')
     # file1 = open('data/CAS_NOF/logs/logfile_403177472.txt', 'r')
@@ -348,13 +414,18 @@ if __name__ == "__main__":
     #     for server in servers:
     #         print_one_key_one_server(key, server)
 
-    # mean_server_response_time("s2")
+    mean_server_response_time("s2")
+    mean_server_response_time("s5")
+    mean_server_response_time("s7")
+    mean_server_response_time("s8")
 
     # plot_per_datacenter_opration("config/auto_test/optimizer_output_1.json")
     # plot_per_datacenter_opration("config/auto_test/optimizer_output_2.json")
     # plot_total_cost_per_configuration(["config/auto_test/optimizer_output_1.json", "config/auto_test/optimizer_output_2.json"])
 
-    for server in servers:
-        draw_latencies_based_on_arrival_rate_for_server(server)
+    # for server in servers:
+    #    # draw_latencies_based_on_arrival_rate_for_server(server)
+    #     draw_latencies_based_on_object_number_for_server(server)
+
 
     plt.show()

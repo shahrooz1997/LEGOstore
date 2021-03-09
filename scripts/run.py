@@ -13,9 +13,12 @@ import run_optimizer as optimizer
 from collections import OrderedDict
 import json
 
-server_type = "e2-standard-2"
+server_type = "n1-standard-1" # "f1-micro" #"e2-standard-2"
 client_type = "e2-standard-8"
 controller_type = "e2-standard-2"
+
+
+weak_vm_types = ["n1-standard-1", "f1-micro", "g1-small"]
 
 # Please note that to use this script you need to install gcloud, login, and set the default project to Legostore.
 
@@ -203,7 +206,7 @@ class Machine:
         for thread in threads:
             thread.join()
 
-        os.system("pairwise_latencies/combine.sh")
+        os.system("cd pairwise_latencies; ./combine.sh")
         print("Pairwise latencies are ready in pairwise_latencies/latencies.txt")
 
     def run_all(servers, clients): # if you call this method, you should not call run method anymore. It does not make sense to run twice!
@@ -343,13 +346,21 @@ class Machine:
             self.execute(
                 "sudo apt-get install -y build-essential autoconf automake libtool zlib1g-dev git protobuf-compiler pkg-config psmisc bc aria2 libgflags-dev cmake librocksdb-dev >/dev/null 2>&1")
             self.execute("git clone https://github.com/openstack/liberasurecode.git >/dev/null 2>&1")
-            self.execute(
-                "cd liberasurecode/; ./autogen.sh >/dev/null 2>&1; ./configure --prefix=/usr >/dev/null 2>&1; make -j 4 >/dev/null 2>&1");
+            if self.type in weak_vm_types:
+                self.execute(
+                    "cd liberasurecode/; ./autogen.sh >/dev/null 2>&1; ./configure --prefix=/usr >/dev/null 2>&1; make >/dev/null 2>&1")
+            else:
+                self.execute(
+                "cd liberasurecode/; ./autogen.sh >/dev/null 2>&1; ./configure --prefix=/usr >/dev/null 2>&1; make -j 4 >/dev/null 2>&1")
             self.execute("cd liberasurecode/; sudo make install >/dev/null 2>&1");
 
             # self.execute("git clone https://github.com/facebook/rocksdb.git >/dev/null 2>&1")
-            # self.execute(
-            #     "cd rocksdb/; mkdir mybuild; cd mybuild; cmake ../ >/dev/null 2>&1; make USE_RTTI=1 MAKECMDGOALS=release -j 4 >/dev/null 2>&1");
+            # if self.type in weak_vm_types:
+            #     self.execute(
+            #     "cd rocksdb/; mkdir mybuild; cd mybuild; cmake ../ >/dev/null 2>&1; make USE_RTTI=1 MAKECMDGOALS=release >/dev/null 2>&1")
+            # else:
+            #     self.execute(
+            #         "cd rocksdb/; mkdir mybuild; cd mybuild; cmake ../ >/dev/null 2>&1; make USE_RTTI=1 MAKECMDGOALS=release -j 4 >/dev/null 2>&1")
             # self.execute("cd rocksdb/mybuild; sudo make install >/dev/null 2>&1");
 
             # self.copy_to("../lib/librocksdb.a", "")
@@ -385,9 +396,15 @@ class Machine:
         #     self.execute("cp ../librocksdb.a ./project/lib/")
 
         if make_clear:
-            self.execute("cd project/; sudo make cleanall; make -j 4 > /dev/null 2>&1")
+            if self.type in weak_vm_types:
+                self.execute("cd project/; sudo make cleanall; make > /dev/null 2>&1")
+            else:
+                self.execute("cd project/; sudo make cleanall; make -j 4 > /dev/null 2>&1")
         else:
-            self.execute("cd project/; make -j 4 > /dev/null 2>&1")
+            if self.type in weak_vm_types:
+                self.execute("cd project/; make > /dev/null 2>&1")
+            else:
+                self.execute("cd project/; make -j 4 > /dev/null 2>&1")
 
     def get_latencies(self, machines):
         self.copy_to("./myping", "")
@@ -442,7 +459,7 @@ class Machine:
         self.execute("killall Metadata_Server")
 
     def stop(self):
-        self.execute("sudo killall Server Metadata_Server Controller Client")
+        self.execute("sudo killall Server Metadata_Server Controller Client make cc1plus")
         # self.stop_server()
         # self.stop_metadata_server()
 
@@ -457,8 +474,8 @@ class Machine:
     def gather_logs(self, run_name):
         os.system("mkdir -p data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]))
         if self.name[-1] != 'c':
-            self.copy_from("project/server*_output.txt",
-                           "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
+            # self.copy_from("project/server*_output.txt",
+            #                "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
             self.copy_from("project/metadata*_output.txt",
                            "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
         else:
@@ -535,7 +552,7 @@ def make_sure_project_can_be_built():
         print("Project was built successfully")
 
 def should_gather_outputs(controller):
-    stdout, stderr = controller.execute("cat controller_output.txt | grep \"Child temination status 0\"")
+    stdout, stderr = controller.execute("cat project/controller_output.txt | grep \"Child temination status 0\"")
     if stdout != "":
         return True
     return False
@@ -553,10 +570,9 @@ def main(args):
     Machine.dump_machines_ip_info(servers, clients)
     machines = OrderedDict(list(servers.items()) + list(clients.items()) + list([(controller.name, controller)]))
 
-    # Machine.execute_on_all(machines, "cd project; grep -R -i \"Error\" >aaa.txt 2>&1")
+    # Machine.execute_on_all(machines, "sudo bash -c 'printf \"* soft stack 1024\\n\" >> /etc/security/limits.conf'")
     # for name, machine in machines.items():
     #     machine.copy_from("project/aaa.txt", "CAS_NOF/" + machine.name)
-    #
     # return
 
     if args.only_latency:
@@ -571,18 +587,18 @@ def main(args):
         Machine.gather_summary_all(clients)
         summarize()
         if should_gather_outputs(controller):
-            print("WARN: There has been an error in at least on client. Gathering logs...")
+            print("WARN: There has been an error in at least one client. Gathering logs...")
             Machine.gather_logs_all(machines)
 
     if args.only_gather_data:
         print("Please wait while I am gathering the logs...")
-        os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
+        # os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
         Machine.stop_all(machines)
-        Machine.gather_summary_all(clients)
-        summarize()
-        if should_gather_outputs(controller):
-            print("WARN: There has been an error in at least on client. Gathering logs...")
-            Machine.gather_logs_all(machines)
+        # Machine.gather_summary_all(clients)
+        # summarize()
+        # if should_gather_outputs(controller):
+        #     print("WARN: There has been an error in at least on client. Gathering logs...")
+        Machine.gather_logs_all(machines)
 
 
 def arrival_rate_test(args):
@@ -605,13 +621,41 @@ def arrival_rate_test(args):
         main(args)
         os.system("mv data/CAS_NOF data/arrival_rate/HR/CAS_NOF_" + str(ar))
 
+def object_number_test(args):
+    object_number = [1, 5, 25, 125]
+    # read_ratios = OrderedDict([("HW", 0.1)]) #, ("RW", 0.5), ("HR", 0.9)])
+    read_ratios = OrderedDict([("RW", 0.5), ("HR", 0.9)])
+
+    if not args.only_create:
+        make_sure_project_can_be_built()
+    args.no_build = True
+
+    for rr in read_ratios:
+        for on in object_number:
+            workload = json.load(open("../config/auto_test/input_workload.json", "r"), object_pairs_hook=OrderedDict)["workload_config"]
+            for grp_con in workload:
+                groups = grp_con["grp_workload"]
+                for grp in groups:
+                    keys = []
+                    key_id = 2000
+                    for i in range(1, on + 1):
+                        keys.append(str(key_id + i))
+                    grp["read_ratio"] = read_ratios[rr]
+                    grp["write_ratio"] = 1 - read_ratios[rr]
+                    grp["keys"] = keys
+
+            json.dump({"workload_config": workload}, open("../config/auto_test/input_workload.json", "w"), indent=2)
+
+            main(args)
+            os.system("mv data/CAS_NOF data/object_number/" + rr + "/CAS_NOF_" + str(on))
 
 if __name__ == '__main__':
     args = parse_args()
     # print(can_project_be_built())
 
-    # main(args)
-    arrival_rate_test(args)
+    main(args)
+    # arrival_rate_test(args)
+    # object_number_test(args)
 
     # print("Main thread goes to sleep")
     # threading.Event().wait()

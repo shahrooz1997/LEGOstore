@@ -10,9 +10,16 @@
 #include <netinet/tcp.h>
 #include "../inc/Util.h"
 #include <iostream>
+#include <atomic>
 
 using std::string;
 using std::to_string;
+using std::unique_lock;
+using std::mutex;
+
+mutex concurrent_counter_mu;
+int concurrent_counter;
+int max_concurrent_counter;
 
 void increase_thread_priority(bool increase=true){ // true: increase the priority of the caller thread, false: priority default
     static int default_policy;
@@ -28,7 +35,6 @@ void increase_thread_priority(bool increase=true){ // true: increase the priorit
         sched_param sch_params;
         int policy = SCHED_FIFO;
         sch_params.sched_priority = 2;
-//    std::cout << "RRRRRRRRRR: " << pthread_setschedparam(pthread_self(), policy, &sch_params) << std::endl;
         assert(pthread_setschedparam(pthread_self(), policy, &sch_params) == 0);
     }
     else{
@@ -38,43 +44,19 @@ void increase_thread_priority(bool increase=true){ // true: increase the priorit
 
 void message_handler(int connection, DataServer& dataserver, int portid, std::string& recvd){
     EASY_LOG_INIT_M(string("started") + " with port " + to_string(portid));
-    int le_counter = 0;
-    uint64_t le_init = time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-    DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
-
     int result = 1;
 
-    // if data.size > 3
-    // Data[0] -> method_name
-    // Data[1] -> key
-    // Data[2] -> timestamp
     strVec data = DataTransfer::deserialize(recvd);
     std::string& method = data[0];
 
-//    for(int i = 0; i < data.size(); i++){
-//        DPRINTF(DEBUG_CAS_Client, "recv_data[%d]: %s\n", i, data[i].c_str());
-//        fflush(stdout);
-//    }
-
-//    if(method != "get" && method != "put" && method != "get_timestamp"){
-//        DPRINTF(DEBUG_RECONFIG_CONTROL, "The method %s is called. The key is %s, server port is %u\n",
-//                    method.c_str(), data[1].c_str(), portid);
-//    }
-
     if(method == "put"){
-        EASY_LOG_M("put");
-        DPRINTF(DEBUG_RECONFIG_CONTROL,
-                "The method put is called. The key is %s, ts: %s, value_size: %lu, class: %s, server port is %u\n",
-                data[1].c_str(), data[2].c_str(), data[3].size(), data[4].c_str(), portid);
+        EASY_LOG_M(string("put, The key is ") + data[1] + " ts: " + data[2] + " value_size: " + to_string(data[3].size()) + " class: " + data[4]);
         result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[3], data[2], data[4], stoul(data[5])));
         EASY_LOG_M("put finished");
     }
     else if(method == "get"){
-        EASY_LOG_M("get");
+        EASY_LOG_M(string("get, The key is ") + data[1] + " ts: " + data[2] + " class: " + data[3]);
         if(data[3] == CAS_PROTOCOL_NAME){
-            DPRINTF(DEBUG_RECONFIG_CONTROL,
-                    "The method get is called. The key is %s, ts: %s, class: %s, server port is %u\n", data[1].c_str(),
-                    data[2].c_str(), data[3].c_str(), portid);
             result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3], stoul(data[4])));
         }
         else{
@@ -84,10 +66,7 @@ void message_handler(int connection, DataServer& dataserver, int portid, std::st
         EASY_LOG_M("get finished");
     }
     else if(method == "get_timestamp"){
-        EASY_LOG_M("get_timestamp");
-        DPRINTF(DEBUG_RECONFIG_CONTROL,
-                "The method get_timestamp is called. The key is %s, class: %s, server port is %u\n", data[1].c_str(),
-                data[2].c_str(), portid);
+        EASY_LOG_M(string("get_timestamp, The key is ") + data[1] + " class: " + data[2]);
         result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2], stoul(data[3])));
         EASY_LOG_M("get_timestamp finished");
     }
@@ -129,8 +108,6 @@ void message_handler(int connection, DataServer& dataserver, int portid, std::st
         DataTransfer::sendMsg(connection, DataTransfer::serialize({"Failure", "Server Response failed"}));
         EASY_LOG_M("Failure: Server Response failed");
     }
-
-    DPRINTF(DEBUG_CAS_Client, "latencies%d: %lu\n", le_counter++, time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - le_init);
 }
 
 void server_connection(int connection, DataServer& dataserver, int portid){
@@ -160,7 +137,22 @@ void server_connection(int connection, DataServer& dataserver, int portid){
             }
             continue;
         }
+
+        // Counting the max concurrent ops
+//        unique_lock<mutex> ccm(concurrent_counter_mu);
+//        concurrent_counter++;
+//        if(max_concurrent_counter < concurrent_counter){
+//            max_concurrent_counter = concurrent_counter;
+//            DPRINTF(DEBUG_METADATA_SERVER, "max concurrent ops on this server is %d\n", max_concurrent_counter);
+//        }
+//        ccm.unlock();
+
         message_handler(connection, dataserver, portid, recvd);
+
+        // Counting the max concurrent ops
+//        ccm.lock();
+//        concurrent_counter--;
+//        ccm.unlock();
     }
 }
 
@@ -203,6 +195,9 @@ void runServer(const std::string& db_name, const std::string& socket_port, const
 int main(int argc, char** argv){
 
     signal(SIGPIPE, SIG_IGN);
+
+    concurrent_counter = 0;
+    max_concurrent_counter = 0;
 
     std::vector <std::string> socket_port;
     std::vector <std::string> db_list;

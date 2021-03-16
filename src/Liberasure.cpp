@@ -31,7 +31,7 @@ namespace Liberasure_helper{
         char** encoded_data = NULL, ** encoded_parity = NULL;
         uint64_t encoded_fragment_len = 0;
 
-        DPRINTF(DEBUG_CAS_Client, "222222desc is %d\n", desc);
+//        DPRINTF(DEBUG_CAS_Client, "222222desc is %d\n", desc);
 
         //desc = liberasurecode_instance_create(EC_BACKEND_LIBERASURECODE_RS_VAND, args);
 
@@ -51,7 +51,7 @@ namespace Liberasure_helper{
         assert(orig_data != NULL);
         rc = liberasurecode_encode(desc, orig_data, data->size(), &encoded_data, &encoded_parity,
                                    &encoded_fragment_len);
-        DPRINTF(DEBUG_CAS_Client, "rc is %d\n", rc);
+//        DPRINTF(DEBUG_CAS_Client, "rc is %d\n", rc);
         fflush(stdout);
         assert(0 == rc); // ToDo: Add a lot of crash handler...
 

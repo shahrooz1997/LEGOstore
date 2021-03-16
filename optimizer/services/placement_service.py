@@ -80,7 +80,7 @@ def min_latency_abd(datacenters, group, params):
                 _storage_cost = group.num_objects*\
                                 sum([datacenters[i].details["storage_cost"]/(730*3600) for i in dcs])*\
                                     group.object_size
-                _vm_cost = sum([datacenters[i].details["price"] for i in dcs])/3600
+                _vm_cost = group.arrival_rate / 600. * sum([datacenters[i].details["price"] for i in dcs])/3600
                 if latency < min_lat: # group.duration*(get_cost+put_cost+_storage_cost + _vm_cost) < mincost:
                     mincost = group.duration*(get_cost+put_cost+_storage_cost + _vm_cost)#+_vm_cost)
                     min_lat = latency
@@ -190,11 +190,11 @@ def min_latency_cas(datacenters, group, params):
                 put_cost = group.write_ratio*group.arrival_rate*_put_cost
                 _storage_cost = group.num_objects*sum([datacenters[i].details["storage_cost"]/(730*3600) \
                                                         for i in dcs])*(group.object_size/k_g)
-                _vm_cost = sum([datacenters[i].details["price"]/3600 for i in dcs])
+                _vm_cost = group.arrival_rate / 600. * sum([datacenters[i].details["price"]/3600 for i in dcs])
                 if put_lat <= min_put_lat and get_lat <= min_get_lat: # group.duration*(get_cost+put_cost+_storage_cost + _vm_cost) < mincost:
                     mincost = group.duration*(get_cost+put_cost+_storage_cost + _vm_cost)#+_vm_cost)
-                    put_lat = min_put_lat
-                    get_lat = min_get_lat
+                    min_put_lat = put_lat
+                    min_get_lat = get_lat
                     selected_get_cost, selected_put_cost = get_cost, put_cost
                     storage_cost, vm_cost = _storage_cost, _vm_cost
                     read_lat, write_lat = get_lat, put_lat
@@ -288,7 +288,7 @@ def min_cost_abd(datacenters, group, params):
                 put_cost = group.write_ratio*group.arrival_rate*_put_cost
                 _storage_cost = group.num_objects*sum([datacenters[i].details["storage_cost"]/(730*3600) \
                                                         for i in dcs])*(group.object_size)
-                _vm_cost = sum([datacenters[i].details["price"] for i in dcs])/3600
+                _vm_cost = group.arrival_rate / 600. * sum([datacenters[i].details["price"] for i in dcs])/3600
                 if group.duration*(get_cost+put_cost+_storage_cost+_vm_cost) < mincost:
                     mincost = group.duration*(get_cost+put_cost+_storage_cost+_vm_cost)#+_vm_cost)
                     min_get_cost, min_put_cost = get_cost, put_cost
@@ -408,7 +408,7 @@ def min_cost_cas(datacenters, group, params):
                 put_cost = group.write_ratio*group.arrival_rate*_put_cost
                 _storage_cost = group.num_objects*sum([datacenters[i].details["storage_cost"]/(730*3600) \
                                                         for i in dcs])*(group.object_size/k_g)
-                _vm_cost = sum([datacenters[i].details["price"]/3600 for i in dcs])
+                _vm_cost = group.arrival_rate / 600. * sum([datacenters[i].details["price"]/3600 for i in dcs])
                 tot = (get_cost+put_cost+_storage_cost+_vm_cost)*3600
                 #print(m_g, k_g, get_cost*3600, put_cost*3600, _storage_cost*3600, _vm_cost*3600, tot)
                 if group.duration*(get_cost+put_cost+_storage_cost+_vm_cost) < mincost:

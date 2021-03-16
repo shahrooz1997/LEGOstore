@@ -15,10 +15,13 @@ import json
 from collections import OrderedDict
 from pylab import *
 
-path = "data/CAS_NOF"
+# path = "data/CAS_NOF_C"
 # path = "data/arrival_rate/HR/CAS_NOF"
 # path = "data/object_number/RW/CAS_NOF"
 # path = "data/Findlimits/CAS_NOF_600_Success"
+# path = "data/ARIF/CAS_NOF_HIGHDUR"
+# path = "data/ARIF/CAS_NOF_HIGHDUR_OPTIMIZEDTRUE"
+path = "data/ARIF/CAS_NOF_HIGHDUR_3"
 
 
 keys = ["2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010"]#, "222222", "222223"]
@@ -190,7 +193,9 @@ def plot_per_datacenter_opration(config):
     plt.xticks([i + 0.25 * width for i in indices], indices_label)
 
     plt.grid(True)
-    plt.title("Latency per datacenter for conf " + confid)
+    plt.title("Latencies per datacenter for conf " + confid)
+    plt.xlabel('datacenter name')
+    plt.ylabel('latency(ms)')
     plt.legend()
 
     # costs
@@ -235,7 +240,7 @@ def plot_total_cost_per_configuration(configs):
     plt.xticks(x, x)
     plt.title("Configuration Total Cost")
     plt.xlabel('Configuration id')
-    plt.ylabel('cost($)')
+    plt.ylabel('cost($/hour)')
     plt.grid(True)
 
 def draw_latencies_based_on_arrival_rate_for_server(server):
@@ -404,20 +409,24 @@ def main():
 if __name__ == "__main__":
     # main()
 
-    # plot_reconfiguration_latencies()
+    plot_reconfiguration_latencies()
 
     # plot_one_key_one_server(keys[1], "s0")
     # plot_one_key_one_server(keys[1], "s1")
     # plot_one_key_one_server(keys[1], "s3")
 
+    for server in servers:
+       plot_one_key_one_server(keys[0], server)
+       # print_one_key_one_server(keys[0], server)
+
     # for key in keys:
     #     for server in servers:
     #         print_one_key_one_server(key, server)
 
-    mean_server_response_time("s2")
-    mean_server_response_time("s5")
-    mean_server_response_time("s7")
-    mean_server_response_time("s8")
+    # mean_server_response_time("s2")
+    # mean_server_response_time("s5")
+    # mean_server_response_time("s7")
+    # mean_server_response_time("s8")
 
     # plot_per_datacenter_opration("config/auto_test/optimizer_output_1.json")
     # plot_per_datacenter_opration("config/auto_test/optimizer_output_2.json")

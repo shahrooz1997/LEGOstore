@@ -10,7 +10,7 @@
       "details": {
         "type": "linux",
         "size": "n1-standard-1",
-        "price": 0.06493925,
+        "price": 0.050037,
         "storage_cost": 0.052
       }
     },
@@ -24,7 +24,7 @@
       "details": {
         "type": "linux",
         "size": "n1-standard-1",
-        "price": 0.06493925,
+        "price": 0.050037,
         "storage_cost": 0.052
       }
     },
@@ -38,7 +38,7 @@
       "details": {
         "type": "linux",
         "size": "n1-standard-1",
-        "price": 0.0625965,
+        "price": 0.048225,
         "storage_cost": 0.044
       }
     },
@@ -52,7 +52,7 @@
       "details": {
         "type": "linux",
         "size": "n1-standard-1",
-        "price": 0.0651975,
+        "price": 0.050188,
         "storage_cost": 0.048
       }
     },
@@ -66,7 +66,7 @@
       "details": {
         "type": "linux",
         "size": "n1-standard-1",
-        "price": 0.0651975,
+        "price": 0.050188,
         "storage_cost": 0.048
       }
     },
@@ -80,7 +80,7 @@
       "details": {
         "type": "linux",
         "size": "n1-standard-1",
-        "price": 0.05749625,
+        "price": 0.044376,
         "storage_cost": 0.044
       }
     },
@@ -94,7 +94,7 @@
       "details": {
         "type": "linux",
         "size": "n1-standard-1",
-        "price": 0.07939875,
+        "price": 0.060905,
         "storage_cost": 0.06
       }
     },
@@ -108,7 +108,7 @@
       "details": {
         "type": "linux",
         "size": "n1-standard-1",
-        "price": 0.06105375,
+        "price": 0.047059,
         "storage_cost": 0.048
       }
     },
@@ -122,7 +122,7 @@
       "details": {
         "type": "linux",
         "size": "n1-standard-1",
-        "price": 0.05149975,
+        "price": 0.039848,
         "storage_cost": 0.04
       }
     }

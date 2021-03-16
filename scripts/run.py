@@ -13,12 +13,12 @@ import run_optimizer as optimizer
 from collections import OrderedDict
 import json
 
-server_type = "n1-standard-1" # "f1-micro" #"e2-standard-2"
+server_type = "custom-1-1024" # "n1-standard-1" # "f1-micro" #"e2-standard-2"
 client_type = "e2-standard-8"
 controller_type = "e2-standard-2"
 
 
-weak_vm_types = ["n1-standard-1", "f1-micro", "g1-small"]
+weak_vm_types = ["custom-1-1024", "n1-standard-1", "f1-micro", "g1-small"]
 
 # Please note that to use this script you need to install gcloud, login, and set the default project to Legostore.
 
@@ -62,7 +62,7 @@ def read_zones(zones_file_name='zones.txt'):
 files_lock = threading.Lock()
 def create_project_tar_file():
     files_lock.acquire()
-    os.system("./copy2.sh")
+    os.system("./copy.sh")
 
 def delete_project_tar_file():
     os.system("rm -rf project2.tar.gz project")
@@ -474,8 +474,8 @@ class Machine:
     def gather_logs(self, run_name):
         os.system("mkdir -p data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]))
         if self.name[-1] != 'c':
-            # self.copy_from("project/server*_output.txt",
-            #                "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
+            self.copy_from("project/server*_output.txt",
+                           "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
             self.copy_from("project/metadata*_output.txt",
                            "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
         else:
@@ -564,6 +564,7 @@ def main(args):
 
     if args.run_optimizer:
         optimizer.main()
+        return
 
     controller = Controller()
     servers, clients = Machine.get_machine_list()
@@ -586,9 +587,10 @@ def main(args):
         Machine.stop_all(machines)
         Machine.gather_summary_all(clients)
         summarize()
-        if should_gather_outputs(controller):
-            print("WARN: There has been an error in at least one client. Gathering logs...")
-            Machine.gather_logs_all(machines)
+        # if should_gather_outputs(controller):
+        #     print("WARN: There has been an error in at least one client. Gathering logs...")
+        #     Machine.gather_logs_all(machines)
+        Machine.gather_logs_all(machines)
 
     if args.only_gather_data:
         print("Please wait while I am gathering the logs...")

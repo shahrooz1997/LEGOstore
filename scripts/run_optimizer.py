@@ -27,7 +27,7 @@ class Input_groups:
         group = Input_groups.Single_group()
         for key, val in json_dict.items():
             group.__dict__[key] = val
-        group.num_objects = len(group.keys)
+        # group.num_objects = len(group.keys)
         group.object_size /= 1024 * 1024 * 1024
         del group.keys
         del group.id

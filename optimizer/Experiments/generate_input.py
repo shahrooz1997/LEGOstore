@@ -24,10 +24,10 @@ SLO_reads = [500, 750, 1000]
 # Default values
 availability_target_default  = 2
 client_dist_default          = [1/9 for _ in range(9)]
-object_size_default          = 100*2**10 / 2**30 # in GB
-metadata_size_default        = 1 / 2**30 # in GB
+object_size_default          = 1*2**10 / 2**30 # in GB
+metadata_size_default        = 11 / 2**30 # in GB
 num_objects_default          = 1000000
-arrival_rate_default         = 200
+arrival_rate_default         = 350
 read_ratio_default           = 0.5
 write_ratio_default          = float("{:.2f}".format(1 - read_ratio_default))
 SLO_read_default             = 1000

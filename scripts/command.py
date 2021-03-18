@@ -58,7 +58,7 @@ def scp_from(name, zone, file_from, file_to):
     proc = subprocess.run([gcloud, "compute", "scp", "--zone", zone, name + ":" + file_from, file_to], stdout=PIPE,
                           stderr=PIPE)
     if proc.stderr.decode("utf-8").find("ERROR") != -1 or proc.stdout.decode("utf-8").find("ERROR") != -1:
-        print(proc.stdout.decode("utf-8"), "\n---\n", proc.stderr.decode("utf-8"))
+        print(name + ": ", proc.stdout.decode("utf-8"), "\n---\n", proc.stderr.decode("utf-8"))
         raise Exception("Error in gathering information ")
 
 

@@ -1,0 +1,193 @@
+{
+  "output": [
+    {
+      "protocol": "cas",
+      "m": 7,
+      "k": 3,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 14.546136,
+      "put_cost": 1.4596272,
+      "storage_cost": 0.001764840182648402,
+      "vm_cost": 1.4367999999999999,
+      "total_cost": 17.444328040182647,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "protocol": "cas",
+      "m": 7,
+      "k": 3,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 7.372050000000001,
+      "put_cost": 22.332636899999997,
+      "storage_cost": 0.001764840182648402,
+      "vm_cost": 1.4367999999999999,
+      "total_cost": 31.14325174018265,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "protocol": "cas",
+      "m": 6,
+      "k": 2,
+      "selected_dcs": [
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 0.018468864,
+      "put_cost": 1.69392503808,
+      "storage_cost": 0.023471232876712326,
+      "vm_cost": 4.8256,
+      "total_cost": 6.561465134956712,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "protocol": "cas",
+      "m": 6,
+      "k": 2,
+      "selected_dcs": [
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 0.7095275827200002,
+      "put_cost": 0.08413555507200002,
+      "storage_cost": 0.011735616438356163,
+      "vm_cost": 2.4128,
+      "total_cost": 3.218198754230356,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "protocol": "cas",
+      "m": 6,
+      "k": 2,
+      "selected_dcs": [
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 0.4123029600000001,
+      "put_cost": 1.4789453040000005,
+      "storage_cost": 0.017603424657534245,
+      "vm_cost": 3.6192,
+      "total_cost": 5.528051688657535,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "protocol": "cas",
+      "m": 6,
+      "k": 2,
+      "selected_dcs": [
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 0.024628230144000007,
+      "put_cost": 2.672355567974401,
+      "storage_cost": 0.017603424657534245,
+      "vm_cost": 3.6192,
+      "total_cost": 6.3337872227759355,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "protocol": "cas",
+      "m": 6,
+      "k": 2,
+      "selected_dcs": [
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 0.5586831360000001,
+      "put_cost": 0.11663080243200004,
+      "storage_cost": 0.023471232876712326,
+      "vm_cost": 4.8256,
+      "total_cost": 5.524385171308712,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "protocol": "cas",
+      "m": 6,
+      "k": 2,
+      "selected_dcs": [
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 0.2597184,
+      "put_cost": 1.6401206592000004,
+      "storage_cost": 0.023471232876712326,
+      "vm_cost": 4.8256,
+      "total_cost": 6.748910292076713,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "protocol": "cas",
+      "m": 7,
+      "k": 3,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 0.016176384000000002,
+      "put_cost": 3.0869434366848,
+      "storage_cost": 0.00847123287671233,
+      "vm_cost": 2.8735999999999997,
+      "total_cost": 5.985191053561512,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    }
+  ],
+  "overall_cost": 88.48756909793276,
+  "get_cost": 23.917691556864003,
+  "put_cost": 34.56532046344319,
+  "storage_cost": 0.12935707762557075,
+  "vm_cost": 29.875199999999996,
+  "time_period_hrs": 24.0
+}

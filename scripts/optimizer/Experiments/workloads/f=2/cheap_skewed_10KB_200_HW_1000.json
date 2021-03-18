@@ -1,0 +1,28 @@
+{
+    "input_groups": [
+        {
+            "availability_target": 2,
+            "client_dist": [
+                0.025,
+                0.025,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.025,
+                0.025,
+                0.9
+            ],
+            "object_size": 9.5367431640625e-06,
+            "metadata_size": 1.0244548320770264e-08,
+            "num_objects": 1000000,
+            "arrival_rate": 200,
+            "read_ratio": 0.1,
+            "write_ratio": 0.9,
+            "SLO_read": 1000,
+            "SLO_write": 1000,
+            "duration": 3600,
+            "time_to_decode": 0.00028
+        }
+    ]
+}

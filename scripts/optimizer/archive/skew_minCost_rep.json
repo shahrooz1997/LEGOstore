@@ -1,0 +1,26 @@
+{
+  "output": [
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 7.783776,
+      "put_cost": 3.6445360319999986,
+      "storage_cost": 6.365753424657535e-05,
+      "vm_cost": 3.6191999999999998,
+      "total_cost": 15.047575689534243,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    }
+  ],
+  "overall_cost": 15.047575689534243,
+  "time_period_hrs": 3
+}

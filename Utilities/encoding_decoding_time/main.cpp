@@ -59,7 +59,7 @@ void print_mean(const vector<T>& a, const vector<T>& b){
 int main(){
 
 	Liberasure liberasure;
-    vector<uint32_t> ms{4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21};
+    vector<uint32_t> ms{5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21};
     vector<uint32_t> ks{2,3,4,5,6,7,8,9};
     vector<uint32_t> sizes{1, 1024, 10 * 1024, 100 * 1024, 1024 * 1024, 10 * 1024 * 1024};
 

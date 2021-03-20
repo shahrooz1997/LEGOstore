@@ -81,7 +81,7 @@ def min_latency_abd(datacenters, group, params):
                                 sum([datacenters[i].details["storage_cost"]/(730*3600) for i in dcs])*\
                                     group.object_size
                 _vm_cost = group.arrival_rate / 600. * sum([datacenters[i].details["price"] for i in dcs])/3600
-                if latency < min_lat: # group.duration*(get_cost+put_cost+_storage_cost + _vm_cost) < mincost:
+                if group.duration*(get_cost+put_cost+_storage_cost + _vm_cost) < mincost: #latency < min_lat: # group.duration*(get_cost+put_cost+_storage_cost + _vm_cost) < mincost:
                     mincost = group.duration*(get_cost+put_cost+_storage_cost + _vm_cost)#+_vm_cost)
                     min_lat = latency
                     storage_cost, vm_cost = _storage_cost, _vm_cost
@@ -186,12 +186,14 @@ def min_latency_cas(datacenters, group, params):
             get_lat = max(_get_latencies)
             put_lat = max(_put_latencies)
             if get_lat < group.slo_read and put_lat < group.slo_write:
+
                 get_cost = group.read_ratio*group.arrival_rate*_get_cost
                 put_cost = group.write_ratio*group.arrival_rate*_put_cost
                 _storage_cost = group.num_objects*sum([datacenters[i].details["storage_cost"]/(730*3600) \
                                                         for i in dcs])*(group.object_size/k_g)
                 _vm_cost = group.arrival_rate / 600. * sum([datacenters[i].details["price"]/3600 for i in dcs])
-                if put_lat <= min_put_lat and get_lat <= min_get_lat: # group.duration*(get_cost+put_cost+_storage_cost + _vm_cost) < mincost:
+                if group.duration*(get_cost+put_cost+_storage_cost + _vm_cost) < mincost: # put_lat <= min_put_lat and get_lat <= min_get_lat: # group.duration*(get_cost+put_cost+_storage_cost + _vm_cost) < mincost:
+                    # print(get_lat, put_lat)
                     mincost = group.duration*(get_cost+put_cost+_storage_cost + _vm_cost)#+_vm_cost)
                     min_put_lat = put_lat
                     min_get_lat = get_lat
@@ -299,6 +301,8 @@ def min_cost_abd(datacenters, group, params):
                     m_g = m
     # Calculate other costs
     if selected_placement is None:
+        # return (m_g, None, selected_full_placement_info, read_lat, write_lat,
+        #         min_get_cost, min_put_cost, storage_cost, vm_cost)
         print("WARN: No placement with the heuristic min cost was found. Trying to find a placement "
               "with the heuristic min latency method...")
         return min_latency_abd(datacenters, group, params)
@@ -345,6 +349,7 @@ def min_cost_cas(datacenters, group, params):
             _put_cost = 0
             full_placement_info = []
             #possible_cost_list = [elem for elem in cost_dc_list if elem[0] in dcs]
+            # print("start")
             for datacenter in datacenters:
                 # Get possible combination of DCs (of size q1 and q2) from the 
                 # m-sized set of DCs.
@@ -377,6 +382,8 @@ def min_cost_cas(datacenters, group, params):
                                         group.metadata_size * sum([datacenters[i].network_cost[k] for k in _iq3]) + \
                                         group.object_size / k_g * sum([datacenters[i].network_cost[m] for m in _iq2])
 
+                # print("obj size:", group.object_size / k_g, "sum of network: ", sum([datacenters[k].network_cost[i] for k in _iq4]), "q4=", _iq4)
+
                 _get_cost += group.client_dist[i] * \
                                 (group.metadata_size*sum([datacenters[j].network_cost[i] for j in _iq1]) + \
                                     (group.object_size/k_g)*sum([datacenters[k].network_cost[i] for k in _iq4]))
@@ -402,7 +409,6 @@ def min_cost_cas(datacenters, group, params):
             #     tot = (get_cost + put_cost + _storage_cost + _vm_cost) * 3600
             #     print("get_cost: " + str(get_cost) + ", put_cost: " + str(put_cost) + ", _storage_cost:" + str(_storage_cost) + " _vm_cost: ", str(_vm_cost))
             #     print("tot: " + str(tot))
-
             if get_lat < group.slo_read and put_lat < group.slo_write:
                 get_cost = group.read_ratio*group.arrival_rate*_get_cost
                 put_cost = group.write_ratio*group.arrival_rate*_put_cost
@@ -412,6 +418,7 @@ def min_cost_cas(datacenters, group, params):
                 tot = (get_cost+put_cost+_storage_cost+_vm_cost)*3600
                 #print(m_g, k_g, get_cost*3600, put_cost*3600, _storage_cost*3600, _vm_cost*3600, tot)
                 if group.duration*(get_cost+put_cost+_storage_cost+_vm_cost) < mincost:
+                    # print("chosen")
                     mincost = group.duration*(get_cost+put_cost+_storage_cost+_vm_cost)
                     min_get_cost, min_put_cost = get_cost, put_cost
                     storage_cost, vm_cost = _storage_cost, _vm_cost
@@ -422,6 +429,8 @@ def min_cost_cas(datacenters, group, params):
                     # print(selected_full_placement_info)
     # Calculate other costs
     if selected_placement is None:
+        # return (M, K, None, selected_full_placement_info, read_lat, write_lat, \
+        #         min_get_cost, min_put_cost, storage_cost, vm_cost)
         print("WARN: No placement with the heuristic min cost was found. Trying to find a placement "
               "with the heuristic min latency method...")
         return min_latency_cas(datacenters, group, params)
@@ -614,7 +623,7 @@ def brute_force_cas(datacenters, group, params):
     return (selected_dcs, iq1, iq2, iq3, iq4, M, K, read_lat, write_lat, \
                 min_get_cost, min_put_cost, storage_cost, vm_cost)
 
-def get_placement(obj, heuristic, M, K, verbose, grp, use_protocol_param=False):
+def get_placement(obj, heuristic, M, K, verbose, grp, use_protocol_param=False, only_EC=False):
     N = len(obj.datacenters)
     G = len(obj.groups)
     # Iterate over groups and find placements for each group
@@ -627,17 +636,19 @@ def get_placement(obj, heuristic, M, K, verbose, grp, use_protocol_param=False):
     for i, group in enumerate(groups):
         #print("group %s"%i)
         _res = []
-        protocols =  [CAS, ABD, REP]
+        protocols = [CAS, ABD] # [CAS, ABD, REP]
         if use_protocol_param is True:
-            protocols = [obj.protocol]
+            protocols = obj.protocol
         for protocol in protocols:
             d = {}
             f = group.availability_target
             if protocol==REP:
-                params = generate_placement_params(N, f, protocol, 1, M)
+                params = generate_placement_params(N, f, protocol, 1, M, only_EC)
 
             else:
-                params = generate_placement_params(N, f, protocol, K, M)
+                params = generate_placement_params(N, f, protocol, K, M, only_EC)
+            # print("AAAAA: ", params, "\n")
+
             ret = eval(FUNC_HEURISTIC_MAP[protocol][heuristic])(obj.datacenters, group, params)
             d["id"] = i
             if ret is None:
@@ -662,46 +673,49 @@ def get_placement(obj, heuristic, M, K, verbose, grp, use_protocol_param=False):
             d["put_latency"] = ret[4] if protocol==ABD else ret[5]
             if verbose:
                 placement_info = ret[2] if protocol == ABD else ret[3]
-                if protocol == ABD:
+                if protocol == ABD and placement_info != None:
                     placement_json = {}
-                    for i, val in enumerate(placement_info):
-                        placement_json[str(i)] = {}
+                    for val_i, val in enumerate(placement_info):
+                        placement_json[str(val_i)] = {}
                         val[1].sort()
                         val[2].sort()
-                        placement_json[str(i)]["Q1"] = val[1]
-                        placement_json[str(i)]["Q2"] = val[2]
-                        placement_json[str(i)]["get_cost_on_this_client"] = val[5]
-                        placement_json[str(i)]["put_cost_on_this_client"] = val[6]
-                        placement_json[str(i)]["get_latency_on_this_client"] = val[7]
-                        placement_json[str(i)]["put_latency_on_this_client"] = val[8]
-                else:
+                        placement_json[str(val_i)]["Q1"] = val[1]
+                        placement_json[str(val_i)]["Q2"] = val[2]
+                        placement_json[str(val_i)]["get_cost_on_this_client"] = val[5]
+                        placement_json[str(val_i)]["put_cost_on_this_client"] = val[6]
+                        placement_json[str(val_i)]["get_latency_on_this_client"] = val[7]
+                        placement_json[str(val_i)]["put_latency_on_this_client"] = val[8]
+                elif placement_info != None:
                     placement_json = {}
-                    for i, val in enumerate(placement_info):
+                    for val_i, val in enumerate(placement_info):
                         val[1].sort()
                         val[2].sort()
                         val[3].sort()
                         val[4].sort()
-                        placement_json[str(i)] = {}
-                        placement_json[str(i)]["Q1"] = val[1]
-                        placement_json[str(i)]["Q2"] = val[2]
-                        placement_json[str(i)]["Q3"] = val[3]
-                        placement_json[str(i)]["Q4"] = val[4]
-                        placement_json[str(i)]["get_cost_on_this_client"] = val[5]
-                        placement_json[str(i)]["put_cost_on_this_client"] = val[6]
-                        placement_json[str(i)]["get_latency_on_this_client"] = val[7]
-                        placement_json[str(i)]["put_latency_on_this_client"] = val[8]
+                        placement_json[str(val_i)] = {}
+                        placement_json[str(val_i)]["Q1"] = val[1]
+                        placement_json[str(val_i)]["Q2"] = val[2]
+                        placement_json[str(val_i)]["Q3"] = val[3]
+                        placement_json[str(val_i)]["Q4"] = val[4]
+                        placement_json[str(val_i)]["get_cost_on_this_client"] = val[5]
+                        placement_json[str(val_i)]["put_cost_on_this_client"] = val[6]
+                        placement_json[str(val_i)]["get_latency_on_this_client"] = val[7]
+                        placement_json[str(val_i)]["put_latency_on_this_client"] = val[8]
                 #print("Verbose is ", verbose)
                 # d["iq1"] = ret[2] if protocol==ABD else ret[3]
                 # d["iq2"] = ret[3] if protocol==ABD else ret[4]
                 # if protocol in [CAS, REP]:
                 #     d["iq3"] = ret[5]
                 #     d["iq4"] = ret[6]
-                d["client_placement_info"] = placement_json
+                if placement_info != None:
+                    d["client_placement_info"] = placement_json
             _res.append([d, total_cost])
         time_period += (group.duration/3600)
         if len(_res)>0:
             _res.sort(key = lambda x: x[1])
             result.append(_res[0][0])
+            if result[-1]["m"] == "INVALID" or result[-1]["selected_dcs"] == None:
+                print("WARN: no placement found for group id " + str(i))
     if len(result)>0:
         overall_cost = sum([d["total_cost"] for d in result if d.get("total_cost")!=float("inf")])
         get_cost = sum([d["get_cost"] for d in result if d.get("get_cost")!=float("inf") and d.get("get_cost")!=None])

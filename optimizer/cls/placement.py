@@ -43,7 +43,7 @@ class PlacementBase:
 class PlacementAbd(PlacementBase):
     def __init__(self, **kwargs):
         super(PlacementAbd, self).__init__(**kwargs)
-        self.protocol = CONSTS.ABD
+        self.protocol = [CONSTS.ABD]
     
     def find_placement(self):
         ps.get_placement(self, self.heuristic, self.m, self.k, self.verbose, self.grp, use_protocol_param=True)
@@ -51,9 +51,24 @@ class PlacementAbd(PlacementBase):
 class PlacementCas(PlacementBase):
     def __init__(self, **kwargs):
         super(PlacementCas, self).__init__(**kwargs)
-        self.protocol = CONSTS.CAS
+        self.protocol = [CONSTS.CAS]
     
     def find_placement(self):
         ps.get_placement(self, self.heuristic, self.m, self.k, self.verbose, self.grp, use_protocol_param=True)
 
 
+class PlacementRep(PlacementBase):
+    def __init__(self, **kwargs):
+        super(PlacementRep, self).__init__(**kwargs)
+        self.protocol = [CONSTS.ABD, CONSTS.REP]
+
+    def find_placement(self):
+        ps.get_placement(self, self.heuristic, self.m, self.k, self.verbose, self.grp, use_protocol_param=True)
+
+class PlacementEC(PlacementBase):
+    def __init__(self, **kwargs):
+        super(PlacementEC, self).__init__(**kwargs)
+        self.protocol = [CONSTS.CAS]
+
+    def find_placement(self):
+        ps.get_placement(self, self.heuristic, self.m, self.k, self.verbose, self.grp, use_protocol_param=True, only_EC=True)

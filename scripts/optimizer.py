@@ -5,6 +5,7 @@ import subprocess
 from subprocess import PIPE
 import threading
 import os, shutil
+import sys
 from time import sleep
 from signal import signal, SIGINT
 import urllib.request
@@ -12,44 +13,13 @@ import argparse
 import run_optimizer as optimizer
 from collections import OrderedDict
 import json
+from os.path import dirname, join, abspath
+sys.path.insert(0, abspath(join(dirname(__file__), '..')))
+from optimizer.Experiments.workload_def import *
 
 server_type = "e2-standard-4"
 num_of_servers = 8
 
-availability_targets = [1, 2]
-client_dists = OrderedDict([
-    ("uniform", [1/9 for _ in range(9)]),
-    #("skewed_single", [0.9, 0.025, 0.025, 0.0, 0.0, 0.0, 0.0, 0.025, 0.025]),
-    #("skewed_double", [0.45, 0.025, 0.025, 0.0, 0.0, 0.0, 0.45, 0.025, 0.025]),
-    ("cheap_skewed", [0.025, 0.025, 0.0, 0.0, 0.0, 0.0, 0.025, 0.025, 0.9]),
-    ("expensive_skewed", [0.025, 0.9, 0.0, 0.0, 0.0, 0.0, 0.025, 0.025, 0.025])
-    # ("Japan_skewed", [0.9, 0.0, 0.0, 0.0, 0.0, 0.025, 0.0, 0.05, 0.025])
-])
-object_sizes = [10 / 2**30, 1*2**10 / 2**30, 10*2**10 / 2**30, 100*2**10 / 2**30]
-arrival_rates = [200, 350, 500]
-read_ratios = OrderedDict([("HW", 0.1), ("RW", 0.5), ("HR", 0.9)])
-SLO_latencies = [500, 750, 1000]
-
-# Default values
-availability_target_default  = 2
-client_dist_default          = [1/9 for _ in range(9)]
-object_size_default          = 1*2**10 / 2**30 # in GB
-metadata_size_default        = 11 / 2**30 # in GB
-num_objects_default          = 1000000
-arrival_rate_default         = 350
-read_ratio_default           = 0.5
-write_ratio_default          = float("{:.2f}".format(1 - read_ratio_default))
-SLO_read_default             = 1000000
-SLO_write_default            = 1000000
-duration_default             = 3600
-time_to_decode_default       = 0.00028
-
-object_size_name = {10 / 2**30: "1B", 1*2**10 / 2**30: "1KB", 10*2**10 / 2**30: "10KB", 100*2**10 / 2**30: "100KB"}
-
-# executions = ["optimized", "baseline_fixed_ABD", "baseline_fixed_CAS", "baseline_replication_based", "baseline_ec_based"]
-
-executions = [OrderedDict([("optimized", ""), ("baseline_fixed_ABD", "-b -t abd -m 3"), ("baseline_fixed_CAS", "-b -t cas -m 6 -k 4"), ("baseline_replication_based", "-b -t replication"), ("baseline_ec_based", "-b -t ec")]),
-             OrderedDict([("optimized", ""), ("baseline_fixed_ABD", "-b -t abd -m 5"), ("baseline_fixed_CAS", "-b -t cas -m 8 -k 4"), ("baseline_replication_based", "-b -t replication"), ("baseline_ec_based", "-b -t ec")])]
 
 def get_workloads():
     workloads = []
@@ -58,7 +28,7 @@ def get_workloads():
             for arrival_rate in arrival_rates:
                 for read_ratio in read_ratios:
                     for lat in SLO_latencies:
-                        FILE_NAME = client_dist + "_" + object_size_name[object_size] + "_" + str(arrival_rate) + "_" + \
+                        FILE_NAME = client_dist + "_" + object_size + "_" + str(arrival_rate) + "_" + \
                                     read_ratio + "_" + str(lat) + ".json"
                         workloads.append(FILE_NAME)
 
@@ -66,18 +36,28 @@ def get_workloads():
 
 def get_commands():
     commands = []
-
+    workload_files = get_workloads()
     directory = "workloads"
-    for f_index, f in enumerate(availability_targets):
-        files_path = os.path.join(directory, "f=" + str(f))
-        workload_files = get_workloads()
 
-        for file_name in workload_files:
-            for exec in list(executions[0].keys()):
+    for file_name in workload_files:
+        for f_index, f in enumerate(availability_targets):
+            for exec in executions[f_index]:
+                files_path = os.path.join(directory, "f=" + str(f))
                 result_file_name = "res_" + exec + "_" + file_name
-                commands.append("python3 ../placement.py -f ../tests/inputtests/dc_gcp.json -i " + os.path.join(files_path,
-                                                                                                      file_name) + " -o " + os.path.join(
-                    files_path, result_file_name) + " -H min_cost -v " + executions[f_index][exec])
+                commands.append(
+                    "python3 ../placement.py -f ../tests/inputtests/dc_gcp.json -i " + os.path.join(files_path,
+                                                                                                    file_name) + " -o " + os.path.join(
+                        files_path, result_file_name) + " -H min_cost -v " + executions[f_index][exec])
+
+
+    # for f_index, f in enumerate(availability_targets):
+    #     files_path = os.path.join(directory, "f=" + str(f))
+    #     for file_name in workload_files:
+    #         for exec in list(executions[0].keys()):
+    #             result_file_name = "res_" + exec + "_" + file_name
+    #             commands.append("python3 ../placement.py -f ../tests/inputtests/dc_gcp.json -i " + os.path.join(files_path,
+    #                                                                                                   file_name) + " -o " + os.path.join(
+    #                 files_path, result_file_name) + " -H min_cost -v " + executions[f_index][exec])
 
     return commands
 
@@ -349,7 +329,7 @@ class Machine:
         if stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1:
             print("Installing prerequisites on machine", self.name + "...")
             self.execute(
-                "sudo apt-get install -y build-essential autoconf automake libtool zlib1g-dev git protobuf-compiler pkg-config psmisc bc aria2 libgflags-dev cmake librocksdb-dev >/dev/null 2>&1")
+                "sudo apt-get install -y build-essential autoconf automake libtool zlib1g-dev git psmisc bc libgflags-dev cmake >/dev/null 2>&1")
             self.execute("sudo touch ../init_config_done")
 
     def config(self, make_clear=True, clear_all=True):
@@ -394,13 +374,11 @@ class Machine:
                 command_name = command[command.find("-o"):command.find(".json -H")]
                 command_name = command_name[command_name.find("workloads"):]
                 # print("cd optimizer/Experiments; " + command + " >" + command_name + "_output.txt 2>&1")
-                # print(command)
+                print(command)
                 self.execute("cd optimizer/Experiments; " + command + " >" + command_name + "_output.txt 2>&1")
 
         self.stop()
         self.config()
-
-        print(commands[0])
 
         # execute 6 processes of the optimizer
         num_of_parallel_programs = 6
@@ -411,13 +389,13 @@ class Machine:
             indicies.append((i * batch_size + 1, (i + 1) * batch_size))
         indicies.append(((num_of_parallel_programs - 1) * batch_size + 1, len(commands) - 1))
 
-        # threads = []
-        # for index in indicies:
-        #     threads.append(threading.Thread(target=batch_exec_thread_helper, args=[commands[index[0]:index[1] + 1]]))
-        #     threads[-1].start()
-        #
-        # for thread in threads:
-        #     thread.join()
+        threads = []
+        for index in indicies:
+            threads.append(threading.Thread(target=batch_exec_thread_helper, args=[commands[index[0]:index[1] + 1]]))
+            threads[-1].start()
+
+        for thread in threads:
+            thread.join()
 
         print("execution finished on " + self.name)
 
@@ -444,6 +422,10 @@ class Machine:
 
 def main(args):
 
+    # Generate input workloads
+    os.system("cd ../optimizer/Experiments; ./generate_input.py")
+
+    # Run
     machines = Machine.get_machine_list()
     commands = get_commands()
     Machine.run_all(machines, commands)
@@ -451,6 +433,9 @@ def main(args):
     os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/ALL_optimizer")
     Machine.gather_results_all(machines, "ALL")
     Machine.gather_logs_all(machines, "ALL")
+
+    # delete the machines
+    os.system("./delete_servers.py")
 
 def arrival_rate_test(args):
     arrival_rates = [40, 60, 80, 100] #list(range(20, 101, 20))

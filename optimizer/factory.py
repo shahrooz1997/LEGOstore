@@ -1,6 +1,6 @@
 import sys
 import constants.opt_consts as CONSTS
-from cls import PlacementBase, PlacementAbd, PlacementCas, Group, DataCenter
+from cls import * #PlacementBase, PlacementAbd, PlacementCas, PlacementRep, Group, DataCenter
 
 def obj_factory(cls, **kwargs):
     """ Factory method to create objects

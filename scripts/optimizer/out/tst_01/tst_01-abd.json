@@ -1,0 +1,194 @@
+{
+  "output": [
+    {
+      "protocol": "abd",
+      "m": 6,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 15.604160000000006,
+      "put_cost": 0.3879680000000001,
+      "storage_cost": 3.6328767123287675,
+      "vm_cost": 4.940799999999999,
+      "total_cost": 24.565804712328774,
+      "get_latency": 572.44,
+      "put_latency": 572.44
+    },
+    {
+      "protocol": "abd",
+      "m": 6,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 16.120000000000005,
+      "put_cost": 12.124000000000002,
+      "storage_cost": 1.8164383561643838,
+      "vm_cost": 2.4703999999999997,
+      "total_cost": 32.53083835616439,
+      "get_latency": 572.44,
+      "put_latency": 572.44
+    },
+    {
+      "protocol": "abd",
+      "m": 6,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 1.6120000000000003,
+      "put_cost": 23.035600000000006,
+      "storage_cost": 1.8164383561643838,
+      "vm_cost": 2.4703999999999997,
+      "total_cost": 28.934438356164392,
+      "get_latency": 572.44,
+      "put_latency": 572.44
+    },
+    {
+      "protocol": "abd",
+      "m": 6,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 45.94515200000001,
+      "put_cost": 1.1710361599999999,
+      "storage_cost": 1.8164383561643838,
+      "vm_cost": 2.4703999999999997,
+      "total_cost": 51.40302651616439,
+      "get_latency": 572.44,
+      "put_latency": 572.44
+    },
+    {
+      "protocol": "abd",
+      "m": 6,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 41.8964,
+      "put_cost": 3.1653791999999994,
+      "storage_cost": 1.8164383561643838,
+      "vm_cost": 2.4703999999999997,
+      "total_cost": 49.34861755616438,
+      "get_latency": 572.44,
+      "put_latency": 572.44
+    },
+    {
+      "protocol": "abd",
+      "m": 6,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 21.952,
+      "put_cost": 16.517439999999997,
+      "storage_cost": 1.8164383561643838,
+      "vm_cost": 2.4703999999999997,
+      "total_cost": 42.75627835616438,
+      "get_latency": 572.44,
+      "put_latency": 572.44
+    },
+    {
+      "protocol": "abd",
+      "m": 6,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 2.3494680000000003,
+      "put_cost": 34.41748464,
+      "storage_cost": 2.7246575342465755,
+      "vm_cost": 3.7055999999999996,
+      "total_cost": 43.19721017424657,
+      "get_latency": 572.44,
+      "put_latency": 572.44
+    },
+    {
+      "protocol": "abd",
+      "m": 5,
+      "selected_dcs": [
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 29.106,
+      "put_cost": 4.357584,
+      "storage_cost": 2.2561643835616443,
+      "vm_cost": 3.0143999999999997,
+      "total_cost": 38.73414838356165,
+      "get_latency": 572.44,
+      "put_latency": 572.44
+    },
+    {
+      "protocol": "abd",
+      "m": 5,
+      "selected_dcs": [
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 29.106,
+      "put_cost": 4.357584,
+      "storage_cost": 2.2561643835616443,
+      "vm_cost": 3.0143999999999997,
+      "total_cost": 38.73414838356165,
+      "get_latency": 572.44,
+      "put_latency": 572.44
+    },
+    {
+      "protocol": "abd",
+      "m": 6,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 62.207552000000014,
+      "put_cost": 1.7086361600000002,
+      "storage_cost": 1.8164383561643838,
+      "vm_cost": 2.4703999999999997,
+      "total_cost": 68.2030265161644,
+      "get_latency": 572.44,
+      "put_latency": 572.44
+    }
+  ],
+  "overall_cost": 418.40753731068503,
+  "time_period_hrs": 25
+}

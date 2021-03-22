@@ -1,0 +1,16 @@
+{
+  "output": [
+    {
+      "id": 0,
+      "total_cost": Infinity,
+      "protocol": "cas",
+      "m": "INVALID"
+    }
+  ],
+  "overall_cost": 0,
+  "get_cost": 0,
+  "put_cost": 0,
+  "storage_cost": 0,
+  "vm_cost": 0,
+  "time_period_hrs": 1.0
+}

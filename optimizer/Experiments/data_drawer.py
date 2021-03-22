@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from workload_def import *
 
-# directory = "workloads"
-directory = "/home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/ALL_optimizer_Mar19_0817"
+directory = "workloads"
+# directory = "/home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/ALL_optimizer_Mar19_0817"
 
 def get_workloads():
     workloads = []
@@ -269,6 +269,23 @@ def plot_normalized(workload, availability_target):
     #     print(exec, results[f_index][exec + "_" + workload])
     # print("\n")
 
+def counting(availability_target):
+    results, confs = get_results()
+    f_index = availability_targets.index(availability_target)
+
+    cas_num = 0
+    abd_num = 0
+
+    for workload in workloads:
+        workload = workload if workload.find(".json") != -1 else workload + ".json"
+        conf = confs[f_index]["optimized" + "_" + workload].split("|")
+        if int(conf[1]) > 0:
+            cas_num += 1
+        else:
+            abd_num += 1
+
+    print("#ABD:", abd_num, "#CAS:", cas_num)
+
 def workload_satisfies(workload, attrs):
     for a in attrs:
         if workload.find(a) == -1:
@@ -279,15 +296,17 @@ def plot_all():
     for workload in workloads:
         # print("A")
         # interesting cases
-        attrs = ["1KB", "RW"] #, "HW"] #workload.find(list(client_dists.keys())[2])
+        attrs = ["1KB"] #, "HW"] #workload.find(list(client_dists.keys())[2])
         # attrs = ["10KB", "HR"]
         if workload_satisfies(workload, attrs):
-            plot_workload(workload, 1)
-            # plot_normalized(workload, 1)
+            # plot_workload(workload, 1)
+            plot_normalized(workload, 2)
 
 if __name__ == "__main__":
     global workloads
     workloads = get_workloads()
+
+    # counting(2)
 
     # interesting_workloads = ["dist_LO_1KB_500_RW_1000.json", "dist_L_1KB_50_RW_1000"]
     # for wl in interesting_workloads:

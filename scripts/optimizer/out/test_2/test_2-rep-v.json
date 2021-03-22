@@ -1,0 +1,191 @@
+{
+  "output": [
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 3.875872000000001,
+      "put_cost": 0.38835584,
+      "storage_cost": 3.6328767123287675,
+      "vm_cost": 4.940799999999999,
+      "total_cost": 12.837904552328768,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 4.004000000000001,
+      "put_cost": 12.13612,
+      "storage_cost": 1.8164383561643838,
+      "vm_cost": 2.4703999999999997,
+      "total_cost": 20.426958356164384,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 0.25625600000000004,
+      "put_cost": 23.495528320000002,
+      "storage_cost": 1.8164383561643838,
+      "vm_cost": 2.4703999999999997,
+      "total_cost": 28.038622676164387,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 9.84471488,
+      "put_cost": 1.1670586879999996,
+      "storage_cost": 1.8164383561643838,
+      "vm_cost": 2.4703999999999997,
+      "total_cost": 15.298611924164382,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 5.0850800000000005,
+      "put_cost": 18.235291999999994,
+      "storage_cost": 1.8164383561643838,
+      "vm_cost": 2.4703999999999997,
+      "total_cost": 27.60721035616438,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 0.32544479455488,
+      "put_cost": 35.30349000847467,
+      "storage_cost": 2.7246575342465755,
+      "vm_cost": 3.7055999999999996,
+      "total_cost": 42.05919233727612,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 7.751744000000002,
+      "put_cost": 1.618000128,
+      "storage_cost": 1.8164383561643838,
+      "vm_cost": 2.4703999999999997,
+      "total_cost": 13.656582484164385,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 4.004000000000001,
+      "put_cost": 25.281252,
+      "storage_cost": 1.8164383561643838,
+      "vm_cost": 2.4703999999999997,
+      "total_cost": 33.57209035616438,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "protocol": "replication",
+      "m": 6,
+      "k": 1,
+      "selected_dcs": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        8
+      ],
+      "get_cost": 0.25625574374400006,
+      "put_cost": 48.944454927496125,
+      "storage_cost": 2.7246575342465755,
+      "vm_cost": 3.7055999999999996,
+      "total_cost": 55.630968205486695,
+      "get_latency": 572.44,
+      "put_latency": 858.6600000000001
+    },
+    {
+      "total_cost": Infinity,
+      "protocol": "cas",
+      "m": "INVALID"
+    }
+  ],
+  "overall_cost": 249.1281412480779,
+  "time_period_hrs": 24
+}

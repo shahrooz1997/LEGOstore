@@ -39,6 +39,8 @@ def get_commands():
     workload_files = get_workloads()
     directory = "workloads"
 
+    # print(workload_files)
+
     for file_name in workload_files:
         for f_index, f in enumerate(availability_targets):
             for exec in executions[f_index]:
@@ -47,7 +49,7 @@ def get_commands():
                 commands.append(
                     "python3 ../placement.py -f ../tests/inputtests/dc_gcp.json -i " + os.path.join(files_path,
                                                                                                     file_name) + " -o " + os.path.join(
-                        files_path, result_file_name) + " -H min_cost -v " + executions[f_index][exec])
+                        files_path, result_file_name) + " -v " + executions[f_index][exec])
 
 
     # for f_index, f in enumerate(availability_targets):
@@ -371,7 +373,7 @@ class Machine:
         def batch_exec_thread_helper(commands):
             for command in commands:
                 # self.execute("cd optimizer/Experiments; ")
-                command_name = command[command.find("-o"):command.find(".json -H")]
+                command_name = command[command.find("-o"):command.find(".json -v")]
                 command_name = command_name[command_name.find("workloads"):]
                 # print("cd optimizer/Experiments; " + command + " >" + command_name + "_output.txt 2>&1")
                 print(command)
@@ -435,7 +437,7 @@ def main(args):
     Machine.gather_logs_all(machines, "ALL")
 
     # delete the machines
-    os.system("./delete_servers.py")
+    # os.system("./delete_servers.py")
 
 def arrival_rate_test(args):
     arrival_rates = [40, 60, 80, 100] #list(range(20, 101, 20))

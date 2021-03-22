@@ -1,0 +1,339 @@
+{
+  "output": [
+    {
+      "id": 0,
+      "protocol": "cas",
+      "m": 6,
+      "k": 3,
+      "selected_dcs": [
+        5,
+        7,
+        8,
+        3,
+        4,
+        0
+      ],
+      "get_cost": 0.050605237483978265,
+      "put_cost": 0.006896853446960449,
+      "storage_cost": 0.0012193096282819634,
+      "vm_cost": 0.04911664444666667,
+      "total_cost": 0.10783804500588734,
+      "get_latency": 306.8,
+      "put_latency": 460.20000000000005,
+      "client_placement_info": {
+        "0": {
+          "Q1": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q2": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q3": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q4": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "get_cost_on_this_client": 1.6440947850545247e-07,
+          "put_cost_on_this_client": 2.016623814900716e-07,
+          "get_latency_on_this_client": 452.2,
+          "put_latency_on_this_client": 678.3
+        },
+        "1": {
+          "Q1": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q2": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q3": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q4": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "get_cost_on_this_client": 3.082677721977234e-07,
+          "put_cost_on_this_client": 3.781169652938843e-07,
+          "get_latency_on_this_client": 578,
+          "put_latency_on_this_client": 867
+        },
+        "2": {
+          "Q1": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q2": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q3": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q4": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "get_cost_on_this_client": 1.6440947850545247e-07,
+          "put_cost_on_this_client": 2.016623814900716e-07,
+          "get_latency_on_this_client": 428,
+          "put_latency_on_this_client": 642
+        },
+        "3": {
+          "Q1": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q2": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q3": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q4": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "get_cost_on_this_client": 1.1097639799118042e-07,
+          "put_cost_on_this_client": 1.3612210750579834e-07,
+          "get_latency_on_this_client": 306.2,
+          "put_latency_on_this_client": 459.29999999999995
+        },
+        "4": {
+          "Q1": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q2": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q3": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q4": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "get_cost_on_this_client": 1.1097639799118042e-07,
+          "put_cost_on_this_client": 1.3612210750579834e-07,
+          "get_latency_on_this_client": 281.8,
+          "put_latency_on_this_client": 422.70000000000005
+        },
+        "5": {
+          "Q1": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q2": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q3": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q4": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "get_cost_on_this_client": 7.809450229008992e-08,
+          "put_cost_on_this_client": 9.578963120778401e-08,
+          "get_latency_on_this_client": 179.4,
+          "put_latency_on_this_client": 269.1
+        },
+        "6": {
+          "Q1": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q2": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q3": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q4": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "get_cost_on_this_client": 1.6440947850545247e-07,
+          "put_cost_on_this_client": 2.016623814900716e-07,
+          "get_latency_on_this_client": 404.2,
+          "put_latency_on_this_client": 606.3
+        },
+        "7": {
+          "Q1": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q2": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q3": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q4": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "get_cost_on_this_client": 7.809450229008992e-08,
+          "put_cost_on_this_client": 9.578963120778401e-08,
+          "get_latency_on_this_client": 306.8,
+          "put_latency_on_this_client": 460.20000000000005
+        },
+        "8": {
+          "Q1": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q2": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q3": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "Q4": [
+            3,
+            4,
+            5,
+            7,
+            8
+          ],
+          "get_cost_on_this_client": 7.809450229008992e-08,
+          "put_cost_on_this_client": 9.578963120778401e-08,
+          "get_latency_on_this_client": 283.6,
+          "put_latency_on_this_client": 425.40000000000003
+        }
+      }
+    }
+  ],
+  "overall_cost": 0.10783804500588734,
+  "get_cost": 0.050605237483978265,
+  "put_cost": 0.006896853446960449,
+  "storage_cost": 0.0012193096282819634,
+  "vm_cost": 0.04911664444666667,
+  "time_period_hrs": 1.0
+}

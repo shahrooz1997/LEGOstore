@@ -1,6 +1,6 @@
 import json
 from itertools import product
-from utils import combinations, generate_placement_params
+from utils import combinations, generate_placement_params, compute_vm_cost
 from constants.opt_consts import FUNC_HEURISTIC_MAP, CAS, ABD, CAS_K_1, REP
 from services.baselines import *
 
@@ -81,7 +81,8 @@ def min_latency_abd(datacenters, group, params):
                 _storage_cost = group.num_objects*\
                                 sum([datacenters[i].details["storage_cost"]/(730*3600) for i in dcs])*\
                                     group.object_size
-                _vm_cost = group.arrival_rate / 600. * sum([datacenters[i].details["price"] for i in dcs])/3600
+                # _vm_cost = group.arrival_rate / 600. * sum([datacenters[i].details["price"] for i in dcs])/3600
+                _vm_cost = compute_vm_cost(group, datacenters, full_placement_info)
                 if group.duration*(get_cost+put_cost+_storage_cost + _vm_cost) < mincost: #latency < min_lat: # group.duration*(get_cost+put_cost+_storage_cost + _vm_cost) < mincost:
                     mincost = group.duration*(get_cost+put_cost+_storage_cost + _vm_cost)#+_vm_cost)
                     min_lat = latency
@@ -192,7 +193,8 @@ def min_latency_cas(datacenters, group, params):
                 put_cost = group.write_ratio*group.arrival_rate*_put_cost
                 _storage_cost = group.num_objects*sum([datacenters[i].details["storage_cost"]/(730*3600) \
                                                         for i in dcs])*(group.object_size/k_g)
-                _vm_cost = group.arrival_rate / 600. * sum([datacenters[i].details["price"]/3600 for i in dcs])
+                # _vm_cost = group.arrival_rate / 600. * sum([datacenters[i].details["price"]/3600 for i in dcs])
+                _vm_cost = compute_vm_cost(group, datacenters, full_placement_info)
                 if group.duration*(get_cost+put_cost+_storage_cost + _vm_cost) < mincost: # put_lat <= min_put_lat and get_lat <= min_get_lat: # group.duration*(get_cost+put_cost+_storage_cost + _vm_cost) < mincost:
                     # print(get_lat, put_lat)
                     mincost = group.duration*(get_cost+put_cost+_storage_cost + _vm_cost)#+_vm_cost)
@@ -255,7 +257,8 @@ def min_cost_abd(datacenters, group, params):
                 # Get possible combination of DCs (of size q1 and q2) from the 
                 # m-sized set of DCs.
                 # cost_list = [elem if elem[0]!= datacenter.id else (elem[0], 0.01) for elem in cost_dc_list if elem[0] in dcs]
-                cost_list = [(elem[0], elem[1][datacenter.id]) for elem in cost_dc_list if elem[0] in dcs]
+                cost_list = [(elem[0], elem[1][datacenter.id], datacenter.latencies[elem[0]]) for elem in cost_dc_list if elem[0] in dcs]
+                cost_list.sort(key=lambda x: x[2])
                 cost_list.sort(key=lambda x: x[1])
                 _iq1 = [l[0] for l in cost_list[:q1]]
                 _iq2 = [l[0] for l in cost_list[:q2]]
@@ -291,7 +294,8 @@ def min_cost_abd(datacenters, group, params):
                 put_cost = group.write_ratio*group.arrival_rate*_put_cost
                 _storage_cost = group.num_objects*sum([datacenters[i].details["storage_cost"]/(730*3600) \
                                                         for i in dcs])*(group.object_size)
-                _vm_cost = group.arrival_rate / 600. * sum([datacenters[i].details["price"] for i in dcs])/3600
+                # _vm_cost = group.arrival_rate / 600. * sum([datacenters[i].details["price"] for i in dcs])/3600
+                _vm_cost = compute_vm_cost(group, datacenters, full_placement_info)
                 if group.duration*(get_cost+put_cost+_storage_cost+_vm_cost) < mincost:
                     mincost = group.duration*(get_cost+put_cost+_storage_cost+_vm_cost)#+_vm_cost)
                     min_get_cost, min_put_cost = get_cost, put_cost
@@ -354,8 +358,9 @@ def min_cost_cas(datacenters, group, params):
             for datacenter in datacenters:
                 # Get possible combination of DCs (of size q1 and q2) from the 
                 # m-sized set of DCs.
-                cost_list = [(elem[0], elem[1][datacenter.id]) for elem in cost_dc_list if elem[0] in dcs]
+                cost_list = [(elem[0], elem[1][datacenter.id], datacenter.latencies[elem[0]]) for elem in cost_dc_list if elem[0] in dcs]
                 # cost_list = [elem if elem[0]!= datacenter.id else (elem[0], 0.01) for elem in cost_dc_list if elem[0] in dcs]
+                cost_list.sort(key=lambda x: x[2])
                 cost_list.sort(key=lambda x: x[1])
                 _iq1 = [l[0] for l in cost_list[:q1]]
                 _iq2 = [l[0] for l in cost_list[:q2]]
@@ -415,7 +420,8 @@ def min_cost_cas(datacenters, group, params):
                 put_cost = group.write_ratio*group.arrival_rate*_put_cost
                 _storage_cost = group.num_objects*sum([datacenters[i].details["storage_cost"]/(730*3600) \
                                                         for i in dcs])*(group.object_size/k_g)
-                _vm_cost = group.arrival_rate / 600. * sum([datacenters[i].details["price"]/3600 for i in dcs])
+                # _vm_cost = group.arrival_rate / 600. * sum([datacenters[i].details["price"]/3600 for i in dcs])
+                _vm_cost = compute_vm_cost(group, datacenters, full_placement_info)
                 tot = (get_cost+put_cost+_storage_cost+_vm_cost)*3600
                 #print(m_g, k_g, get_cost*3600, put_cost*3600, _storage_cost*3600, _vm_cost*3600, tot)
                 if group.duration*(get_cost+put_cost+_storage_cost+_vm_cost) < mincost:
@@ -652,6 +658,16 @@ def get_placement(obj, heuristic, M, K, verbose, grp, use_protocol_param=False, 
 
             ret = eval(FUNC_HEURISTIC_MAP[protocol][heuristic])(obj.datacenters, group, params)
             d["id"] = i
+            # if len(protocols) == 1 and protocols[0] == CAS and ret is None: # baseline CAS could not find any placement with the SLO latencies
+            #     group.slo_read = 400
+            #     group.slo_write = 400
+            #     print("WARN: Trying to find a placement with SLO latency of 400ms")
+            #     ret = eval(FUNC_HEURISTIC_MAP[protocol][heuristic])(obj.datacenters, group, params)
+            #     if ret is None:
+            #         group.slo_read = 750
+            #         group.slo_write = 750
+            #         print("WARN: Trying to find a placement with SLO latency of 750ms")
+            #         ret = eval(FUNC_HEURISTIC_MAP[protocol][heuristic])(obj.datacenters, group, params)
             if ret is None:
                 d["total_cost"] = float("inf")
                 d["protocol"] = protocol

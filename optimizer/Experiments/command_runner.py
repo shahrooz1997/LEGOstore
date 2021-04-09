@@ -33,7 +33,7 @@ def execute(commands, num_of_threads=6):
             command_name = command_name[command_name.find("workloads"):]
             # print("cd optimizer/Experiments; " + command + " >" + command_name + "_output.txt 2>&1")
             print(command)
-            os.system("cd optimizer/Experiments; " + command + " >" + command_name + "_output.txt 2>&1")
+            os.system(command + " >" + command_name + "_output.txt 2>&1")
 
     # execute 6 processes of the optimizer
     indicies = []

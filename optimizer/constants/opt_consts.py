@@ -7,6 +7,7 @@ BRUTE_FORCE = 'brute_force'
 MIN_COST = 'min_cost'
 MIN_LATENCY = 'min_latency'
 BASELINE0 = 'baseline0'
+BASELINE1 = 'baseline1'
 
 GROUP = "Group"
 DATACENTER = "DataCenter"
@@ -38,20 +39,23 @@ FUNC_HEURISTIC_MAP = {
         MIN_COST: MIN_COST+'_'+ABD,
         MIN_LATENCY: MIN_LATENCY+'_'+ABD,
         BRUTE_FORCE: BRUTE_FORCE+'_'+ABD,
-        BASELINE0: "baseline0"+'_'+ABD
+        BASELINE0: BASELINE0+'_'+ABD,
+        BASELINE1: BASELINE1+'_'+ABD
     },
 
     CAS: {
         MIN_COST: MIN_COST+'_'+CAS,
         MIN_LATENCY: MIN_LATENCY+'_'+CAS,
         BRUTE_FORCE: BRUTE_FORCE+'_'+CAS,
-        BASELINE0: "baseline0"+'_'+CAS
+        BASELINE0: BASELINE0+'_'+CAS,
+        BASELINE1: BASELINE1+'_'+CAS
     },
 
     REP: {
         MIN_COST: MIN_COST+'_'+CAS,
         MIN_LATENCY: MIN_LATENCY+'_'+CAS,
         BRUTE_FORCE: BRUTE_FORCE+'_'+CAS,
-        BASELINE0: "baseline0"+'_'+CAS
+        BASELINE0: "baseline0"+'_'+CAS,
+        BASELINE1: BASELINE1+'_'+CAS
     }
 }

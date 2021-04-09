@@ -46,24 +46,29 @@ if __name__ == "__main__":
     # directory = sys.argv[1]
     directory = "workloads/"
     os.system("rm -rf " + directory + "*")
-    for f in availability_targets:
+    os.system("cp workload_def.py " + directory)
+    for f_index, f in enumerate(availability_targets):
         os.mkdir(directory + "f=" + str(f))
         files_path = directory + "f=" + str(f) + "/"
 
         # client_dist
         for client_dist in client_dists:
             for object_size in object_sizes:
-                for arrival_rate in arrival_rates:
-                    for read_ratio in read_ratios:
-                        for lat in SLO_latencies:
+                for storage_size in storage_sizes:
+                    for arrival_rate in arrival_rates:
+                        for read_ratio in read_ratios:
+                            # for lat in SLO_latencies:
+                            lat = SLO_latencies[f_index]
+
+                            num_objects = storage_sizes[storage_size] / object_sizes[object_size]
                             input_groups = []
                             key_group = Single_group(f, client_dists[client_dist], object_sizes[object_size], metadata_size_default,
-                                                     num_objects_default, arrival_rate, read_ratios[read_ratio],
+                                                     num_objects, arrival_rate, read_ratios[read_ratio],
                                                      float("{:.2f}".format(1 - read_ratios[read_ratio])), lat, lat,
                                                      duration_default, time_to_decode_default)
                             input_groups.append(key_group.__dict__)
-                            FILE_NAME = client_dist + "_" + object_size + "_" + str(arrival_rate) + "_" +\
-                                        read_ratio + "_" + str(lat) + ".json"
+                            FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
+                                arrival_rate) + "_" + read_ratio + "_" + str(lat) + ".json"
                             json.dump({"input_groups": input_groups}, open(files_path + FILE_NAME, "w"), indent=4)
 
 

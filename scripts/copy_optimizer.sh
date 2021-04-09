@@ -4,6 +4,8 @@ rm -rf optimizer
 rm -rf optimizer.tar.gz
 
 cp -r ../optimizer ./
+rm -f ./optimizer/Experiments/workloads/f=*/res_*
+rm -f ./optimizer/Experiments/workloads/*_output*.txt
 
 # mkdir optimizer
 # cd project

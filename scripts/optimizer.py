@@ -5,7 +5,7 @@ import subprocess
 from subprocess import PIPE
 import threading
 import os, shutil
-import sys
+import sys, time
 from time import sleep
 from signal import signal, SIGINT
 import urllib.request
@@ -16,33 +16,38 @@ import json
 from os.path import dirname, join, abspath
 sys.path.insert(0, abspath(join(dirname(__file__), '..')))
 from optimizer.Experiments.workload_def import *
+from random import shuffle
 
 server_type = "e2-standard-4"
 num_of_servers = 8
 
 
-def get_workloads():
+def get_workloads(availability_target):
+    f_index = availability_targets.index(availability_target)
+
     workloads = []
     for client_dist in client_dists:
         for object_size in object_sizes:
-            for arrival_rate in arrival_rates:
-                for read_ratio in read_ratios:
-                    for lat in SLO_latencies:
-                        FILE_NAME = client_dist + "_" + object_size + "_" + str(arrival_rate) + "_" + \
-                                    read_ratio + "_" + str(lat) + ".json"
+            for storage_size in storage_sizes:
+                for arrival_rate in arrival_rates:
+                    for read_ratio in read_ratios:
+                        # for lat in SLO_latencies:
+                        lat = SLO_latencies[f_index]
+
+                        FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
+                            arrival_rate) + "_" + read_ratio + "_" + str(lat) + ".json"
                         workloads.append(FILE_NAME)
 
     return workloads
 
 def get_commands():
     commands = []
-    workload_files = get_workloads()
     directory = "workloads"
 
     # print(workload_files)
-
-    for file_name in workload_files:
-        for f_index, f in enumerate(availability_targets):
+    for f_index, f in enumerate(availability_targets):
+        workload_files = get_workloads(f)
+        for file_name in workload_files:
             for exec in executions[f_index]:
                 files_path = os.path.join(directory, "f=" + str(f))
                 result_file_name = "res_" + exec + "_" + file_name
@@ -60,7 +65,7 @@ def get_commands():
     #             commands.append("python3 ../placement.py -f ../tests/inputtests/dc_gcp.json -i " + os.path.join(files_path,
     #                                                                                                   file_name) + " -o " + os.path.join(
     #                 files_path, result_file_name) + " -H min_cost -v " + executions[f_index][exec])
-
+    shuffle(commands)
     return commands
 
 #Todo: Add command line parser
@@ -192,8 +197,9 @@ class Machine:
         os.system("cd pairwise_latencies; ./combine.sh")
         print("Pairwise latencies are ready in pairwise_latencies/latencies.txt")
 
-    def run_all(servers, commands): # if you call this method, you should not call run method anymore. It does not make sense to run twice!
+    def run_all(servers, commands, clear_all=True): # if you call this method, you should not call run method anymore. It does not make sense to run twice!
         create_project_tar_file()
+        os.system("mkdir -p /tmp/optimizer_autorun/")
         threads = []
 
         indicies = []
@@ -205,7 +211,7 @@ class Machine:
 
         server_index = 0
         for name, server in servers.items():
-            threads.append(threading.Thread(target=server.run, args=[commands[indicies[server_index][0]:indicies[server_index][1] + 1]]))
+            threads.append(threading.Thread(target=server.run, args=[commands[indicies[server_index][0]:indicies[server_index][1] + 1], clear_all]))
             threads[-1].start()
             server_index += 1
 
@@ -213,6 +219,7 @@ class Machine:
             thread.join()
 
         delete_project_tar_file()
+        os.system("rm -rf /tmp/optimizer_autorun/")
 
         print("All machines are running")
 
@@ -253,11 +260,11 @@ class Machine:
         for thread in threads:
             thread.join()
 
-    def gather_logs_all(machines, run_name):
+    def gather_logs_all(machines, run_name, type=None):
         threads = []
         os.system("mkdir -p data/" + run_name + "_optimizer/")
         for name, client in machines.items():
-            threads.append(threading.Thread(target=client.gather_logs, args=[run_name]))
+            threads.append(threading.Thread(target=client.gather_logs, args=[run_name, type]))
             threads[-1].start()
 
         for thread in threads:
@@ -334,7 +341,7 @@ class Machine:
                 "sudo apt-get install -y build-essential autoconf automake libtool zlib1g-dev git psmisc bc libgflags-dev cmake >/dev/null 2>&1")
             self.execute("sudo touch ../init_config_done")
 
-    def config(self, make_clear=True, clear_all=True):
+    def config(self, clear_all=True):
         # self.stop()
         if clear_all:
             self.clear()
@@ -369,40 +376,28 @@ class Machine:
     def delete(self):
         command.delete_server(self.name, self.zone)
 
-    def run(self, commands):
-        def batch_exec_thread_helper(commands):
-            for command in commands:
-                # self.execute("cd optimizer/Experiments; ")
-                command_name = command[command.find("-o"):command.find(".json -v")]
-                command_name = command_name[command_name.find("workloads"):]
-                # print("cd optimizer/Experiments; " + command + " >" + command_name + "_output.txt 2>&1")
-                print(command)
-                self.execute("cd optimizer/Experiments; " + command + " >" + command_name + "_output.txt 2>&1")
-
+    def run(self, commands, clear_all=True):
         self.stop()
-        self.config()
+        self.config(clear_all)
 
-        # execute 6 processes of the optimizer
-        num_of_parallel_programs = 6
-        indicies = []
-        batch_size = int(len(commands) / num_of_parallel_programs)
-        indicies.append((0, batch_size))
-        for i in range(1, num_of_parallel_programs - 1):
-            indicies.append((i * batch_size + 1, (i + 1) * batch_size))
-        indicies.append(((num_of_parallel_programs - 1) * batch_size + 1, len(commands) - 1))
+        commands_str = ""
+        for command in commands:
+            commands_str += command + '\n'
+        # print("cd optimizer/Experiments; echo \"" + commands_str + "\" > commands.txt")
+        os.system("mkdir -p /tmp/optimizer_autorun/")
+        f = open("/tmp/optimizer_autorun/" + "commnads_" + self.name + ".txt", "w")
+        f.write(commands_str)
+        f.close()
+        self.copy_to("/tmp/optimizer_autorun/" + "commnads_" + self.name + ".txt", "optimizer/Experiments/commands.txt")
+        print("execution started on " + self.name)
+        start_time = time.time()
+        self.execute("cd optimizer/Experiments; ./command_runner.py >command_runner_output_" + self.name + ".txt 2>&1")
 
-        threads = []
-        for index in indicies:
-            threads.append(threading.Thread(target=batch_exec_thread_helper, args=[commands[index[0]:index[1] + 1]]))
-            threads[-1].start()
-
-        for thread in threads:
-            thread.join()
-
-        print("execution finished on " + self.name)
+        print("execution finished on " + self.name + " in " + str(time.time() - start_time) + "s.")
 
     def stop(self):
         #Todo: kill python3 ./placement
+        self.execute("sudo pkill -f command_runner.py")
         self.execute("sudo pkill -f \"python3 ../placement.py\"")
         # self.stop_server()
         # self.stop_metadata_server()
@@ -414,27 +409,88 @@ class Machine:
             if not (stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1):
                 self.copy_from("optimizer/Experiments/workloads/f=" + str(f) + "/res_*.json", "data/" + run_name + "_optimizer/f=" + str(f))
 
-    def gather_logs(self, run_name):
+    def gather_logs(self, run_name, type=None):
+        if type is not None:
+            run_name += "_" + type
         for f in availability_targets:
             os.system("mkdir -p data/" + run_name + "_optimizer/f=" + str(f))
             stdout, stderr = self.execute("ls optimizer/Experiments/workloads/f=" + str(f) + "/res_*_output.txt")
             if not (stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1):
                 self.copy_from("optimizer/Experiments/workloads/f=" + str(f) + "/res_*_output.txt", "data/" + run_name + "_optimizer/f=" + str(f))
+        self.copy_from("optimizer/Experiments/command_runner_output_" + self.name + ".txt", "data/" + run_name + "_optimizer/")
 
-
-def main(args):
-
-    # Generate input workloads
-    os.system("cd ../optimizer/Experiments; ./generate_input.py")
-
-    # Run
-    machines = Machine.get_machine_list()
+def get_commands_with_opt_m_k():
     commands = get_commands()
+    ret_commands = []
+
+    files_path = "../optimizer/Experiments/workloads"
+
+    for command in commands:
+        exclude = False
+        if command.find("nearest") == -1:
+            continue
+        workload = command[command.find("workloads") + 10:command.find(".json",command.find("workloads"))] + ".json"
+        f = workload[2]
+        workload = workload[4:]
+        # print(workload)
+
+        if command.find("cas") != -1:
+            res_file = os.path.join(files_path, "f=" + f, "res_" + "baseline_cas" + "_" + workload)
+            data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
+            for grp_index, grp in enumerate(data):
+                m = grp["m"]
+                if m == "INVALID":
+                    exclude = True
+                    break
+                k = grp["k"]
+            if not exclude:
+                new_command = command[:command.find("-m ") + 3] + str(m) + command[command.find("-m ") + 4:command.find("-k ") + 3] + str(k) + command[command.find("-k ") + 5:]
+        else:
+            res_file = os.path.join(files_path, "f=" + f, "res_" + "baseline_abd" + "_" + workload)
+            data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
+            for grp_index, grp in enumerate(data):
+                m = grp["m"]
+                if m == "INVALID":
+                    exclude = True
+                    break
+            if not exclude:
+                new_command = command[:command.find("-m ") + 3] + str(m) + command[command.find("-m ") + 5:]
+        # print(new_command)
+        if not exclude:
+            ret_commands.append(new_command)
+
+    return ret_commands
+
+def commands_exclude(commands, word):
+    new_commands = []
+    for command in commands:
+        if command.find(word) != -1:
+            continue
+        new_commands.append(command)
+
+    return new_commands
+
+def execute(machines, commands, type=None):
     Machine.run_all(machines, commands)
-    print("Project execution finished.\nPlease wait while I am stopping all the machines and gathering the results...")
+    print("Project execution finished.")
+    print("Please wait while I am stopping all the machines and gathering the results...")
     os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/ALL_optimizer")
     Machine.gather_results_all(machines, "ALL")
-    Machine.gather_logs_all(machines, "ALL")
+    Machine.gather_logs_all(machines, "ALL", type)
+
+    # Copy files to workloads
+    os.system("cp -rf data/ALL_optimizer/* ../optimizer/Experiments/workloads/")
+
+def main(args):
+    machines = Machine.get_machine_list()
+
+    os.system("cd ../optimizer/Experiments; ./generate_input.py")
+    commands = get_commands()
+    commands = commands_exclude(commands, "nearest")
+    execute(machines, commands)
+
+    commands = get_commands_with_opt_m_k()
+    execute(machines, commands, "nearest")
 
     # delete the machines
     # os.system("./delete_servers.py")

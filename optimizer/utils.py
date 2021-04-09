@@ -65,3 +65,28 @@ def generate_placement_params(N, f, protocol, k=None, m=None, only_EC=False):
     """
     return eval(CONSTS.GEN_PARAM_FUNC[protocol])(N, f, k, m, only_EC)
 
+def compute_vm_cost(group, datacenters, full_placement_info):
+    ret = 0
+    selected_dcs = full_placement_info[0][0]
+    # used_vm = [False for _ in selected_dcs]
+
+    for datacenter in datacenters:
+        i = int(datacenter.id)
+        arrival_rate = group.arrival_rate * group.client_dist[i]
+        if arrival_rate == 0:
+            continue
+        selected_dcs, q1, q2, q3, q4 = full_placement_info[i][0:5]
+        num_of_use_vm = [0 for _ in selected_dcs]
+        for id in q1 + q2 + q3 + q4:
+            num_of_use_vm[selected_dcs.index(id)] += 1
+            # used_vm[selected_dcs.index(id)] = True
+
+        for i, id in enumerate(selected_dcs):
+            ret += arrival_rate * num_of_use_vm[i] / 600 * (datacenters[id].details["price"] / 3600)
+
+    # for i, in_use in enumerate(used_vm):
+    #     if not in_use:
+    #         ret += datacenters[selected_dcs[i]].details["price"] / 3600
+
+    return ret
+

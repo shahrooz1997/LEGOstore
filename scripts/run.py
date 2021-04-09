@@ -416,6 +416,8 @@ class Machine:
         self.execute(command)
         os.system("rm -f pairwise_latencies/latencies_from_server_" + self.name[1:] + ".txt")
         self.copy_from("latencies_from_server_" + self.name[1:] + ".txt", "pairwise_latencies")
+        for i in range(9):
+            self.copy_from("lats_from_server_" + self.name[1:] + "_to_server_" + str(i) + ".txt", "pairwise_latencies")
 
 
     def clear(self):

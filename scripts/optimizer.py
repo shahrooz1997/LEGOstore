@@ -15,7 +15,13 @@ from collections import OrderedDict
 import json
 from os.path import dirname, join, abspath
 sys.path.insert(0, abspath(join(dirname(__file__), '..')))
-from optimizer.Experiments.workload_def import *
+
+lat_sense = True
+
+if lat_sense:
+    from optimizer.Experiments_Lat_sense.workload_def import *
+else:
+    from optimizer.Experiments.workload_def import *
 from random import shuffle
 
 server_type = "e2-standard-4"
@@ -31,12 +37,19 @@ def get_workloads(availability_target):
             for storage_size in storage_sizes:
                 for arrival_rate in arrival_rates:
                     for read_ratio in read_ratios:
-                        # for lat in SLO_latencies:
-                        lat = SLO_latencies[f_index]
+                        if lat_sense:
+                            for lat in SLO_latencies:
+                                # lat = SLO_latencies[f_index]
 
-                        FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
-                            arrival_rate) + "_" + read_ratio + "_" + str(lat) + ".json"
-                        workloads.append(FILE_NAME)
+                                FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
+                                    arrival_rate) + "_" + read_ratio + "_" + str(lat) + ".json"
+                                workloads.append(FILE_NAME)
+                        else:
+                            lat = SLO_latencies[f_index]
+
+                            FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
+                                arrival_rate) + "_" + read_ratio + "_" + str(lat) + ".json"
+                            workloads.append(FILE_NAME)
 
     return workloads
 
@@ -95,7 +108,10 @@ def read_zones():
 files_lock = threading.Lock()
 def create_project_tar_file():
     files_lock.acquire()
-    os.system("./copy_optimizer.sh")
+    if lat_sense:
+        os.system("./copy_optimizer2.sh")
+    else:
+        os.system("./copy_optimizer.sh")
 
 def delete_project_tar_file():
     os.system("rm -rf optimizer.tar.gz optimizer")
@@ -388,10 +404,16 @@ class Machine:
         f = open("/tmp/optimizer_autorun/" + "commnads_" + self.name + ".txt", "w")
         f.write(commands_str)
         f.close()
-        self.copy_to("/tmp/optimizer_autorun/" + "commnads_" + self.name + ".txt", "optimizer/Experiments/commands.txt")
+        if lat_sense:
+            self.copy_to("/tmp/optimizer_autorun/" + "commnads_" + self.name + ".txt", "optimizer/Experiments_Lat_sense/commands.txt")
+        else:
+            self.copy_to("/tmp/optimizer_autorun/" + "commnads_" + self.name + ".txt", "optimizer/Experiments/commands.txt")
         print("execution started on " + self.name)
         start_time = time.time()
-        self.execute("cd optimizer/Experiments; ./command_runner.py >command_runner_output_" + self.name + ".txt 2>&1")
+        if lat_sense:
+            self.execute("cd optimizer/Experiments_Lat_sense; ./command_runner.py >command_runner_output_" + self.name + ".txt 2>&1")
+        else:
+            self.execute("cd optimizer/Experiments; ./command_runner.py >command_runner_output_" + self.name + ".txt 2>&1")
 
         print("execution finished on " + self.name + " in " + str(time.time() - start_time) + "s.")
 
@@ -405,19 +427,34 @@ class Machine:
     def gather_results(self, run_name):
         for f in availability_targets:
             os.system("mkdir -p data/" + run_name + "_optimizer/f=" + str(f))
-            stdout, stderr = self.execute("ls optimizer/Experiments/workloads/f=" + str(f) + "/res_*.json")
+            if lat_sense:
+                stdout, stderr = self.execute("ls optimizer/Experiments_Lat_sense/workloads/f=" + str(f) + "/res_*.json")
+            else:
+                stdout, stderr = self.execute("ls optimizer/Experiments/workloads/f=" + str(f) + "/res_*.json")
             if not (stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1):
-                self.copy_from("optimizer/Experiments/workloads/f=" + str(f) + "/res_*.json", "data/" + run_name + "_optimizer/f=" + str(f))
+                if lat_sense:
+                    self.copy_from("optimizer/Experiments_Lat_sense/workloads/f=" + str(f) + "/res_*.json", "data/" + run_name + "_optimizer/f=" + str(f))
+                else:
+                    self.copy_from("optimizer/Experiments/workloads/f=" + str(f) + "/res_*.json", "data/" + run_name + "_optimizer/f=" + str(f))
 
     def gather_logs(self, run_name, type=None):
         if type is not None:
             run_name += "_" + type
         for f in availability_targets:
             os.system("mkdir -p data/" + run_name + "_optimizer/f=" + str(f))
-            stdout, stderr = self.execute("ls optimizer/Experiments/workloads/f=" + str(f) + "/res_*_output.txt")
+            if lat_sense:
+                stdout, stderr = self.execute("ls optimizer/Experiments_Lat_sense/workloads/f=" + str(f) + "/res_*_output.txt")
+            else:
+                stdout, stderr = self.execute("ls optimizer/Experiments/workloads/f=" + str(f) + "/res_*_output.txt")
             if not (stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1):
-                self.copy_from("optimizer/Experiments/workloads/f=" + str(f) + "/res_*_output.txt", "data/" + run_name + "_optimizer/f=" + str(f))
-        self.copy_from("optimizer/Experiments/command_runner_output_" + self.name + ".txt", "data/" + run_name + "_optimizer/")
+                if lat_sense:
+                    self.copy_from("optimizer/Experiments_Lat_sense/workloads/f=" + str(f) + "/res_*_output.txt", "data/" + run_name + "_optimizer/f=" + str(f))
+                else:
+                    self.copy_from("optimizer/Experiments/workloads/f=" + str(f) + "/res_*_output.txt", "data/" + run_name + "_optimizer/f=" + str(f))
+        if lat_sense:
+            self.copy_from("optimizer/Experiments_Lat_sense/command_runner_output_" + self.name + ".txt", "data/" + run_name + "_optimizer/")
+        else:
+            self.copy_from("optimizer/Experiments/command_runner_output_" + self.name + ".txt", "data/" + run_name + "_optimizer/")
 
 def get_commands_with_opt_m_k():
     commands = get_commands()
@@ -479,18 +516,25 @@ def execute(machines, commands, type=None):
     Machine.gather_logs_all(machines, "ALL", type)
 
     # Copy files to workloads
-    os.system("cp -rf data/ALL_optimizer/* ../optimizer/Experiments/workloads/")
+    if lat_sense:
+        os.system("cp -rf data/ALL_optimizer/* ../optimizer/Experiments_Lat_sense/workloads/")
+    else:
+        os.system("cp -rf data/ALL_optimizer/* ../optimizer/Experiments/workloads/")
 
 def main(args):
     machines = Machine.get_machine_list()
 
-    os.system("cd ../optimizer/Experiments; ./generate_input.py")
+    if lat_sense:
+        os.system("cd ../optimizer/Experiments_Lat_sense; ./generate_input.py")
+    else:
+        os.system("cd ../optimizer/Experiments; ./generate_input.py")
     commands = get_commands()
     commands = commands_exclude(commands, "nearest")
     execute(machines, commands)
 
-    commands = get_commands_with_opt_m_k()
-    execute(machines, commands, "nearest")
+    if not lat_sense:
+        commands = get_commands_with_opt_m_k()
+        execute(machines, commands, "nearest")
 
     # delete the machines
     # os.system("./delete_servers.py")

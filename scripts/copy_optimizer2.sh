@@ -4,11 +4,11 @@ rm -rf optimizer
 rm -rf optimizer.tar.gz
 
 cp -r ../optimizer ./
-rm -f ./optimizer/Experiments/workloads/f=*/res_*
-rm -f ./optimizer/Experiments/workloads/*_output*.txt
-rm -rf ./optimizer/Experiments/RESULTS
-rm -rf ./optimizer/Experiments/workloads?*
-rm -rf ./optimizer/Experiments_Lat_sense
+rm -f ./optimizer/Experiments_Lat_sense/workloads/f=*/res_*
+rm -f ./optimizer/Experiments_Lat_sense/workloads/*_output*.txt
+rm -rf ./optimizer/Experiments_Lat_sense/RESULTS
+rm -rf ./optimizer/Experiments_Lat_sense/workloads?*
+rm -rf ./optimizer/Experiments
 
 # mkdir optimizer
 # cd project

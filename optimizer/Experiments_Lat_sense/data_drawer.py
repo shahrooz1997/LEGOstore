@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from workload_def import *
 
-# directory = "workloads"
+directory = "workloads"
 # directory = "RESULTS/workloads_200ms"
 # directory = "RESULTS/workloads_500ms"
-directory = "RESULTS/workloads_1000ms"
+# directory = "RESULTS/workloads_1000ms"
 # directory = "workloads_Mar24_2152"
 # directory = "/home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/ALL_optimizer_Mar19_0817"
 
@@ -117,13 +117,13 @@ def get_workloads():
             for storage_size in storage_sizes:
                 for arrival_rate in arrival_rates:
                     for read_ratio in read_ratios:
-                        # for lat in SLO_latencies:
-                        lat = 1000
+                        for lat in SLO_latencies:
+                        # lat = 1000
 
-                        num_objects = storage_sizes[storage_size] / object_sizes[object_size]
-                        FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(arrival_rate) + "_" + \
-                                    read_ratio + "_" + str(lat) + ".json"
-                        workloads.append(FILE_NAME)
+                            num_objects = storage_sizes[storage_size] / object_sizes[object_size]
+                            FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(arrival_rate) + "_" + \
+                                        read_ratio + "_" + str(lat) + ".json"
+                            workloads.append(FILE_NAME)
 
     # for client_dist in client_dists:
     #     for object_size in object_sizes:
@@ -220,7 +220,7 @@ def print_workload(workload, availability_target):
         # if exec == "optimized":
         #     continue
         if results[f_index][exec + "_" + workload] == "INVALID":
-            print("WARN: no data found for " + exec + "_" + workload)
+            print("WARN: no data found for " + "optimized" + "_" + workload)
             continue
         labels.append(exec if exec.find("baseline") == -1 else exec[9:])
         values = results[f_index][exec + "_" + workload].split()
@@ -836,6 +836,145 @@ def plot_cumulative3(workloads, availability_target):
         # break
 
 
+def plot_scatter(workloads, availability_target):
+    results, confs = get_results()
+    f_index = availability_targets.index(availability_target)
+
+    exec = "optimized"
+
+    # data = OrderedDict()
+    labels = []
+
+    impossilbes_x = []
+    impossilbes_y = []
+
+    abd_x = []
+    abd_y = []
+
+    cas1_x = []
+    cas1_y = []
+
+    ec_x = []
+    ec_y = []
+
+    i = 0
+    for cd in client_dists:
+        # data[cd] = []  # 0: impossible, 1: Rep, 2: EC
+        labels.append(cd)
+        for workload in workloads:
+            if workload.find("HW") == -1:
+                continue
+            if workload.find(cd) != -1:
+                lat = int(workload[workload.rfind("_")+1:workload.find(".json")])
+                if results[f_index][exec + "_" + workload] == "INVALID":
+                    impossilbes_x.append(i)
+                    impossilbes_y.append(lat)
+                elif confs[f_index][exec + "_" + workload][2] == "0":
+                    abd_x.append(i)
+                    abd_y.append(lat)
+                elif confs[f_index][exec + "_" + workload][2] == "1":
+                    cas1_x.append(i)
+                    cas1_y.append(lat)
+                else:
+                    ec_x.append(i)
+                    ec_y.append(lat)
+        i += 1
+
+    for cd in client_dists:
+        # data[cd] = []  # 0: impossible, 1: Rep, 2: EC
+        labels.append(cd)
+        for workload in workloads:
+            if workload.find("RW") == -1:
+                continue
+            if workload.find(cd) != -1:
+                lat = int(workload[workload.rfind("_") + 1:workload.find(".json")])
+                if results[f_index][exec + "_" + workload] == "INVALID":
+                    impossilbes_x.append(i)
+                    impossilbes_y.append(lat)
+                elif confs[f_index][exec + "_" + workload][2] == "0":
+                    abd_x.append(i)
+                    abd_y.append(lat)
+                elif confs[f_index][exec + "_" + workload][2] == "1":
+                    cas1_x.append(i)
+                    cas1_y.append(lat)
+                else:
+                    ec_x.append(i)
+                    ec_y.append(lat)
+        i += 1
+
+    for cd in client_dists:
+        # data[cd] = []  # 0: impossible, 1: Rep, 2: EC
+        labels.append(cd)
+        for workload in workloads:
+            if workload.find("HR") == -1:
+                continue
+            if workload.find(cd) != -1:
+                lat = int(workload[workload.rfind("_") + 1:workload.find(".json")])
+                if results[f_index][exec + "_" + workload] == "INVALID":
+                    impossilbes_x.append(i)
+                    impossilbes_y.append(lat)
+                elif confs[f_index][exec + "_" + workload][2] == "0":
+                    abd_x.append(i)
+                    abd_y.append(lat)
+                elif confs[f_index][exec + "_" + workload][2] == "1":
+                    cas1_x.append(i)
+                    cas1_y.append(lat)
+                else:
+                    ec_x.append(i)
+                    ec_y.append(lat)
+        i += 1
+
+    plt.rcParams.update({'font.size': 38})
+    area = 100
+    fig = plt.figure()
+    ax = fig.add_axes([0.09, 0.2, .70, .78])
+    # fig, ax = plt.subplots()
+
+    x = np.arange(0.0, len(labels))  # the label locations
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation='vertical')
+    ax.axvline(x=7.5, color='k', lw=5)
+    ax.axvline(x=15.5, color='k', lw=5)
+    colors = ["r", "b", "c", "g"]
+
+
+    ax.scatter(impossilbes_x, impossilbes_y, s=area, c=colors[0], label="Infeasible")
+    ax.scatter(abd_x, abd_y, s=area, c=colors[1], label="ABD")
+    ax.scatter(cas1_x, cas1_y, s=area, c=colors[2], label="CAS K=1")
+    ax.scatter(ec_x, ec_y, s=area, c=colors[3], label="CAS K>1")
+
+    major_ticks = np.arange(0, 1001, 100)
+    minor_ticks = np.arange(0, 1001, 25)
+
+    ax.set_yticks(major_ticks)
+    ax.set_yticks(minor_ticks, minor=True)
+
+    ax.grid(which='minor', alpha=0.4)
+    ax.grid(which='major', alpha=0.8)
+    ax.spines['top'].set_visible(False)
+    ax.tick_params(labeltop=False)
+
+    # for cd in client_dists:
+    #     for i, state in enumerate(data[cd]):
+    #         if state == 0:
+    #             ax.scatter([labels.index(cd)], SLO_latencies[i], c=colors[0])
+    #         elif state == 1:
+    #             ax.scatter([labels.index(cd)], SLO_latencies[i], c=colors[1])
+    #         else:
+    #             ax.scatter([labels.index(cd)], SLO_latencies[i], c=colors[2])
+
+    # for state in [0, 1, 2]:
+    #     for i, lat in enumerate(SLO_latencies):
+    #         ys =
+
+
+    ax.grid(True)
+    ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
+    ax.set_ylabel('SLO latency (ms)')
+    ax.set_xlabel('Workload')
+
+
+
 def counting(availability_target):
     results, confs = get_results()
     f_index = availability_targets.index(availability_target)
@@ -1071,65 +1210,6 @@ def when_EC_lat_better(availability_target):
 
     open_sublime()
 
-def nearest_experiment(workloads, availability_target):
-    results, confs = get_results()
-    f_index = availability_targets.index(availability_target)
-    # workload = workload if workload.find(".json") != -1 else workload + ".json"
-
-    labels = []
-    get_cost = []
-    put_cost = []
-    vm_cost = []
-    storage_cost = []
-
-    max_profit_cas = 0.
-    max_profit_abd = 0.
-    best_workload = ""
-
-    profits = []
-
-    for workload in workloads:
-        if workload.find("HW") != -1:
-            continue
-        if workload.find("dist_S") == -1:
-            continue
-        exec = "baseline_abd_nearest"
-        if results[f_index][exec + "_" + workload] == "INVALID":
-            continue
-        values = results[f_index][exec + "_" + workload].split()
-        nabd_total_cost = float(values[0]) + float(values[1]) + float(values[2]) + float(values[3])
-
-        exec = "baseline_cas_nearest"
-        if results[f_index][exec + "_" + workload] == "INVALID":
-            continue
-        values = results[f_index][exec + "_" + workload].split()
-        ncas_total_cost = float(values[0]) + float(values[1]) + float(values[2]) + float(values[3])
-
-        exec = "optimized"
-        if results[f_index][exec + "_" + workload] == "INVALID":
-            continue
-        values = results[f_index][exec + "_" + workload].split()
-        opt_total_cost = float(values[0]) + float(values[1]) + float(values[2]) + float(values[3])
-
-        if opt_total_cost < nabd_total_cost and opt_total_cost < ncas_total_cost:
-            # print(workload, ":", opt_total_cost, nabd_total_cost, ncas_total_cost)
-            profits.append(ncas_total_cost / opt_total_cost)
-            # if max_profit_cas + max_profit_abd < ncas_total_cost / opt_total_cost + nabd_total_cost / opt_total_cost:
-            #     max_profit_cas = ncas_total_cost / opt_total_cost
-            #     max_profit_abd = nabd_total_cost / opt_total_cost
-            #     best_workload = workload
-
-            if max_profit_cas < ncas_total_cost / opt_total_cost:
-                max_profit_cas = ncas_total_cost / opt_total_cost
-                max_profit_abd = nabd_total_cost / opt_total_cost
-                best_workload = workload
-
-    for profit in profits:
-        if "{:.4f}".format(profit) == "{:.4f}".format(max_profit_cas):
-            print("AAAA")
-
-    print("best:", best_workload, max_profit_cas, max_profit_abd)
-
 def workload_satisfies(workload, attrs):
     for a in attrs:
         if workload.find(a) == -1:
@@ -1192,7 +1272,7 @@ if __name__ == "__main__":
     # plot_workload(list(client_dists.keys())[2] + "_" + "1KB" + "_" + str(arrival_rates[1]) + "_" + "RW" + "_" + "1000" + ".json")
 
     # counting(1)
-    when_read_ratio_changes(1)
+    # when_read_ratio_changes(1)
     # when_arrival_rate_changes(1)
 
     # when_baseline_is_better(1)
@@ -1206,8 +1286,8 @@ if __name__ == "__main__":
     # plot_cumulative2(workloads, 1)
     # plot_cumulative3(workloads, 1)
 
-    # nearest_experiment(workloads, 1)
-    # plot_workload("dist_ST_1KB_100GB_500_HR_1000.json", 1)
+
+    plot_scatter(workloads, 2)
 
     # os.system("subl drawer_output.txt")
     sys.stdout.flush()

@@ -26,7 +26,7 @@ client_dists = OrderedDict([
     # ("expensive_skewed", [0.025, 0.9, 0.0, 0.0, 0.0, 0.0, 0.025, 0.025, 0.025])
     # ("Japan_skewed", [0.9, 0.0, 0.0, 0.0, 0.0, 0.025, 0.0, 0.05, 0.025])
 ])
-object_sizes = OrderedDict([("1KB", 1*2**10 / 2**30)])
+object_sizes = OrderedDict([("10KB", 10*2**10 / 2**30)])
 storage_sizes = OrderedDict([("1TB", 1024)]) # in GB
 arrival_rates = [500]
 read_ratios = OrderedDict([("HW", 0.03225), ("RW", 0.5), ("HR", 0.96774)])

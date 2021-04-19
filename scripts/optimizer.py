@@ -16,7 +16,7 @@ import json
 from os.path import dirname, join, abspath
 sys.path.insert(0, abspath(join(dirname(__file__), '..')))
 
-lat_sense = True
+lat_sense = False
 
 if lat_sense:
     from optimizer.Experiments_Lat_sense.workload_def import *
@@ -45,11 +45,18 @@ def get_workloads(availability_target):
                                     arrival_rate) + "_" + read_ratio + "_" + str(lat) + ".json"
                                 workloads.append(FILE_NAME)
                         else:
-                            lat = SLO_latencies[f_index]
+                            # lat = SLO_latencies[f_index]
+                            #
+                            # FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
+                            #     arrival_rate) + "_" + read_ratio + "_" + str(lat) + ".json"
+                            # workloads.append(FILE_NAME)
 
-                            FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
-                                arrival_rate) + "_" + read_ratio + "_" + str(lat) + ".json"
-                            workloads.append(FILE_NAME)
+                            for lat in SLO_latencies:
+                                # lat = SLO_latencies[f_index]
+
+                                FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
+                                    arrival_rate) + "_" + read_ratio + "_" + str(lat) + ".json"
+                                workloads.append(FILE_NAME)
 
     return workloads
 

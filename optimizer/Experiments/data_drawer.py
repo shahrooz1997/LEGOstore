@@ -8,9 +8,9 @@ import numpy as np
 from workload_def import *
 
 # directory = "workloads"
-# directory = "RESULTS/workloads_200ms"
+directory = "RESULTS/workloads_200ms"
 # directory = "RESULTS/workloads_500ms"
-directory = "RESULTS/workloads_1000ms"
+# directory = "RESULTS/workloads_1000ms"
 # directory = "workloads_Mar24_2152"
 # directory = "/home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/ALL_optimizer_Mar19_0817"
 
@@ -118,7 +118,7 @@ def get_workloads():
                 for arrival_rate in arrival_rates:
                     for read_ratio in read_ratios:
                         # for lat in SLO_latencies:
-                        lat = 1000
+                        lat = 300
 
                         num_objects = storage_sizes[storage_size] / object_sizes[object_size]
                         FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(arrival_rate) + "_" + \
@@ -369,6 +369,20 @@ def plot_normalized(workload, availability_target):
     #     print(exec, results[f_index][exec + "_" + workload])
     # print("\n")
 
+def get_exec_name(exec):
+    if exec == "baseline_fixed_ABD":
+        return "ABD Fixed"
+    elif exec == "baseline_fixed_CAS":
+        return "CAS Fixed"
+    elif exec == "baseline_abd_nearest":
+        return "ABD Nearest"
+    elif exec == "baseline_cas_nearest":
+        return "CAS Nearest"
+    elif exec == "baseline_abd":
+        return "ABD Only Optimal"
+    elif exec == "baseline_cas":
+        return "CAS Only Optimal"
+
 plot_cumulative_max_x = 0
 def plot_cumulative(workloads, availability_target):
     def plot_one_exec(fig, ax, exec, workloads, norm_total_cost):
@@ -395,13 +409,13 @@ def plot_cumulative(workloads, availability_target):
         max_x = 0
         for i, c in enumerate(counter):
             if c == number_workload:
-                max_x = i / granularity + 1
+                max_x = (i / granularity + 1) / 100.
                 break
 
         # fig, ax = plt.subplots()
-        ax.plot(np.array(range(int(1000 * granularity))) / granularity - 100., np.array(counter), label=exec, linewidth=4) #linestyle=':'
-        ax.set_ylabel('CDF across workloads')
-        ax.set_xlabel('Cost-saving normalized to the cost of the optimizer output(%)')
+        ax.plot(np.array(range(int(1000 * granularity))) / granularity / 100., np.array(counter), label=get_exec_name(exec), linewidth=4) #linestyle=':'
+        ax.set_ylabel('Cumulative Count of Workloads')
+        ax.set_xlabel('Cost normalized to the cost of the optimizer output')
         # ax.set_title(exec)
         # ax.legend()
         plt.grid(True)
@@ -412,7 +426,7 @@ def plot_cumulative(workloads, availability_target):
 
         if plot_cumulative_max_x < max_x:
             plot_cumulative_max_x = max_x
-        ax.axis([0.0, plot_cumulative_max_x, 0.0, len(workloads)])
+        ax.axis([1.0, plot_cumulative_max_x, 0.0, len(workloads)])
 
     results, confs = get_results()
     f_index = availability_targets.index(availability_target)
@@ -966,6 +980,8 @@ def when_arrival_rate_changes(availability_target):
             print(workload2, confs[f_index][exec + "_" + workload2])
             print()
 
+    open_sublime()
+
 def when_baseline_is_better(availability_target):
     results, confs = get_results()
     f_index = availability_targets.index(availability_target)
@@ -1192,7 +1208,7 @@ if __name__ == "__main__":
     # plot_workload(list(client_dists.keys())[2] + "_" + "1KB" + "_" + str(arrival_rates[1]) + "_" + "RW" + "_" + "1000" + ".json")
 
     # counting(1)
-    when_read_ratio_changes(1)
+    # when_read_ratio_changes(1)
     # when_arrival_rate_changes(1)
 
     # when_baseline_is_better(1)
@@ -1202,7 +1218,7 @@ if __name__ == "__main__":
     # write_latencies(2)
 
     # plot_all(1)
-    # plot_cumulative(workloads, 2)
+    plot_cumulative(workloads, 2)
     # plot_cumulative2(workloads, 1)
     # plot_cumulative3(workloads, 1)
 

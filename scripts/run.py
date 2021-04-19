@@ -26,7 +26,7 @@ weak_vm_types = ["custom-1-1024", "n1-standard-1", "f1-micro", "g1-small"]
 def parse_args():
     parser = argparse.ArgumentParser(description="This application automatically runs the Legostore project on Google Cloud Platform")
     parser.add_argument('-c','--only-create', dest='only_create', action='store_true', required=False)
-    parser.add_argument('-o', '--run-optimizer', dest='run_optimizer', action='store_true', required=False)
+    parser.add_argument('-o', '--run-optimizer', dest='run_optimizer', action='store_false', required=False)
     parser.add_argument('-l', '--only-latency', dest='only_latency', action='store_true', required=False)
     parser.add_argument('-g', '--only-gather-data', dest='only_gather_data', action='store_true', required=False)
     parser.add_argument('-b', '--no-build', dest='no_build', action='store_true', required=False)
@@ -564,9 +564,9 @@ def main(args):
     if not args.only_create and not args.no_build:
         make_sure_project_can_be_built()
 
-    if args.run_optimizer:
-        optimizer.main()
-        return
+    # if args.run_optimizer:
+    #     optimizer.main()
+    #     return
 
     controller = Controller()
     servers, clients = Machine.get_machine_list()

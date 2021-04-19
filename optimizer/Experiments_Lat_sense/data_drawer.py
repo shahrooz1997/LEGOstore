@@ -8,7 +8,7 @@ import numpy as np
 from workload_def import *
 
 directory = "workloads"
-# directory = "RESULTS/workloads_200ms"
+# directory = "RESULTS/workloads_object_size_sense"
 # directory = "RESULTS/workloads_500ms"
 # directory = "RESULTS/workloads_1000ms"
 # directory = "workloads_Mar24_2152"
@@ -836,7 +836,7 @@ def plot_cumulative3(workloads, availability_target):
         # break
 
 
-def plot_scatter(workloads, availability_target):
+def plot_scatter_slo_latency(workloads, availability_target):
     results, confs = get_results()
     f_index = availability_targets.index(availability_target)
 
@@ -972,6 +972,213 @@ def plot_scatter(workloads, availability_target):
     ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
     ax.set_ylabel('SLO latency (ms)')
     ax.set_xlabel('Workload')
+
+def plot_sense_to_object_size(workloads, availability_target):
+    def get_object_size(workload):
+        size = workload[workload.find("_") + 1:workload.find("_", workload.find("_") + 1)]
+        if size.find("B") != -1:
+            return size
+        size = workload[workload.find("_", workload.find("_") + 1) + 1:workload.find("_", workload.find("_", workload.find("_") + 1) + 1)]
+        return size
+
+    results, confs = get_results()
+    f_index = availability_targets.index(availability_target)
+
+    exec = "optimized"
+
+    arrival_rate = arrival_rates[1]
+
+    # data = OrderedDict()
+    labels = list(object_sizes.keys())
+
+    get_object_size(workloads[0])
+
+    hwks = [-1 for _ in range(len(object_sizes))]
+    ms = [-1 for _ in range(len(object_sizes))]
+    rwks = [-1 for _ in range(len(object_sizes))]
+    hrks = [-1 for _ in range(len(object_sizes))]
+
+    colors = ["r", "b", "g"]
+
+    i = 1
+    for cd in client_dists:
+        print("Figure " + str(i) + ": " + cd)
+        i += 1
+        for workload in workloads:
+            if workload.find(cd) == -1 or workload.find("_" + str(arrival_rate) + "_") == -1:
+                continue
+            if workload.find("HW") == -1:
+                continue
+
+            object_size = get_object_size(workload)
+            # print(object_size)
+            hwks[list(object_sizes.keys()).index(object_size)] = int(confs[f_index][exec + "_" + workload][2])
+            ms[list(object_sizes.keys()).index(object_size)] = int(confs[f_index][exec + "_" + workload][0])
+
+        for workload in workloads:
+            if workload.find(cd) == -1 or workload.find("_" + str(arrival_rate) + "_") == -1:
+                continue
+            if workload.find("RW") == -1:
+                continue
+
+            object_size = get_object_size(workload)
+            # print(object_size)
+            rwks[list(object_sizes.keys()).index(object_size)] = int(confs[f_index][exec + "_" + workload][2])
+
+        for workload in workloads:
+            if workload.find(cd) == -1 or workload.find("_" + str(arrival_rate) + "_") == -1:
+                continue
+            if workload.find("HR") == -1:
+                continue
+
+            object_size = get_object_size(workload)
+            # print(object_size)
+            hrks[list(object_sizes.keys()).index(object_size)] = int(confs[f_index][exec + "_" + workload][2])
+
+        plt.rcParams.update({'font.size': 38})
+        area = 100
+        # fig = plt.figure()
+        # ax = fig.add_axes([0.09, 0.2, .70, .78])
+        fig, ax = plt.subplots()
+        x = np.arange(0.0, len(labels))  # the label locations
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels)
+        # ax.axvline(x=7.5, color='k', lw=5)
+        # ax.axvline(x=15.5, color='k', lw=5)
+
+        ax.scatter(x, hwks, s=3*area, c=colors[0])
+        ax.plot(x, hwks, c=colors[0], label="HW")
+        # ax.scatter(x, ms, s=3 * area, c=colors[0])
+        # ax.plot(x, ms, "-.", c=colors[0], label="HW")
+
+        ax.scatter(x, rwks, s=1.75*area, c=colors[1])
+        ax.plot(x, rwks, c=colors[1], label="RW")
+
+        ax.scatter(x, hrks, s=.5*area, c=colors[2])
+        ax.plot(x, hrks, c=colors[2], label="HR")
+
+        ax.legend()
+
+        major_ticks = np.arange(0, 10, 1)
+        # minor_ticks = np.arange(0, 1001, 25)
+
+        ax.set_yticks(major_ticks)
+        # ax.set_yticks(minor_ticks, minor=True)
+
+        ax.grid(which='minor', alpha=0.4)
+        ax.grid(which='major', alpha=0.8)
+        ax.spines['top'].set_visible(False)
+        ax.tick_params(labeltop=False)
+
+        # ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
+        ax.set_ylabel('K')
+        ax.set_xlabel('Object size')
+
+def plot_sense_to_arrival_rate(workloads, availability_target):
+    def get_arrival_rate(workload):
+        workload = workload[0:workload.rfind("_")]
+        workload = workload[0:workload.rfind("_")]
+        ar = workload[workload.rfind("_") + 1:]
+        return int(ar)
+
+    results, confs = get_results()
+    f_index = availability_targets.index(availability_target)
+
+    exec = "optimized"
+
+    object_size = list(object_sizes.keys())[1]
+
+    # data = OrderedDict()
+    labels = arrival_rates
+
+    hwks = [[-1 for _ in range(len(labels))] for i in range(2)]
+    ms = [[-1 for _ in range(len(labels))] for i in range(2)]
+    rwks = [[-1 for _ in range(len(labels))] for i in range(2)]
+    hrks = [[-1 for _ in range(len(labels))] for i in range(2)]
+
+    colors = ["r", "b", "g"]
+
+    i = 1
+    for cd in client_dists:
+        print("Figure " + str(i) + ": " + cd)
+        i += 1
+        for object_size_index, object_size in enumerate(list(object_sizes.keys())):
+            for workload in workloads:
+                if workload.find(cd) == -1 or workload.find("_" + str(object_size) + "_") == -1:
+                    continue
+                if workload.find("HW") == -1:
+                    continue
+
+                ar = get_arrival_rate(workload)
+                # print(object_size)
+                hwks[object_size_index][labels.index(ar)] = int(confs[f_index][exec + "_" + workload][2])
+                ms[object_size_index][labels.index(ar)] = int(confs[f_index][exec + "_" + workload][0])
+
+            for workload in workloads:
+                if workload.find(cd) == -1 or workload.find("_" + str(object_size) + "_") == -1:
+                    continue
+                if workload.find("RW") == -1:
+                    continue
+
+                ar = get_arrival_rate(workload)
+                # print(object_size)
+                rwks[object_size_index][labels.index(ar)] = int(confs[f_index][exec + "_" + workload][2])
+
+            for workload in workloads:
+                if workload.find(cd) == -1 or workload.find("_" + str(object_size) + "_") == -1:
+                    continue
+                if workload.find("HR") == -1:
+                    continue
+
+                ar = get_arrival_rate(workload)
+                # print(object_size)
+                hrks[object_size_index][labels.index(ar)] = int(confs[f_index][exec + "_" + workload][2])
+
+        plt.rcParams.update({'font.size': 38})
+        area = 100
+        # fig = plt.figure()
+        # ax = fig.add_axes([0.09, 0.2, .70, .78])
+        fig, ax = plt.subplots()
+        x = labels # np.arange(0.0, len(labels))  # the label locations
+        # ax.set_xticks(x)
+        # ax.set_xticklabels(labels)
+        # ax.axvline(x=7.5, color='k', lw=5)
+        # ax.axvline(x=15.5, color='k', lw=5)
+
+        ax.scatter(x, hwks[0], s=3*area, c=colors[0])
+        ax.plot(x, hwks[0], c=colors[0], label="HW - 1KB")
+        # ax.scatter(x, hwks[1], s=3 * area, c=colors[0])
+        # ax.plot(x, hwks[1], "--", c=colors[0], label="HW - 100KB")
+
+        # ax.scatter(x, ms, s=3 * area, c=colors[0])
+        # ax.plot(x, ms, "-.", c=colors[0], label="HW")
+
+        ax.scatter(x, rwks[0], s=1.75*area, c=colors[1])
+        ax.plot(x, rwks[0], c=colors[1], label="RW - 1KB")
+        # ax.scatter(x, rwks[1], s=1.75 * area, c=colors[1])
+        # ax.plot(x, rwks[1], "--", c=colors[1], label="HR - 100KB")
+
+        ax.scatter(x, hrks[0], s=.5*area, c=colors[2])
+        ax.plot(x, hrks[0], c=colors[2], label="HR - 1KB")
+        # ax.scatter(x, hrks[1], s=.5 * area, c=colors[2])
+        # ax.plot(x, hrks[1], "--", c=colors[2], label="HR - 100KB")
+
+        ax.legend()
+
+        major_ticks = np.arange(0, 10, 1)
+        # minor_ticks = np.arange(0, 1001, 25)
+
+        ax.set_yticks(major_ticks)
+        # ax.set_yticks(minor_ticks, minor=True)
+
+        ax.grid(which='minor', alpha=0.4)
+        ax.grid(which='major', alpha=0.8)
+        ax.spines['top'].set_visible(False)
+        ax.tick_params(labeltop=False)
+
+        # ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
+        ax.set_ylabel('K')
+        ax.set_xlabel('Arrival rate (req/s)')
 
 
 
@@ -1287,7 +1494,9 @@ if __name__ == "__main__":
     # plot_cumulative3(workloads, 1)
 
 
-    plot_scatter(workloads, 2)
+    plot_scatter_slo_latency(workloads, 2)
+    # plot_sense_to_object_size(workloads, 1)
+    # plot_sense_to_arrival_rate(workloads, 1)
 
     # os.system("subl drawer_output.txt")
     sys.stdout.flush()

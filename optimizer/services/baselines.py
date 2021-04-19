@@ -158,14 +158,14 @@ def baseline1_cas(datacenters, group, params):
                                             max([datacenter.latencies[k] for k in _iq2]) + \
                                                 max([datacenter.latencies[m] for m in _iq3]))
 
-                this_client_get_cost = group.metadata_size * sum([datacenters[j].network_cost[i] for j in _iq1]) + \
+                this_client_get_cost = group.metadata_size * (sum([datacenters[j].network_cost[i] for j in _iq1]) + sum([datacenters[i].network_cost[j2] for j2 in _iq4])) + \
                                        (group.object_size / k_g) * sum([datacenters[k].network_cost[i] for k in _iq4])
                 this_client_put_cost = group.metadata_size * sum([datacenters[j].network_cost[i] for j in _iq1]) + \
                                        group.metadata_size * sum([datacenters[i].network_cost[k] for k in _iq3]) + \
                                        group.object_size / k_g * sum([datacenters[i].network_cost[m] for m in _iq2])
 
                 _get_cost += group.client_dist[i] * \
-                             (group.metadata_size * sum([datacenters[j].network_cost[i] for j in _iq1]) + \
+                             (group.metadata_size * (sum([datacenters[j].network_cost[i] for j in _iq1]) + sum([datacenters[i].network_cost[j2] for j2 in _iq4])) + \
                               (group.object_size / k_g) * sum([datacenters[k].network_cost[i] for k in _iq4]))
                 _put_cost += group.client_dist[i] * \
                              (group.metadata_size * (sum([datacenters[j].network_cost[i] for j in _iq1]) + \
@@ -421,7 +421,7 @@ def baseline0_cas(datacenters, group, params):
                                         max([datacenter.latencies[k] for k in _iq2]) + \
                                             max([datacenter.latencies[m] for m in _iq3]))
 
-                this_client_get_cost = group.metadata_size * sum([datacenters[j].network_cost[i] for j in _iq1]) + \
+                this_client_get_cost = group.metadata_size * (sum([datacenters[j].network_cost[i] for j in _iq1]) + sum([datacenters[i].network_cost[j2] for j2 in _iq4])) + \
                                         (group.object_size / k_g) * sum([datacenters[k].network_cost[i] for k in _iq4])
                 this_client_put_cost = group.metadata_size * sum([datacenters[j].network_cost[i] for j in _iq1]) + \
                                         group.metadata_size * sum([datacenters[i].network_cost[k] for k in _iq3]) + \
@@ -430,7 +430,7 @@ def baseline0_cas(datacenters, group, params):
                 # print("obj size:", group.object_size / k_g, "sum of network: ", sum([datacenters[k].network_cost[i] for k in _iq4]), "q4=", _iq4)
 
                 _get_cost += group.client_dist[i] * \
-                                (group.metadata_size*sum([datacenters[j].network_cost[i] for j in _iq1]) + \
+                                (group.metadata_size*(sum([datacenters[j].network_cost[i] for j in _iq1]) + sum([datacenters[i].network_cost[j2] for j2 in _iq4])) + \
                                     (group.object_size/k_g)*sum([datacenters[k].network_cost[i] for k in _iq4]))
                 _put_cost += group.client_dist[i] * \
                                 (group.metadata_size*(sum([datacenters[j].network_cost[i] for j in _iq1]) + \

@@ -4,12 +4,12 @@ from collections import OrderedDict
 #version 3
 availability_targets = [1, 2]
 client_dists = OrderedDict([
-    # ("uniform", [1/9 for _ in range(9)]),
-    ("dist_O", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1]),
-    ("dist_LA", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1, 0.0]),
+    ("uniform", [1/9 for _ in range(9)]),
+    # ("dist_O", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1]),
+    # ("dist_LA", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1, 0.0]),
     ("dist_LO", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5]),
-    ("dist_T", [1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
-    ("dist_SY", [0.0, 1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+    # ("dist_T", [1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+    # ("dist_SY", [0.0, 1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
     ("dist_SS", [0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
     ("dist_ST", [0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
@@ -26,11 +26,11 @@ client_dists = OrderedDict([
     # ("expensive_skewed", [0.025, 0.9, 0.0, 0.0, 0.0, 0.0, 0.025, 0.025, 0.025])
     # ("Japan_skewed", [0.9, 0.0, 0.0, 0.0, 0.0, 0.025, 0.0, 0.05, 0.025])
 ])
-object_sizes = OrderedDict([("1KB", 1*2**10 / 2**30), ("10KB", 10*2**10 / 2**30), ("100KB", 100*2**10 / 2**30)])
-storage_sizes = OrderedDict([("100GB", 100), ("1TB", 1024), ("10TB", 10 * 1024)]) # in GB
-arrival_rates = [50, 200, 500]
+object_sizes = OrderedDict([("1KB", 1*2**10 / 2**30), ("10KB", 10*2**10 / 2**30)])# OrderedDict([("1KB", 1*2**10 / 2**30), ("10KB", 10*2**10 / 2**30), ("100KB", 100*2**10 / 2**30)])
+storage_sizes = OrderedDict([("1TB", 1024)]) # in GB
+arrival_rates = [ar for ar in range(50, 525, 25)] # [50, 200, 500]
 read_ratios = OrderedDict([("HW", 0.03225), ("RW", 0.5), ("HR", 0.96774)])
-SLO_latencies = [200, 300] # for each availability_target
+SLO_latencies = [300, 1000] # for each availability_target
 
 # Default values
 availability_target_default  = 2

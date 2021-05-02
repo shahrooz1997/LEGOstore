@@ -21,10 +21,12 @@ from pylab import *
 # path = "data/Findlimits/CAS_NOF_600_Success"
 # path = "data/ARIF/CAS_NOF_HIGHDUR"
 # path = "data/ARIF/CAS_NOF_HIGHDUR_OPTIMIZEDTRUE"
-path = "data/ARIF/CAS_NOF_HIGHDUR_3"
+# path = "data/ARIF/CAS_NOF_HIGHDUR_3"
+path = "data/LAST_RES/CAS_NOF_One_hour_exec_for_latency_verifi"
+path = "data/arrival_rate/HW/CAS_NOF"
 
 
-keys = ["2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010"]#, "222222", "222223"]
+keys = ["20"] #["2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010"]#, "222222", "222223"]
 servers = ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]
 
 def read_operation_for_key(key, log_path):
@@ -288,21 +290,49 @@ def draw_latencies_based_on_arrival_rate_for_server(server):
                 elif line.find("get tail latency(100%)") != -1:
                     get_tail_100.append(float(line[24:line.find("ms")]))
 
-    plt.figure()
+    # plt.figure()
+
+    plt.rcParams.update({'font.size': 44})
+    # fig, ax = plt.subplots()
+    fig = plt.figure()
+    # ax = fig.add_axes([0.07, 0.09, .68, .88])
+    ax = fig.add_axes([0.1, 0.1, .88, .88])
+
     x = arrival_rates
-    plt.plot(x, put_avg, color="b", linewidth=4.0)
-    plt.plot(x, put_tail_95, color="c", linewidth=4.0)
-    plt.plot(x, put_tail_99, color="darkslateblue", linewidth=4.0)
-    plt.plot(x, get_avg, color="r", linewidth=4.0)
-    plt.plot(x, get_tail_95, color="tab:pink", linewidth=4.0)
-    plt.plot(x, get_tail_99, color="lime", linewidth=4.0)
-    legs = plt.legend(["put_avg", "put_tail_95", "put_tail_99", "get_avg", "get_tail_95", "get_tail_99"])
+
+    colors = ["r", "b", "g"]
+    area = 500
+
+    ax.scatter(x, put_tail_99, s=1.75 * area, c="darkslateblue", label='put 99%')
+    ax.plot(x, put_tail_99, "--", color="darkslateblue", linewidth=5.0)
+    # plt.plot(x, put_tail_95, color="c", linewidth=4.0)
+
+    ax.scatter(x, put_avg, s=1 * area, linewidth=10, facecolors='none', edgecolors="b", label='put avg')
+    ax.plot(x, put_avg, "--", color="b", linewidth=5.0)
+
+    ax.scatter(x, get_tail_99, s=1.75 * area, c="lime", label='get 99%')
+    ax.plot(x, get_tail_99, "--", color="lime", linewidth=5.0)
+
+    ax.scatter(x, get_avg, s=1 * area, linewidth=10, facecolors='none', edgecolors="r", label='get avg')
+    ax.plot(x, get_avg, "--", color="r", linewidth=5.0)
+
+
+    # plt.plot(x, get_tail_99, ":", color="lime", linewidth=15.0, label='get 99%')
+    # plt.plot(x, get_tail_95, color="tab:pink", linewidth=4.0)
+    # plt.plot(x, get_avg, "-.", color="r", linewidth=15.0, label='get avg')
+
+    # legs = plt.legend(["put avg", "put tail 95", "put tail_99", "get_avg", "get_tail_95", "get_tail_99"])
+    legs = plt.legend()
     for leg in legs.get_lines():
-        leg.set_linewidth(4)
+        leg.set_linewidth(7)
     # plt.plot(y, '.-g')
-    plt.title(server + "")
-    plt.xlabel('arrival_rate(req/sec)')
-    plt.ylabel('latency(ms)')
+    # plt.title(server + "")
+    plt.xlabel('Arrival rate (req/sec)')
+    plt.ylabel('Latency (ms)')
+
+    limits = ax.axis()
+    ax.axis([limits[0], limits[1], 0, limits[3]])
+
     plt.grid(True)
 
 def draw_latencies_based_on_object_number_for_server(server):
@@ -409,14 +439,14 @@ def main():
 if __name__ == "__main__":
     # main()
 
-    plot_reconfiguration_latencies()
+    # plot_reconfiguration_latencies()
 
     # plot_one_key_one_server(keys[1], "s0")
     # plot_one_key_one_server(keys[1], "s1")
     # plot_one_key_one_server(keys[1], "s3")
 
-    for server in servers:
-       plot_one_key_one_server(keys[0], server)
+    # for server in servers:
+    #    plot_one_key_one_server(keys[0], server)
        # print_one_key_one_server(keys[0], server)
 
     # for key in keys:
@@ -435,6 +465,8 @@ if __name__ == "__main__":
     # for server in servers:
     #    # draw_latencies_based_on_arrival_rate_for_server(server)
     #     draw_latencies_based_on_object_number_for_server(server)
+
+    draw_latencies_based_on_arrival_rate_for_server(servers[0])
 
 
     plt.show()

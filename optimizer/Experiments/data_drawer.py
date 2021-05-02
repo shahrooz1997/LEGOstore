@@ -8,9 +8,9 @@ import numpy as np
 from workload_def import *
 
 # directory = "workloads"
-directory = "RESULTS/workloads_200ms"
+# directory = "RESULTS/workloads_200ms"
 # directory = "RESULTS/workloads_500ms"
-# directory = "RESULTS/workloads_1000ms"
+directory = "RESULTS/workloads_1000ms"
 # directory = "workloads_Mar24_2152"
 # directory = "/home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/ALL_optimizer_Mar19_0817"
 
@@ -118,7 +118,7 @@ def get_workloads():
                 for arrival_rate in arrival_rates:
                     for read_ratio in read_ratios:
                         # for lat in SLO_latencies:
-                        lat = 300
+                        lat = 1000
 
                         num_objects = storage_sizes[storage_size] / object_sizes[object_size]
                         FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(arrival_rate) + "_" + \
@@ -849,7 +849,6 @@ def plot_cumulative3(workloads, availability_target):
         print("for " + exec + ": max is", max_cost, "and geo_mean is", geo_mean_cost)
         # break
 
-
 def counting(availability_target):
     results, confs = get_results()
     f_index = availability_targets.index(availability_target)
@@ -1072,6 +1071,8 @@ def when_EC_lat_better(availability_target):
             #     print()
 
     print(min_lat_diff, picked_workload, picked_rep_selected_dcs, picked_ec_selected_dcs, picked_rep_get_lat, picked_ec_get_lat)
+    print("baseline_abd_nearest", confs[f_index]["baseline_abd_nearest" + "_" + picked_workload])
+    print("baseline_cas_nearest", confs[f_index]["baseline_cas_nearest" + "_" + picked_workload])
 
     # Cost-basis view
     # for workload in workloads:
@@ -1146,6 +1147,338 @@ def nearest_experiment(workloads, availability_target):
 
     print("best:", best_workload, max_profit_cas, max_profit_abd)
 
+def mis_prediction_robustness(availability_target):
+    results, confs = get_results()
+    f_index = availability_targets.index(availability_target)
+    files_path = os.path.join(directory, "f=" + str(availability_targets[f_index]))
+
+    lat = 1000
+
+    # client dist.
+    workload_counter = 0
+    conf_change_counter = 0
+    for object_size in object_sizes:
+        for storage_size in storage_sizes:
+            for arrival_rate in arrival_rates:
+                for read_ratio in read_ratios:
+                    workload_counter += 1
+                    old_configuration = ""
+                    for client_dist in client_dists:
+                        # for lat in SLO_latencies:
+
+                        num_objects = storage_sizes[storage_size] / object_sizes[object_size]
+                        FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(arrival_rate) + "_" + \
+                                    read_ratio + "_" + str(lat) + ".json"
+                        workload = FILE_NAME
+
+                        res_file = os.path.join(files_path, "res_" + "optimized" + "_" + workload)
+                        data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
+                        for grp_index, grp in enumerate(data):
+                            if grp["protocol"] != "abd":
+                                configuration = str(grp["m"]) + "|" + str(grp["k"]) + "|" + list_reformat(
+                                    grp["selected_dcs"]) + \
+                                                "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q4"]))
+                            else:
+                                configuration = str(grp["m"]) + "|" + "0" + "|" + list_reformat(
+                                    grp["selected_dcs"]) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"]))
+
+                        if old_configuration != "" and old_configuration != configuration:
+                            conf_change_counter += 1
+                            break
+
+                        old_configuration = configuration
+    print("client dist:", "{:.2f}".format(float(conf_change_counter) / float(workload_counter)) )
+
+    # object_size
+    workload_counter = 0
+    conf_change_counter = 0
+    for client_dist in client_dists:
+        for storage_size in storage_sizes:
+            for arrival_rate in arrival_rates:
+                for read_ratio in read_ratios:
+                    workload_counter += 1
+                    old_configuration = ""
+                    for object_size in object_sizes:
+                        # for lat in SLO_latencies:
+
+                        num_objects = storage_sizes[storage_size] / object_sizes[object_size]
+                        FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
+                            arrival_rate) + "_" + \
+                                    read_ratio + "_" + str(lat) + ".json"
+                        workload = FILE_NAME
+
+                        res_file = os.path.join(files_path, "res_" + "optimized" + "_" + workload)
+                        data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
+                        for grp_index, grp in enumerate(data):
+                            if grp["protocol"] != "abd":
+                                configuration = str(grp["m"]) + "|" + str(grp["k"]) + "|" + list_reformat(
+                                    grp["selected_dcs"]) + \
+                                                "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q4"]))
+                            else:
+                                configuration = str(grp["m"]) + "|" + "0" + "|" + list_reformat(
+                                    grp["selected_dcs"]) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"]))
+
+                        if old_configuration != "" and old_configuration != configuration:
+                            conf_change_counter += 1
+                            break
+
+                        old_configuration = configuration
+    print("object size:", "{:.2f}".format(float(conf_change_counter) / float(workload_counter)))
+
+    # storage_size
+    workload_counter = 0
+    conf_change_counter = 0
+    for client_dist in client_dists:
+        for object_size in object_sizes:
+            for arrival_rate in arrival_rates:
+                for read_ratio in read_ratios:
+                    workload_counter += 1
+                    old_configuration = ""
+                    for storage_size in storage_sizes:
+                        # for lat in SLO_latencies:
+
+                        num_objects = storage_sizes[storage_size] / object_sizes[object_size]
+                        FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
+                            arrival_rate) + "_" + \
+                                    read_ratio + "_" + str(lat) + ".json"
+                        workload = FILE_NAME
+
+                        res_file = os.path.join(files_path, "res_" + "optimized" + "_" + workload)
+                        data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
+                        for grp_index, grp in enumerate(data):
+                            if grp["protocol"] != "abd":
+                                configuration = str(grp["m"]) + "|" + str(grp["k"]) + "|" + list_reformat(
+                                    grp["selected_dcs"]) + \
+                                                "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q4"]))
+                            else:
+                                configuration = str(grp["m"]) + "|" + "0" + "|" + list_reformat(
+                                    grp["selected_dcs"]) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"]))
+
+                        if old_configuration != "" and old_configuration != configuration:
+                            conf_change_counter += 1
+                            break
+
+                        old_configuration = configuration
+    print("storage size:", "{:.2f}".format(float(conf_change_counter) / float(workload_counter)))
+
+    # arrival_rate
+    workload_counter = 0
+    conf_change_counter = 0
+    for client_dist in client_dists:
+        for object_size in object_sizes:
+            for storage_size in storage_sizes:
+                for read_ratio in read_ratios:
+                    workload_counter += 1
+                    old_configuration = ""
+                    for arrival_rate in arrival_rates:
+                        # for lat in SLO_latencies:
+
+                        num_objects = storage_sizes[storage_size] / object_sizes[object_size]
+                        FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
+                            arrival_rate) + "_" + \
+                                    read_ratio + "_" + str(lat) + ".json"
+                        workload = FILE_NAME
+
+                        res_file = os.path.join(files_path, "res_" + "optimized" + "_" + workload)
+                        data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
+                        for grp_index, grp in enumerate(data):
+                            if grp["protocol"] != "abd":
+                                configuration = str(grp["m"]) + "|" + str(grp["k"]) + "|" + list_reformat(
+                                    grp["selected_dcs"]) + \
+                                                "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q4"]))
+                            else:
+                                configuration = str(grp["m"]) + "|" + "0" + "|" + list_reformat(
+                                    grp["selected_dcs"]) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"]))
+
+                        if old_configuration != "" and old_configuration != configuration:
+                            conf_change_counter += 1
+                            break
+
+                        old_configuration = configuration
+    print("arrival rate:", "{:.2f}".format(float(conf_change_counter) / float(workload_counter)))
+
+    # read_ratio
+    workload_counter = 0
+    conf_change_counter = 0
+    for client_dist in client_dists:
+        for object_size in object_sizes:
+            for storage_size in storage_sizes:
+                for arrival_rate in arrival_rates:
+                    workload_counter += 1
+                    old_configuration = ""
+                    for read_ratio in read_ratios:
+                        # for lat in SLO_latencies:
+
+                        num_objects = storage_sizes[storage_size] / object_sizes[object_size]
+                        FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
+                            arrival_rate) + "_" + \
+                                    read_ratio + "_" + str(lat) + ".json"
+                        workload = FILE_NAME
+
+                        res_file = os.path.join(files_path, "res_" + "optimized" + "_" + workload)
+                        data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
+                        for grp_index, grp in enumerate(data):
+                            if grp["protocol"] != "abd":
+                                configuration = str(grp["m"]) + "|" + str(grp["k"]) + "|" + list_reformat(
+                                    grp["selected_dcs"]) + \
+                                                "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q4"]))
+                            else:
+                                configuration = str(grp["m"]) + "|" + "0" + "|" + list_reformat(
+                                    grp["selected_dcs"]) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"]))
+
+                        if old_configuration != "" and old_configuration != configuration:
+                            conf_change_counter += 1
+                            break
+
+                        old_configuration = configuration
+    print("read ratio:", "{:.2f}".format(float(conf_change_counter) / float(workload_counter)))
+
+def get_conf(res_file):
+    data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
+    for grp_index, grp in enumerate(data):
+        if grp["protocol"] != "abd":
+            configuration = str(grp["m"]) + "|" + str(grp["k"]) + "|" + list_reformat(
+                grp["selected_dcs"]) + \
+                            "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                len(grp["client_placement_info"]["0"]["Q2"])) + "|" + str(
+                len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(
+                len(grp["client_placement_info"]["0"]["Q4"]))
+        else:
+            configuration = str(grp["m"]) + "|" + "0" + "|" + list_reformat(
+                grp["selected_dcs"]) + "|" + str(
+                len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                len(grp["client_placement_info"]["0"]["Q2"]))
+            
+    return configuration
+
+def get_res_files(characteristic):
+    for client_dist in client_dists:
+        for object_size in object_sizes:
+            for storage_size in storage_sizes:
+                for arrival_rate in arrival_rates:
+                    for read_ratio in read_ratios:
+                        old_configuration = ""
+
+                        # for lat in SLO_latencies:
+
+                        num_objects = storage_sizes[storage_size] / object_sizes[object_size]
+                        FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(arrival_rate) + "_" + \
+                                    read_ratio + "_" + str(lat) + ".json"
+                        workload = FILE_NAME
+
+                        res_file = os.path.join(files_path, "res_" + "optimized" + "_" + workload)
+
+def mis_prediction():
+    # results, confs = get_results()
+    # f_index = availability_targets.index(availability_target)
+    # files_path = os.path.join(directory, "f=" + str(availability_targets[f_index]))
+
+    lat = 1000
+
+    # object_size
+    workload_counter = 0
+    conf_change_low_counter = 0
+    conf_change_high_counter = 0
+    low_path = "RESULTS/prediction/workloads_OS_Low/f=1"
+    main_path = "RESULTS/workloads_1000ms/f=1"
+    high_path = "RESULTS/prediction/workloads_OS_High/f=1"
+
+    for object_size in object_sizes:
+        for workload in workloads:
+            if workload_satisfies(workload, [object_size]):
+                workload_counter += 1
+                file = "res_" + "optimized" + "_" + workload
+                low_res_file = os.path.join(low_path, file)
+                main_res_file = os.path.join(main_path, file)
+                high_res_file = os.path.join(high_path, file)
+
+                if get_conf(low_res_file) != get_conf(main_res_file):
+                    conf_change_low_counter += 1
+
+                if get_conf(high_res_file) != get_conf(main_res_file):
+                    conf_change_high_counter += 1
+
+        print("object size low:", "{:.2f}".format(float(conf_change_low_counter) / float(workload_counter)))
+        print("object size high:", "{:.2f}".format(float(conf_change_high_counter) / float(workload_counter)))
+
+    # storage_size
+    workload_counter = 0
+    conf_change_low_counter = 0
+    conf_change_high_counter = 0
+    low_path = "RESULTS/prediction/workloads_SS_Low/f=1"
+    main_path = "RESULTS/workloads_1000ms/f=1"
+    high_path = "RESULTS/prediction/workloads_SS_High/f=1"
+
+    for storage_size in storage_sizes:
+        for workload in workloads:
+            if workload_satisfies(workload, [storage_size]):
+                workload_counter += 1
+                file = "res_" + "optimized" + "_" + workload
+                low_res_file = os.path.join(low_path, file)
+                main_res_file = os.path.join(main_path, file)
+                high_res_file = os.path.join(high_path, file)
+
+                if get_conf(low_res_file) != get_conf(main_res_file):
+                    conf_change_low_counter += 1
+
+                if get_conf(high_res_file) != get_conf(main_res_file):
+                    conf_change_high_counter += 1
+
+        print("storage size low:", "{:.2f}".format(float(conf_change_low_counter) / float(workload_counter)))
+        print("storage size high:", "{:.2f}".format(float(conf_change_high_counter) / float(workload_counter)))
+
+
+    # read_ratio
+    workload_counter = 0
+    conf_change_low_counter = 0
+    conf_change_high_counter = 0
+    low_path = "RESULTS/prediction/workloads_SS_Low/f=1"
+    main_path = "RESULTS/workloads_1000ms/f=1"
+    high_path = "RESULTS/prediction/workloads_SS_High/f=1"
+
+    for read_ratio in read_ratios:
+        for workload in workloads:
+            if workload_satisfies(workload, [read_ratio]):
+                workload_counter += 1
+                file = "res_" + "optimized" + "_" + workload
+                low_res_file = os.path.join(low_path, file)
+                main_res_file = os.path.join(main_path, file)
+                high_res_file = os.path.join(high_path, file)
+
+                if get_conf(low_res_file) != get_conf(main_res_file):
+                    conf_change_low_counter += 1
+
+                if get_conf(high_res_file) != get_conf(main_res_file):
+                    conf_change_high_counter += 1
+
+        print("read ratio low:", "{:.2f}".format(float(conf_change_low_counter) / float(workload_counter)))
+        print("read ratio high:", "{:.2f}".format(float(conf_change_high_counter) / float(workload_counter)))
+
 def workload_satisfies(workload, attrs):
     for a in attrs:
         if workload.find(a) == -1:
@@ -1218,12 +1551,15 @@ if __name__ == "__main__":
     # write_latencies(2)
 
     # plot_all(1)
-    plot_cumulative(workloads, 2)
+    # plot_cumulative(workloads, 1)
     # plot_cumulative2(workloads, 1)
     # plot_cumulative3(workloads, 1)
 
     # nearest_experiment(workloads, 1)
     # plot_workload("dist_ST_1KB_100GB_500_HR_1000.json", 1)
+
+    # mis_prediction_robustness(1)
+    mis_prediction()
 
     # os.system("subl drawer_output.txt")
     sys.stdout.flush()

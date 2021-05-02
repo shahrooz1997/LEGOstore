@@ -229,7 +229,7 @@ CAS_Client::~CAS_Client(){
     DPRINTF(DEBUG_CAS_Client, "cliend with id \"%u\" has been destructed.\n", this->id);
 }
 
-int CAS_Client::get_timestamp(const string& key, unique_ptr<Timestamp>& timestamp_p){
+int CAS_Client::get_timestamp(const string& key, unique_ptr<Timestamp>& timestamp_p, bool is_put){
 
     DPRINTF(DEBUG_CAS_Client, "started on key %s\n", key.c_str());
 
@@ -243,7 +243,7 @@ int CAS_Client::get_timestamp(const string& key, unique_ptr<Timestamp>& timestam
     
     DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");
 #ifndef No_GET_OPTIMIZED
-    if(p.quorums[this->local_datacenter_id].Q1.size() < p.quorums[this->local_datacenter_id].Q4.size()) {
+    if(!is_put && p.quorums[this->local_datacenter_id].Q1.size() < p.quorums[this->local_datacenter_id].Q4.size()) {
         op_status = CAS_helper::failure_support_optimized("get_timestamp", key, "", vector<string>(p.m, ""), this->retry_attempts, p.quorums[this->local_datacenter_id].Q4,
                                                                  p.servers, p.m,
                                                                  this->datacenters, this->current_class,
@@ -339,7 +339,7 @@ int CAS_Client::put(const string& key, const string& value){
     unique_ptr<Timestamp> timestamp_p;
     unique_ptr<Timestamp> timestamp_tmp_p;
     int status = S_OK;
-    status = this->get_timestamp(key, timestamp_tmp_p);
+    status = this->get_timestamp(key, timestamp_tmp_p, true);
     if(status == S_RECFG){
         return parent->put(key, value);
     }

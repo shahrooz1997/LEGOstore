@@ -26,7 +26,7 @@ weak_vm_types = ["custom-1-1024", "n1-standard-1", "f1-micro", "g1-small"]
 def parse_args():
     parser = argparse.ArgumentParser(description="This application automatically runs the Legostore project on Google Cloud Platform")
     parser.add_argument('-c','--only-create', dest='only_create', action='store_true', required=False)
-    parser.add_argument('-o', '--run-optimizer', dest='run_optimizer', action='store_false', required=False)
+    parser.add_argument('-o', '--run-optimizer', dest='run_optimizer', action='store_true', required=False)
     parser.add_argument('-l', '--only-latency', dest='only_latency', action='store_true', required=False)
     parser.add_argument('-g', '--only-gather-data', dest='only_gather_data', action='store_true', required=False)
     parser.add_argument('-b', '--no-build', dest='no_build', action='store_true', required=False)
@@ -377,7 +377,7 @@ class Machine:
             self.execute("sudo bash -c 'printf \"* hard nofile 97816\\n* soft nofile 97816\\n\" >> /etc/security/limits.conf'")
             self.execute("sudo touch ../init_config_done")
 
-    def config(self, make_clear=True, clear_all=False):
+    def config(self, make_clear=True, clear_all=True):
         self.stop()
         if clear_all:
             self.clear()
@@ -451,6 +451,9 @@ class Machine:
             if int(stdout) > 5:
                 break;
             sleep(1)
+
+        if self.name == "s7":
+            self.execute("sudo killall Server")
 
         print("server and metadata_server are running on " + self.name)
 
@@ -606,24 +609,30 @@ def main(args):
 
 
 def arrival_rate_test(args):
-    arrival_rates = [40, 60, 80, 100] #list(range(20, 101, 20))
-    read_ratios = OrderedDict([("HW", 0.1), ("RW", 0.5), ("HR", 0.9)])
+    arrival_rates = [20, 40] #[20, 40, 60, 80, 100] #list(range(20, 101, 20))
+    # read_ratios = OrderedDict([("HW", 0.1), ("RW", 0.5), ("HR", 0.9)])
+    read_ratios =  OrderedDict([("RW", 0.5)]) #OrderedDict([("HW", 0.03225), ("RW", 0.5)]) #, ("HR", 0.96774)])
 
     if not args.only_create:
         make_sure_project_can_be_built()
     args.no_build = True
 
-    for ar in arrival_rates:
-        workload = json.load(open("../config/auto_test/input_workload.json", "r"), object_pairs_hook=OrderedDict)["workload_config"]
-        for grp_con in workload:
-            groups = grp_con["grp_workload"]
-            for grp in groups:
-                grp["arrival_rate"] = ar
+    for rr in read_ratios:
+        for ar in arrival_rates:
+            workload = json.load(open("../config/auto_test/input_workload.json", "r"), object_pairs_hook=OrderedDict)["workload_config"]
+            for grp_con in workload:
+                groups = grp_con["grp_workload"]
+                for grp in groups:
+                    grp["arrival_rate"] = ar
+                    grp["read_ratio"] = read_ratios[rr]
+                    grp["write_ratio"] = 1 - read_ratios[rr]
 
-        json.dump({"workload_config": workload}, open("../config/auto_test/input_workload.json", "w"), indent=2)
+            json.dump({"workload_config": workload}, open("../config/auto_test/input_workload.json", "w"), indent=2)
 
-        main(args)
-        os.system("mv data/CAS_NOF data/arrival_rate/HR/CAS_NOF_" + str(ar))
+            main(args)
+            os.system("mv data/CAS_NOF data/arrival_rate/" + rr + "/CAS_NOF_" + str(ar))
+            # os.system("./delete_servers.py")
+            sleep(5)
 
 def object_number_test(args):
     object_number = [1, 5, 25, 125]

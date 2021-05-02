@@ -7,12 +7,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 from workload_def import *
 
-directory = "workloads"
+# directory = "workloads"
+directory = "RESULTS/workloads_cost_k"
 # directory = "RESULTS/workloads_object_size_sense"
+# directory = "RESULTS/workloads_arrival_rate_sense"
 # directory = "RESULTS/workloads_500ms"
 # directory = "RESULTS/workloads_1000ms"
 # directory = "workloads_Mar24_2152"
 # directory = "/home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/ALL_optimizer_Mar19_0817"
+
+m = 9
 
 def open_sublime():
     os.system("subl drawer_output.txt")
@@ -147,6 +151,48 @@ def get_results():
         all_results.append(OrderedDict())
         confs.append(OrderedDict())
         for exec in executions[f_index]:
+            for workload in workloads:
+                key = exec + "_" + workload  # list(client_dists.keys())[grp_index] + "_" + object_size_default + "_" + arrival_rate_default + "_" + read_ratio_default + "_" + SLO_read_default
+                res_file = os.path.join(files_path, "res_" + exec + "_" + workload)
+                if not os.path.exists(res_file):
+                    value = "INVALID"
+                    all_results[f_index][key] = value
+                    confs[f_index][key] = value
+                    continue
+                data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
+                for grp_index, grp in enumerate(data):
+                    if grp["m"] != "INVALID":
+                        value = "{:.4e}".format(grp["get_cost"]) + " " + "{:.4e}".format(grp["put_cost"]) + " " + \
+                                "{:.4e}".format(grp["vm_cost"]) + " " + "{:.4e}".format(grp["storage_cost"])
+                        all_results[f_index][key] = value
+                        value = str(grp["m"]) + "|" + (str(grp["k"]) if grp["protocol"] != "abd" else str(0)) + "|"
+                        for s in grp["selected_dcs"]:
+                            value += str(s) + ","
+                        value = value[0:-1]
+                        value += "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(len(grp["client_placement_info"]["0"]["Q2"]))
+                        if grp["protocol"] != "abd":
+                            value += "|" + str(len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(len(grp["client_placement_info"]["0"]["Q4"]))
+                        value += "|" + "{:.4e}".format(grp["get_cost"]) + "|" + "{:.4e}".format(grp["put_cost"]) + "|" + \
+                                "{:.4e}".format(grp["vm_cost"]) + "|" + "{:.4e}".format(grp["storage_cost"]) + "|" + "{:.4f}".format(grp["total_cost"]) + "|" + "{:.0f}".format(grp["put_latency"]) + "|" + "{:.0f}".format(grp["get_latency"])
+                        confs[f_index][key] = value
+                    else:
+                        value = "INVALID"
+                        all_results[f_index][key] = value
+                        confs[f_index][key] = value
+    return all_results, confs
+
+def get_results_k():
+    all_results = []
+    confs = []
+    # m = 9
+
+    for f_index, f in enumerate(availability_targets):
+        files_path = os.path.join(directory, "f=" + str(f))
+        all_results.append(OrderedDict())
+        confs.append(OrderedDict())
+        for k in range(1, m - 1, 1):
+            exec = str(k)
+        # for exec in executions[f_index]:
             for workload in workloads:
                 key = exec + "_" + workload  # list(client_dists.keys())[grp_index] + "_" + object_size_default + "_" + arrival_rate_default + "_" + read_ratio_default + "_" + SLO_read_default
                 res_file = os.path.join(files_path, "res_" + exec + "_" + workload)
@@ -860,7 +906,7 @@ def plot_scatter_slo_latency(workloads, availability_target):
     i = 0
     for cd in client_dists:
         # data[cd] = []  # 0: impossible, 1: Rep, 2: EC
-        labels.append(cd)
+        labels.append(distribution_full_name[cd])
         for workload in workloads:
             if workload.find("HW") == -1:
                 continue
@@ -882,7 +928,7 @@ def plot_scatter_slo_latency(workloads, availability_target):
 
     for cd in client_dists:
         # data[cd] = []  # 0: impossible, 1: Rep, 2: EC
-        labels.append(cd)
+        labels.append(distribution_full_name[cd])
         for workload in workloads:
             if workload.find("RW") == -1:
                 continue
@@ -904,7 +950,7 @@ def plot_scatter_slo_latency(workloads, availability_target):
 
     for cd in client_dists:
         # data[cd] = []  # 0: impossible, 1: Rep, 2: EC
-        labels.append(cd)
+        labels.append(distribution_full_name[cd])
         for workload in workloads:
             if workload.find("HR") == -1:
                 continue
@@ -927,7 +973,7 @@ def plot_scatter_slo_latency(workloads, availability_target):
     plt.rcParams.update({'font.size': 38})
     area = 100
     fig = plt.figure()
-    ax = fig.add_axes([0.09, 0.2, .70, .78])
+    ax = fig.add_axes([0.09, 0.4, .90, .58])
     # fig, ax = plt.subplots()
 
     x = np.arange(0.0, len(labels))  # the label locations
@@ -969,9 +1015,9 @@ def plot_scatter_slo_latency(workloads, availability_target):
 
 
     ax.grid(True)
-    ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
+    # ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
     ax.set_ylabel('SLO latency (ms)')
-    ax.set_xlabel('Workload')
+    ax.set_xlabel('Client Distribution')
 
 def plot_sense_to_object_size(workloads, availability_target):
     def get_object_size(workload):
@@ -1086,10 +1132,12 @@ def plot_sense_to_arrival_rate(workloads, availability_target):
 
     exec = "optimized"
 
-    object_size = list(object_sizes.keys())[1]
+    object_size = list(object_sizes.keys())[0]
+
+    m_k_pair = []
 
     # data = OrderedDict()
-    labels = arrival_rates
+    labels = arrival_rates[0:21]
 
     hwks = [[-1 for _ in range(len(labels))] for i in range(2)]
     ms = [[-1 for _ in range(len(labels))] for i in range(2)]
@@ -1100,6 +1148,8 @@ def plot_sense_to_arrival_rate(workloads, availability_target):
 
     i = 1
     for cd in client_dists:
+        if cd != "dist_T":
+            continue
         print("Figure " + str(i) + ": " + cd)
         i += 1
         for object_size_index, object_size in enumerate(list(object_sizes.keys())):
@@ -1110,9 +1160,12 @@ def plot_sense_to_arrival_rate(workloads, availability_target):
                     continue
 
                 ar = get_arrival_rate(workload)
+                if not ar in labels:
+                    continue
                 # print(object_size)
                 hwks[object_size_index][labels.index(ar)] = int(confs[f_index][exec + "_" + workload][2])
                 ms[object_size_index][labels.index(ar)] = int(confs[f_index][exec + "_" + workload][0])
+                # m_k_pair.append([int(confs[f_index][exec + "_" + workload][0]), int(confs[f_index][exec + "_" + workload][2])])
 
             for workload in workloads:
                 if workload.find(cd) == -1 or workload.find("_" + str(object_size) + "_") == -1:
@@ -1121,6 +1174,8 @@ def plot_sense_to_arrival_rate(workloads, availability_target):
                     continue
 
                 ar = get_arrival_rate(workload)
+                if not ar in labels:
+                    continue
                 # print(object_size)
                 rwks[object_size_index][labels.index(ar)] = int(confs[f_index][exec + "_" + workload][2])
 
@@ -1131,6 +1186,8 @@ def plot_sense_to_arrival_rate(workloads, availability_target):
                     continue
 
                 ar = get_arrival_rate(workload)
+                if not ar in labels:
+                    continue
                 # print(object_size)
                 hrks[object_size_index][labels.index(ar)] = int(confs[f_index][exec + "_" + workload][2])
 
@@ -1146,7 +1203,8 @@ def plot_sense_to_arrival_rate(workloads, availability_target):
         # ax.axvline(x=15.5, color='k', lw=5)
 
         ax.scatter(x, hwks[0], s=3*area, c=colors[0])
-        ax.plot(x, hwks[0], c=colors[0], label="HW - 1KB")
+        ax.plot(x, hwks[0], c=colors[0], label="HW")
+        print(m_k_pair)
         # ax.scatter(x, hwks[1], s=3 * area, c=colors[0])
         # ax.plot(x, hwks[1], "--", c=colors[0], label="HW - 100KB")
 
@@ -1154,12 +1212,12 @@ def plot_sense_to_arrival_rate(workloads, availability_target):
         # ax.plot(x, ms, "-.", c=colors[0], label="HW")
 
         ax.scatter(x, rwks[0], s=1.75*area, c=colors[1])
-        ax.plot(x, rwks[0], c=colors[1], label="RW - 1KB")
+        ax.plot(x, rwks[0], c=colors[1], label="RW")
         # ax.scatter(x, rwks[1], s=1.75 * area, c=colors[1])
         # ax.plot(x, rwks[1], "--", c=colors[1], label="HR - 100KB")
 
         ax.scatter(x, hrks[0], s=.5*area, c=colors[2])
-        ax.plot(x, hrks[0], c=colors[2], label="HR - 1KB")
+        ax.plot(x, hrks[0], c=colors[2], label="HR")
         # ax.scatter(x, hrks[1], s=.5 * area, c=colors[2])
         # ax.plot(x, hrks[1], "--", c=colors[2], label="HR - 100KB")
 
@@ -1176,11 +1234,132 @@ def plot_sense_to_arrival_rate(workloads, availability_target):
         ax.spines['top'].set_visible(False)
         ax.tick_params(labeltop=False)
 
+        limits = ax.axis()
+        ax.axis([limits[0], 600, limits[2], limits[3]])
+
         # ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
         ax.set_ylabel('K')
         ax.set_xlabel('Arrival rate (req/s)')
 
+def cost_const_k(workload, availability_target):
+    results, confs = get_results_k()
+    f_index = availability_targets.index(availability_target)
+    workload = workload if workload.find(".json") != -1 else workload + ".json"
 
+    labels = []
+    get_cost = []
+    put_cost = []
+    vm_cost = []
+    storage_cost = []
+
+    # optimized = []
+    # values = results[f_index]["optimized" + "_" + workload].split()
+    # optimized.append(float(values[0]))
+    # optimized.append(float(values[1]))
+    # optimized.append(float(values[2]))
+    # optimized.append(float(values[3]))
+    # optimized_cost = sum(optimized)
+    print(workload[:workload.find(".json")] + ":")
+    for k in range(1, m - 1, 1):
+        exec = str(k)
+    # for exec in executions[f_index]:
+        # if exec == "optimized":
+        #     continue
+        if results[f_index][exec + "_" + workload] == "INVALID":
+            print("WARN: no data found for " + exec + "_" + workload)
+            continue
+        labels.append(exec)
+        values = results[f_index][exec + "_" + workload].split()
+        # print(values)
+        get_cost.append(float(values[0]))
+        put_cost.append(float(values[1]))
+        vm_cost.append(float(values[2]))
+        storage_cost.append(float(values[3]))
+        print(exec + ":", confs[f_index][exec + "_" + workload])
+    print()
+
+    # print(get_cost)
+    # print(put_cost)
+    # print(vm_cost)
+    # print(storage_cost)
+    width = 0.5  # the width of the bars: can also be len(x) sequence
+    fig, ax = plt.subplots()
+
+    # ax.bar(labels, women_means, width, yerr=women_std, bottom=men_means, label='Women')
+
+    ax.bar(labels, storage_cost, width, bottom=np.array(get_cost) + np.array(put_cost) + np.array(vm_cost),
+           label='storage_cost', color='tab:red')
+    ax.bar(labels, vm_cost, width, bottom=np.array(get_cost) + np.array(put_cost), label='vm_cost', color='tab:green')
+    ax.bar(labels, put_cost, width, bottom=get_cost, label='put_cost', color='tab:orange')
+    ax.bar(labels, get_cost, width, label='get_cost', color='tab:blue')
+
+    ax.set_ylabel('Cost($/hour)')
+    ax.set_xlabel('K')
+    ax.set_title(workload[:workload.find(".json")] + ", N is constant 9")
+    ax.legend()
+    plt.grid(True)
+
+def cost_k(workload, availability_target):
+    results, confs = get_results_k()
+    f_index = availability_targets.index(availability_target)
+    workload = workload if workload.find(".json") != -1 else workload + ".json"
+
+    labels = []
+    get_cost = []
+    put_cost = []
+    vm_cost = []
+    storage_cost = []
+
+    # optimized = []
+    # values = results[f_index]["optimized" + "_" + workload].split()
+    # optimized.append(float(values[0]))
+    # optimized.append(float(values[1]))
+    # optimized.append(float(values[2]))
+    # optimized.append(float(values[3]))
+    # optimized_cost = sum(optimized)
+    print(workload[:workload.find(".json")] + ":")
+    for k in range(1, m - 1, 1):
+        exec = str(k)
+    # for exec in executions[f_index]:
+        # if exec == "optimized":
+        #     continue
+        if results[f_index][exec + "_" + workload] == "INVALID":
+            print("WARN: no data found for " + exec + "_" + workload)
+            continue
+        labels.append(exec)
+        values = results[f_index][exec + "_" + workload].split()
+        # print(values)
+        get_cost.append(float(values[0]))
+        put_cost.append(float(values[1]))
+        vm_cost.append(float(values[2]))
+        storage_cost.append(float(values[3]))
+        print(exec + ":", confs[f_index][exec + "_" + workload])
+    print()
+
+    # print(get_cost)
+    # print(put_cost)
+    # print(vm_cost)
+    # print(storage_cost)
+    plt.rcParams.update({'font.size': 38})
+    width = 0.5  # the width of the bars: can also be len(x) sequence
+    # fig, ax = plt.subplots()
+    fig = plt.figure()
+    ax = fig.add_axes([0.07, 0.09, .68, .88])
+
+    # ax.bar(labels, women_means, width, yerr=women_std, bottom=men_means, label='Women')
+
+    ax.bar(labels, storage_cost, width, bottom=np.array(get_cost) + np.array(put_cost) + np.array(vm_cost),
+           label='storage_cost', color='tab:red')
+    ax.bar(labels, vm_cost, width, bottom=np.array(get_cost) + np.array(put_cost), label='vm_cost', color='tab:green', fill=True, hatch='/')
+    ax.bar(labels, put_cost, width, bottom=get_cost, label='put_cost', color='tab:orange', fill=True, hatch='|')
+    ax.bar(labels, get_cost, width, label='get_cost', color='tab:blue', fill=True, hatch='X')
+
+    ax.set_ylabel('Cost ($/hour)')
+    ax.set_xlabel('K')
+    # ax.set_title(workload[:workload.find(".json")] + ", N k+2f")
+    # ax.legend()
+    ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
+    plt.grid(True)
 
 def counting(availability_target):
     results, confs = get_results()
@@ -1451,11 +1630,14 @@ def plot_all(availability_target):
     for workload in workloads:
         # print("A")
         # interesting cases
-        attrs = ["dist_SS", "1KB", "1TB", "_500_"] #, "HW"] #workload.find(list(client_dists.keys())[2])
+        attrs = ["RW", "dist_ST", "1KB"]# ["dist_SS", "1KB", "1TB", "_500_"] #, "HW"] #workload.find(list(client_dists.keys())[2])
         # attrs = ["10KB", "HR"]
         if workload_satisfies(workload, attrs):
-            plot_workload(workload, availability_target)
+            # plot_workload(workload, availability_target)
             # plot_normalized(workload, availability_target)
+
+            # cost_const_k(workload, availability_target)
+            cost_k(workload, availability_target)
 
     os.system("subl drawer_output.txt")
 
@@ -1494,9 +1676,11 @@ if __name__ == "__main__":
     # plot_cumulative3(workloads, 1)
 
 
-    plot_scatter_slo_latency(workloads, 2)
+    # plot_scatter_slo_latency(workloads, 2)
     # plot_sense_to_object_size(workloads, 1)
     # plot_sense_to_arrival_rate(workloads, 1)
+
+    plot_all(1)
 
     # os.system("subl drawer_output.txt")
     sys.stdout.flush()

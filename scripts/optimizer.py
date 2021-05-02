@@ -17,6 +17,8 @@ from os.path import dirname, join, abspath
 sys.path.insert(0, abspath(join(dirname(__file__), '..')))
 
 lat_sense = False
+cold_hot = False
+coldhot_executions = OrderedDict([("optimized", "-H min_cost"), ("baseline_cas", "-H min_cost -b -t cas -m 4 -k 2")])
 
 if lat_sense:
     from optimizer.Experiments_Lat_sense.workload_def import *
@@ -51,18 +53,47 @@ def get_workloads(availability_target):
                             #     arrival_rate) + "_" + read_ratio + "_" + str(lat) + ".json"
                             # workloads.append(FILE_NAME)
 
-                            for lat in SLO_latencies:
-                                # lat = SLO_latencies[f_index]
+                            # for lat in SLO_latencies:
+                            lat = SLO_latencies[f_index]
 
-                                FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
-                                    arrival_rate) + "_" + read_ratio + "_" + str(lat) + ".json"
-                                workloads.append(FILE_NAME)
+                            FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
+                                arrival_rate) + "_" + read_ratio + "_" + str(lat) + ".json"
+                            workloads.append(FILE_NAME)
 
     return workloads
 
 def get_commands():
     commands = []
     directory = "workloads"
+
+    if cold_hot:
+        for cold_ratio in range(0, 101, 1):
+            cold_ratio_p = cold_ratio / 100.
+            file_name = "workload_" + str(cold_ratio) + ".json"
+
+            files_path = "coldhot/workloads/cold"
+            for exec in coldhot_executions:
+                result_file_name = "res_" + exec + "_" + file_name
+                commands.append(
+                    "python3 ../placement.py -f ../tests/inputtests/dc_gcp.json -i " + os.path.join(files_path,
+                                                                                                    file_name) + " -o " + os.path.join(
+                        files_path, result_file_name) + " -v " + coldhot_executions[exec])
+
+        exec = "baseline_cas"
+        for cold_ratio in range(0, 101, 1):
+            cold_ratio_p = cold_ratio / 100.
+            file_name = "workload_" + str(cold_ratio) + ".json"
+
+            files_path = "coldhot/workloads/hot"
+            result_file_name = "res_" + exec + "_" + file_name
+            commands.append(
+                "python3 ../placement.py -f ../tests/inputtests/dc_gcp.json -i " + os.path.join(files_path,
+                                                                                                file_name) + " -o " + os.path.join(
+                    files_path, result_file_name) + " -v " + coldhot_executions[exec])
+
+
+        shuffle(commands)
+        return commands
 
     # print(workload_files)
     for f_index, f in enumerate(availability_targets):
@@ -85,6 +116,32 @@ def get_commands():
     #             commands.append("python3 ../placement.py -f ../tests/inputtests/dc_gcp.json -i " + os.path.join(files_path,
     #                                                                                                   file_name) + " -o " + os.path.join(
     #                 files_path, result_file_name) + " -H min_cost -v " + executions[f_index][exec])
+    shuffle(commands)
+    return commands
+
+def get_commands_k(const_m=False):
+    commands = []
+    directory = "workloads"
+    m = 9
+
+    # print(workload_files)
+    for f_index, f in enumerate(availability_targets):
+        workload_files = get_workloads(f)
+        for file_name in workload_files:
+            for k in range(1, m-1, 1):
+                files_path = os.path.join(directory, "f=" + str(f))
+                result_file_name = "res_" + str(k) + "_" + file_name
+                if const_m:
+                    commands.append(
+                        "python3 ../placement.py -f ../tests/inputtests/dc_gcp.json -i " + os.path.join(files_path,
+                                                                                                        file_name) + " -o " + os.path.join(
+                            files_path, result_file_name) + " -v -H min_cost -b -t cas -m " + str(m) + " -k " + str(k))
+                else:
+                    commands.append(
+                        "python3 ../placement.py -f ../tests/inputtests/dc_gcp.json -i " + os.path.join(files_path,
+                                                                                                        file_name) + " -o " + os.path.join(
+                            files_path, result_file_name) + " -v -H min_cost -b -t cas -m " + str(k+2*f) + " -k " + str(k))
+
     shuffle(commands)
     return commands
 
@@ -432,6 +489,20 @@ class Machine:
         # self.stop_metadata_server()
 
     def gather_results(self, run_name):
+        if cold_hot:
+            os.system("mkdir -p data/" + run_name + "_optimizer/cold")
+            stdout, stderr = self.execute("ls optimizer/Experiments/coldhot/workloads/cold" + "/res_*.json")
+            if not (stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1):
+                self.copy_from("optimizer/Experiments/coldhot/workloads/cold" + "/res_*.json",
+                               "data/" + run_name + "_optimizer/cold")
+
+            os.system("mkdir -p data/" + run_name + "_optimizer/hot")
+            stdout, stderr = self.execute("ls optimizer/Experiments/coldhot/workloads/hot" + "/res_*.json")
+            if not (stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1):
+                self.copy_from("optimizer/Experiments/coldhot/workloads/hot" + "/res_*.json",
+                               "data/" + run_name + "_optimizer/hot")
+            return
+
         for f in availability_targets:
             os.system("mkdir -p data/" + run_name + "_optimizer/f=" + str(f))
             if lat_sense:
@@ -520,13 +591,18 @@ def execute(machines, commands, type=None):
     print("Please wait while I am stopping all the machines and gathering the results...")
     os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/ALL_optimizer")
     Machine.gather_results_all(machines, "ALL")
-    Machine.gather_logs_all(machines, "ALL", type)
+
+    if not cold_hot:
+        Machine.gather_logs_all(machines, "ALL", type)
 
     # Copy files to workloads
     if lat_sense:
         os.system("cp -rf data/ALL_optimizer/* ../optimizer/Experiments_Lat_sense/workloads/")
     else:
-        os.system("cp -rf data/ALL_optimizer/* ../optimizer/Experiments/workloads/")
+        if cold_hot:
+            os.system("cp -rf data/ALL_optimizer/* ../optimizer/Experiments/coldhot/workloads/")
+        else:
+            os.system("cp -rf data/ALL_optimizer/* ../optimizer/Experiments/workloads/")
 
 def main(args):
     machines = Machine.get_machine_list()
@@ -534,14 +610,21 @@ def main(args):
     if lat_sense:
         os.system("cd ../optimizer/Experiments_Lat_sense; ./generate_input.py")
     else:
-        os.system("cd ../optimizer/Experiments; ./generate_input.py")
+        if cold_hot:
+            os.system("cd ../optimizer/Experiments/coldhot; ./generate_input.py")
+        else:
+            os.system("cd ../optimizer/Experiments; ./generate_input.py")
+
+    # uncomment one line of the following two lines
     commands = get_commands()
     commands = commands_exclude(commands, "nearest")
+    # commands = get_commands_k()
+
     execute(machines, commands)
 
-    if not lat_sense:
-        commands = get_commands_with_opt_m_k()
-        execute(machines, commands, "nearest")
+    # if not lat_sense and not cold_hot:
+    #     commands = get_commands_with_opt_m_k()
+    #     execute(machines, commands, "nearest")
 
     # delete the machines
     # os.system("./delete_servers.py")

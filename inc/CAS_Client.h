@@ -45,7 +45,7 @@ private:
     Client_Node* parent;
     Liberasure liberasure;
     
-    int get_timestamp(const std::string& key, std::unique_ptr<Timestamp>& timestamp_p); // Returns 10 if the get operation could be done in one phase.
+    int get_timestamp(const std::string& key, std::unique_ptr<Timestamp>& timestamp_p, bool is_put=false); // Returns 10 if the get operation could be done in one phase.
 };
 
 #endif /* CAS_Client_H */

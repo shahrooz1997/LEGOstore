@@ -15,12 +15,12 @@ import json
 from collections import OrderedDict
 from pylab import *
 
-path = "data/CAS_NOF"
-# path = "data/arrival_rate/HR/CAS_NOF"
+# path = "data/CAS_NOF"
+# path = "data/arrival_rate/HW/CAS_NOF_100"
 
-ops = []
+# ops = []
 
-def read_operation_for_key(key, log_path):
+def read_operation_for_key(ops, key, log_path, op="put"):
     log_files_names = [os.path.join(log_path, f) for f in os.listdir(log_path) if os.path.isfile(os.path.join(log_path, f))]
     for file in log_files_names:
         log = open(file, 'r')
@@ -28,7 +28,9 @@ def read_operation_for_key(key, log_path):
         for line in lines:
             # print(file, line)
             words = line.split()
-            if (words[2][:-1] != key):
+            # if (words[2][:-1] != key):
+            #     continue
+            if (words[1][:-1] != op):
                 continue
             ops.append(((int(words[4][:-1]) / 1000) % 1000000, (int(words[5]) / 1000) % 1000000))
 
@@ -38,14 +40,14 @@ def read_operation_for_key(key, log_path):
 
     return ops
 
-def number_of_ops_concurrent_to(index):
+def number_of_ops_concurrent_to(ops, index):
     start = ops[index][0]
     end = ops[index][1]
 
     counter = 1
     start_index = 0
 
-    for i in range(index - 1, -1, -1):
+    # for i in range(index - 1, -1, -1):
 
 
     for op in ops:
@@ -56,21 +58,28 @@ def number_of_ops_concurrent_to(index):
 
     return counter
 
-def max_concurrent():
+def max_concurrent(ops):
     max_count = 0
     for i in range(len(ops)):
-        count = number_of_ops_concurrent_to(i)
+        count = number_of_ops_concurrent_to(ops, i)
         if max_count < count:
             max_count = count
 
     return max_count
 
-def main():
-    read_operation_for_key("2001", os.path.join(path, "logs"))
+def main(ar, ops, path):
+    read_operation_for_key(ops, "2001", os.path.join(path, "logs"))
 
-    print("Number of ops is", len(ops))
-    print(max_concurrent())
+    # print("Number of ops is", len(ops))
+    print(str(ar) + " " + str(max_concurrent(ops)))
 
 if __name__ == "__main__":
-    main()
+    path = "data/arrival_rate/RW/CAS_NOF_"
+
+    for ar in range(20, 101, 20):
+        ops = []
+        main(ar, ops, path + str(ar))
+
+
+    # main()
 

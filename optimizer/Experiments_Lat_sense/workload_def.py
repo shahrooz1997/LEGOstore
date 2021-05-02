@@ -26,11 +26,11 @@ client_dists = OrderedDict([
     # ("expensive_skewed", [0.025, 0.9, 0.0, 0.0, 0.0, 0.0, 0.025, 0.025, 0.025])
     # ("Japan_skewed", [0.9, 0.0, 0.0, 0.0, 0.0, 0.025, 0.0, 0.05, 0.025])
 ])
-object_sizes = OrderedDict([("10KB", 10*2**10 / 2**30)])
+object_sizes = OrderedDict([("1KB", 1*2**10 / 2**30), ("100KB", 100*2**10 / 2**30)]) # OrderedDict([("128B", 2**7 / 2**30), ("256B", 2**8 / 2**30), ("512B", 2**9 / 2**30), ("1KB", 1*2**10 / 2**30), ("2KB", 2*2**10 / 2**30), ("4KB", 4*2**10 / 2**30), ("8KB", 8*2**10 / 2**30), ("16KB", 16*2**10 / 2**30), ("32KB", 32*2**10 / 2**30), ("64KB", 64*2**10 / 2**30), ("128KB", 128*2**10 / 2**30)])
 storage_sizes = OrderedDict([("1TB", 1024)]) # in GB
-arrival_rates = [500]
+arrival_rates = [200] #[x for x in range(50, 1025, 25)] #[50, 500]
 read_ratios = OrderedDict([("HW", 0.03225), ("RW", 0.5), ("HR", 0.96774)])
-SLO_latencies = [x for x in range(50, 1025, 25)] # for each availability_target
+SLO_latencies = [1000] #[x for x in range(50, 1025, 25)] # for each availability_target
 
 # Default values
 availability_target_default  = 2

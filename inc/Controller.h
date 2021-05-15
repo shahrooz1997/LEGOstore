@@ -17,6 +17,7 @@ public:
     
     int init_metadata_server();
 
+    int run_clients_for(int group_config_i);
     int run_all_clients();
 
     int wait_for_clients();

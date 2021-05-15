@@ -2,7 +2,7 @@
 from collections import OrderedDict
 
 #version 3
-availability_targets = [1,2]
+availability_targets = [1, 2]
 client_dists = OrderedDict([
     # ("uniform", [1/9 for _ in range(9)]),
     ("dist_O", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1]),
@@ -27,9 +27,9 @@ client_dists = OrderedDict([
     # ("Japan_skewed", [0.9, 0.0, 0.0, 0.0, 0.0, 0.025, 0.0, 0.05, 0.025])
 ])
 object_sizes = OrderedDict([("1KB", 1*2**10 / 2**30), ("10KB", 10*2**10 / 2**30), ("100KB", 100*2**10 / 2**30)])
-storage_sizes = OrderedDict([("100GB", 100 * 1.1), ("1TB", 1024 * 1.1), ("10TB", 10 * 1024 * 1.1)]) # in GB
-arrival_rates = [50, 200, 500]
-read_ratios = OrderedDict([("HW", 0.0), ("RW", 0.4), ("HR", 0.86774)]) # OrderedDict([("HW", 0.03225), ("RW", 0.5), ("HR", 0.96774)])
+storage_sizes = OrderedDict([("100GB", 100), ("1TB", 1024), ("10TB", 10 * 1024)]) # in GB
+arrival_rates = [50, 200, 500] #[int(50 * 0.9), int(200 * 0.9), int(500 * 0.9)]
+read_ratios = OrderedDict([("HW", 0.03225), ("RW", 0.5), ("HR", 0.96774)])
 SLO_latencies = [1000, 1000]
 
 # Default values
@@ -48,11 +48,11 @@ time_to_decode_default       = 0.00028
 
 # object_size_name = {10 / 2**30: "1B", 1*2**10 / 2**30: "1KB", 10*2**10 / 2**30: "10KB", 100*2**10 / 2**30: "100KB"}
 
-# executions = [OrderedDict([("optimized", "-H min_cost"), ("baseline_fixed_ABD", "-H baseline0 -b -t abd -m 3"), ("baseline_fixed_CAS", "-H baseline0 -b -t cas -m 5 -k 3"), ("baseline_abd_nearest", "-H baseline1 -b -t abd -m 3"), ("baseline_cas_nearest", "-H baseline1 -b -t cas -m 5 -k 3"), ("baseline_abd", "-H min_cost -b -t abd"), ("baseline_cas", "-H min_cost -b -t cas")]),
-#              OrderedDict([("optimized", "-H min_cost"), ("baseline_fixed_ABD", "-H baseline0 -b -t abd -m 5"), ("baseline_fixed_CAS", "-H baseline0 -b -t cas -m 7 -k 3"), ("baseline_abd_nearest", "-H baseline1 -b -t abd -m 5"), ("baseline_cas_nearest", "-H baseline1 -b -t cas -m 7 -k 3"), ("baseline_abd", "-H min_cost -b -t abd"), ("baseline_cas", "-H min_cost -b -t cas")])]
+executions = [OrderedDict([("optimized", "-H min_cost"), ("baseline_fixed_ABD", "-H baseline0 -b -t abd -m 3"), ("baseline_fixed_CAS", "-H baseline0 -b -t cas -m 5 -k 3"), ("baseline_abd_nearest", "-H baseline1 -b -t abd -m 3"), ("baseline_cas_nearest", "-H baseline1 -b -t cas -m 5 -k 3"), ("baseline_abd", "-H min_cost -b -t abd"), ("baseline_cas", "-H min_cost -b -t cas")]),
+             OrderedDict([("optimized", "-H min_cost"), ("baseline_fixed_ABD", "-H baseline0 -b -t abd -m 5"), ("baseline_fixed_CAS", "-H baseline0 -b -t cas -m 7 -k 3"), ("baseline_abd_nearest", "-H baseline1 -b -t abd -m 5"), ("baseline_cas_nearest", "-H baseline1 -b -t cas -m 7 -k 3"), ("baseline_abd", "-H min_cost -b -t abd"), ("baseline_cas", "-H min_cost -b -t cas")])]
 
-executions = [OrderedDict([("optimized", "-H min_cost")]),
-             OrderedDict([("optimized", "-H min_cost")])]
+# executions = [OrderedDict([("optimized", "-H min_cost")]),
+#              OrderedDict([("optimized", "-H min_cost")])]
 
 # executions = [OrderedDict([("baseline_abd_nearest", "-H baseline1 -b -t abd -m 3"), ("baseline_cas_nearest", "-H baseline1 -b -t cas -m 4 -k 2")]),
 #              OrderedDict([("baseline_abd_nearest", "-H baseline1 -b -t abd -m 5"), ("baseline_cas_nearest", "-H baseline1 -b -t cas -m 6 -k 2")])]

@@ -452,8 +452,8 @@ class Machine:
                 break;
             sleep(1)
 
-        if self.name == "s7":
-            self.execute("sudo killall Server")
+        # if self.name == "s7":
+        #     self.execute("sudo killall Server")
 
         print("server and metadata_server are running on " + self.name)
 

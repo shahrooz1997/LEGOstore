@@ -8,9 +8,9 @@ import numpy as np
 from workload_def import *
 
 # directory = "workloads"
-# directory = "RESULTS/workloads_200ms"
+directory = "RESULTS/workloads_200ms"
 # directory = "RESULTS/workloads_500ms"
-directory = "RESULTS/workloads_1000ms"
+# directory = "RESULTS/workloads_1000ms"
 # directory = "workloads_Mar24_2152"
 # directory = "/home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/ALL_optimizer_Mar19_0817"
 
@@ -118,7 +118,7 @@ def get_workloads():
                 for arrival_rate in arrival_rates:
                     for read_ratio in read_ratios:
                         # for lat in SLO_latencies:
-                        lat = 1000
+                        lat = 200
 
                         num_objects = storage_sizes[storage_size] / object_sizes[object_size]
                         FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(arrival_rate) + "_" + \
@@ -177,6 +177,53 @@ def get_results():
                         confs[f_index][key] = value
     return all_results, confs
 
+def get_results2():
+    all_results = []
+    confs = []
+    num_of_objects = []
+    for f_index, f in enumerate(availability_targets):
+        files_path = os.path.join(directory, "f=" + str(f))
+        all_results.append(OrderedDict())
+        confs.append(OrderedDict())
+        num_of_objects.append(OrderedDict())
+        for exec in executions[f_index]:
+            for workload in workloads:
+                key = exec + "_" + workload  # list(client_dists.keys())[grp_index] + "_" + object_size_default + "_" + arrival_rate_default + "_" + read_ratio_default + "_" + SLO_read_default
+                main_file = os.path.join(files_path, workload)
+                res_file = os.path.join(files_path, "res_" + exec + "_" + workload)
+                if not os.path.exists(res_file):
+                    value = "INVALID"
+                    all_results[f_index][key] = value
+                    confs[f_index][key] = value
+                    continue
+                data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
+                for grp_index, grp in enumerate(data):
+                    if grp["m"] != "INVALID":
+                        value = "{:.4e}".format(grp["get_cost"]) + " " + "{:.4e}".format(grp["put_cost"]) + " " + \
+                                "{:.4e}".format(grp["vm_cost"]) + " " + "{:.4e}".format(grp["storage_cost"])
+                        all_results[f_index][key] = value
+                        value = str(grp["m"]) + "|" + (str(grp["k"]) if grp["protocol"] != "abd" else str(0)) + "|"
+                        for s in grp["selected_dcs"]:
+                            value += str(s) + ","
+                        value = value[0:-1]
+                        value += "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(len(grp["client_placement_info"]["0"]["Q2"]))
+                        if grp["protocol"] != "abd":
+                            value += "|" + str(len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(len(grp["client_placement_info"]["0"]["Q4"]))
+                        value += "|" + "{:.4e}".format(grp["get_cost"]) + "|" + "{:.4e}".format(grp["put_cost"]) + "|" + \
+                                "{:.4e}".format(grp["vm_cost"]) + "|" + "{:.4e}".format(grp["storage_cost"]) + "|" + "{:.4f}".format(grp["total_cost"]) + "|" + "{:.0f}".format(grp["put_latency"]) + "|" + "{:.0f}".format(grp["get_latency"])
+                        confs[f_index][key] = value
+                    else:
+                        value = "INVALID"
+                        all_results[f_index][key] = value
+                        confs[f_index][key] = value
+
+                if exec == "optimized":
+                    data = json.load(open(main_file, "r"), object_pairs_hook=OrderedDict)["input_groups"]
+                    for grp_index, grp in enumerate(data):
+                        num_of_objects[f_index][workload] = [int(grp["num_objects"]), grp["object_size"]]
+
+    return all_results, confs, num_of_objects
+
 def extractor_type2():
     all_results, confs = get_results()
 
@@ -217,8 +264,8 @@ def print_workload(workload, availability_target):
     print(workload[:workload.find(".json")] + ":")
     print(" get_cost put_cost vm_cost storage_cost total")
     for exec in executions[f_index]:
-        # if exec == "optimized":
-        #     continue
+        if exec != "optimized":
+            continue
         if results[f_index][exec + "_" + workload] == "INVALID":
             print("WARN: no data found for " + exec + "_" + workload)
             continue
@@ -229,12 +276,129 @@ def print_workload(workload, availability_target):
         put_cost.append(float(values[1]))
         vm_cost.append(float(values[2]))
         storage_cost.append(float(values[3]))
-        # print(exec + ":", confs[f_index][exec + "_" + workload])
+        print(exec + ":", confs[f_index][exec + "_" + workload])
     # print()
 
-    for i, l in enumerate(labels):
-        print(l, get_cost[i], put_cost[i], vm_cost[i], storage_cost[i], get_cost[i] + put_cost[i] + vm_cost[i] + storage_cost[i])
-    print()
+    # for i, l in enumerate(labels):
+    #     print(l, get_cost[i], put_cost[i], vm_cost[i], storage_cost[i], get_cost[i] + put_cost[i] + vm_cost[i] + storage_cost[i])
+    # print()
+
+def print_workload2(availability_target):
+    results, confs = get_results()
+    f_index = availability_targets.index(availability_target)
+
+    labels = []
+    get_cost = []
+    put_cost = []
+    vm_cost = []
+    storage_cost = []
+
+    dist1 = "dist_O"
+    dist2 = "dist_LO"
+
+    dist1_workloads = []
+    dist2_workloads = []
+
+    for workload in workloads:
+        if workload.find(dist1) != -1:
+            dist1_workloads.append(workload)
+        if workload.find(dist2) != -1:
+            dist2_workloads.append(workload)
+
+    for i, workload in enumerate(dist1_workloads):
+        exec = "optimized"
+        print(exec + "_" + workload + ":", confs[f_index][exec + "_" + workload])
+        print(exec + "_" + dist2_workloads[i] + ":", confs[f_index][exec + "_" + dist2_workloads[i]])
+        print()
+
+    # print(workload[:workload.find(".json")] + ":")
+    # print(" get_cost put_cost vm_cost storage_cost total")
+    # for exec in executions[f_index]:
+    #     if exec != "optimized":
+    #         continue
+    #     if results[f_index][exec + "_" + workload] == "INVALID":
+    #         print("WARN: no data found for " + exec + "_" + workload)
+    #         continue
+    #     labels.append(exec if exec.find("baseline") == -1 else exec[9:])
+    #     values = results[f_index][exec + "_" + workload].split()
+    #     # print(values)
+    #     get_cost.append(float(values[0]))
+    #     put_cost.append(float(values[1]))
+    #     vm_cost.append(float(values[2]))
+    #     storage_cost.append(float(values[3]))
+    #     print(exec + ":", confs[f_index][exec + "_" + workload])
+    # print()
+
+    # for i, l in enumerate(labels):
+    #     print(l, get_cost[i], put_cost[i], vm_cost[i], storage_cost[i], get_cost[i] + put_cost[i] + vm_cost[i] + storage_cost[i])
+    # print()
+
+def find_good_opt_get(availability_target):
+    def good_opt_get(conf):
+        words = conf.split('|')
+        if words[1] == '0':
+            return int(words[3]) >= int(words[4])
+        else:
+            return int(words[3]) >= int(words[6])
+
+    results, confs = get_results()
+    f_index = availability_targets.index(availability_target)
+
+    labels = []
+    get_cost = []
+    put_cost = []
+    vm_cost = []
+    storage_cost = []
+
+    for workload in workloads:
+        exec = "optimized"
+        if results[f_index][exec + "_" + workload] == "INVALID":
+            continue
+        # elif confs[f_index][exec + "_" + workload][2] == "0":
+        if good_opt_get(confs[f_index][exec + "_" + workload]):
+            print(workload, confs[f_index][exec + "_" + workload])
+
+    return
+
+    dist1 = "dist_O"
+    dist2 = "dist_LO"
+
+    dist1_workloads = []
+    dist2_workloads = []
+
+    for workload in workloads:
+        if workload.find(dist1) != -1:
+            dist1_workloads.append(workload)
+        if workload.find(dist2) != -1:
+            dist2_workloads.append(workload)
+
+    for i, workload in enumerate(dist1_workloads):
+        exec = "optimized"
+        print(exec + "_" + workload + ":", confs[f_index][exec + "_" + workload])
+        print(exec + "_" + dist2_workloads[i] + ":", confs[f_index][exec + "_" + dist2_workloads[i]])
+        print()
+
+    # print(workload[:workload.find(".json")] + ":")
+    # print(" get_cost put_cost vm_cost storage_cost total")
+    # for exec in executions[f_index]:
+    #     if exec != "optimized":
+    #         continue
+    #     if results[f_index][exec + "_" + workload] == "INVALID":
+    #         print("WARN: no data found for " + exec + "_" + workload)
+    #         continue
+    #     labels.append(exec if exec.find("baseline") == -1 else exec[9:])
+    #     values = results[f_index][exec + "_" + workload].split()
+    #     # print(values)
+    #     get_cost.append(float(values[0]))
+    #     put_cost.append(float(values[1]))
+    #     vm_cost.append(float(values[2]))
+    #     storage_cost.append(float(values[3]))
+    #     print(exec + ":", confs[f_index][exec + "_" + workload])
+    # print()
+
+    # for i, l in enumerate(labels):
+    #     print(l, get_cost[i], put_cost[i], vm_cost[i], storage_cost[i], get_cost[i] + put_cost[i] + vm_cost[i] + storage_cost[i])
+    # print()
 
 def plot_workload(workload, availability_target):
     results, confs = get_results()
@@ -412,10 +576,30 @@ def plot_cumulative(workloads, availability_target):
                 max_x = (i / granularity + 1) / 100.
                 break
 
+        colors = OrderedDict([
+            ("optimized", "g"),
+            ("baseline_fixed_ABD", "saddlebrown"),
+            ("baseline_fixed_CAS", "r"),
+            ("baseline_abd_nearest", "magenta"),
+            ("baseline_cas_nearest", "black"),
+            ("baseline_abd", "b"),
+            ("baseline_cas", "g")
+        ])
+
+        line_types = OrderedDict([
+            ("optimized", "g"),
+            ("baseline_fixed_ABD", ":"),
+            ("baseline_fixed_CAS", ":"),
+            ("baseline_abd_nearest", "--"),
+            ("baseline_cas_nearest", "--"),
+            ("baseline_abd", "-"),
+            ("baseline_cas", "-")
+        ])
+
         # fig, ax = plt.subplots()
-        ax.plot(np.array(range(int(1000 * granularity))) / granularity / 100., np.array(counter), label=get_exec_name(exec), linewidth=4) #linestyle=':'
+        ax.plot(np.array(range(int(1000 * granularity))) / granularity / 100., np.array(counter), label=get_exec_name(exec), linewidth=10, color=colors[exec], linestyle=line_types[exec]) #linestyle=':'
         ax.set_ylabel('Cumulative Count of Workloads')
-        ax.set_xlabel('Cost normalized to the cost of the optimizer output')
+        ax.set_xlabel('Normalized Cost of Baseline.')
         # ax.set_title(exec)
         # ax.legend()
         plt.grid(True)
@@ -437,6 +621,21 @@ def plot_cumulative(workloads, availability_target):
         if exec == "optimized":
             continue
         labels.append(exec if exec.find("baseline") == -1 else exec[9:])
+
+
+    print("SHAHH")
+    shah_counter = 0
+    for workload in workloads:
+        if results[f_index]["baseline_cas" + "_" + workload] == "INVALID":
+            continue
+
+        # print(confs[f_index]["baseline_cas" + "_" + workload][2])
+        if confs[f_index]["baseline_cas" + "_" + workload][2] == '1':
+            print(workload)
+            shah_counter += 1
+    print(shah_counter)
+    print("SHAHH")
+    return
 
     for workload in workloads:
         optimized = []
@@ -484,10 +683,10 @@ def plot_cumulative(workloads, availability_target):
     fig, ax = plt.subplots()
     plot_cumulative_max_x = 0
     for exec in executions[f_index]:
-        if exec == "optimized":
+        if exec == "optimized" or exec == "baseline_fixed_CAS": #or exec == "baseline_fixed_ABD" or exec == "baseline_fixed_CAS":
             continue
         plot_one_exec(fig, ax, exec, workloads, norm_total_cost)
-    ax.legend()
+    ax.legend(loc="lower right")
 
     for exec in executions[f_index]:
         if exec == "optimized":
@@ -626,7 +825,7 @@ def plot_cumulative2(workloads, availability_target):
         fig = plt.figure(figsize=(10, 5))
         ax = fig.add_subplot()
         plot_one_exec(fig, ax, exec, workloads, norm_total_cost)
-    ax.legend()
+        ax.legend()
 
     for exec in executions[f_index]:
         if exec == "optimized":
@@ -1393,6 +1592,13 @@ def get_res_files(characteristic):
 
                         res_file = os.path.join(files_path, "res_" + "optimized" + "_" + workload)
 
+def change_arrival_rate(file_name, new_arrival_rate):
+    index_start = file_name.rfind("_", 0, file_name.rfind("_", 0, file_name.rfind("_")))
+    index_end = file_name.rfind("_", 0, file_name.rfind("_"))
+
+    ret = file_name[0:index_start + 1] + str(new_arrival_rate) + file_name[index_end:]
+    return ret
+
 def mis_prediction():
     # results, confs = get_results()
     # f_index = availability_targets.index(availability_target)
@@ -1423,8 +1629,8 @@ def mis_prediction():
                 if get_conf(high_res_file) != get_conf(main_res_file):
                     conf_change_high_counter += 1
 
-        print("object size low:", "{:.2f}".format(float(conf_change_low_counter) / float(workload_counter)))
-        print("object size high:", "{:.2f}".format(float(conf_change_high_counter) / float(workload_counter)))
+        print("object size: " + object_size + "(-10%)", "{:.2f}".format(float(conf_change_low_counter) / float(workload_counter)))
+        print("object size: " + object_size + "(+10%)", "{:.2f}".format(float(conf_change_high_counter) / float(workload_counter)))
 
     # storage_size
     workload_counter = 0
@@ -1449,17 +1655,17 @@ def mis_prediction():
                 if get_conf(high_res_file) != get_conf(main_res_file):
                     conf_change_high_counter += 1
 
-        print("storage size low:", "{:.2f}".format(float(conf_change_low_counter) / float(workload_counter)))
-        print("storage size high:", "{:.2f}".format(float(conf_change_high_counter) / float(workload_counter)))
+        print("storage size: " + storage_size + "(-10%)", "{:.2f}".format(float(conf_change_low_counter) / float(workload_counter)))
+        print("storage size: " + storage_size + "(+10%)", "{:.2f}".format(float(conf_change_high_counter) / float(workload_counter)))
 
 
     # read_ratio
     workload_counter = 0
     conf_change_low_counter = 0
     conf_change_high_counter = 0
-    low_path = "RESULTS/prediction/workloads_SS_Low/f=1"
+    low_path = "RESULTS/prediction/workloads_RR_Low/f=1"
     main_path = "RESULTS/workloads_1000ms/f=1"
-    high_path = "RESULTS/prediction/workloads_SS_High/f=1"
+    high_path = "RESULTS/prediction/workloads_RR_High/f=1"
 
     for read_ratio in read_ratios:
         for workload in workloads:
@@ -1476,8 +1682,40 @@ def mis_prediction():
                 if get_conf(high_res_file) != get_conf(main_res_file):
                     conf_change_high_counter += 1
 
-        print("read ratio low:", "{:.2f}".format(float(conf_change_low_counter) / float(workload_counter)))
-        print("read ratio high:", "{:.2f}".format(float(conf_change_high_counter) / float(workload_counter)))
+        print("read ratio: " + read_ratio + "(-10%)", "{:.2f}".format(float(conf_change_low_counter) / float(workload_counter)))
+        print("read ratio: " + read_ratio + "(+10%)", "{:.2f}".format(float(conf_change_high_counter) / float(workload_counter)))
+
+    # arrival_rate
+    workload_counter = 0
+    conf_change_low_counter = 0
+    conf_change_high_counter = 0
+    low_path = "RESULTS/prediction/workloads_AR_Low/f=1"
+    main_path = "RESULTS/workloads_1000ms/f=1"
+    high_path = "RESULTS/prediction/workloads_AR_High/f=1"
+
+    for arrival_rate in arrival_rates:
+        for workload in workloads:
+            if workload_satisfies(workload, ["_" + str(arrival_rate) + "_"]):
+                workload_counter += 1
+                file = "res_" + "optimized" + "_" + workload
+                file = change_arrival_rate(file, int(arrival_rate * 0.9))
+                low_res_file = os.path.join(low_path, file)
+
+                file = "res_" + "optimized" + "_" + workload
+                main_res_file = os.path.join(main_path, file)
+
+                file = "res_" + "optimized" + "_" + workload
+                file = change_arrival_rate(file, int(arrival_rate * 1.1))
+                high_res_file = os.path.join(high_path, file)
+
+                if get_conf(low_res_file) != get_conf(main_res_file):
+                    conf_change_low_counter += 1
+
+                if get_conf(high_res_file) != get_conf(main_res_file):
+                    conf_change_high_counter += 1
+
+        print("arrival rate: " + str(arrival_rate) + "(-10%)", "{:.2f}".format(float(conf_change_low_counter) / float(workload_counter)))
+        print("arrival rate: " + str(arrival_rate) + "(+10%)", "{:.2f}".format(float(conf_change_high_counter) / float(workload_counter)))
 
 def workload_satisfies(workload, attrs):
     for a in attrs:
@@ -1509,11 +1747,168 @@ def write_latencies(availability_target):
         rep_put_lat, rep_get_lat, rep_selected_dcs = get_lat(confs[f_index]["baseline_abd_nearest" + "_" + workload])
         print(distribution_full_name[workload[:workload.find("_", workload.find("_") + 1)]] + "," + str(rep_put_lat) + "," + str(rep_get_lat) + "," + str(ec_put_lat) + "," + str(ec_get_lat))
 
+def plot_storage_cost_cold_ratio(availability_target):
+    def get_storage_cost(costs):
+        sc = costs[costs.rfind(" "):]
+        return float(sc)
+
+    results, confs, num_of_objects = get_results2()
+    f_index = availability_targets.index(availability_target)
+
+    max_number_of_object = 104857600
+    total_storage_price = 0.438 / (730*3600)
+
+    labels = []
+    get_cost = []
+    put_cost = []
+    vm_cost = []
+    storage_cost = []
+
+    total_cost_subopt = OrderedDict()
+    total_cost_opt = OrderedDict()
+
+    cost_without_cold_store = OrderedDict()
+
+    # print(workload[:workload.find(".json")] + ":")
+    # print(" get_cost put_cost vm_cost storage_cost total")
+    for workload in workloads:
+        for exec in executions[f_index]:
+            if exec != "optimized":
+                continue
+            if results[f_index][exec + "_" + workload] == "INVALID":
+                print("WARN: no data found for " + exec + "_" + workload)
+                continue
+            labels.append(exec if exec.find("baseline") == -1 else exec[9:])
+            values = results[f_index][exec + "_" + workload].split()
+            # print(values)
+            # get_cost.append(float(values[0]))
+            # put_cost.append(float(values[1]))
+            # vm_cost.append(float(values[2]))
+            # storage_cost.append(float(values[3]))
+            # print(exec + ":", confs[f_index][exec + "_" + workload])
+
+            # total_cost_subopt[workload] = float(values[0]) + float(values[1]) + float(values[2]) + float(values[3])
+
+            cost_without_cold_store = float(values[0]) + float(values[1]) + float(values[2]) + float(values[3]) / num_of_objects[f_index][workload][0]
+
+            for m in range(1, max_number_of_object + 1, 10000000):
+                cost_of_cold_store_subopt = float(m) * float(values[3]) / num_of_objects[f_index][workload][0]
+                total_cost_subopt[str(m) + "_" + workload] = float(values[0]) + float(values[1]) + float(values[2]) + cost_of_cold_store_subopt
+
+                # cost_of_cold_store = (num_of_objects[f_index][workload][0] - 1) * (total_storage_price) * (num_of_objects[f_index][workload][1] / 7.)
+                cost_of_cold_store = (m) * (total_storage_price) * (num_of_objects[f_index][workload][1] / 7.)
+                total_cost_opt[str(m) + "_" + workload] = cost_of_cold_store + cost_without_cold_store
+
+    total_cost_subopt_overall = OrderedDict()
+    total_cost_opt_overall = OrderedDict()
+    for m in range(1, max_number_of_object + 1, 10000000):
+        total_cost_subopt_overall[m] = 0
+        total_cost_opt_overall[m] = 0
+        for workload in workloads:
+            total_cost_subopt_overall[m] += total_cost_subopt[str(m) + "_" + workload]
+            total_cost_opt_overall[m] += total_cost_opt[str(m) + "_" + workload]
+
+    colors = ["r", "b", "g"]
+
+    plt.rcParams.update({'font.size': 38})
+    area = 100
+    # fig = plt.figure()
+    # ax = fig.add_axes([0.09, 0.2, .70, .78])
+    fig, ax = plt.subplots()
+
+    x = range(1, max_number_of_object + 1, 10000000)
+    real_x = np.array(range(1, max_number_of_object + 1, 10000000)) * len(workloads)
+
+    y = []
+    for each_x in x:
+        y.append(total_cost_subopt_overall[each_x])
+    ax.plot(real_x, y, linewidth=5, c=colors[1], label="Sub optimal")
+
+    y = []
+    for each_x in x:
+        y.append(total_cost_opt_overall[each_x])
+    ax.plot(real_x, y, linewidth=5, c=colors[2], label="Optimal")
+
+
+    major_x_ticks = list(range(0, max_number_of_object* len(workloads), 12500000 * 200))
+    major_x_ticks.append(major_x_ticks[-1] + 12500000 * 200)
+    ax.set_xticks(major_x_ticks)
+    labels = []
+    for tt in major_x_ticks:
+        labels.append(str(int(tt/100000000)))
+    ax.set_xticklabels(labels)
+
+    # labels = cold_ratios
+
+
+
+    # plt.rcParams.update({'font.size': 38})
+    # area = 100
+    # # fig = plt.figure()
+    # # ax = fig.add_axes([0.09, 0.2, .70, .78])
+    # fig, ax = plt.subplots()
+    # x = labels # np.arange(0.0, len(labels))  # the label locations
+    # print(x)
+    # # ax.set_xticks(x)
+    # # ax.set_xticklabels(labels)
+    # # ax.axvline(x=7.5, color='k', lw=5)
+    # # ax.axvline(x=15.5, color='k', lw=5)
+    #
+    # # ax.scatter(x, cold_storage_cost, s=1.75*area, c=colors[1])
+    # ax.plot(x, total_storage_cost, "--", linewidth=4, c="darkgoldenrod", label="Hot + cold")
+    # # ax.scatter(x, rwks[1], s=1.75 * area, c=colors[1])
+    # # ax.plot(x, rwks[1], "--", c=colors[1], label="HR - 100KB")
+    #
+    # # ax.scatter(x, cold_storage_cost, s=1.75*area, c=colors[1])
+    # ax.plot(x, total_storage_cost_opt, "-.", linewidth=4, c="darkgreen", label="Hot + optimized cold")
+    # # ax.scatter(x, rwks[1], s=1.75 * area, c=colors[1])
+    # # ax.plot(x, rwks[1], "--", c=colors[1], label="HR - 100KB")
+    #
+    # # ax.scatter(x, hot_storage_cost, s=3*area, c=colors[0])
+    # ax.plot(x, hot_storage_cost, linewidth=4, c=colors[0], label="Hot objects")
+    # # print(m_k_pair)
+    # # ax.scatter(x, hwks[1], s=3 * area, c=colors[0])
+    # # ax.plot(x, hwks[1], "--", c=colors[0], label="HW - 100KB")
+    #
+    # # ax.scatter(x, ms, s=3 * area, c=colors[0])
+    # # ax.plot(x, ms, "-.", c=colors[0], label="HW")
+    #
+    # # ax.scatter(x, cold_storage_cost, s=1.75*area, c=colors[1])
+    # ax.plot(x, cold_storage_cost, linewidth=4, c=colors[1], label="Cold objects")
+    # # ax.scatter(x, rwks[1], s=1.75 * area, c=colors[1])
+    # # ax.plot(x, rwks[1], "--", c=colors[1], label="HR - 100KB")
+    #
+    # # ax.scatter(x, opt_cold_storage_cost, s=.5*area, c=colors[2])
+    # ax.plot(x, opt_cold_storage_cost, linewidth=4, c=colors[2], label="Optimized cold objects")
+    # # ax.scatter(x, hrks[1], s=.5 * area, c=colors[2])
+    # # ax.plot(x, hrks[1], "--", c=colors[2], label="HR - 100KB")
+
+    ax.legend()
+
+    # major_ticks = np.arange(0, 10, 1)
+    # minor_ticks = np.arange(0, 1001, 25)
+
+    # ax.set_yticks(major_ticks)
+    # ax.set_yticks(minor_ticks, minor=True)
+
+    # ax.grid(which='minor', alpha=0.4)
+    # ax.grid(which='major', alpha=0.8)
+    ax.grid()
+    ax.spines['top'].set_visible(False)
+    ax.tick_params(labeltop=False)
+
+    limits = ax.axis()
+    ax.axis([0, limits[1], 0, limits[3]])
+
+    # ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
+    ax.set_ylabel('Total cost ($/hour)')
+    ax.set_xlabel('Number of cold objects (100 Million)')
+
 def plot_all(availability_target):
     for workload in workloads:
         # print("A")
         # interesting cases
-        attrs = ["dist_SS", "1KB", "1TB", "_500_"] #, "HW"] #workload.find(list(client_dists.keys())[2])
+        attrs = ["dist_ST", "HR"] #, "HW"] #workload.find(list(client_dists.keys())[2])
         # attrs = ["10KB", "HR"]
         if workload_satisfies(workload, attrs):
             plot_workload(workload, availability_target)
@@ -1551,15 +1946,21 @@ if __name__ == "__main__":
     # write_latencies(2)
 
     # plot_all(1)
-    # plot_cumulative(workloads, 1)
+    plot_cumulative(workloads, 1)
     # plot_cumulative2(workloads, 1)
     # plot_cumulative3(workloads, 1)
 
     # nearest_experiment(workloads, 1)
+    # plot_workload("dist_SS_1KB_100GB_500_HR_1000.json", 1)
     # plot_workload("dist_ST_1KB_100GB_500_HR_1000.json", 1)
 
     # mis_prediction_robustness(1)
-    mis_prediction()
+    # mis_prediction()
+
+    # print_workload2(1)
+    # find_good_opt_get(1)
+
+    # plot_storage_cost_cold_ratio(1)
 
     # os.system("subl drawer_output.txt")
     sys.stdout.flush()

@@ -5,23 +5,14 @@ import os, sys, time
 from collections import OrderedDict
 import matplotlib.pyplot as plt
 import numpy as np
-from workload_def import *
-import seaborn as sns
-from matplotlib.colors import LinearSegmentedColormap
+# from workload_def import *
 
-# directory = "workloads"
-# directory = "RESULTS/workloads_cost_k2"
-directory = "RESULTS/workloads_lat_sense_1KB"
-# directory = "RESULTS/workloads_object_size_sense"
-# directory = "RESULTS/workloads_object_size_sense3"
-# directory = "RESULTS/workloads_arrival_rate_sense2"
-# directory = "RESULTS/workloads_arrival_rate_sense"
+directory = "workloads"
+# directory = "RESULTS/workloads_200ms"
 # directory = "RESULTS/workloads_500ms"
 # directory = "RESULTS/workloads_1000ms"
 # directory = "workloads_Mar24_2152"
 # directory = "/home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/ALL_optimizer_Mar19_0817"
-
-m = 9
 
 def open_sublime():
     os.system("subl drawer_output.txt")
@@ -121,18 +112,25 @@ def print_configurations_count():
 
 def get_workloads():
     workloads = []
-    for client_dist in client_dists:
-        for object_size in object_sizes:
-            for storage_size in storage_sizes:
-                for arrival_rate in arrival_rates:
-                    for read_ratio in read_ratios:
-                        for lat in SLO_latencies:
-                        # lat = 1000
 
-                            num_objects = storage_sizes[storage_size] / object_sizes[object_size]
-                            FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(arrival_rate) + "_" + \
-                                        read_ratio + "_" + str(lat) + ".json"
-                            workloads.append(FILE_NAME)
+    for cold_ratio in range(0, 101, 1):
+        # cold_ratio = cold_ratio / 100.
+        FILE_NAME = "workload_" + str(cold_ratio) + ".json"
+        workloads.append(FILE_NAME)
+
+
+    # for client_dist in client_dists:
+    #     for object_size in object_sizes:
+    #         for storage_size in storage_sizes:
+    #             for arrival_rate in arrival_rates:
+    #                 for read_ratio in read_ratios:
+    #                     # for lat in SLO_latencies:
+    #                     lat = 1000
+    #
+    #                     num_objects = storage_sizes[storage_size] / object_sizes[object_size]
+    #                     FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(arrival_rate) + "_" + \
+    #                                 read_ratio + "_" + str(lat) + ".json"
+    #                     workloads.append(FILE_NAME)
 
     # for client_dist in client_dists:
     #     for object_size in object_sizes:
@@ -151,82 +149,233 @@ def get_workloads():
 def get_results():
     all_results = []
     confs = []
-    for f_index, f in enumerate(availability_targets):
-        files_path = os.path.join(directory, "f=" + str(f))
+    files_path = directory
+
+    coldhot_executions = OrderedDict(
+        [("optimized", "-H min_cost"), ("baseline_cas", "-H min_cost -b -t cas -m 4 -k 2")])
+
+    # for exec in coldhot_executions:
+    for workload in workloads:
+        files_path = os.path.join(directory, "cold")
+        res_file1 = os.path.join(files_path, "res_" + "optimized" + "_" + workload)
+        res_file3 = os.path.join(files_path, "res_" + "baseline_cas" + "_" + workload)
+        files_path = os.path.join(directory, "hot")
+        res_file2 = os.path.join(files_path, "res_" + "baseline_cas" + "_" + workload)
+        if not os.path.exists(res_file1):
+            value = "INVALID"
+            all_results[0][key] = value
+            confs[0][key] = value
+            print("WARNNNNN: file " + res_file1 + "does not exist")
+            continue
+
+        if not os.path.exists(res_file2):
+            value = "INVALID"
+            all_results[0][key] = value
+            confs[0][key] = value
+            print("WARNNNNN: file " + res_file2 + "does not exist")
+            continue
+
+        if not os.path.exists(res_file3):
+            value = "INVALID"
+            all_results[0][key] = value
+            confs[0][key] = value
+            print("WARNNNNN: file " + res_file2 + "does not exist")
+            continue
+
         all_results.append(OrderedDict())
         confs.append(OrderedDict())
-        for exec in executions[f_index]:
-            for workload in workloads:
-                key = exec + "_" + workload  # list(client_dists.keys())[grp_index] + "_" + object_size_default + "_" + arrival_rate_default + "_" + read_ratio_default + "_" + SLO_read_default
-                res_file = os.path.join(files_path, "res_" + exec + "_" + workload)
-                if not os.path.exists(res_file):
-                    value = "INVALID"
-                    all_results[f_index][key] = value
-                    confs[f_index][key] = value
-                    continue
-                data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
-                for grp_index, grp in enumerate(data):
-                    if grp["m"] != "INVALID":
-                        value = "{:.4e}".format(grp["get_cost"]) + " " + "{:.4e}".format(grp["put_cost"]) + " " + \
-                                "{:.4e}".format(grp["vm_cost"]) + " " + "{:.4e}".format(grp["storage_cost"])
-                        all_results[f_index][key] = value
-                        value = str(grp["m"]) + "|" + (str(grp["k"]) if grp["protocol"] != "abd" else str(0)) + "|"
-                        for s in grp["selected_dcs"]:
-                            value += str(s) + ","
-                        value = value[0:-1]
-                        value += "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(len(grp["client_placement_info"]["0"]["Q2"]))
-                        if grp["protocol"] != "abd":
-                            value += "|" + str(len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(len(grp["client_placement_info"]["0"]["Q4"]))
-                        value += "|" + "{:.4e}".format(grp["get_cost"]) + "|" + "{:.4e}".format(grp["put_cost"]) + "|" + \
-                                "{:.4e}".format(grp["vm_cost"]) + "|" + "{:.4e}".format(grp["storage_cost"]) + "|" + "{:.4f}".format(grp["total_cost"]) + "|" + "{:.0f}".format(grp["put_latency"]) + "|" + "{:.0f}".format(grp["get_latency"])
-                        confs[f_index][key] = value
-                    else:
-                        value = "INVALID"
-                        all_results[f_index][key] = value
-                        confs[f_index][key] = value
-    return all_results, confs
+        key = "optimized" + "_" + workload
+        data1 = json.load(open(res_file1, "r"), object_pairs_hook=OrderedDict)["output"]
+        for grp_index, grp in enumerate(data1):
+            if grp["m"] != "INVALID":
+                value = "{:.4e}".format(grp["get_cost"]) + " " + "{:.4e}".format(grp["put_cost"]) + " " + \
+                        "{:.4e}".format(grp["vm_cost"]) + " " + "{:.4e}".format(grp["storage_cost"])
+                all_results[0][key] = value
+                value = str(grp["m"]) + "|" + (str(grp["k"]) if grp["protocol"] != "abd" else str(0)) + "|"
+                for s in grp["selected_dcs"]:
+                    value += str(s) + ","
+                value = value[0:-1]
+                value += "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                    len(grp["client_placement_info"]["0"]["Q2"]))
+                if grp["protocol"] != "abd":
+                    value += "|" + str(len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(
+                        len(grp["client_placement_info"]["0"]["Q4"]))
+                value += "|" + "{:.4e}".format(grp["get_cost"]) + "|" + "{:.4e}".format(grp["put_cost"]) + "|" + \
+                         "{:.4e}".format(grp["vm_cost"]) + "|" + "{:.4e}".format(
+                    grp["storage_cost"]) + "|" + "{:.4f}".format(grp["total_cost"]) + "|" + "{:.0f}".format(
+                    grp["put_latency"]) + "|" + "{:.0f}".format(grp["get_latency"])
+                confs[0][key] = value
+            else:
+                value = "INVALID"
+                all_results[0][key] = value
+                confs[0][key] = value
 
-def get_results_k():
-    all_results = []
-    confs = []
-    # m = 9
 
-    for f_index, f in enumerate(availability_targets):
-        files_path = os.path.join(directory, "f=" + str(f))
         all_results.append(OrderedDict())
         confs.append(OrderedDict())
-        for k in range(1, m - 1, 1):
-            exec = str(k)
-        # for exec in executions[f_index]:
-            for workload in workloads:
-                key = exec + "_" + workload  # list(client_dists.keys())[grp_index] + "_" + object_size_default + "_" + arrival_rate_default + "_" + read_ratio_default + "_" + SLO_read_default
-                res_file = os.path.join(files_path, "res_" + exec + "_" + workload)
-                if not os.path.exists(res_file):
-                    value = "INVALID"
-                    all_results[f_index][key] = value
-                    confs[f_index][key] = value
-                    continue
-                data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
-                for grp_index, grp in enumerate(data):
-                    if grp["m"] != "INVALID":
-                        value = "{:.4e}".format(grp["get_cost"]) + " " + "{:.4e}".format(grp["put_cost"]) + " " + \
-                                "{:.4e}".format(grp["vm_cost"]) + " " + "{:.4e}".format(grp["storage_cost"])
-                        all_results[f_index][key] = value
-                        value = str(grp["m"]) + "|" + (str(grp["k"]) if grp["protocol"] != "abd" else str(0)) + "|"
-                        for s in grp["selected_dcs"]:
-                            value += str(s) + ","
-                        value = value[0:-1]
-                        value += "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(len(grp["client_placement_info"]["0"]["Q2"]))
-                        if grp["protocol"] != "abd":
-                            value += "|" + str(len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(len(grp["client_placement_info"]["0"]["Q4"]))
-                        value += "|" + "{:.4e}".format(grp["get_cost"]) + "|" + "{:.4e}".format(grp["put_cost"]) + "|" + \
-                                "{:.4e}".format(grp["vm_cost"]) + "|" + "{:.4e}".format(grp["storage_cost"]) + "|" + "{:.4f}".format(grp["total_cost"]) + "|" + "{:.0f}".format(grp["put_latency"]) + "|" + "{:.0f}".format(grp["get_latency"])
-                        confs[f_index][key] = value
-                    else:
-                        value = "INVALID"
-                        all_results[f_index][key] = value
-                        confs[f_index][key] = value
+        key = "baseline_cas" + "_" + workload
+        data2 = json.load(open(res_file2, "r"), object_pairs_hook=OrderedDict)["output"]
+        for grp_index, grp in enumerate(data2):
+            if grp["m"] != "INVALID":
+                value = "{:.4e}".format(grp["get_cost"]) + " " + "{:.4e}".format(grp["put_cost"]) + " " + \
+                        "{:.4e}".format(grp["vm_cost"]) + " " + "{:.4e}".format(grp["storage_cost"])
+                all_results[1][key] = value
+                value = str(grp["m"]) + "|" + (str(grp["k"]) if grp["protocol"] != "abd" else str(0)) + "|"
+                for s in grp["selected_dcs"]:
+                    value += str(s) + ","
+                value = value[0:-1]
+                value += "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                    len(grp["client_placement_info"]["0"]["Q2"]))
+                if grp["protocol"] != "abd":
+                    value += "|" + str(len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(
+                        len(grp["client_placement_info"]["0"]["Q4"]))
+                value += "|" + "{:.4e}".format(grp["get_cost"]) + "|" + "{:.4e}".format(grp["put_cost"]) + "|" + \
+                         "{:.4e}".format(grp["vm_cost"]) + "|" + "{:.4e}".format(
+                    grp["storage_cost"]) + "|" + "{:.4f}".format(grp["total_cost"]) + "|" + "{:.0f}".format(
+                    grp["put_latency"]) + "|" + "{:.0f}".format(grp["get_latency"])
+                confs[1][key] = value
+            else:
+                value = "INVALID"
+                all_results[1][key] = value
+                confs[1][key] = value
+
+        all_results.append(OrderedDict())
+        confs.append(OrderedDict())
+        key = "baseline_cas" + "_" + workload
+        data3 = json.load(open(res_file3, "r"), object_pairs_hook=OrderedDict)["output"]
+        for grp_index, grp in enumerate(data3):
+            if grp["m"] != "INVALID":
+                value = "{:.4e}".format(grp["get_cost"]) + " " + "{:.4e}".format(grp["put_cost"]) + " " + \
+                        "{:.4e}".format(grp["vm_cost"]) + " " + "{:.4e}".format(grp["storage_cost"])
+                all_results[2][key] = value
+                value = str(grp["m"]) + "|" + (str(grp["k"]) if grp["protocol"] != "abd" else str(0)) + "|"
+                for s in grp["selected_dcs"]:
+                    value += str(s) + ","
+                value = value[0:-1]
+                value += "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                    len(grp["client_placement_info"]["0"]["Q2"]))
+                if grp["protocol"] != "abd":
+                    value += "|" + str(len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(
+                        len(grp["client_placement_info"]["0"]["Q4"]))
+                value += "|" + "{:.4e}".format(grp["get_cost"]) + "|" + "{:.4e}".format(grp["put_cost"]) + "|" + \
+                         "{:.4e}".format(grp["vm_cost"]) + "|" + "{:.4e}".format(
+                    grp["storage_cost"]) + "|" + "{:.4f}".format(grp["total_cost"]) + "|" + "{:.0f}".format(
+                    grp["put_latency"]) + "|" + "{:.0f}".format(grp["get_latency"])
+                confs[2][key] = value
+            else:
+                value = "INVALID"
+                all_results[2][key] = value
+                confs[2][key] = value
+
+
     return all_results, confs
+
+def plot_storage_cost_cold_ratio():
+    def get_storage_cost(costs):
+        sc = costs[costs.rfind(" "):]
+        return float(sc)
+
+    results, confs = get_results()
+
+    cold_ratios = []
+    for cold_ratio in range(0, 101, 1):
+        cold_ratios.append(cold_ratio/100.)
+
+    hot_storage_cost = []
+    cold_storage_cost = []
+    opt_cold_storage_cost = []
+    total_storage_cost = []
+    total_storage_cost_opt = []
+
+    exec = "baseline_cas"
+    total_storage_cost_all_hot = get_storage_cost(results[1][exec + "_" + workloads[0]])
+    for workload in workloads:
+        total_storage_cost.append(total_storage_cost_all_hot)
+
+    exec = "baseline_cas"
+    for workload in workloads:
+        key = exec + "_" + workload
+        hot_storage_cost.append(get_storage_cost(results[1][key]))
+
+    exec = "baseline_cas"
+    for workload in workloads:
+        key = exec + "_" + workload
+        cold_storage_cost.append(get_storage_cost(results[2][key]))
+
+    exec = "optimized"
+    for workload in workloads:
+        key = exec + "_" + workload
+        opt_cold_storage_cost.append(get_storage_cost(results[0][key]))
+
+    for i, a in enumerate(hot_storage_cost):
+        total_storage_cost_opt.append(a + opt_cold_storage_cost[i])
+
+
+    labels = cold_ratios
+
+    colors = ["r", "b", "g"]
+
+    plt.rcParams.update({'font.size': 38})
+    area = 100
+    # fig = plt.figure()
+    # ax = fig.add_axes([0.09, 0.2, .70, .78])
+    fig, ax = plt.subplots()
+    x = labels # np.arange(0.0, len(labels))  # the label locations
+    print(x)
+    # ax.set_xticks(x)
+    # ax.set_xticklabels(labels)
+    # ax.axvline(x=7.5, color='k', lw=5)
+    # ax.axvline(x=15.5, color='k', lw=5)
+
+    # ax.scatter(x, cold_storage_cost, s=1.75*area, c=colors[1])
+    ax.plot(x, total_storage_cost, "--", linewidth=4, c="darkgoldenrod", label="Hot + cold")
+    # ax.scatter(x, rwks[1], s=1.75 * area, c=colors[1])
+    # ax.plot(x, rwks[1], "--", c=colors[1], label="HR - 100KB")
+
+    # ax.scatter(x, cold_storage_cost, s=1.75*area, c=colors[1])
+    ax.plot(x, total_storage_cost_opt, "-.", linewidth=4, c="darkgreen", label="Hot + optimized cold")
+    # ax.scatter(x, rwks[1], s=1.75 * area, c=colors[1])
+    # ax.plot(x, rwks[1], "--", c=colors[1], label="HR - 100KB")
+
+    # ax.scatter(x, hot_storage_cost, s=3*area, c=colors[0])
+    ax.plot(x, hot_storage_cost, linewidth=4, c=colors[0], label="Hot objects")
+    # print(m_k_pair)
+    # ax.scatter(x, hwks[1], s=3 * area, c=colors[0])
+    # ax.plot(x, hwks[1], "--", c=colors[0], label="HW - 100KB")
+
+    # ax.scatter(x, ms, s=3 * area, c=colors[0])
+    # ax.plot(x, ms, "-.", c=colors[0], label="HW")
+
+    # ax.scatter(x, cold_storage_cost, s=1.75*area, c=colors[1])
+    ax.plot(x, cold_storage_cost, linewidth=4, c=colors[1], label="Cold objects")
+    # ax.scatter(x, rwks[1], s=1.75 * area, c=colors[1])
+    # ax.plot(x, rwks[1], "--", c=colors[1], label="HR - 100KB")
+
+    # ax.scatter(x, opt_cold_storage_cost, s=.5*area, c=colors[2])
+    ax.plot(x, opt_cold_storage_cost, linewidth=4, c=colors[2], label="Optimized cold objects")
+    # ax.scatter(x, hrks[1], s=.5 * area, c=colors[2])
+    # ax.plot(x, hrks[1], "--", c=colors[2], label="HR - 100KB")
+
+    ax.legend()
+
+    # major_ticks = np.arange(0, 10, 1)
+    # minor_ticks = np.arange(0, 1001, 25)
+
+    # ax.set_yticks(major_ticks)
+    # ax.set_yticks(minor_ticks, minor=True)
+
+    # ax.grid(which='minor', alpha=0.4)
+    # ax.grid(which='major', alpha=0.8)
+    ax.grid()
+    ax.spines['top'].set_visible(False)
+    ax.tick_params(labeltop=False)
+
+    limits = ax.axis()
+    ax.axis([0, 1, 0, limits[3]])
+
+    # ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
+    ax.set_ylabel('Storage cost ($/hour)')
+    ax.set_xlabel('Cold object ratio')
 
 def extractor_type2():
     all_results, confs = get_results()
@@ -271,7 +420,7 @@ def print_workload(workload, availability_target):
         # if exec == "optimized":
         #     continue
         if results[f_index][exec + "_" + workload] == "INVALID":
-            print("WARN: no data found for " + "optimized" + "_" + workload)
+            print("WARN: no data found for " + exec + "_" + workload)
             continue
         labels.append(exec if exec.find("baseline") == -1 else exec[9:])
         values = results[f_index][exec + "_" + workload].split()
@@ -420,6 +569,20 @@ def plot_normalized(workload, availability_target):
     #     print(exec, results[f_index][exec + "_" + workload])
     # print("\n")
 
+def get_exec_name(exec):
+    if exec == "baseline_fixed_ABD":
+        return "ABD Fixed"
+    elif exec == "baseline_fixed_CAS":
+        return "CAS Fixed"
+    elif exec == "baseline_abd_nearest":
+        return "ABD Nearest"
+    elif exec == "baseline_cas_nearest":
+        return "CAS Nearest"
+    elif exec == "baseline_abd":
+        return "ABD Only Optimal"
+    elif exec == "baseline_cas":
+        return "CAS Only Optimal"
+
 plot_cumulative_max_x = 0
 def plot_cumulative(workloads, availability_target):
     def plot_one_exec(fig, ax, exec, workloads, norm_total_cost):
@@ -446,13 +609,13 @@ def plot_cumulative(workloads, availability_target):
         max_x = 0
         for i, c in enumerate(counter):
             if c == number_workload:
-                max_x = i / granularity + 1
+                max_x = (i / granularity + 1) / 100.
                 break
 
         # fig, ax = plt.subplots()
-        ax.plot(np.array(range(int(1000 * granularity))) / granularity - 100., np.array(counter), label=exec, linewidth=4) #linestyle=':'
-        ax.set_ylabel('CDF across workloads')
-        ax.set_xlabel('Cost-saving normalized to the cost of the optimizer output(%)')
+        ax.plot(np.array(range(int(1000 * granularity))) / granularity / 100., np.array(counter), label=get_exec_name(exec), linewidth=4) #linestyle=':'
+        ax.set_ylabel('Cumulative Count of Workloads')
+        ax.set_xlabel('Cost normalized to the cost of the optimizer output')
         # ax.set_title(exec)
         # ax.legend()
         plt.grid(True)
@@ -463,7 +626,7 @@ def plot_cumulative(workloads, availability_target):
 
         if plot_cumulative_max_x < max_x:
             plot_cumulative_max_x = max_x
-        ax.axis([0.0, plot_cumulative_max_x, 0.0, len(workloads)])
+        ax.axis([1.0, plot_cumulative_max_x, 0.0, len(workloads)])
 
     results, confs = get_results()
     f_index = availability_targets.index(availability_target)
@@ -886,739 +1049,6 @@ def plot_cumulative3(workloads, availability_target):
         print("for " + exec + ": max is", max_cost, "and geo_mean is", geo_mean_cost)
         # break
 
-def plot_scatter_slo_latency(workloads, availability_target):
-    results, confs = get_results()
-    f_index = availability_targets.index(availability_target)
-
-    exec = "optimized"
-
-    # data = OrderedDict()
-    labels = []
-
-    impossilbes_x = []
-    impossilbes_y = []
-
-    abd_x = []
-    abd_y = []
-
-    cas1_x = []
-    cas1_y = []
-
-    ec_x = []
-    ec_y = []
-
-    i = 0
-    for cd in client_dists:
-        # data[cd] = []  # 0: impossible, 1: Rep, 2: EC
-        labels.append(distribution_full_name[cd])
-        for workload in workloads:
-            if workload.find("HW") == -1:
-                continue
-            if workload.find(cd) != -1:
-                lat = int(workload[workload.rfind("_")+1:workload.find(".json")])
-                if results[f_index][exec + "_" + workload] == "INVALID":
-                    impossilbes_x.append(i)
-                    impossilbes_y.append(lat)
-                elif confs[f_index][exec + "_" + workload][2] == "0":
-                    abd_x.append(i)
-                    abd_y.append(lat)
-                elif confs[f_index][exec + "_" + workload][2] == "1":
-                    cas1_x.append(i)
-                    cas1_y.append(lat)
-                else:
-                    ec_x.append(i)
-                    ec_y.append(lat)
-        i += 1
-
-    for cd in client_dists:
-        # data[cd] = []  # 0: impossible, 1: Rep, 2: EC
-        labels.append(distribution_full_name[cd])
-        for workload in workloads:
-            if workload.find("RW") == -1:
-                continue
-            if workload.find(cd) != -1:
-                lat = int(workload[workload.rfind("_") + 1:workload.find(".json")])
-                if results[f_index][exec + "_" + workload] == "INVALID":
-                    impossilbes_x.append(i)
-                    impossilbes_y.append(lat)
-                elif confs[f_index][exec + "_" + workload][2] == "0":
-                    abd_x.append(i)
-                    abd_y.append(lat)
-                elif confs[f_index][exec + "_" + workload][2] == "1":
-                    cas1_x.append(i)
-                    cas1_y.append(lat)
-                else:
-                    ec_x.append(i)
-                    ec_y.append(lat)
-        i += 1
-
-    for cd in client_dists:
-        # data[cd] = []  # 0: impossible, 1: Rep, 2: EC
-        labels.append(distribution_full_name[cd])
-        for workload in workloads:
-            if workload.find("HR") == -1:
-                continue
-            if workload.find(cd) != -1:
-                lat = int(workload[workload.rfind("_") + 1:workload.find(".json")])
-                if results[f_index][exec + "_" + workload] == "INVALID":
-                    impossilbes_x.append(i)
-                    impossilbes_y.append(lat)
-                elif confs[f_index][exec + "_" + workload][2] == "0":
-                    abd_x.append(i)
-                    abd_y.append(lat)
-                elif confs[f_index][exec + "_" + workload][2] == "1":
-                    cas1_x.append(i)
-                    cas1_y.append(lat)
-                else:
-                    ec_x.append(i)
-                    ec_y.append(lat)
-        i += 1
-
-    plt.rcParams.update({'font.size': 38})
-    area = 100
-    fig = plt.figure()
-    ax = fig.add_axes([0.09, 0.4, .90, .58])
-    # fig, ax = plt.subplots()
-
-    x = np.arange(0.0, len(labels))  # the label locations
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels, rotation='vertical')
-    ax.axvline(x=7.5, color='k', lw=5)
-    ax.axvline(x=15.5, color='k', lw=5)
-    colors = ["r", "b", "c", "g"]
-
-
-    ax.scatter(impossilbes_x, impossilbes_y, s=area, c=colors[0], label="Infeasible")
-    ax.scatter(abd_x, abd_y, s=area, c=colors[1], label="ABD")
-    ax.scatter(cas1_x, cas1_y, s=area, c=colors[2], label="CAS K=1")
-    ax.scatter(ec_x, ec_y, s=area, c=colors[3], label="CAS K>1")
-
-    major_ticks = np.arange(0, 1001, 100)
-    minor_ticks = np.arange(0, 1001, 25)
-
-    ax.set_yticks(major_ticks)
-    ax.set_yticks(minor_ticks, minor=True)
-
-    ax.grid(which='minor', alpha=0.4)
-    ax.grid(which='major', alpha=0.8)
-    ax.spines['top'].set_visible(False)
-    ax.tick_params(labeltop=False)
-
-    # for cd in client_dists:
-    #     for i, state in enumerate(data[cd]):
-    #         if state == 0:
-    #             ax.scatter([labels.index(cd)], SLO_latencies[i], c=colors[0])
-    #         elif state == 1:
-    #             ax.scatter([labels.index(cd)], SLO_latencies[i], c=colors[1])
-    #         else:
-    #             ax.scatter([labels.index(cd)], SLO_latencies[i], c=colors[2])
-
-    # for state in [0, 1, 2]:
-    #     for i, lat in enumerate(SLO_latencies):
-    #         ys =
-
-
-    ax.grid(True)
-    # ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
-    ax.set_ylabel('SLO latency (ms)')
-    ax.set_xlabel('Client Distribution')
-
-def plot_scatter_slo_latency2(workloads, availability_target):
-    results, confs = get_results()
-    f_index = availability_targets.index(availability_target)
-
-    exec = "optimized"
-
-    # data = OrderedDict()
-    labels = []
-
-    impossilbes_x = []
-    impossilbes_y = []
-
-    abd_x = []
-    abd_y = []
-
-    cas1_x = []
-    cas1_y = []
-
-    ec_x = []
-    ec_y = []
-
-    i = 0
-    for cd in client_dists:
-        # data[cd] = []  # 0: impossible, 1: Rep, 2: EC
-        labels.append(distribution_full_name[cd])
-        for workload in workloads:
-            if workload.find("HW") == -1:
-                continue
-            if workload.find(cd) != -1:
-                lat = int(workload[workload.rfind("_")+1:workload.find(".json")])
-                if results[f_index][exec + "_" + workload] == "INVALID":
-                    impossilbes_x.append(i)
-                    impossilbes_y.append(lat)
-                elif confs[f_index][exec + "_" + workload][2] == "0":
-                    abd_x.append(i)
-                    abd_y.append(lat)
-                elif confs[f_index][exec + "_" + workload][2] == "1":
-                    cas1_x.append(i)
-                    cas1_y.append(lat)
-                else:
-                    ec_x.append(i)
-                    ec_y.append(lat)
-        i += 1
-
-    for cd in client_dists:
-        # data[cd] = []  # 0: impossible, 1: Rep, 2: EC
-        labels.append(distribution_full_name[cd])
-        for workload in workloads:
-            if workload.find("RW") == -1:
-                continue
-            if workload.find(cd) != -1:
-                lat = int(workload[workload.rfind("_") + 1:workload.find(".json")])
-                if results[f_index][exec + "_" + workload] == "INVALID":
-                    impossilbes_x.append(i)
-                    impossilbes_y.append(lat)
-                elif confs[f_index][exec + "_" + workload][2] == "0":
-                    abd_x.append(i)
-                    abd_y.append(lat)
-                elif confs[f_index][exec + "_" + workload][2] == "1":
-                    cas1_x.append(i)
-                    cas1_y.append(lat)
-                else:
-                    ec_x.append(i)
-                    ec_y.append(lat)
-        i += 1
-
-    for cd in client_dists:
-        # data[cd] = []  # 0: impossible, 1: Rep, 2: EC
-        labels.append(distribution_full_name[cd])
-        for workload in workloads:
-            if workload.find("HR") == -1:
-                continue
-            if workload.find(cd) != -1:
-                lat = int(workload[workload.rfind("_") + 1:workload.find(".json")])
-                if results[f_index][exec + "_" + workload] == "INVALID":
-                    impossilbes_x.append(i)
-                    impossilbes_y.append(lat)
-                elif confs[f_index][exec + "_" + workload][2] == "0":
-                    abd_x.append(i)
-                    abd_y.append(lat)
-                elif confs[f_index][exec + "_" + workload][2] == "1":
-                    cas1_x.append(i)
-                    cas1_y.append(lat)
-                else:
-                    ec_x.append(i)
-                    ec_y.append(lat)
-        i += 1
-
-    print(i, len(SLO_latencies))
-    a = [[0] * i for _ in range(len(SLO_latencies))]
-
-    for t, val_x in enumerate(impossilbes_x):
-        a[SLO_latencies.index(impossilbes_y[t])][val_x] = 0
-
-    for t, val_x in enumerate(abd_x):
-        a[SLO_latencies.index(abd_y[t])][val_x] = 1
-
-    for t, val_x in enumerate(cas1_x):
-        a[SLO_latencies.index(cas1_y[t])][val_x] = 2
-
-    for t, val_x in enumerate(ec_x):
-        a[SLO_latencies.index(ec_y[t])][val_x] = 3
-
-    # a = np.random.random((16, 16))
-    # print(a)
-    b = [[0] * i for _ in range(2)]
-    for r in a:
-        b.append(r)
-    a = b
-
-    print(a)
-    # return
-
-    plt.rcParams.update({'font.size': 38})
-    area = 100
-    fig = plt.figure()
-    ax = fig.add_axes([0.09, 0.4, 1.1, .58])
-    # ax = fig.add_axes([0.09, 0.4, .90, .58])
-
-    # ax.imshow(a, cmap='hot', interpolation='nearest')
-    # ax = sns.heatmap(a, linewidth=0.5)
-
-    #(0.84, 0.15, 0.16, 1.0) : tab:red
-
-    myColors = ((0.70, 0.13, 0.13, 1.0), (0.12, 0.47, 0.71, 1.0), (0.28, 0.82, 0.8, 1.0), (0.2, 0.80, 0.2, 1.0))
-    cmap = LinearSegmentedColormap.from_list('Custom', myColors, len(myColors))
-
-    ax = sns.heatmap(a, cmap=cmap, linewidths=.5, linecolor='lightgray')
-
-    # Manually specify colorbar labelling after it's been generated
-    colorbar = ax.collections[0].colorbar
-    colorbar.set_ticks([0.375, 1.125, 1.875, 2.625])
-    colorbar.set_ticklabels(['Infeasible', 'ABD', 'CAS K=1', 'CAS K>1'])
-
-    plt.gca().invert_yaxis()
-
-    x = np.arange(0.0, len(labels))  # the label locations
-    ax.set_xticks(x + 0.5)
-    ax.set_xticklabels(labels, rotation='vertical')
-    ax.axvline(x=7.5 + 0.5, color='k', lw=5)
-    ax.axvline(x=15.5 + 0.5, color='k', lw=5)
-    # plt.show()
-
-    major_ticks = np.arange(0, 1001, 25)
-    # minor_ticks = np.arange(0, 1001, 25)
-    # for i, val in enumerate(major_ticks):
-    #     if i % 4 != 2:
-    #         major_ticks[i] = ""
-
-    y = np.arange(0.0, len(SLO_latencies) + 2)
-    ax.set_yticks(y + 0.5)
-    ax.set_yticklabels(major_ticks)
-    plt.locator_params(axis='y', nbins=10)
-
-
-
-    # ax.set_yticks(major_ticks)
-    # ax.set_yticks(minor_ticks, minor=True)
-
-    # ax.grid(which='minor', alpha=0.4)
-    # ax.grid(which='major', alpha=0.8)
-    ax.spines['top'].set_visible(False)
-    ax.tick_params(labeltop=False)
-
-    ax.set_ylabel('Latency SLO (msec)')
-    ax.set_xlabel('User Location')
-
-    return
-
-    plt.rcParams.update({'font.size': 38})
-    area = 100
-    fig = plt.figure()
-    ax = fig.add_axes([0.09, 0.4, .90, .58])
-    # fig, ax = plt.subplots()
-
-    x = np.arange(0.0, len(labels))  # the label locations
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels, rotation='vertical')
-    ax.axvline(x=7.5, color='k', lw=5)
-    ax.axvline(x=15.5, color='k', lw=5)
-    colors = ["r", "b", "c", "g"]
-
-
-    ax.scatter(impossilbes_x, impossilbes_y, s=area, c=colors[0], label="Infeasible")
-    ax.scatter(abd_x, abd_y, s=area, c=colors[1], label="ABD")
-    ax.scatter(cas1_x, cas1_y, s=area, c=colors[2], label="CAS K=1")
-    ax.scatter(ec_x, ec_y, s=area, c=colors[3], label="CAS K>1")
-
-    major_ticks = np.arange(0, 1001, 100)
-    minor_ticks = np.arange(0, 1001, 25)
-
-    ax.set_yticks(major_ticks)
-    ax.set_yticks(minor_ticks, minor=True)
-
-    ax.grid(which='minor', alpha=0.4)
-    ax.grid(which='major', alpha=0.8)
-    ax.spines['top'].set_visible(False)
-    ax.tick_params(labeltop=False)
-
-    # for cd in client_dists:
-    #     for i, state in enumerate(data[cd]):
-    #         if state == 0:
-    #             ax.scatter([labels.index(cd)], SLO_latencies[i], c=colors[0])
-    #         elif state == 1:
-    #             ax.scatter([labels.index(cd)], SLO_latencies[i], c=colors[1])
-    #         else:
-    #             ax.scatter([labels.index(cd)], SLO_latencies[i], c=colors[2])
-
-    # for state in [0, 1, 2]:
-    #     for i, lat in enumerate(SLO_latencies):
-    #         ys =
-
-
-    ax.grid(True)
-    # ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
-    ax.set_ylabel('SLO latency (ms)')
-    ax.set_xlabel('Client Distribution')
-
-def plot_sense_to_object_size(workloads, availability_target):
-    def get_object_size(workload):
-        size = workload[workload.find("_") + 1:workload.find("_", workload.find("_") + 1)]
-        if size.find("B") != -1:
-            return size
-        size = workload[workload.find("_", workload.find("_") + 1) + 1:workload.find("_", workload.find("_", workload.find("_") + 1) + 1)]
-        return size
-
-    results, confs = get_results()
-    f_index = availability_targets.index(availability_target)
-
-    exec = "baseline_cas"
-
-    arrival_rate = 200
-
-    # data = OrderedDict()
-    labels = list(object_sizes.keys())
-
-    get_object_size(workloads[0])
-
-    hwks = [-1 for _ in range(len(object_sizes))]
-    ms = [-1 for _ in range(len(object_sizes))]
-    rwks = [-1 for _ in range(len(object_sizes))]
-    hrks = [-1 for _ in range(len(object_sizes))]
-
-    colors = ["r", "b", "g"]
-
-    i = 1
-    for cd in client_dists:
-        if cd != "dist_ST":
-            continue
-        print("Figure " + str(i) + ": " + cd)
-        i += 1
-        # for workload in workloads:
-        #     if workload.find(cd) == -1 or workload.find("_" + str(arrival_rate) + "_") == -1:
-        #         continue
-        #     if workload.find("HW") == -1:
-        #         continue
-        #
-        #     object_size = get_object_size(workload)
-        #     # print(object_size)
-        #     hwks[list(object_sizes.keys()).index(object_size)] = int(confs[f_index][exec + "_" + workload][2])
-        #     ms[list(object_sizes.keys()).index(object_size)] = int(confs[f_index][exec + "_" + workload][0])
-
-        for workload in workloads:
-            if workload.find(cd) == -1 or workload.find("_" + str(arrival_rate) + "_") == -1:
-                continue
-            if workload.find("RW") == -1:
-                continue
-
-            object_size = get_object_size(workload)
-            # print(object_size)
-            rwks[list(object_sizes.keys()).index(object_size)] = int(confs[f_index][exec + "_" + workload][2])
-
-        # for workload in workloads:
-        #     if workload.find(cd) == -1 or workload.find("_" + str(arrival_rate) + "_") == -1:
-        #         continue
-        #     if workload.find("HR") == -1:
-        #         continue
-        #
-        #     object_size = get_object_size(workload)
-        #     # print(object_size)
-        #     hrks[list(object_sizes.keys()).index(object_size)] = int(confs[f_index][exec + "_" + workload][2])
-
-        plt.rcParams.update({'font.size': 38*1.6})
-        # area = 100
-        area = 500
-        fig = plt.figure()
-        ax = fig.add_axes([0.08, 0.14, .85, .80])
-        # fig = plt.figure()
-        # ax = fig.add_axes([0.09, 0.2, .70, .78])
-        # fig, ax = plt.subplots()
-        x = np.arange(0.0, len(labels))  # the label locations
-        ax.set_xticks(x)
-        ax.set_xticklabels(labels)
-        # ax.axvline(x=7.5, color='k', lw=5)
-        # ax.axvline(x=15.5, color='k', lw=5)
-
-        # ax.scatter(x, hwks, s=3*area, c=colors[0])
-        # ax.plot(x, hwks, c=colors[0], label="HW")
-        # ax.scatter(x, ms, s=3 * area, c=colors[0])
-        # ax.plot(x, ms, "-.", c=colors[0], label="HW")
-
-        ax.scatter(x, rwks, s=1.75*area, linewidth=10.0, c=colors[1])
-        ax.plot(x, rwks, c=colors[1], linewidth=5.0)
-
-        # ax.scatter(x, hrks, s=.5*area, c=colors[2])
-        # ax.plot(x, hrks, c=colors[2], label="HR")
-
-        # ax.legend()
-
-        major_ticks = np.arange(0, 10, 1)
-        # minor_ticks = np.arange(0, 1001, 25)
-
-        ax.set_yticks(major_ticks)
-        # ax.set_yticks(minor_ticks, minor=True)
-
-        ax.grid(which='minor', alpha=0.4)
-        ax.grid(which='major', alpha=0.8)
-        ax.spines['top'].set_visible(False)
-        ax.tick_params(labeltop=False)
-
-        # ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
-        params = {'mathtext.default': 'regular'}
-        plt.rcParams.update(params)
-        ax.set_ylabel('$K_{Opt}$')
-        ax.set_xlabel('Object size')
-
-def plot_sense_to_arrival_rate(workloads, availability_target):
-    def get_arrival_rate(workload):
-        workload = workload[0:workload.rfind("_")]
-        workload = workload[0:workload.rfind("_")]
-        ar = workload[workload.rfind("_") + 1:]
-        return int(ar)
-
-    results, confs = get_results()
-    f_index = availability_targets.index(availability_target)
-
-    exec = "baseline_cas"
-
-    object_size = list(object_sizes.keys())[0]
-
-    m_k_pair = []
-
-    # data = OrderedDict()
-    labels = arrival_rates[0:21:4]
-
-    hwks = [[-1 for _ in range(len(labels))] for i in range(2)]
-    ms = [[-1 for _ in range(len(labels))] for i in range(2)]
-    rwks = [[-1 for _ in range(len(labels))] for i in range(2)]
-    hrks = [[-1 for _ in range(len(labels))] for i in range(2)]
-
-    colors = ["r", "b", "g"]
-
-    i = 1
-    for cd in client_dists:
-        if cd != "dist_ST":
-            continue
-        print("Figure " + str(i) + ": " + cd)
-        i += 1
-        for object_size_index, object_size in enumerate(list(object_sizes.keys())[0:-1]):
-            # print("SSSS")
-            # for workload in workloads:
-            #     if workload.find(cd) == -1 or workload.find("_" + str(object_size) + "_") == -1:
-            #         continue
-            #     if workload.find("HW") == -1:
-            #         continue
-            #
-            #     ar = get_arrival_rate(workload)
-            #     if not ar in labels:
-            #         continue
-            #     # print(object_size)
-            #     hwks[object_size_index][labels.index(ar)] = int(confs[f_index][exec + "_" + workload][2])
-            #     ms[object_size_index][labels.index(ar)] = int(confs[f_index][exec + "_" + workload][0])
-            #     # m_k_pair.append([int(confs[f_index][exec + "_" + workload][0]), int(confs[f_index][exec + "_" + workload][2])])
-
-            for workload in workloads:
-                if workload.find(cd) == -1 or workload.find("_" + str(object_size) + "_") == -1:
-                    continue
-                if workload.find("RW") == -1:
-                    continue
-
-                ar = get_arrival_rate(workload)
-                if not ar in labels:
-                    continue
-                # print(object_size)
-                rwks[object_size_index][labels.index(ar)] = int(confs[f_index][exec + "_" + workload][2])
-
-            # for workload in workloads:
-            #     if workload.find(cd) == -1 or workload.find("_" + str(object_size) + "_") == -1:
-            #         continue
-            #     if workload.find("HR") == -1:
-            #         continue
-            #
-            #     ar = get_arrival_rate(workload)
-            #     if not ar in labels:
-            #         continue
-            #     # print(object_size)
-            #     hrks[object_size_index][labels.index(ar)] = int(confs[f_index][exec + "_" + workload][2])
-
-            plt.rcParams.update({'font.size': 38*1.6})
-            # area = 100
-            area = 500
-            fig = plt.figure()
-            ax = fig.add_axes([0.08, 0.14, .85, .80])
-            # fig, ax = plt.subplots()
-            x = labels # np.arange(0.0, len(labels))  # the label locations
-            # ax.set_xticks(x)
-            # ax.set_xticklabels(labels)
-            # ax.axvline(x=7.5, color='k', lw=5)
-            # ax.axvline(x=15.5, color='k', lw=5)
-
-            # ax.scatter(x, hwks[0], s=3*area, c=colors[0])
-            # ax.plot(x, hwks[0], c=colors[0], label="HW")
-            # print(m_k_pair)
-            # ax.scatter(x, hwks[1], s=3 * area, c=colors[0])
-            # ax.plot(x, hwks[1], "--", c=colors[0], label="HW - 100KB")
-
-            # ax.scatter(x, ms, s=3 * area, c=colors[0])
-            # ax.plot(x, ms, "-.", c=colors[0], label="HW")
-
-            ax.scatter(x, rwks[0], s=1.75*area, linewidth=10, c=colors[1])
-            ax.plot(x, rwks[0], linewidth=5.0, c=colors[1])
-            # ax.scatter(x, rwks[1], s=1.75 * area, c=colors[1])
-            # ax.plot(x, rwks[1], "--", c=colors[1], label="HR - 100KB")
-
-            # ax.scatter(x, hrks[0], s=.5*area, c=colors[2])
-            # ax.plot(x, hrks[0], c=colors[2], label="HR")
-            # ax.scatter(x, hrks[1], s=.5 * area, c=colors[2])
-            # ax.plot(x, hrks[1], "--", c=colors[2], label="HR - 100KB")
-
-            # ax.legend()
-
-            major_ticks = np.arange(50, 650, 100)
-            ax.set_xticks(major_ticks)
-
-            major_ticks = np.arange(0, 10, 1)
-            # minor_ticks = np.arange(0, 1001, 25)
-
-            ax.set_yticks(major_ticks)
-            # ax.set_yticks(minor_ticks, minor=True)
-
-            ax.grid(which='minor', alpha=0.4)
-            ax.grid(which='major', alpha=0.8)
-            ax.spines['top'].set_visible(False)
-            ax.tick_params(labeltop=False)
-
-            limits = ax.axis()
-            ax.axis([limits[0], 600, limits[2], limits[3]])
-
-            # ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
-            params = {'mathtext.default': 'regular'}
-            plt.rcParams.update(params)
-            ax.set_ylabel('$K_{Opt}$')
-            ax.set_xlabel('Arrival rate (req/sec)')
-
-            # minor_ticks = np.arange(0, 600, 25)
-            # ax.set_xticks(major_ticks)
-            # ax.set_xticks(minor_ticks, minor=True)
-            # ax.grid(which='minor', alpha=0.5)
-            ax.grid(which='major', alpha=1)
-
-
-def cost_const_k(workload, availability_target):
-    results, confs = get_results_k()
-    f_index = availability_targets.index(availability_target)
-    workload = workload if workload.find(".json") != -1 else workload + ".json"
-
-    labels = []
-    get_cost = []
-    put_cost = []
-    vm_cost = []
-    storage_cost = []
-
-    # optimized = []
-    # values = results[f_index]["optimized" + "_" + workload].split()
-    # optimized.append(float(values[0]))
-    # optimized.append(float(values[1]))
-    # optimized.append(float(values[2]))
-    # optimized.append(float(values[3]))
-    # optimized_cost = sum(optimized)
-    print(workload[:workload.find(".json")] + ":")
-    for k in range(1, m - 1, 1):
-        exec = str(k)
-    # for exec in executions[f_index]:
-        # if exec == "optimized":
-        #     continue
-        if results[f_index][exec + "_" + workload] == "INVALID":
-            print("WARN: no data found for " + exec + "_" + workload)
-            continue
-        labels.append(exec)
-        values = results[f_index][exec + "_" + workload].split()
-        # print(values)
-        get_cost.append(float(values[0]))
-        put_cost.append(float(values[1]))
-        vm_cost.append(float(values[2]))
-        storage_cost.append(float(values[3]))
-        print(exec + ":", confs[f_index][exec + "_" + workload])
-    print()
-
-    # print(get_cost)
-    # print(put_cost)
-    # print(vm_cost)
-    # print(storage_cost)
-    width = 0.5  # the width of the bars: can also be len(x) sequence
-    fig, ax = plt.subplots()
-
-    # ax.bar(labels, women_means, width, yerr=women_std, bottom=men_means, label='Women')
-
-    ax.bar(labels, storage_cost, width, bottom=np.array(get_cost) + np.array(put_cost) + np.array(vm_cost),
-           label='storage_cost', color='tab:red')
-    ax.bar(labels, vm_cost, width, bottom=np.array(get_cost) + np.array(put_cost), label='vm_cost', color='tab:green')
-    ax.bar(labels, put_cost, width, bottom=get_cost, label='put_cost', color='tab:orange')
-    ax.bar(labels, get_cost, width, label='get_cost', color='tab:blue')
-
-    ax.set_ylabel('Cost($/hour)')
-    ax.set_xlabel('K')
-    ax.set_title(workload[:workload.find(".json")] + ", N is constant 9")
-    ax.legend()
-    plt.grid(True)
-
-def cost_k(workload, availability_target):
-    results, confs = get_results_k()
-    f_index = availability_targets.index(availability_target)
-    workload = workload if workload.find(".json") != -1 else workload + ".json"
-
-    labels = []
-    get_cost = []
-    put_cost = []
-    vm_cost = []
-    storage_cost = []
-
-    # optimized = []
-    # values = results[f_index]["optimized" + "_" + workload].split()
-    # optimized.append(float(values[0]))
-    # optimized.append(float(values[1]))
-    # optimized.append(float(values[2]))
-    # optimized.append(float(values[3]))
-    # optimized_cost = sum(optimized)
-    print(workload[:workload.find(".json")] + ":")
-    for k in range(1, m - 1, 1):
-        exec = str(k)
-    # for exec in executions[f_index]:
-        # if exec == "optimized":
-        #     continue
-        if results[f_index][exec + "_" + workload] == "INVALID":
-            print("WARN: no data found for " + exec + "_" + workload)
-            continue
-        labels.append(exec)
-        values = results[f_index][exec + "_" + workload].split()
-        # print(values)
-        get_cost.append(float(values[0]))
-        put_cost.append(float(values[1]))
-        vm_cost.append(float(values[2]))
-        storage_cost.append(float(values[3]))
-        print(exec + ":", confs[f_index][exec + "_" + workload])
-    print()
-
-    # print(get_cost)
-    # print(put_cost)
-    # print(vm_cost)
-    # print(storage_cost)
-    # plt.rcParams.update({'font.size': 38})
-    width = 0.5  # the width of the bars: can also be len(x) sequence
-    # fig, ax = plt.subplots()
-    # fig = plt.figure()
-    # ax = fig.add_axes([0.07, 0.09, .68, .88])
-
-    plt.rcParams.update({'font.size': 38 * 1.6})
-    fig = plt.figure()
-    ax = fig.add_axes([0.1, 0.14, .54, .80])
-
-    # ax.bar(labels, women_means, width, yerr=women_std, bottom=men_means, label='Women')
-
-    ax.bar(labels, storage_cost, width, bottom=np.array(get_cost) + np.array(put_cost) + np.array(vm_cost),
-           label='Storage cost', color='tab:red')
-    ax.bar(labels, vm_cost, width, bottom=np.array(get_cost) + np.array(put_cost), label='VM cost', color='tab:green', fill=True, hatch='/')
-    ax.bar(labels, put_cost, width, bottom=get_cost, label='PUT cost', color='tab:orange', fill=True, hatch='|')
-    ax.bar(labels, get_cost, width, label='GET cost', color='tab:blue', fill=True, hatch='X')
-
-    opt_index = 1
-    ax.text(opt_index - 0.3, storage_cost[opt_index] + vm_cost[opt_index] + put_cost[opt_index] + get_cost[opt_index] + 0.01, "$K_{Opt}$")
-
-
-    ax.set_ylabel('Cost ($/hour)')
-    ax.set_xlabel('K')
-    # ax.set_title(workload[:workload.find(".json")] + ", N k+2f")
-    # ax.legend()
-
-    # minor_ticks = np.arange(0, 600, 25)
-    # ax.set_xticks(major_ticks)
-    # ax.set_xticks(minor=True)
-
-    ax.legend(bbox_to_anchor=(1, 1), loc='upper left')
-    ax.grid(which='minor', alpha=0.5, axis='y')
-    plt.grid(True, axis='y')
-
-
 def counting(availability_target):
     results, confs = get_results()
     f_index = availability_targets.index(availability_target)
@@ -1749,6 +1179,8 @@ def when_arrival_rate_changes(availability_target):
             print(workload2, confs[f_index][exec + "_" + workload2])
             print()
 
+    open_sublime()
+
 def when_baseline_is_better(availability_target):
     results, confs = get_results()
     f_index = availability_targets.index(availability_target)
@@ -1839,6 +1271,8 @@ def when_EC_lat_better(availability_target):
             #     print()
 
     print(min_lat_diff, picked_workload, picked_rep_selected_dcs, picked_ec_selected_dcs, picked_rep_get_lat, picked_ec_get_lat)
+    print("baseline_abd_nearest", confs[f_index]["baseline_abd_nearest" + "_" + picked_workload])
+    print("baseline_cas_nearest", confs[f_index]["baseline_cas_nearest" + "_" + picked_workload])
 
     # Cost-basis view
     # for workload in workloads:
@@ -1853,6 +1287,276 @@ def when_EC_lat_better(availability_target):
     #             print()
 
     open_sublime()
+
+def nearest_experiment(workloads, availability_target):
+    results, confs = get_results()
+    f_index = availability_targets.index(availability_target)
+    # workload = workload if workload.find(".json") != -1 else workload + ".json"
+
+    labels = []
+    get_cost = []
+    put_cost = []
+    vm_cost = []
+    storage_cost = []
+
+    max_profit_cas = 0.
+    max_profit_abd = 0.
+    best_workload = ""
+
+    profits = []
+
+    for workload in workloads:
+        if workload.find("HW") != -1:
+            continue
+        if workload.find("dist_S") == -1:
+            continue
+        exec = "baseline_abd_nearest"
+        if results[f_index][exec + "_" + workload] == "INVALID":
+            continue
+        values = results[f_index][exec + "_" + workload].split()
+        nabd_total_cost = float(values[0]) + float(values[1]) + float(values[2]) + float(values[3])
+
+        exec = "baseline_cas_nearest"
+        if results[f_index][exec + "_" + workload] == "INVALID":
+            continue
+        values = results[f_index][exec + "_" + workload].split()
+        ncas_total_cost = float(values[0]) + float(values[1]) + float(values[2]) + float(values[3])
+
+        exec = "optimized"
+        if results[f_index][exec + "_" + workload] == "INVALID":
+            continue
+        values = results[f_index][exec + "_" + workload].split()
+        opt_total_cost = float(values[0]) + float(values[1]) + float(values[2]) + float(values[3])
+
+        if opt_total_cost < nabd_total_cost and opt_total_cost < ncas_total_cost:
+            # print(workload, ":", opt_total_cost, nabd_total_cost, ncas_total_cost)
+            profits.append(ncas_total_cost / opt_total_cost)
+            # if max_profit_cas + max_profit_abd < ncas_total_cost / opt_total_cost + nabd_total_cost / opt_total_cost:
+            #     max_profit_cas = ncas_total_cost / opt_total_cost
+            #     max_profit_abd = nabd_total_cost / opt_total_cost
+            #     best_workload = workload
+
+            if max_profit_cas < ncas_total_cost / opt_total_cost:
+                max_profit_cas = ncas_total_cost / opt_total_cost
+                max_profit_abd = nabd_total_cost / opt_total_cost
+                best_workload = workload
+
+    for profit in profits:
+        if "{:.4f}".format(profit) == "{:.4f}".format(max_profit_cas):
+            print("AAAA")
+
+    print("best:", best_workload, max_profit_cas, max_profit_abd)
+
+def mis_prediction_robustness(availability_target):
+    results, confs = get_results()
+    f_index = availability_targets.index(availability_target)
+    files_path = os.path.join(directory, "f=" + str(availability_targets[f_index]))
+
+    lat = 1000
+
+    # client dist.
+    workload_counter = 0
+    conf_change_counter = 0
+    for object_size in object_sizes:
+        for storage_size in storage_sizes:
+            for arrival_rate in arrival_rates:
+                for read_ratio in read_ratios:
+                    workload_counter += 1
+                    old_configuration = ""
+                    for client_dist in client_dists:
+                        # for lat in SLO_latencies:
+
+                        num_objects = storage_sizes[storage_size] / object_sizes[object_size]
+                        FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(arrival_rate) + "_" + \
+                                    read_ratio + "_" + str(lat) + ".json"
+                        workload = FILE_NAME
+
+                        res_file = os.path.join(files_path, "res_" + "optimized" + "_" + workload)
+                        data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
+                        for grp_index, grp in enumerate(data):
+                            if grp["protocol"] != "abd":
+                                configuration = str(grp["m"]) + "|" + str(grp["k"]) + "|" + list_reformat(
+                                    grp["selected_dcs"]) + \
+                                                "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q4"]))
+                            else:
+                                configuration = str(grp["m"]) + "|" + "0" + "|" + list_reformat(
+                                    grp["selected_dcs"]) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"]))
+
+                        if old_configuration != "" and old_configuration != configuration:
+                            conf_change_counter += 1
+                            break
+
+                        old_configuration = configuration
+    print("client dist:", "{:.2f}".format(float(conf_change_counter) / float(workload_counter)) )
+
+    # object_size
+    workload_counter = 0
+    conf_change_counter = 0
+    for client_dist in client_dists:
+        for storage_size in storage_sizes:
+            for arrival_rate in arrival_rates:
+                for read_ratio in read_ratios:
+                    workload_counter += 1
+                    old_configuration = ""
+                    for object_size in object_sizes:
+                        # for lat in SLO_latencies:
+
+                        num_objects = storage_sizes[storage_size] / object_sizes[object_size]
+                        FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
+                            arrival_rate) + "_" + \
+                                    read_ratio + "_" + str(lat) + ".json"
+                        workload = FILE_NAME
+
+                        res_file = os.path.join(files_path, "res_" + "optimized" + "_" + workload)
+                        data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
+                        for grp_index, grp in enumerate(data):
+                            if grp["protocol"] != "abd":
+                                configuration = str(grp["m"]) + "|" + str(grp["k"]) + "|" + list_reformat(
+                                    grp["selected_dcs"]) + \
+                                                "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q4"]))
+                            else:
+                                configuration = str(grp["m"]) + "|" + "0" + "|" + list_reformat(
+                                    grp["selected_dcs"]) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"]))
+
+                        if old_configuration != "" and old_configuration != configuration:
+                            conf_change_counter += 1
+                            break
+
+                        old_configuration = configuration
+    print("object size:", "{:.2f}".format(float(conf_change_counter) / float(workload_counter)))
+
+    # storage_size
+    workload_counter = 0
+    conf_change_counter = 0
+    for client_dist in client_dists:
+        for object_size in object_sizes:
+            for arrival_rate in arrival_rates:
+                for read_ratio in read_ratios:
+                    workload_counter += 1
+                    old_configuration = ""
+                    for storage_size in storage_sizes:
+                        # for lat in SLO_latencies:
+
+                        num_objects = storage_sizes[storage_size] / object_sizes[object_size]
+                        FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
+                            arrival_rate) + "_" + \
+                                    read_ratio + "_" + str(lat) + ".json"
+                        workload = FILE_NAME
+
+                        res_file = os.path.join(files_path, "res_" + "optimized" + "_" + workload)
+                        data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
+                        for grp_index, grp in enumerate(data):
+                            if grp["protocol"] != "abd":
+                                configuration = str(grp["m"]) + "|" + str(grp["k"]) + "|" + list_reformat(
+                                    grp["selected_dcs"]) + \
+                                                "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q4"]))
+                            else:
+                                configuration = str(grp["m"]) + "|" + "0" + "|" + list_reformat(
+                                    grp["selected_dcs"]) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"]))
+
+                        if old_configuration != "" and old_configuration != configuration:
+                            conf_change_counter += 1
+                            break
+
+                        old_configuration = configuration
+    print("storage size:", "{:.2f}".format(float(conf_change_counter) / float(workload_counter)))
+
+    # arrival_rate
+    workload_counter = 0
+    conf_change_counter = 0
+    for client_dist in client_dists:
+        for object_size in object_sizes:
+            for storage_size in storage_sizes:
+                for read_ratio in read_ratios:
+                    workload_counter += 1
+                    old_configuration = ""
+                    for arrival_rate in arrival_rates:
+                        # for lat in SLO_latencies:
+
+                        num_objects = storage_sizes[storage_size] / object_sizes[object_size]
+                        FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
+                            arrival_rate) + "_" + \
+                                    read_ratio + "_" + str(lat) + ".json"
+                        workload = FILE_NAME
+
+                        res_file = os.path.join(files_path, "res_" + "optimized" + "_" + workload)
+                        data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
+                        for grp_index, grp in enumerate(data):
+                            if grp["protocol"] != "abd":
+                                configuration = str(grp["m"]) + "|" + str(grp["k"]) + "|" + list_reformat(
+                                    grp["selected_dcs"]) + \
+                                                "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q4"]))
+                            else:
+                                configuration = str(grp["m"]) + "|" + "0" + "|" + list_reformat(
+                                    grp["selected_dcs"]) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"]))
+
+                        if old_configuration != "" and old_configuration != configuration:
+                            conf_change_counter += 1
+                            break
+
+                        old_configuration = configuration
+    print("arrival rate:", "{:.2f}".format(float(conf_change_counter) / float(workload_counter)))
+
+    # read_ratio
+    workload_counter = 0
+    conf_change_counter = 0
+    for client_dist in client_dists:
+        for object_size in object_sizes:
+            for storage_size in storage_sizes:
+                for arrival_rate in arrival_rates:
+                    workload_counter += 1
+                    old_configuration = ""
+                    for read_ratio in read_ratios:
+                        # for lat in SLO_latencies:
+
+                        num_objects = storage_sizes[storage_size] / object_sizes[object_size]
+                        FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
+                            arrival_rate) + "_" + \
+                                    read_ratio + "_" + str(lat) + ".json"
+                        workload = FILE_NAME
+
+                        res_file = os.path.join(files_path, "res_" + "optimized" + "_" + workload)
+                        data = json.load(open(res_file, "r"), object_pairs_hook=OrderedDict)["output"]
+                        for grp_index, grp in enumerate(data):
+                            if grp["protocol"] != "abd":
+                                configuration = str(grp["m"]) + "|" + str(grp["k"]) + "|" + list_reformat(
+                                    grp["selected_dcs"]) + \
+                                                "|" + str(len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q3"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q4"]))
+                            else:
+                                configuration = str(grp["m"]) + "|" + "0" + "|" + list_reformat(
+                                    grp["selected_dcs"]) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q1"])) + "|" + str(
+                                    len(grp["client_placement_info"]["0"]["Q2"]))
+
+                        if old_configuration != "" and old_configuration != configuration:
+                            conf_change_counter += 1
+                            break
+
+                        old_configuration = configuration
+    print("read ratio:", "{:.2f}".format(float(conf_change_counter) / float(workload_counter)))
 
 def workload_satisfies(workload, attrs):
     for a in attrs:
@@ -1888,20 +1592,19 @@ def plot_all(availability_target):
     for workload in workloads:
         # print("A")
         # interesting cases
-        attrs = ["dist_ST", "1KB"]# ["dist_SS", "1KB", "1TB", "_500_"] #, "HW"] #workload.find(list(client_dists.keys())[2])
+        attrs = ["dist_SS", "1KB", "1TB", "_500_"] #, "HW"] #workload.find(list(client_dists.keys())[2])
         # attrs = ["10KB", "HR"]
         if workload_satisfies(workload, attrs):
-            # plot_workload(workload, availability_target)
+            plot_workload(workload, availability_target)
             # plot_normalized(workload, availability_target)
 
-            # cost_const_k(workload, availability_target)
-            cost_k(workload, availability_target)
-
-    # os.system("subl drawer_output.txt")
+    os.system("subl drawer_output.txt")
 
 if __name__ == "__main__":
     global workloads
     workloads = get_workloads()
+
+    plot_storage_cost_cold_ratio()
 
     # print_configurations_count()
 
@@ -1929,17 +1632,14 @@ if __name__ == "__main__":
     # write_latencies(2)
 
     # plot_all(1)
-    # plot_cumulative(workloads, 2)
+    # plot_cumulative(workloads, 1)
     # plot_cumulative2(workloads, 1)
     # plot_cumulative3(workloads, 1)
 
+    # nearest_experiment(workloads, 1)
+    # plot_workload("dist_ST_1KB_100GB_500_HR_1000.json", 1)
 
-    # plot_scatter_slo_latency(workloads, 1)
-    plot_scatter_slo_latency2(workloads, 2)
-    # plot_sense_to_object_size(workloads, 1)
-    # plot_sense_to_arrival_rate(workloads, 1)
-
-    # plot_all(1)
+    # mis_prediction_robustness(1)
 
     # os.system("subl drawer_output.txt")
     sys.stdout.flush()

@@ -557,15 +557,28 @@ static inline bool compare_placement(const Placement& old, const Placement& curr
     return true;
 }
 
-int Controller::run_all_clients(){ //Todo: run other clients as well.
-    for(uint i = 0; i < properties.group_configs[0].groups.size(); i++){
+int Controller::run_clients_for(int group_config_i){ //Todo: run other clients as well.
+    for(uint i = 0; i < properties.group_configs[group_config_i].groups.size(); i++){
         for(uint j = 0; j < properties.datacenters.size(); j++){
 //            DPRINTF(DEBUG_RECONFIG_CONTROL, "aaaa %s\n", master.prp.datacenters[j]->metadata_server_ip.c_str());
-            if(properties.group_configs[0].groups[i].client_dist[j] != 0){
-                clients_thread.emplace_back(&Controller::run_client, this, properties.datacenters[j]->id, 1,
-                                            properties.group_configs[0].groups[i].id);
+            if(properties.group_configs[group_config_i].groups[i].client_dist[j] != 0){
+                clients_thread.emplace_back(&Controller::run_client, this, properties.datacenters[j]->id, properties.group_configs[group_config_i].id,
+                                            properties.group_configs[group_config_i].groups[i].id);
             }
         }
+    }
+    return S_OK;
+}
+
+int Controller::run_all_clients(){ //Todo: run other clients as well.
+    auto startPoint = time_point_cast<milliseconds>(system_clock::now());
+    time_point <system_clock, milliseconds> timePoint;
+    for(uint i = 0; i < properties.group_configs.size(); i++){
+        auto& gc = properties.group_configs[i];
+        timePoint = startPoint + milliseconds{gc.timestamp * 1000};
+        this_thread::sleep_until(timePoint);
+        DPRINTF(DEBUG_CAS_Client, "clients in group_configs %d started.\n", i);
+        this->run_clients_for(i);
     }
     return S_OK;
 }
@@ -680,7 +693,8 @@ int main(){
     Controller master(2, 10000, 10000, "./config/auto_test/datacenters_access_info.json",
                       "./config/auto_test/input_workload.json", "./config/auto_test/optimizer_output.json");
 #endif
-    master.run_all_clients();
+    std::future<int> client_executer_fut = std::async(&Controller::run_all_clients, &master);
+//    master.run_all_clients();
     DPRINTF(DEBUG_RECONFIG_CONTROL, "controller created\n");
 
 #ifdef DO_WARM_UP
@@ -693,6 +707,7 @@ int main(){
     DPRINTF(DEBUG_RECONFIG_CONTROL, "run_reconfigurer\n");
     master.run_reconfigurer();
 
+    client_executer_fut.get();
     master.wait_for_clients();
 
     DPRINTF(DEBUG_RECONFIG_CONTROL, "Connect::close_all()\n");

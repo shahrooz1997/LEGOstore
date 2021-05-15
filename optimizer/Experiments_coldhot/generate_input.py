@@ -43,33 +43,52 @@ if __name__ == "__main__":
     #     print("USAGE: python3 generate_input.py <path>")
     #     exit(1)
 
+    step = 10000000 # 10M
+    num_of_hot_keys = 500
+
     # directory = sys.argv[1]
     directory = "workloads/"
     os.system("rm -rf " + directory + "*")
     os.system("cp workload_def.py " + directory)
-    for f_index, f in enumerate(availability_targets):
-        os.mkdir(directory + "f=" + str(f))
-        files_path = directory + "f=" + str(f) + "/"
+    os.mkdir(directory + "opt")
+    directory += "opt/"
+    # for f_index, f in enumerate(availability_targets):
+    #     os.mkdir(directory + "f=" + str(f))
+    #     files_path = directory + "f=" + str(f) + "/"
 
-        # client_dist
-        for client_dist in client_dists:
-            for object_size in object_sizes:
-                for storage_size in storage_sizes:
-                    for arrival_rate in arrival_rates:
-                        for read_ratio in read_ratios:
-                            # for lat in SLO_latencies:
-                            lat = SLO_latencies[f_index]
+    f = 1
+    files_path = directory
+    # client_dist
+    for client_dist in client_dists:
+        for object_size in object_sizes:
+            for arrival_rate in arrival_rates:
+                for read_ratio in read_ratios:
+                    # for lat in SLO_latencies:
+                    lat = SLO_latencies[availability_targets.index(f)]
 
-                            num_objects = storage_sizes[storage_size] / object_sizes[object_size] - 1
-                            input_groups = []
-                            key_group = Single_group(f, client_dists[client_dist], object_sizes[object_size], metadata_size_default,
-                                                     num_objects, arrival_rate, read_ratios[read_ratio],
-                                                     float("{:.2f}".format(1 - read_ratios[read_ratio])), lat, lat,
-                                                     duration_default, time_to_decode_default)
-                            input_groups.append(key_group.__dict__)
-                            FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(
-                                arrival_rate) + "_" + read_ratio + "_" + str(lat) + ".json"
-                            json.dump({"input_groups": input_groups}, open(files_path + FILE_NAME, "w"), indent=4)
+                    for num_cold_objects in range(0, 1000000001, step):
+                        # hot group
+                        num_objects = num_of_hot_keys
+                        input_groups = []
+                        key_group = Single_group(f, client_dists[client_dist], object_sizes[object_size], metadata_size_default,
+                                                 num_objects, arrival_rate * num_of_hot_keys, read_ratios[read_ratio],
+                                                 float("{:.2f}".format(1 - read_ratios[read_ratio])), lat, lat,
+                                                 duration_default, time_to_decode_default)
+                        input_groups.append(key_group.__dict__)
+
+
+                        #cold group
+                        key_group = Single_group(f, client_dists[client_dist], object_sizes[object_size],
+                                                 metadata_size_default,
+                                                 num_cold_objects, 0, read_ratios[read_ratio],
+                                                 float("{:.2f}".format(1 - read_ratios[read_ratio])), lat, lat,
+                                                 duration_default, time_to_decode_default)
+                        input_groups.append(key_group.__dict__)
+
+
+                        FILE_NAME = client_dist + "_" + object_size + "_" + str(num_cold_objects) + "_" + str(
+                            arrival_rate) + "_" + read_ratio + "_" + str(lat) + ".json"
+                        json.dump({"input_groups": input_groups}, open(files_path + FILE_NAME, "w"), indent=4)
 
 
 

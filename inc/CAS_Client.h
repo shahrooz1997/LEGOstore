@@ -30,22 +30,26 @@
 
 class Client_Node;
 
-class CAS_Client : public Client{
-public:
-    CAS_Client(uint32_t id, uint32_t local_datacenter_id, uint32_t retry_attempts, uint32_t metadata_server_timeout,
-            uint32_t timeout_per_request, std::vector<DC*>& datacenters, Client_Node* parent);
-    CAS_Client(const CAS_Client& orig) = delete;
-    virtual ~CAS_Client();
-    
-    int put(const std::string& key, const std::string& value);
-    
-    int get(const std::string& key, std::string& value);
+class CAS_Client : public Client {
+ public:
+  CAS_Client(uint32_t id, uint32_t local_datacenter_id, uint32_t retry_attempts, uint32_t metadata_server_timeout,
+             uint32_t timeout_per_request, std::vector<DC *> &datacenters, Client_Node *parent);
+  CAS_Client(const CAS_Client &orig) = delete;
+  virtual ~CAS_Client();
 
-private:
-    Client_Node* parent;
-    Liberasure liberasure;
-    
-    int get_timestamp(const std::string& key, std::unique_ptr<Timestamp>& timestamp_p, bool is_put=false); // Returns 10 if the get operation could be done in one phase.
+  int put(const std::string &key, const std::string &value);
+
+  int get(const std::string &key, std::string &value);
+
+ private:
+  Client_Node *parent;
+  Liberasure liberasure;
+
+  int get_timestamp(const std::string &key,
+                    std::unique_ptr<Timestamp> &timestamp_p,
+                    bool is_put = false); // Returns 10 if the get operation could be done in one phase.
+  int asyc_propagate(const std::string key, const std::string timestamp,
+                     const Placement p, const uint32_t conf_id);
 };
 
 #endif /* CAS_Client_H */

@@ -422,11 +422,11 @@ int CAS_Client::put(const string& key, const string& value){
     EASY_LOG_M("phase 2 done. Trying to do phase 3(FIN)...");
 
     // Fin
-
     DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");
+    const auto key_conf_id = parent->get_conf_id(key);
     op_status = CAS_helper::failure_support_optimized("put_fin", key, timestamp_p->get_string(), vector<string>(p.m, ""),
                                                         this->retry_attempts, p.quorums[this->local_datacenter_id].Q3, p.servers, p.m,
-                                                        this->datacenters, this->current_class, parent->get_conf_id(key),
+                                                        this->datacenters, this->current_class, key_conf_id,
                                                         this->timeout_per_request, ret);
 
     DPRINTF(DEBUG_CAS_Client, "op_status: %d.\n", op_status);
@@ -458,6 +458,9 @@ int CAS_Client::put(const string& key, const string& value){
     }
 
     EASY_LOG_M("phase 3 done.");
+
+    // Call Async put to let the remaining servers know about the finished put operation
+    std::thread (&CAS_Client::asyc_propagate, this, key, timestamp_p->get_string(), p, key_conf_id).detach();
     
     DPRINTF(DEBUG_CAS_Client, "end latencies%d:fin %lu\n", le_counter++, time_point_cast<chrono::milliseconds>(chrono::system_clock::now()).time_since_epoch().count() - le_init);
     
@@ -593,4 +596,54 @@ int CAS_Client::get(const string& key, string& value){
     cache_optimized_get[key + "!" + timestamp_p->get_string()] = value;
 
     return op_status;
+}
+
+int CAS_Client::asyc_propagate(const std::string key, const std::string timestamp,
+                               const Placement p, const uint32_t conf_id) {
+
+
+  vector<strVec> ret;
+  vector<uint32_t> remaining_servers = p.servers;
+  for(auto s: p.quorums[this->local_datacenter_id].Q3) {
+    remaining_servers.erase(remove(remaining_servers.begin(), remaining_servers.end(), s), remaining_servers.end());
+  }
+  int op_status = CAS_helper::failure_support_optimized("put_fin", key, timestamp, vector<string>(p.m, ""),
+                                                    this->retry_attempts, remaining_servers, p.servers, p.m,
+                                                    this->datacenters, this->current_class, conf_id,
+                                                    this->timeout_per_request, ret);
+
+
+  DPRINTF(DEBUG_CAS_Client, "op_status: %d.\n", op_status);
+  if(op_status == -1) {
+    DPRINTF(DEBUG_CAS_Client, "WARN: Async put error for key : %s with op_status %d\n", key.c_str(), op_status);
+    return op_status;
+  }
+
+  for(auto it = ret.begin(); it != ret.end(); it++) {
+    if((*it)[0] == "OK"){
+      DPRINTF(DEBUG_CAS_Client, "Async put: OK received for key : %s\n", key.c_str());
+    }
+    else if((*it)[0] == "operation_fail"){
+      DPRINTF(DEBUG_CAS_Client, "Async put: operation_fail received for key : %s\n", key.c_str());
+//      parent->get_placement(key, true, (*it)[1]);
+//            op_status = -2; // reconfiguration happened on the key
+//            return S_RECFG;
+      // Must ignore
+//      return parent->put(key, value);
+    }
+    else{
+      DPRINTF(DEBUG_CAS_Client, "WARN: Async put error for key : %s Bad message received from server: %s\n",
+              key.c_str(), ((*it)[0]).c_str());
+      return -3; // Bad message received from server
+    }
+  }
+
+  if(op_status != 0){
+    DPRINTF(DEBUG_CAS_Client, "WARN: Async put error for key : %s with op_status %d\n", key.c_str(), op_status);
+    return -4; // pre_write could not succeed.
+  }
+
+  DPRINTF(DEBUG_CAS_Client, "Async put done for key : %s\n", key.c_str());
+
+  return S_OK;
 }

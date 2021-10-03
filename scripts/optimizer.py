@@ -16,7 +16,7 @@ import json
 from os.path import dirname, join, abspath
 sys.path.insert(0, abspath(join(dirname(__file__), '..')))
 
-lat_sense = False
+lat_sense = True
 cold_hot = False
 coldhot_executions = OrderedDict([("optimized", "-H min_cost"), ("baseline_cas", "-H min_cost -b -t cas -m 4 -k 2")])
 
@@ -622,9 +622,9 @@ def main(args):
 
     execute(machines, commands)
 
-    # if not lat_sense and not cold_hot:
-    #     commands = get_commands_with_opt_m_k()
-    #     execute(machines, commands, "nearest")
+    if not lat_sense and not cold_hot:
+        commands = get_commands_with_opt_m_k()
+        execute(machines, commands, "nearest")
 
     # delete the machines
     # os.system("./delete_servers.py")

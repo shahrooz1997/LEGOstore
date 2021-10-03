@@ -1,41 +1,41 @@
 
 from collections import OrderedDict
 
-availability_targets = [1, 2]
-client_dists = OrderedDict([
-    ("uniform", [1/9 for _ in range(9)]),
-    ("dist_O", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1]),
-    ("dist_LA", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1, 0.0]),
-    ("dist_LO", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5]),
-    ("dist_T", [1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
-    ("dist_SY", [0.0, 1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
-    ("dist_SS", [0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
-    ("dist_ST", [0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+# availability_targets = [1, 2]
+# client_dists = OrderedDict([
+#     ("uniform", [1/9 for _ in range(9)]),
+#     ("dist_O", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1]),
+#     ("dist_LA", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1, 0.0]),
+#     ("dist_LO", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5]),
+#     ("dist_T", [1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+#     ("dist_SY", [0.0, 1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+#     ("dist_SS", [0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+#     ("dist_ST", [0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+#
+#
+#     # ("dist_L", [0.0, 0.0, 0.0, 0.0, 1, 0.0, 0.0, 0.0, 0.0]),
+#     # ("dist_F", [0.0, 0.0, 0.0, 1, 0.0, 0.0, 0.0, 0.0, 0.0]),
+#     # ("dist_LF", [0.0, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0]),
+#
+#     # ("uniform", [1/9 for _ in range(9)]),
+#     # ("cheap_skewed2", [0.025, 0.025, 0.0, 0.0, 0.0, 0.0, 0.025, 0.025, 0.9]),
+#     #("skewed_single", [0.9, 0.025, 0.025, 0.0, 0.0, 0.0, 0.0, 0.025, 0.025]),
+#     #("skewed_double", [0.45, 0.025, 0.025, 0.0, 0.0, 0.0, 0.45, 0.025, 0.025]),
+#     # ("cheap_skewed", [0.025, 0.025, 0.0, 0.0, 0.0, 0.0, 0.025, 0.025, 0.9]),
+#     # ("expensive_skewed", [0.025, 0.9, 0.0, 0.0, 0.0, 0.0, 0.025, 0.025, 0.025])
+#     # ("Japan_skewed", [0.9, 0.0, 0.0, 0.0, 0.0, 0.025, 0.0, 0.05, 0.025])
+# ])
+# object_sizes = OrderedDict([("1KB", 1*2**10 / 2**30)]) # OrderedDict([("128B", 2**7 / 2**30), ("256B", 2**8 / 2**30), ("512B", 2**9 / 2**30), ("1KB", 1*2**10 / 2**30), ("2KB", 2*2**10 / 2**30), ("4KB", 4*2**10 / 2**30), ("8KB", 8*2**10 / 2**30), ("16KB", 16*2**10 / 2**30), ("32KB", 32*2**10 / 2**30), ("64KB", 64*2**10 / 2**30), ("128KB", 128*2**10 / 2**30)])
+# storage_sizes = OrderedDict([("1TB", 1024)]) # in GB
+# arrival_rates = [500] #[x for x in range(50, 1025, 25)] #[50, 500]
+# read_ratios = OrderedDict([("HW", 0.03225), ("RW", 0.5), ("HR", 0.96774)])
+# SLO_latencies = [x for x in range(50, 1025, 25)]# [1000] #[x for x in range(50, 1025, 25)] # for each availability_target
+
+# executions = [OrderedDict([("optimized", "-H min_cost"), ("baseline_fixed_ABD", "-H baseline0 -b -t abd -m 3"), ("baseline_fixed_CAS", "-H baseline0 -b -t cas -m 5 -k 3"), ("baseline_abd_nearest", "-H baseline1 -b -t abd -m 3"), ("baseline_cas_nearest", "-H baseline1 -b -t cas -m 5 -k 3"), ("baseline_abd", "-H min_cost -b -t abd"), ("baseline_cas", "-H min_cost -b -t cas")]),
+#              OrderedDict([("optimized", "-H min_cost"), ("baseline_fixed_ABD", "-H baseline0 -b -t abd -m 5"), ("baseline_fixed_CAS", "-H baseline0 -b -t cas -m 7 -k 3"), ("baseline_abd_nearest", "-H baseline1 -b -t abd -m 5"), ("baseline_cas_nearest", "-H baseline1 -b -t cas -m 7 -k 3"), ("baseline_abd", "-H min_cost -b -t abd"), ("baseline_cas", "-H min_cost -b -t cas")])]
 
 
-    # ("dist_L", [0.0, 0.0, 0.0, 0.0, 1, 0.0, 0.0, 0.0, 0.0]),
-    # ("dist_F", [0.0, 0.0, 0.0, 1, 0.0, 0.0, 0.0, 0.0, 0.0]),
-    # ("dist_LF", [0.0, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0]),
-
-    # ("uniform", [1/9 for _ in range(9)]),
-    # ("cheap_skewed2", [0.025, 0.025, 0.0, 0.0, 0.0, 0.0, 0.025, 0.025, 0.9]),
-    #("skewed_single", [0.9, 0.025, 0.025, 0.0, 0.0, 0.0, 0.0, 0.025, 0.025]),
-    #("skewed_double", [0.45, 0.025, 0.025, 0.0, 0.0, 0.0, 0.45, 0.025, 0.025]),
-    # ("cheap_skewed", [0.025, 0.025, 0.0, 0.0, 0.0, 0.0, 0.025, 0.025, 0.9]),
-    # ("expensive_skewed", [0.025, 0.9, 0.0, 0.0, 0.0, 0.0, 0.025, 0.025, 0.025])
-    # ("Japan_skewed", [0.9, 0.0, 0.0, 0.0, 0.0, 0.025, 0.0, 0.05, 0.025])
-])
-object_sizes = OrderedDict([("1KB", 1*2**10 / 2**30)]) # OrderedDict([("128B", 2**7 / 2**30), ("256B", 2**8 / 2**30), ("512B", 2**9 / 2**30), ("1KB", 1*2**10 / 2**30), ("2KB", 2*2**10 / 2**30), ("4KB", 4*2**10 / 2**30), ("8KB", 8*2**10 / 2**30), ("16KB", 16*2**10 / 2**30), ("32KB", 32*2**10 / 2**30), ("64KB", 64*2**10 / 2**30), ("128KB", 128*2**10 / 2**30)])
-storage_sizes = OrderedDict([("1TB", 1024)]) # in GB
-arrival_rates = [500] #[x for x in range(50, 1025, 25)] #[50, 500]
-read_ratios = OrderedDict([("HW", 0.03225), ("RW", 0.5), ("HR", 0.96774)])
-SLO_latencies = [x for x in range(50, 1025, 25)]# [1000] #[x for x in range(50, 1025, 25)] # for each availability_target
-
-executions = [OrderedDict([("optimized", "-H min_cost"), ("baseline_fixed_ABD", "-H baseline0 -b -t abd -m 3"), ("baseline_fixed_CAS", "-H baseline0 -b -t cas -m 5 -k 3"), ("baseline_abd_nearest", "-H baseline1 -b -t abd -m 3"), ("baseline_cas_nearest", "-H baseline1 -b -t cas -m 5 -k 3"), ("baseline_abd", "-H min_cost -b -t abd"), ("baseline_cas", "-H min_cost -b -t cas")]),
-             OrderedDict([("optimized", "-H min_cost"), ("baseline_fixed_ABD", "-H baseline0 -b -t abd -m 5"), ("baseline_fixed_CAS", "-H baseline0 -b -t cas -m 7 -k 3"), ("baseline_abd_nearest", "-H baseline1 -b -t abd -m 5"), ("baseline_cas_nearest", "-H baseline1 -b -t cas -m 7 -k 3"), ("baseline_abd", "-H min_cost -b -t abd"), ("baseline_cas", "-H min_cost -b -t cas")])]
-
-
-# #object size
+#object size
 # availability_targets = [1, 2]
 # client_dists = OrderedDict([
 #     ("uniform", [1/9 for _ in range(9)]),
@@ -52,8 +52,8 @@ executions = [OrderedDict([("optimized", "-H min_cost"), ("baseline_fixed_ABD", 
 # arrival_rates = [200]
 # read_ratios = OrderedDict([("RW", 0.5)])
 # SLO_latencies = [1000] #[x for x in range(50, 1025, 25)] # for each availability_target
-
-
+#
+#
 # executions = [OrderedDict([("baseline_cas", "-H min_cost -b -t cas")]),
 #              OrderedDict([("baseline_cas", "-H min_cost -b -t cas")])]
 
@@ -82,22 +82,22 @@ executions = [OrderedDict([("optimized", "-H min_cost"), ("baseline_fixed_ABD", 
 
 
 # #cost k
-# availability_targets = [1, 2]
-# client_dists = OrderedDict([
-#     ("uniform", [1/9 for _ in range(9)]),
-#     ("dist_O", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1]),
-#     ("dist_LA", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1, 0.0]),
-#     ("dist_LO", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5]),
-#     ("dist_T", [1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
-#     ("dist_SY", [0.0, 1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
-#     ("dist_SS", [0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
-#     ("dist_ST", [0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-# ])
-# object_sizes = OrderedDict([("1KB", 1*2**10 / 2**30), ("4KB", 100*2**10 / 2**30)]) # OrderedDict([("128B", 2**7 / 2**30), ("256B", 2**8 / 2**30), ("512B", 2**9 / 2**30), ("1KB", 1*2**10 / 2**30), ("2KB", 2*2**10 / 2**30), ("4KB", 4*2**10 / 2**30), ("8KB", 8*2**10 / 2**30), ("16KB", 16*2**10 / 2**30), ("32KB", 32*2**10 / 2**30), ("64KB", 64*2**10 / 2**30), ("128KB", 128*2**10 / 2**30)])
-# storage_sizes = OrderedDict([("1TB", 1024)]) # in GB
-# arrival_rates = [200] #[x for x in range(50, 1025, 25)] #[50, 500]
-# read_ratios = OrderedDict([("RW", 0.5)])
-# SLO_latencies = [1000] #[x for x in range(50, 1025, 25)] # for each availability_target
+availability_targets = [1, 2]
+client_dists = OrderedDict([
+    ("uniform", [1/9 for _ in range(9)]),
+    ("dist_O", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1]),
+    ("dist_LA", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1, 0.0]),
+    ("dist_LO", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5]),
+    ("dist_T", [1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+    ("dist_SY", [0.0, 1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+    ("dist_SS", [0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+    ("dist_ST", [0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+])
+object_sizes = OrderedDict([("1KB", 1*2**10 / 2**30), ("4KB", 100*2**10 / 2**30)]) # OrderedDict([("128B", 2**7 / 2**30), ("256B", 2**8 / 2**30), ("512B", 2**9 / 2**30), ("1KB", 1*2**10 / 2**30), ("2KB", 2*2**10 / 2**30), ("4KB", 4*2**10 / 2**30), ("8KB", 8*2**10 / 2**30), ("16KB", 16*2**10 / 2**30), ("32KB", 32*2**10 / 2**30), ("64KB", 64*2**10 / 2**30), ("128KB", 128*2**10 / 2**30)])
+storage_sizes = OrderedDict([("1TB", 1024)]) # in GB
+arrival_rates = [200] #[x for x in range(50, 1025, 25)] #[50, 500]
+read_ratios = OrderedDict([("RW", 0.5)])
+SLO_latencies = [1000] #[x for x in range(50, 1025, 25)] # for each availability_target
 
 
 

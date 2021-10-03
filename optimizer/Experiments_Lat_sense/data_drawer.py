@@ -10,8 +10,8 @@ import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
 
 # directory = "workloads"
-# directory = "RESULTS/workloads_cost_k2"
-directory = "RESULTS/workloads_lat_sense_1KB"
+directory = "RESULTS/workloads_cost_k"
+# directory = "RESULTS/workloads_lat_sense_1KB"
 # directory = "RESULTS/workloads_object_size_sense"
 # directory = "RESULTS/workloads_object_size_sense3"
 # directory = "RESULTS/workloads_arrival_rate_sense2"
@@ -1888,7 +1888,7 @@ def plot_all(availability_target):
     for workload in workloads:
         # print("A")
         # interesting cases
-        attrs = ["dist_ST", "1KB"]# ["dist_SS", "1KB", "1TB", "_500_"] #, "HW"] #workload.find(list(client_dists.keys())[2])
+        attrs = ["uniform", "1KB"] #attrs = ["dist_ST", "1KB"]# ["dist_SS", "1KB", "1TB", "_500_"] #, "HW"] #workload.find(list(client_dists.keys())[2])
         # attrs = ["10KB", "HR"]
         if workload_satisfies(workload, attrs):
             # plot_workload(workload, availability_target)
@@ -1935,11 +1935,11 @@ if __name__ == "__main__":
 
 
     # plot_scatter_slo_latency(workloads, 1)
-    plot_scatter_slo_latency2(workloads, 2)
+    # plot_scatter_slo_latency2(workloads, 2)
     # plot_sense_to_object_size(workloads, 1)
     # plot_sense_to_arrival_rate(workloads, 1)
 
-    # plot_all(1)
+    plot_all(1)
 
     # os.system("subl drawer_output.txt")
     sys.stdout.flush()

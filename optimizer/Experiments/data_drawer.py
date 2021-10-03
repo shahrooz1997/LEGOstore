@@ -8,9 +8,9 @@ import numpy as np
 from workload_def import *
 
 # directory = "workloads"
-directory = "RESULTS/workloads_200ms"
+# directory = "RESULTS/workloads_200ms"
 # directory = "RESULTS/workloads_500ms"
-# directory = "RESULTS/workloads_1000ms"
+directory = "RESULTS/workloads_1000ms"
 # directory = "workloads_Mar24_2152"
 # directory = "/home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/ALL_optimizer_Mar19_0817"
 
@@ -118,7 +118,7 @@ def get_workloads():
                 for arrival_rate in arrival_rates:
                     for read_ratio in read_ratios:
                         # for lat in SLO_latencies:
-                        lat = 200
+                        lat = 1000
 
                         num_objects = storage_sizes[storage_size] / object_sizes[object_size]
                         FILE_NAME = client_dist + "_" + object_size + "_" + storage_size + "_" + str(arrival_rate) + "_" + \
@@ -623,19 +623,19 @@ def plot_cumulative(workloads, availability_target):
         labels.append(exec if exec.find("baseline") == -1 else exec[9:])
 
 
-    print("SHAHH")
-    shah_counter = 0
-    for workload in workloads:
-        if results[f_index]["baseline_cas" + "_" + workload] == "INVALID":
-            continue
-
-        # print(confs[f_index]["baseline_cas" + "_" + workload][2])
-        if confs[f_index]["baseline_cas" + "_" + workload][2] == '1':
-            print(workload)
-            shah_counter += 1
-    print(shah_counter)
-    print("SHAHH")
-    return
+    # print("SHAHH")
+    # shah_counter = 0
+    # for workload in workloads:
+    #     if results[f_index]["baseline_cas" + "_" + workload] == "INVALID":
+    #         continue
+    #
+    #     # print(confs[f_index]["baseline_cas" + "_" + workload][2])
+    #     if confs[f_index]["baseline_cas" + "_" + workload][2] == '1':
+    #         print(workload)
+    #         shah_counter += 1
+    # print(shah_counter)
+    # print("SHAHH")
+    # return
 
     for workload in workloads:
         optimized = []
@@ -683,7 +683,7 @@ def plot_cumulative(workloads, availability_target):
     fig, ax = plt.subplots()
     plot_cumulative_max_x = 0
     for exec in executions[f_index]:
-        if exec == "optimized" or exec == "baseline_fixed_CAS": #or exec == "baseline_fixed_ABD" or exec == "baseline_fixed_CAS":
+        if exec == "optimized": #or exec == "baseline_fixed_ABD" or exec == "baseline_fixed_CAS":
             continue
         plot_one_exec(fig, ax, exec, workloads, norm_total_cost)
     ax.legend(loc="lower right")

@@ -30,7 +30,7 @@ object_sizes = OrderedDict([("1KB", 1*2**10 / 2**30), ("10KB", 10*2**10 / 2**30)
 storage_sizes = OrderedDict([("100GB", 100), ("1TB", 1024), ("10TB", 10 * 1024)]) # in GB
 arrival_rates = [50, 200, 500] #[int(50 * 0.9), int(200 * 0.9), int(500 * 0.9)]
 read_ratios = OrderedDict([("HW", 0.03225), ("RW", 0.5), ("HR", 0.96774)])
-SLO_latencies = [1000, 1000]
+SLO_latencies = [200, 300]
 
 # Default values
 availability_target_default  = 2

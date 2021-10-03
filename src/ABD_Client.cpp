@@ -14,6 +14,7 @@
 #include "ABD_Client.h"
 #include "Client_Node.h"
 #include "../inc/ABD_Client.h"
+#include <future>
 
 using namespace std;
 
@@ -327,8 +328,9 @@ int ABD_Client::put(const string& key, const string& value){
     vector<strVec> ret;
 
     DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
+    const auto key_conf_id = parent->get_conf_id(key);
     op_status = ABD_helper::failure_support_optimized("put", key, timestamp_p->get_string(), value, this->retry_attempts, p.quorums[this->local_datacenter_id].Q2, p.servers, p.m,
-                                                             this->datacenters, this->current_class, parent->get_conf_id(key),
+                                                             this->datacenters, this->current_class, key_conf_id,
                                                              this->timeout_per_request, ret);
 
     DPRINTF(DEBUG_ABD_Client, "op_status: %d.\n", op_status);
@@ -362,6 +364,9 @@ int ABD_Client::put(const string& key, const string& value){
     }
 
     EASY_LOG_M("phase 2 done.");
+
+    // Call Async put to remaining servers here
+    std::thread (&ABD_Client::asyc_propagate, this, key, value, timestamp_p->get_string(), p, key_conf_id).detach();
 
     DPRINTF(DEBUG_ABD_Client, "fin latencies%d: %lu\n", le_counter++, time_point_cast<chrono::milliseconds>(chrono::system_clock::now()).time_since_epoch().count() - le_init);
     return op_status;
@@ -513,3 +518,49 @@ int ABD_Client::get(const string& key, string& value){
     return op_status;
 }
 
+int ABD_Client::asyc_propagate(const std::string key, const std::string value, const std::string timestamp,
+                   const Placement p, const uint32_t conf_id) {
+  vector<strVec> ret;
+  vector<uint32_t> remaining_servers = p.servers;
+  for(auto s: p.quorums[this->local_datacenter_id].Q2) {
+    remaining_servers.erase(remove(remaining_servers.begin(), remaining_servers.end(), s), remaining_servers.end());
+  }
+  DPRINTF(DEBUG_ABD_Client, "Async put: calling failure_support_optimized.\n");
+  int op_status = ABD_helper::failure_support_optimized("put", key, timestamp, value, this->retry_attempts, remaining_servers, p.servers, p.m,
+                                                    this->datacenters, this->current_class, conf_id,
+                                                    this->timeout_per_request, ret);
+
+  DPRINTF(DEBUG_ABD_Client, "op_status: %d.\n", op_status);
+  if(op_status == -1) {
+    DPRINTF(DEBUG_ABD_Client, "WARN: Async put error for key : %s with op_status %d\n", key.c_str(), op_status);
+    return op_status;
+  }
+
+  for(auto it = ret.begin(); it != ret.end(); it++) {
+    if((*it)[0] == "OK"){
+      DPRINTF(DEBUG_ABD_Client, "Async put: OK received for key : %s\n", key.c_str());
+    }
+    else if((*it)[0] == "operation_fail"){
+      DPRINTF(DEBUG_ABD_Client, "Async put: operation_fail received for key : %s\n", key.c_str());
+//      parent->get_placement(key, true, (*it)[1]);
+//            op_status = -2; // reconfiguration happened on the key
+//            return S_RECFG;
+    // Must ignore
+//      return parent->put(key, value);
+    }
+    else{
+      DPRINTF(DEBUG_ABD_Client, "WARN: Async put error for key : %s Bad message received from server: %s\n",
+              key.c_str(), ((*it)[0]).c_str());
+      return -3; // Bad message received from server
+    }
+  }
+
+  if(op_status != 0){
+    DPRINTF(DEBUG_ABD_Client, "WARN: Async put error for key : %s with op_status %d\n", key.c_str(), op_status);
+    return -4; // pre_write could not succeed.
+  }
+
+  DPRINTF(DEBUG_ABD_Client, "Async put done for key : %s\n", key.c_str());
+
+  return S_OK;
+}

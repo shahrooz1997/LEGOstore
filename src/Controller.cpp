@@ -357,7 +357,7 @@ int Controller::run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t gr
 #ifdef LOCAL_TEST
     vector<string> args;
     string output;
-    string command = "/home/shahrooz/Desktop/PSU/Research/LEGOstore/Client";
+    string command = "./Client";
 
     args.push_back(command);
     args.push_back(to_string(datacenter_id));

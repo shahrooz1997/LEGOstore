@@ -17,7 +17,7 @@ obj3 = $(filter-out obj/Client_driver.o obj/Server_driver.o obj/Metadata_Server.
 obj4 = $(filter-out obj/Client_driver.o obj/Server_driver.o obj/Controller.o obj/gbuffer.pb.o, $(obj))
 
 .PHONY: all
-all: obj client server controller metadata_Server
+all: logs obj client server controller metadata_Server
 
 .PHONY: debug
 debug: CXXFLAGS += -g -O0 -D_GLIBCXX_DEBUG # debug flags
@@ -25,6 +25,9 @@ debug: all
 
 LEGOStore: $(obj) 
 	$(CXX) -o $@ $^ $(LDFLAGS)
+
+logs:
+	mkdir logs
 
 metadata_Server: obj Metadata_Server
 Metadata_Server: $(obj4) obj/gbuffer.pb.o

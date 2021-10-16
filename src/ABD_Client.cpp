@@ -521,9 +521,12 @@ int ABD_Client::get(const string& key, string& value){
 int ABD_Client::asyc_propagate(const std::string key, const std::string value, const std::string timestamp,
                    const Placement p, const uint32_t conf_id) {
   vector<strVec> ret;
-  vector<uint32_t> remaining_servers = p.servers;
-  for(auto s: p.quorums[this->local_datacenter_id].Q2) {
-    remaining_servers.erase(remove(remaining_servers.begin(), remaining_servers.end(), s), remaining_servers.end());
+  vector<uint32_t> remaining_servers;
+  for (auto& s: p.servers) {
+    if (find(p.quorums[this->local_datacenter_id].Q2.begin(), p.quorums[this->local_datacenter_id].Q2.end(), s)
+        == p.quorums[this->local_datacenter_id].Q2.end()) {
+      remaining_servers.push_back(s);
+    }
   }
   DPRINTF(DEBUG_ABD_Client, "Async put: calling failure_support_optimized.\n");
   int op_status = ABD_helper::failure_support_optimized("put", key, timestamp, value, this->retry_attempts, remaining_servers, p.servers, p.m,

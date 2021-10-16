@@ -9,7 +9,15 @@ Client
 Controller
 Server
 Metadata_Server
-*.txt
 logs/*
 knossos
 .idea
+cmake-build/
+*.swp
+*.txt
+!CMakeLists.txt
+!scripts/zones.txt
+!scripts/servers.txt
+!scripts/latencies.txt
+!scripts/REGIONS.txt
+

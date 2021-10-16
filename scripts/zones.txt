@@ -1,0 +1,162 @@
+asia-northeast1-b          asia-northeast1          1.Tokyo
+#asia-northeast3-a          asia-northeast3          2.Seoul
+australia-southeast1-b     australia-southeast1     2.Sydney
+#asia-south1-c              asia-south1              3.Mumbai
+asia-southeast1-b          asia-southeast1          3.Singapore (instead of Mumbai)
+europe-west3-c             europe-west3             4.Frankfurt
+europe-west2-c             europe-west2             5.London
+us-east4-c                 us-east4                 6.Virginia
+southamerica-east1-b       southamerica-east1       7.São Paulo
+us-west2-a                 us-west2                 8.California
+us-west1-b                 us-west1                 9.Oregon
+
+
+
+
+---End of File---
+# whatever follows after the line above will be ignored. You can use them to store some data about the datacenters
+
+asia-northeast3-a          asia-northeast3          2.Seoul
+asia-northeast3-b          asia-northeast3          Seoul
+asia-northeast3-c          asia-northeast3          Seoul
+
+asia-northeast1-b          asia-northeast1          1.Tokyo
+asia-northeast1-c          asia-northeast1          Tokyo
+asia-northeast1-a          asia-northeast1          Tokyo
+
+asia-south1-c              asia-south1              3.Mumbai
+asia-south1-b              asia-south1              Mumbai
+asia-south1-a              asia-south1              Mumbai
+
+europe-west3-c             europe-west3             4.Frankfurt
+europe-west3-a             europe-west3             Frankfurt
+europe-west3-b             europe-west3             Frankfurt
+
+us-east4-c                 us-east4                 6.Virginia
+us-east4-b                 us-east4                 Virginia
+us-east4-a                 us-east4                 Virginia
+
+southamerica-east1-b       southamerica-east1       7.São Paulo
+southamerica-east1-c       southamerica-east1       São Paulo
+southamerica-east1-a       southamerica-east1       São Paulo
+
+us-west1-b                 us-west1                 9.Oregon
+us-west1-c                 us-west1                 Oregon
+us-west1-a                 us-west1                 Oregon
+
+us-west2-a                 us-west2                 8.California
+us-west2-b                 us-west2                 California
+us-west2-c                 us-west2                 California
+
+europe-west2-c             europe-west2             5.London
+europe-west2-b             europe-west2             London
+europe-west2-a             europe-west2             London
+
+asia-southeast1-b          asia-southeast1          3.Singapore (instead of Mumbai)
+asia-southeast1-a          asia-southeast1          Singapore (instead of Mumbai)
+asia-southeast1-c          asia-southeast1          Singapore (instead of Mumbai)
+asia-northeast1-b          asia-northeast1          Singapore (instead of Mumbai)
+asia-northeast1-c          asia-northeast1          Singapore (instead of Mumbai)
+asia-northeast1-a          asia-northeast1          Singapore (instead of Mumbai)
+
+
+
+
+us-east1-b                 us-east1                 UP
+us-east1-c                 us-east1                 UP
+us-east1-d                 us-east1                 UP
+us-east4-c                 us-east4                 UP
+us-east4-b                 us-east4                 UP
+us-east4-a                 us-east4                 UP
+us-central1-c              us-central1              UP
+us-central1-a              us-central1              UP
+us-central1-f              us-central1              UP
+us-central1-b              us-central1              UP
+us-west1-b                 us-west1                 UP
+us-west1-c                 us-west1                 UP
+us-west1-a                 us-west1                 UP
+europe-west4-a             europe-west4             UP
+europe-west4-b             europe-west4             UP
+europe-west4-c             europe-west4             UP
+europe-west1-b             europe-west1             UP
+europe-west1-d             europe-west1             UP
+europe-west1-c             europe-west1             UP
+europe-west3-c             europe-west3             UP
+europe-west3-a             europe-west3             UP
+europe-west3-b             europe-west3             UP
+europe-west2-c             europe-west2             UP
+europe-west2-b             europe-west2             UP
+europe-west2-a             europe-west2             UP
+asia-east1-b               asia-east1               UP
+asia-east1-a               asia-east1               UP
+asia-east1-c               asia-east1               UP
+asia-southeast1-b          asia-southeast1          UP
+asia-southeast1-a          asia-southeast1          UP
+asia-southeast1-c          asia-southeast1          UP
+asia-northeast1-b          asia-northeast1          UP
+asia-northeast1-c          asia-northeast1          UP
+asia-northeast1-a          asia-northeast1          UP
+asia-south1-c              asia-south1              UP
+asia-south1-b              asia-south1              UP
+asia-south1-a              asia-south1              UP
+australia-southeast1-b     australia-southeast1     UP
+australia-southeast1-c     australia-southeast1     UP
+australia-southeast1-a     australia-southeast1     UP
+southamerica-east1-b       southamerica-east1       UP
+southamerica-east1-c       southamerica-east1       UP
+southamerica-east1-a       southamerica-east1       UP
+asia-east2-a               asia-east2               UP
+asia-east2-b               asia-east2               UP
+asia-east2-c               asia-east2               UP
+asia-northeast2-a          asia-northeast2          UP
+asia-northeast2-b          asia-northeast2          UP
+asia-northeast2-c          asia-northeast2          UP
+asia-northeast3-a          asia-northeast3          UP
+asia-northeast3-b          asia-northeast3          UP
+asia-northeast3-c          asia-northeast3          UP
+asia-southeast2-a          asia-southeast2          UP
+asia-southeast2-b          asia-southeast2          UP
+asia-southeast2-c          asia-southeast2          UP
+europe-north1-a            europe-north1            UP
+europe-north1-b            europe-north1            UP
+europe-north1-c            europe-north1            UP
+europe-west6-a             europe-west6             UP
+europe-west6-b             europe-west6             UP
+europe-west6-c             europe-west6             UP
+northamerica-northeast1-a  northamerica-northeast1  UP
+northamerica-northeast1-b  northamerica-northeast1  UP
+northamerica-northeast1-c  northamerica-northeast1  UP
+us-west2-a                 us-west2                 UP
+us-west2-b                 us-west2                 UP
+us-west2-c                 us-west2                 UP
+us-west3-a                 us-west3                 UP
+us-west3-b                 us-west3                 UP
+us-west3-c                 us-west3                 UP
+us-west4-a                 us-west4                 UP
+us-west4-b                 us-west4                 UP
+us-west4-c                 us-west4                 UP
+
+    Council Bluffs, Iowa, USA (us-central1)
+    St. Ghislain, Belgium (europe-west1)
+    Changhua County, Taiwan (asia-east1)
+    Sydney, Australia (australia-southeast1)
+    The Dalles, Oregon, USA (us-west1)
+    Salt Lake City, USA (us-west3)
+    Ashburn, Virginia, USA (us-east4)
+    Moncks Corner, South Carolina, USA (us-east1)
+    São Paulo, Brazil (southamerica-east1)
+    London, UK (europe-west2)
+    Frankfurt, Germany (europe-west3)
+    Jurong West, Singapore (asia-southeast1)
+    Tokyo, Japan (asia-northeast1)
+    Mumbai, India (asia-south1)
+    Montréal, Canada (northamerica-northeast1)
+    Eemshaven, Netherlands (europe-west4)
+    Hamina, Finland (europe-north1)
+    Los Angeles, California (us-west2)
+    Hong Kong (asia-east2)
+    Zürich, Switzerland (europe-west6)
+    Osaka, Japan (asia-northeast2)
+    Seoul, South Korea (asia-northeast3)
+    Las Vegas, Nevada, USA (us-west4)
+    Jakarta, Indonesia (asia-southeast2)

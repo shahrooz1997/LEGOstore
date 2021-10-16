@@ -1,0 +1,9 @@
+us-east1-b
+northamerica-northeast1-a
+us-central1-c
+us-west1-b
+europe-west4-a
+europe-north1-a
+asia-southeast2-b
+southamerica-east1-b
+asia-east1-b

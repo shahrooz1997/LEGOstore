@@ -15,6 +15,7 @@ knossos
 cmake-build/
 *.swp
 *.txt
+CMakeFiles/
 !CMakeLists.txt
 !scripts/zones.txt
 !scripts/servers.txt

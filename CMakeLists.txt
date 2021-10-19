@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
-project(LEGOStore)
 
 # Disable in-source builds.
 if(" ${CMAKE_SOURCE_DIR}" STREQUAL " ${CMAKE_BINARY_DIR}")
-    message(FATAL_ERROR "FATAL: In-source builds are not allowed.
+    message(FATAL_ERROR "
+    FATAL: In-source builds are not allowed.
     You should create a separate directory for build files.")
 endif()
+
+project(LEGOStore)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)

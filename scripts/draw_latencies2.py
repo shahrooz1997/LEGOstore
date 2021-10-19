@@ -28,6 +28,7 @@ path = "data/LAST_RES/CAS_NOF_O->LO"
 # path = "data/ARIF/CAS_NOF_HIGHDUR_3"
 # path = "data/LAST_RES/CAS_NOF_One_hour_exec_for_latency_verifi"
 # path = "data/arrival_rate/HW/CAS_NOF"
+path
 
 
 keys = ["20", "21", "22", "23", "24", "25", "26", "27", "28", "29"] #["2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010"]#, "222222", "222223"]

@@ -13,19 +13,20 @@ import run_optimizer as optimizer
 from collections import OrderedDict
 import json
 
-server_type = "custom-1-1024" # "n1-standard-1" # "f1-micro" #"e2-standard-2"
+server_type = "custom-1-1024"  # "n1-standard-1" # "f1-micro" #"e2-standard-2"
 client_type = "e2-standard-8"
 controller_type = "e2-standard-2"
 
-
 weak_vm_types = ["custom-1-1024", "n1-standard-1", "f1-micro", "g1-small"]
+
 
 # Please note that to use this script you need to install gcloud, login, and set the default project to Legostore.
 
-#Todo: Add command line parser
+# Todo: Add command line parser
 def parse_args():
-    parser = argparse.ArgumentParser(description="This application automatically runs the Legostore project on Google Cloud Platform")
-    parser.add_argument('-c','--only-create', dest='only_create', action='store_true', required=False)
+    parser = argparse.ArgumentParser(
+        description="This application automatically runs the Legostore project on Google Cloud Platform")
+    parser.add_argument('-c', '--only-create', dest='only_create', action='store_true', required=False)
     parser.add_argument('-o', '--run-optimizer', dest='run_optimizer', action='store_true', required=False)
     parser.add_argument('-l', '--only-latency', dest='only_latency', action='store_true', required=False)
     parser.add_argument('-g', '--only-gather-data', dest='only_gather_data', action='store_true', required=False)
@@ -40,6 +41,7 @@ def parse_args():
     if args.only_gather_data:
         args.run_optimizer = False
     return args
+
 
 # Reading zones to create the servers
 def read_zones(zones_file_name='zones.txt'):
@@ -59,18 +61,25 @@ def read_zones(zones_file_name='zones.txt'):
 
     return zones
 
+
 files_lock = threading.Lock()
+
+
 def create_project_tar_file():
     files_lock.acquire()
     os.system("./copy.sh")
+
 
 def delete_project_tar_file():
     os.system("rm -rf project2.tar.gz project")
     files_lock.release()
 
+
 link_lock = threading.Lock()
 link = ""
 link_set = False
+
+
 def getting_librocksdb_download_link():
     # Source 1
     # headers = {'Referer': 'https://anonfiles.com/',
@@ -90,7 +99,8 @@ def getting_librocksdb_download_link():
     link_lock.acquire()
     if not link_set:
         os.system("rm -f /tmp/LEGOSTORE_LIBROCKSDB_LINK.txt")
-        os.system("curl -Lqs \"https://www.mediafire.com/file/bs5ob9lw3urrm6g/librocksdb.a/file\" | grep \"href.*download.*media.*\" | tail -1 | cut -d '\"' -f 2 > /tmp/LEGOSTORE_LIBROCKSDB_LINK.txt")
+        os.system(
+            "curl -Lqs \"https://www.mediafire.com/file/bs5ob9lw3urrm6g/librocksdb.a/file\" | grep \"href.*download.*media.*\" | tail -1 | cut -d '\"' -f 2 > /tmp/LEGOSTORE_LIBROCKSDB_LINK.txt")
 
         with open("/tmp/LEGOSTORE_LIBROCKSDB_LINK.txt") as link_file:
             link = link_file.readlines()[0][:-1]
@@ -99,30 +109,34 @@ def getting_librocksdb_download_link():
 
     return link
 
+
 def summarize():
     os.system("cd data; ./summarize.py >CAS_NOF/summary.txt 2>&1; cat CAS_NOF/summary.txt")
 
-class Machine:
 
+class Machine:
     existing_info = ''
     existing_info_lock = threading.Lock()
 
     def get_machine_list(number_of_machines=9):
         def create_machine_thread_helper(machines, m_name, m_type, m_zone):
             machines[m_name] = Machine(name=m_name, type=m_type, zone=m_zone)
+
         zones = command.read_zones()
         threads = []
         servers = OrderedDict()
         clients = OrderedDict()
         for i, zone in enumerate(zones):
-            if(i >= number_of_machines):
+            if (i >= number_of_machines):
                 break;
             name = "s" + str(i)
-            threads.append(threading.Thread(target=create_machine_thread_helper, args=[servers, name, server_type, zone]))
+            threads.append(
+                threading.Thread(target=create_machine_thread_helper, args=[servers, name, server_type, zone]))
             threads[-1].start()
 
             name = "s" + str(i) + "c"
-            threads.append(threading.Thread(target=create_machine_thread_helper, args=[clients, name, client_type, zone]))
+            threads.append(
+                threading.Thread(target=create_machine_thread_helper, args=[clients, name, client_type, zone]))
             threads[-1].start()
 
         for thread in threads:
@@ -209,7 +223,8 @@ class Machine:
         os.system("cd pairwise_latencies; ./combine.sh")
         print("Pairwise latencies are ready in pairwise_latencies/latencies.txt")
 
-    def run_all(servers, clients): # if you call this method, you should not call run method anymore. It does not make sense to run twice!
+    def run_all(servers,
+                clients):  # if you call this method, you should not call run method anymore. It does not make sense to run twice!
         create_project_tar_file()
         threads = []
         for name, server in servers.items():
@@ -351,7 +366,7 @@ class Machine:
                     "cd liberasurecode/; ./autogen.sh >/dev/null 2>&1; ./configure --prefix=/usr >/dev/null 2>&1; make >/dev/null 2>&1")
             else:
                 self.execute(
-                "cd liberasurecode/; ./autogen.sh >/dev/null 2>&1; ./configure --prefix=/usr >/dev/null 2>&1; make -j 4 >/dev/null 2>&1")
+                    "cd liberasurecode/; ./autogen.sh >/dev/null 2>&1; ./configure --prefix=/usr >/dev/null 2>&1; make -j 4 >/dev/null 2>&1")
             self.execute("cd liberasurecode/; sudo make install >/dev/null 2>&1");
 
             # self.execute("git clone https://github.com/facebook/rocksdb.git >/dev/null 2>&1")
@@ -374,7 +389,8 @@ class Machine:
             #     self.execute("sudo mv librocksdb.a ../")
 
             # increase the number of open files per user
-            self.execute("sudo bash -c 'printf \"* hard nofile 97816\\n* soft nofile 97816\\n\" >> /etc/security/limits.conf'")
+            self.execute(
+                "sudo bash -c 'printf \"* hard nofile 97816\\n* soft nofile 97816\\n\" >> /etc/security/limits.conf'")
             self.execute("sudo touch ../init_config_done")
 
     def config(self, make_clear=True, clear_all=True):
@@ -418,7 +434,6 @@ class Machine:
         self.copy_from("latencies_from_server_" + self.name[1:] + ".txt", "pairwise_latencies")
         for i in range(9):
             self.copy_from("lats_from_server_" + self.name[1:] + "_to_server_" + str(i) + ".txt", "pairwise_latencies")
-
 
     def clear(self):
         self.execute("rm -rf *")
@@ -471,10 +486,15 @@ class Machine:
     def gather_summary(self, run_name):
         self.execute("cd project/; ./summarize.py " + run_name + " >sum.txt 2>&1")
         os.system("mkdir -p data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]))
-        self.copy_from("project/sum.txt", "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
+        self.copy_from("project/sum.txt",
+                       "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
 
         os.system("mkdir -p data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/logs")
-        self.copy_from("project/logs/*", "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/logs/")
+        try:
+            self.copy_from("project/logs/*",
+                           "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/logs/")
+        except:
+            print("No client on " + self.name)
 
     def gather_logs(self, run_name):
         os.system("mkdir -p data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]))
@@ -484,13 +504,17 @@ class Machine:
             self.copy_from("project/metadata*_output.txt",
                            "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
         else:
-            self.copy_from("project/client*_output.txt",
-                           "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
-
+            try:
+                self.copy_from("project/client*_output.txt",
+                               "data/" + run_name + "/" + (self.name if self.name[-1] != 'c' else self.name[:-1]) + "/")
+            except:
+                print("No client on " + self.name)
 
 
 # Signal handlers
 keyboard_int_handler_called = False
+
+
 def keyboard_int_handler(signal_received, frame):
     global keyboard_int_handler_called
 
@@ -504,18 +528,21 @@ def keyboard_int_handler(signal_received, frame):
         Machine.gather_logs_all()
         exit(0)
 
+
 class Controller(Machine):
     def __init__(self):
         self.created = False
         self.add_access_done = False
+
         def create_controller(self):
             Machine.__init__(self, name='s7-cont', type=controller_type, zone='us-west2-a')
             # self.cont_machine = Machine(name='s7-cont', zone='us-west2-a')
+
         self.creator_thread = threading.Thread(target=create_controller, args=[self])
         self.creator_thread.start()
 
     def is_created(self):
-        if(self.created):
+        if (self.created):
             return True
         self.creator_thread.join()
         self.created = True
@@ -548,6 +575,7 @@ class Controller(Machine):
         os.system("mkdir -p data/" + run_name + "/" + self.name)
         self.copy_from("project/controller_output.txt", "data/" + run_name + "/" + self.name + "/")
 
+
 def make_sure_project_can_be_built():
     if os.system("cd ..; make cleanall >/dev/null 2>&1; make -j 9 >/dev/null 2>&1") != 0:
         print("Compile ERROR")
@@ -556,11 +584,13 @@ def make_sure_project_can_be_built():
     else:
         print("Project was built successfully")
 
+
 def should_gather_outputs(controller):
     stdout, stderr = controller.execute("cat project/controller_output.txt | grep \"Child temination status 0\"")
     if stdout != "":
         return True
     return False
+
 
 def main(args):
     # signal(SIGINT, keyboard_int_handler)
@@ -609,9 +639,9 @@ def main(args):
 
 
 def arrival_rate_test(args):
-    arrival_rates = [20, 40] #[20, 40, 60, 80, 100] #list(range(20, 101, 20))
+    arrival_rates = [20, 40]  # [20, 40, 60, 80, 100] #list(range(20, 101, 20))
     # read_ratios = OrderedDict([("HW", 0.1), ("RW", 0.5), ("HR", 0.9)])
-    read_ratios =  OrderedDict([("RW", 0.5)]) #OrderedDict([("HW", 0.03225), ("RW", 0.5)]) #, ("HR", 0.96774)])
+    read_ratios = OrderedDict([("RW", 0.5)])  # OrderedDict([("HW", 0.03225), ("RW", 0.5)]) #, ("HR", 0.96774)])
 
     if not args.only_create:
         make_sure_project_can_be_built()
@@ -619,7 +649,8 @@ def arrival_rate_test(args):
 
     for rr in read_ratios:
         for ar in arrival_rates:
-            workload = json.load(open("../config/auto_test/input_workload.json", "r"), object_pairs_hook=OrderedDict)["workload_config"]
+            workload = json.load(open("../config/auto_test/input_workload.json", "r"), object_pairs_hook=OrderedDict)[
+                "workload_config"]
             for grp_con in workload:
                 groups = grp_con["grp_workload"]
                 for grp in groups:
@@ -634,6 +665,7 @@ def arrival_rate_test(args):
             # os.system("./delete_servers.py")
             sleep(5)
 
+
 def object_number_test(args):
     object_number = [1, 5, 25, 125]
     # read_ratios = OrderedDict([("HW", 0.1)]) #, ("RW", 0.5), ("HR", 0.9)])
@@ -645,7 +677,8 @@ def object_number_test(args):
 
     for rr in read_ratios:
         for on in object_number:
-            workload = json.load(open("../config/auto_test/input_workload.json", "r"), object_pairs_hook=OrderedDict)["workload_config"]
+            workload = json.load(open("../config/auto_test/input_workload.json", "r"), object_pairs_hook=OrderedDict)[
+                "workload_config"]
             for grp_con in workload:
                 groups = grp_con["grp_workload"]
                 for grp in groups:
@@ -661,6 +694,7 @@ def object_number_test(args):
 
             main(args)
             os.system("mv data/CAS_NOF data/object_number/" + rr + "/CAS_NOF_" + str(on))
+
 
 if __name__ == '__main__':
     args = parse_args()

@@ -14,7 +14,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 -Wall -Werror -Wconversion")
 
 # Get the sources.
-file(GLOB SOURCES src/*.cpp)
+#file(GLOB SOURCES src/*.cpp)
+include_directories(./inc)
+set(SOURCES ABD_Client.cpp Client.cpp Data_Transfer.cpp Reconfig.cpp ABD_Server.cpp Client_driver.cpp gbuffer.pb.cpp
+        Server_driver.cpp Cache.cpp Client_Node.cpp Liberasure.cpp Timestamp.cpp CAS_Client.cpp Controller.cpp
+        Metadata_Server.cpp Util.cpp CAS_Server.cpp Data_Server.cpp Persistent.cpp)
 set(LIB_SOURCES ${SOURCES})
 set(MAIN_SOURCES ${CMAKE_SOURCE_DIR}/src/Client_driver.cpp ${CMAKE_SOURCE_DIR}/src/Server_driver.cpp
         ${CMAKE_SOURCE_DIR}/src/Controller.cpp ${CMAKE_SOURCE_DIR}/src/Metadata_Server.cpp)
@@ -28,7 +32,6 @@ add_custom_command(OUTPUT ${CMAKE_SOURCE_DIR}/inc/gbuffer.pb.h ${CMAKE_SOURCE_DI
 
 # Build LEGOStore library.
 link_libraries(m erasurecode rocksdb dl protobuf pthread)
-include_directories(./inc)
 add_library(LEGOStore_lib ${LIB_SOURCES} ${CMAKE_SOURCE_DIR}/src/gbuffer.pb.cpp)
 
 # Create the components using the LEGOStore library.

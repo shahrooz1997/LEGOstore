@@ -1,5 +1,7 @@
 Assuming you have curl downloaded, if not run:
+
 sudo apt-get install curl
+
 Run the following in order to setup the project:
 1. Run "sh gcloud_cli_setup_script.sh" //Don't add the quotes. It downloads google cloud cli tools   
 2. Now, login into your gcp account on browser pop up.

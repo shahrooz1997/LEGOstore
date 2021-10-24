@@ -3,11 +3,11 @@ asia-northeast1-b          asia-northeast1          1.Tokyo
 australia-southeast1-b     australia-southeast1     2.Sydney
 #asia-south1-c              asia-south1              3.Mumbai
 asia-southeast1-b          asia-southeast1          3.Singapore (instead of Mumbai)
-europe-west3-c             europe-west3             4.Frankfurt
+europe-west3-a             europe-west3             4.Frankfurt
 europe-west2-c             europe-west2             5.London
 us-east4-c                 us-east4                 6.Virginia
 southamerica-east1-b       southamerica-east1       7.São Paulo
-us-west2-a                 us-west2                 8.California
+us-west2-c                 us-west2                 8.California
 us-west1-b                 us-west1                 9.Oregon
 
 

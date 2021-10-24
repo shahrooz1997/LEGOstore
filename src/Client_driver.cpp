@@ -12,6 +12,7 @@
 #include <string>
 #include <cstdlib>
 #include <fstream>
+#include <thread>
 
 #ifdef LOCAL_TEST
 #define DEBUGGING
@@ -49,7 +50,7 @@ public:
     File_logger(uint32_t id){
         file = nullptr;
         log_filename = "logs/logfile_";
-        log_filename += std::to_string(id) + ".txt";
+        log_filename += std::to_string(getpid()) + ".txt";
         file = fopen(log_filename.c_str(), "w");
         assert(file != nullptr);
         client_id = id;
@@ -75,6 +76,7 @@ public:
         fprintf(file, "%u, %s, %s, %s, %lu, %lu\n", client_id, op == Op::get ? "get" : "put", key.c_str(),
                 value.c_str(), call_time, return_time);
 #endif
+      fflush(stdout);
     }
     
     ~File_logger(){

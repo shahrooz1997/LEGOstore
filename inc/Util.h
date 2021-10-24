@@ -50,7 +50,7 @@ using namespace std::chrono;
 #define MAX_LINGER_BEFORE_SOCK_CLOSE 50
 
 //#define No_GET_OPTIMIZED
-#define LOCAL_TEST
+//#define LOCAL_TEST
 #define USE_TCP_NODELAY
 //#define DO_WARM_UP
 
@@ -59,7 +59,7 @@ using namespace std::chrono;
 #define NUMBER_OF_OPS_TO_IGNORE 0
 #else
 #define NUMBER_OF_OPS_FOR_WARM_UP 30
-#define NUMBER_OF_OPS_TO_IGNORE 10
+#define NUMBER_OF_OPS_TO_IGNORE 0
 #define DO_NOT_WRITE_VALUE_IN_LOGS
 //#define CHANGE_THREAD_PRIORITY
 #endif

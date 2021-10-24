@@ -413,8 +413,11 @@ int run_session(uint req_idx) {
   }
 
   // Sleep for 10 seconds for threads running asynchronous phase
+#ifdef LOCAL_TEST
+  std::this_thread::sleep_for(seconds(1));
+#else
   std::this_thread::sleep_for(seconds(10));
-
+#endif
   return cnt;
 }
 

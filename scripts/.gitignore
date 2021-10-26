@@ -8,3 +8,4 @@ myping
 pairwise_latencies/latencies*
 setup_config.jsoni
 __pycache__
+!data/summarize.py

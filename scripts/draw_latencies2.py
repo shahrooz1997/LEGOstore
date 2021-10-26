@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+# Required packages: numpy matplotlib
+
+
 import command
 import subprocess
 from subprocess import PIPE
@@ -17,8 +20,9 @@ from pylab import *
 
 # Todo: I know read_operation_for_key is not optimized at all... It's late night and I am too tired to think of a better solution! (:
 
-# path = "data/CAS_NOF"
-path = "data/LAST_RES/CAS_NOF_O->LO"
+# path = "data/CAS_NOF_1"
+path = "data/CAS_NOF"
+# path = "data/LAST_RES/CAS_NOF_O->LO"
 # path = "data/CAS_NOF_C"
 # path = "data/arrival_rate/HR/CAS_NOF"
 # path = "data/object_number/RW/CAS_NOF"

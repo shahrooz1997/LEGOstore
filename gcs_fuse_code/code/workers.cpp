@@ -19,7 +19,7 @@ static void * writer(void *thread_args)
 	char random_buffer[100];
 	std::string check_buffer;
 	
-	for(int round_num = 0; round_num < 100; round_num++)
+	for(int round_num = 0; round_num < rounds; round_num++)
 	{
 		printf("[Thread %lu] round number = %d\n", pthread_self(), round_num+1);
 		
@@ -45,7 +45,7 @@ static void * writer(void *thread_args)
 		// The below check is not critical because there could be a case
 		// when current thread is context switched after write and some other thread
 		// did a Put operation just after that.
-		if(args->critical_debug && !check_buffer.compare(random_buffer))
+		if(args->critical_debug && check_buffer.compare(0,100,random_buffer))
 		{
 			printf("[Thread %lu] Immediate write-read compare failed\n", pthread_self());
 		}

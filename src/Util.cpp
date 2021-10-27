@@ -192,6 +192,17 @@ int socket_setup(const std::string& port, const std::string* IP){
 //    return S_OK;
 //}
 
+uint32_t get_datacenter_index(uint32_t datacenter_id, const std::vector<DC *> &datacenters) {
+  for (uint32_t i = 0; i < datacenters.size(); i++) {
+    if (datacenters[i]->id == datacenter_id) {
+      return i;
+    }
+  }
+  DPRINTF(true, "No datacenter with id %u found\n", datacenter_id);
+  assert(false);
+  return -1;
+}
+
 int get_random_number_uniform(int min, int max, int seed){
     static bool seed_set = false;
     static std::default_random_engine generator;
@@ -199,9 +210,7 @@ int get_random_number_uniform(int min, int max, int seed){
         generator = std::default_random_engine(seed);
         seed_set = true;
     }
-
     std::uniform_int_distribution<int> distribution(min, max);
-
     return distribution(generator);
 }
 

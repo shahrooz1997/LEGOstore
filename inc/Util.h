@@ -213,6 +213,16 @@ struct Properties{
     ~Properties();
 };
 
+template<typename T>
+inline void mydelete(T *&ptr) {
+  if (ptr != nullptr) {
+    delete ptr;
+    ptr = nullptr;
+  }
+}
+
+uint32_t get_datacenter_index(uint32_t datacenter_id, const std::vector<DC *> &datacenters);
+
 int get_random_number_uniform(int min, int max, int seed = std::chrono::system_clock::now().time_since_epoch().count());
 double get_random_real_number_uniform(double min, double max, int seed = std::chrono::system_clock::now().time_since_epoch().count());
 

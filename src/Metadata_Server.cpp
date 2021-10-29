@@ -189,7 +189,7 @@ void server_connection(int connection, int portid){
             return;
         }
         if(is_warmup_message(recvd)){
-//            DPRINTF(DEBUG_METADATA_SERVER, "warmup message received\n");
+            DPRINTF(DEBUG_METADATA_SERVER, "warmup message received\n");
             std::string temp = std::string(WARM_UP_MNEMONIC) + get_random_string();
             result = DataTransfer::sendMsg(connection, temp);
             if(result != 1){

@@ -718,7 +718,7 @@ int Controller::run_all_clients() { //Todo: run other clients as well.
   time_point<system_clock, milliseconds> timePoint;
   for (uint i = 0; i < properties.group_configs.size(); i++) {
     auto &gc = properties.group_configs[i];
-    timePoint = startPoint + milliseconds{gc.timestamp * 1000};
+    timePoint = startPoint + seconds{gc.timestamp} - seconds(WARM_UP_TIME_SECONDS);
     this_thread::sleep_until(timePoint);
     DPRINTF(DEBUG_CAS_Client, "clients in group_configs %d started.\n", i);
     this->run_clients_for(i);
@@ -755,28 +755,33 @@ Group &find_old_configuration(Properties &prp, uint curr_group_id, uint curr_con
 }
 
 int Controller::run_reconfigurer() { //Todo: make it more reliable
+  // Warm up connections with servers.
+  for (auto dc_p: properties.datacenters) {
+    Connect c(dc_p->servers[0]->ip, dc_p->servers[0]->port);
+  }
+
   auto startPoint = time_point_cast<milliseconds>(system_clock::now());
   time_point<system_clock, milliseconds> timePoint;
   for (uint i = 1; i < properties.group_configs.size(); i++) {
     auto &gc = properties.group_configs[i];
     timePoint = startPoint + milliseconds{gc.timestamp * 1000};
     // if server excluded in the next gc, kill it 10 secs before
-    if (i + 1 < properties.group_configs.size()) {
-      auto &next_gc = properties.group_configs[i + 1];
-      vector<uint32_t> excluded_dcs;
-      for (auto &g: next_gc.groups) {
-        for (auto dc_id: g.excluded_dcs) {
-          if (find(excluded_dcs.begin(), excluded_dcs.end(), dc_id) == excluded_dcs.end()) {
-            excluded_dcs.push_back(dc_id);
-          }
+//    if (i + 1 < properties.group_configs.size()) {
+//      auto &next_gc = gc; //properties.group_configs[i + 1];
+    vector<uint32_t> excluded_dcs;
+    for (auto &g: gc.groups) {
+      for (auto dc_id: g.excluded_dcs) {
+        if (find(excluded_dcs.begin(), excluded_dcs.end(), dc_id) == excluded_dcs.end()) {
+          excluded_dcs.push_back(dc_id);
         }
       }
-      this_thread::sleep_until(timePoint - seconds(gc.timestamp / 2));
-      for (auto dc_id: excluded_dcs) {
-        DPRINTF(DEBUG_RECONFIG_CONTROL, "Kill datacenter %u\n", dc_id);
-        kill_datacenter(dc_id);
-      }
     }
+    this_thread::sleep_until(timePoint - seconds(gc.timestamp / 2));
+    for (auto dc_id: excluded_dcs) {
+      DPRINTF(DEBUG_RECONFIG_CONTROL, "Kill datacenter %u\n", dc_id);
+      kill_datacenter(dc_id);
+    }
+//    }
     this_thread::sleep_until(timePoint);
 
     for (uint j = 0; j < gc.groups.size(); j++) {
@@ -840,10 +845,15 @@ int Controller::warm_up() {
   return S_OK;
 }
 
+// Signal handlers
+void sigpipeHandler(int s) {
+  printf("Caught SIGPIPE\n");
+}
+
 // Controller has three main responsibilities: one is to communicate with metadata servers, two is to do reconfiguration,
 // and three is run clients for testing.
 int main() {
-
+  signal(SIGPIPE, sigpipeHandler);
 #ifdef LOCAL_TEST
   Controller master(2, 10000, 10000, "./config/local_config.json",
                     "./config/auto_test/input_workload.json", "./config/auto_test/optimizer_output.json");

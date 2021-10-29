@@ -14,7 +14,7 @@
 // for open/close pair
 #include "Util.h"
 #include "../inc/Util.h"
-#include "Data_Transfer.h"
+#include "../inc/Data_Transfer.h"
 #include <cstring>
 #include <arpa/inet.h>
 #include <inttypes.h>
@@ -389,6 +389,19 @@ Connect::Connect(const std::string &ip, const uint16_t port) : ip(ip), port(port
     if (!error) {
       this->socks[idx].second = this->sock;
       connected = true;
+
+      // Send dummy data to warm up the socket.
+      DPRINTF(true, "Warming up connection\n");
+      std::string temp = std::string(WARM_UP_MNEMONIC) + get_random_string();
+      DataTransfer::sendMsg(this->sock, temp);
+      std::string recvd;
+      if (DataTransfer::recvMsg(this->sock, recvd) == 1) {
+        if (!is_warmup_message(recvd)) {
+          assert(false);
+        }
+      } else {
+        assert(false);
+      }
     }
   } else {
     this->sock = this->socks[idx].second;
@@ -517,6 +530,19 @@ Connect::Connect(const std::string &ip, const std::string &port) : ip(ip), sock(
     if (!error) {
       this->socks[idx].second = this->sock;
       connected = true;
+
+      // Send dummy data to warm up the socket.
+      DPRINTF(true, "Warming up connection\n");
+      std::string temp = std::string(WARM_UP_MNEMONIC) + get_random_string();
+      DataTransfer::sendMsg(this->sock, temp);
+      std::string recvd;
+      if (DataTransfer::recvMsg(this->sock, recvd) == 1) {
+        if (!is_warmup_message(recvd)) {
+          assert(false);
+        }
+      } else {
+        assert(false);
+      }
     }
   } else {
     char *end;

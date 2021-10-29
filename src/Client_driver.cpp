@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <thread>
+#include <signal.h>
 
 #ifdef LOCAL_TEST
 #define DEBUGGING
@@ -178,8 +179,8 @@ int warm_up() {
 // This function will create a client and start sending requests.
 int run_session(uint32_t client_id) {
   DPRINTF(DEBUG_CAS_Client, "client with pid %d started\n", getpid());
-  auto start_point = time_point_cast<milliseconds>(system_clock::now());
   int request_counter = 0;
+  auto warm_up_end_time = time_point_cast<milliseconds>(system_clock::now()) + seconds(WARM_UP_TIME_SECONDS);
 //  uint32_t client_id = get_unique_client_id(datacenter_id, conf_id, grp_id, req_idx);
 
   // Set up seed for random number generator.
@@ -194,12 +195,49 @@ int run_session(uint32_t client_id) {
 #endif
   Client_Node clt(client_id, datacenter_id, retry_attempts_number, metadata_server_timeout, timeout_per_request,
                   datacenters);
+
+  // Run warm up operations.
+  for (int i = 0; i < WARM_UP_NUM_OP; i++) {
+    uint key_idx = 0;
+    int result = S_OK;
+    if (i % 2) { // get
+      std::string read_value;
+//      auto epoch = time_point_cast<std::chrono::microseconds>(
+//          std::chrono::system_clock::now()).time_since_epoch().count();
+      result = clt.get(keys[key_idx], read_value);
+      if (result != 0) {
+        DPRINTF(DEBUG_CAS_Client, "WARM_UP clt.get on key %s, result is %d\n", keys[key_idx].c_str(), result);
+        assert(false);
+      }
+//      auto epoch2 = time_point_cast<std::chrono::microseconds>(
+//          std::chrono::system_clock::now()).time_since_epoch().count();
+//      file_logger(Op::get, keys[key_idx], read_value, epoch, epoch2);
+      DPRINTF(DEBUG_CAS_Client, "WARM_UP get done on key: %s with value: %s\n", keys[key_idx].c_str(),
+              (TRUNC_STR(read_value)).c_str());
+    } else { // put
+      std::string val = get_random_string(object_size);
+//      auto epoch = time_point_cast<std::chrono::microseconds>(
+//          std::chrono::system_clock::now()).time_since_epoch().count();
+      result = clt.put(keys[key_idx], val);
+      if (result != 0) {
+        DPRINTF(DEBUG_CAS_Client, "WARM_UP clt.put on key %s, result is %d\n", keys[key_idx].c_str(), result);
+        assert(false);
+      }
+//      auto epoch2 = time_point_cast<std::chrono::microseconds>(
+//          std::chrono::system_clock::now()).time_since_epoch().count();
+//      file_logger(Op::put, keys[key_idx], val, epoch, epoch2);
+      DPRINTF(DEBUG_CAS_Client, "WARM_UP put done on key: %s with value: %s\n", keys[key_idx].c_str(),
+              std::string(TRUNC_STR(val)).c_str());
+    }
+  }
+  std::this_thread::sleep_until(warm_up_end_time);
   // Randomly delay the first request of clients.
   auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
   timePoint2 += milliseconds{get_random_number_uniform(0, 2000)};
   std::this_thread::sleep_until(timePoint2);
   // Operation logger.
   OperationLogger file_logger(clt.get_id());
+  auto start_point = time_point_cast<milliseconds>(system_clock::now());
 #ifdef DO_WARM_UP
   // WARM UP THE SOCKETS
   auto timePoint3 += start_point + seconds(WARM_UP_DELAY);
@@ -275,7 +313,7 @@ int create_clients() {
     if (child_pid == 0) {
       std::setbuf(stdout, NULL);
       close(1);
-      int pid = getpid();
+//      int pid = getpid();
       uint32_t client_id = get_unique_client_id(datacenter_id, conf_id, grp_id, static_cast<uint32_t>(i));
       std::stringstream filename;
 //      filename << "client_" << pid << "_output.txt";
@@ -315,7 +353,13 @@ int create_clients() {
   return avg;
 }
 
+// Signal handlers
+void sigpipeHandler(int s) {
+  printf("Caught SIGPIPE\n");
+}
+
 int main(int argc, char *argv[]) {
+  signal(SIGPIPE, sigpipeHandler);
   if (argc != 12) {
     std::cout << "Usage: " << argv[0] << " " << "<datacenter_id> <retry_attempts_number> "
                                                 "<metadata_server_timeout> <timeout_per_request> <conf_id> "

@@ -21,8 +21,9 @@ from pylab import *
 # Todo: I know read_operation_for_key is not optimized at all... It's late night and I am too tired to think of a better solution! (:
 
 # path = "data/CAS_NOF_1"
-# path = "data/CAS_NOF"
-path = "data/CAS_NOF_ex2"
+path = "data/CAS_NOF"
+# path = "data/CAS_NOF_ex2"
+# path = "data/CAS_NOF_ex0_2"
 # path = "data/LAST_RES/CAS_NOF_O->LO"
 # path = "data/CAS_NOF_C"
 # path = "data/arrival_rate/HR/CAS_NOF"
@@ -189,7 +190,7 @@ def standardize_clients(clients):
 
 def plot_latencies(key):
 
-    server = "s2"
+    server = "s1"
     log_path = os.path.join(path, server)
     log_path = os.path.join(log_path, "logs")
     clients = [524289, 524288, 524290, 524291] #537395211
@@ -203,15 +204,15 @@ def plot_latencies(key):
     ax2 = fig.add_axes([0.09, 0.1, .88, .35])
     area = 500
 
-    ax.plot([0, 60], [400, 400], "-", color="r", linewidth=4.0, label="Latency SLO")
-    ax2.plot([0, 60], [400, 400], "-", color="r", linewidth=4.0, label="Latency SLO")
+    # ax.plot([0, 60], [400, 400], "-", color="r", linewidth=4.0, label="Latency SLO")
+    # ax2.plot([0, 60], [400, 400], "-", color="r", linewidth=4.0, label="Latency SLO")
 
     for client_index, client in enumerate(clients):
         x = np.array([(a[0]) / 1000 for a in get_operations[client_index]]) / 1000.
         y = [a[1] for a in get_operations[client_index]]
         ax.scatter(x, y, label="Client " + str(client_index + 1), s=.5 * area)
 
-    server = "s1"
+    server = "s2"
     log_path = os.path.join(path, server)
     log_path = os.path.join(log_path, "logs")
     clients = [470810667, 470810704, 470810674, 470810712, 470810640]
@@ -220,7 +221,7 @@ def plot_latencies(key):
 
     for client_index, client in enumerate(clients):
         # x = np.array([(a[0]) / 1000 for a in get_operations[client_index]]) / 1000.
-        x = (np.array([(a[0]) / 1000 for a in get_operations[client_index]]) + 300000) / 1000.
+        x = (np.array([(a[0]) / 1000 for a in get_operations[client_index]])) / 1000.
         y = [a[1] for a in get_operations[client_index]]
         ax2.scatter(x, y, label="Client " + str(client_index + 1 + 5), s=.5 * area)
 
@@ -248,8 +249,8 @@ def plot_latencies(key):
     ax.spines['top'].set_visible(False)
     ax.tick_params(labeltop=False)
     ax.tick_params(labelbottom=False)
-    ax.set_title("GET Operations from Oregon users")
-    ax2.set_title("GET Operations from LA users")
+    ax.set_title("GET Operations from Sydney users")
+    ax2.set_title("GET Operations from Singapore users")
     # ax.legend()
     # ax2.legend()
 
@@ -291,7 +292,7 @@ def plot_latencies(key):
     get_operations, put_operations, clients = read_operation_for_key(key, log_path)
 
     for client_index, client in enumerate(clients):
-        x = (np.array([(a[0]) / 1000 for a in put_operations[client_index]]) + 300000) / 1000.
+        x = (np.array([(a[0]) / 1000 for a in put_operations[client_index]])) / 1000.
         y = [a[1] for a in put_operations[client_index]]
         ax2.scatter(x, y, label="Client " + str(client_index + 1 + 15), s=.5 * area)
 
@@ -646,7 +647,7 @@ if __name__ == "__main__":
     # main()
 
     # for i in range(10):
-    plot_latencies(keys[0])
+    plot_latencies("10")
 
     # plot_reconfiguration_latencies()
 

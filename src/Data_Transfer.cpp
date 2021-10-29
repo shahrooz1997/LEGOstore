@@ -51,7 +51,6 @@ int DataTransfer::sendMsg(int sock, const std::string& out_str){
 }
 
 int DataTransfer::recvAll(int sock, void* buf, int data_size){
-    
     char* iter = static_cast<char*>(buf);
     int bytes_read = 0;
     
@@ -92,27 +91,29 @@ strVec DataTransfer::deserialize(const std::string& data){
 // Decodes the msg and populates the vector
 //Returns 1 on SUCCESS
 int DataTransfer::recvMsg(int sock, std::string& data){
-    
-    uint32_t _size = 0;
-    int result;
-    result = recvAll(sock, &_size, sizeof(_size));
-    if(result == 1){
-        _size = ntohl(_size);
-        if(_size > 0){
-            data.resize(_size);
-            result = recvAll(sock, const_cast<char*>(data.c_str()), _size);
-            if(result != 1){
-                data.clear();
-                return result;
-            }
-        }
+  uint32_t size = 0;
+  int result;
+  data.clear();
+  result = recvAll(sock, &size, sizeof(size));
+  if (result == 1) {
+    size = ntohl(size);
+    if (size > 0) {
+      char *buffer = new char[size];
+      result = recvAll(sock, buffer, size);
+      if (result == 1) {
+        data = std::string(buffer, size);
+        delete[] buffer;
+      } else {
+        delete[] buffer;
+        return result;
+      }
     }
-
-    if(data.empty()){
-        return -2;
-    }
-    
-    return 1;
+  }
+  if (data.empty()) {
+    DPRINTF(DEBUG_UTIL, "data.empty() returned\n");
+    return -2;
+  }
+  return 1;
 }
 
 int DataTransfer::recvMsg_async(const int sock, std::promise <std::string>&& data_set){

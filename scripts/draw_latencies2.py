@@ -21,7 +21,8 @@ from pylab import *
 # Todo: I know read_operation_for_key is not optimized at all... It's late night and I am too tired to think of a better solution! (:
 
 # path = "data/CAS_NOF_1"
-path = "data/CAS_NOF"
+# path = "data/CAS_NOF"
+path = "data/CAS_NOF_ex2"
 # path = "data/LAST_RES/CAS_NOF_O->LO"
 # path = "data/CAS_NOF_C"
 # path = "data/arrival_rate/HR/CAS_NOF"
@@ -50,6 +51,7 @@ def read_operation_for_key(key, log_path, clients=None):
             lines = log.readlines()
             words = lines[0].split()
             clients.append(words[0][:-1])
+            log.close()
     else:
         for c in clients:
             get_operations.append([])
@@ -187,7 +189,7 @@ def standardize_clients(clients):
 
 def plot_latencies(key):
 
-    server = "s0"
+    server = "s2"
     log_path = os.path.join(path, server)
     log_path = os.path.join(log_path, "logs")
     clients = [524289, 524288, 524290, 524291] #537395211
@@ -209,7 +211,7 @@ def plot_latencies(key):
         y = [a[1] for a in get_operations[client_index]]
         ax.scatter(x, y, label="Client " + str(client_index + 1), s=.5 * area)
 
-    server = "s7"
+    server = "s1"
     log_path = os.path.join(path, server)
     log_path = os.path.join(log_path, "logs")
     clients = [470810667, 470810704, 470810674, 470810712, 470810640]
@@ -248,8 +250,8 @@ def plot_latencies(key):
     ax.tick_params(labelbottom=False)
     ax.set_title("GET Operations from Oregon users")
     ax2.set_title("GET Operations from LA users")
-    ax.legend()
-    ax2.legend()
+    # ax.legend()
+    # ax2.legend()
 
 
 
@@ -258,7 +260,7 @@ def plot_latencies(key):
 
 
     # put
-    server = "s8"
+    server = "s1"
     log_path = os.path.join(path, server)
     log_path = os.path.join(log_path, "logs")
     clients = [537395250, 537395220, 537395284, 537395277, 537395204]
@@ -281,7 +283,7 @@ def plot_latencies(key):
         y = [a[1] for a in put_operations[client_index]]
         ax.scatter(x, y, label="Client " + str(client_index + 1 + 10), s=.5 * area)
 
-    server = "s7"
+    server = "s2"
     log_path = os.path.join(path, server)
     log_path = os.path.join(log_path, "logs")
     clients = [470810670, 470810723, 470810693, 470810633, 470810666]
@@ -320,8 +322,8 @@ def plot_latencies(key):
     ax.tick_params(labelbottom=False)
     ax.set_title("PUT Operations from Oregon users")
     ax2.set_title("PUT Operations from LA users")
-    ax.legend()
-    ax2.legend()
+    # ax.legend()
+    # ax2.legend()
 
 
 
@@ -644,7 +646,7 @@ if __name__ == "__main__":
     # main()
 
     # for i in range(10):
-    plot_latencies(keys[4])
+    plot_latencies(keys[0])
 
     # plot_reconfiguration_latencies()
 

@@ -35,6 +35,7 @@
 #include <mutex>
 #include <memory>
 #include <random>
+#include <arpa/inet.h>
 
 using namespace std::chrono;
 
@@ -59,7 +60,7 @@ using namespace std::chrono;
 #define NUMBER_OF_OPS_TO_IGNORE 0
 #else
 #define NUMBER_OF_OPS_FOR_WARM_UP 30
-#define NUMBER_OF_OPS_TO_IGNORE 0
+#define NUMBER_OF_OPS_TO_IGNORE 10
 #define DO_NOT_WRITE_VALUE_IN_LOGS
 //#define CHANGE_THREAD_PRIORITY
 #endif
@@ -99,22 +100,29 @@ extern bool DEBUG_UTIL;
         fflush(stdout); \
     } while(0)
 
-class Logger{
-public:
-    Logger(const std::string& file_name, const std::string& function_name, const int& line_number, bool logging_on = true);
-    Logger(const std::string& file_name, const std::string& function_name, const int& line_number, const std::string& msg, bool logging_on = true);
-    ~Logger();
+class Logger {
+ public:
+  Logger(const std::string &file_name,
+         const std::string &function_name,
+         const int &line_number,
+         bool logging_on = true);
+  Logger(const std::string &file_name,
+         const std::string &function_name,
+         const int &line_number,
+         const std::string &msg,
+         bool logging_on = true);
+  ~Logger();
 
-    void operator()(const int& line_number);
-    void operator()(const int& line_number, const std::string& msg);
+  void operator()(const int &line_number);
+  void operator()(const int &line_number, const std::string &msg);
 
-private:
-    std::string file_name;
-    std::string function_name;
-    time_point<steady_clock, microseconds> timer;
-    time_point<steady_clock, microseconds> last_lapse;
-    std::stringstream output;
-    bool logging_on;
+ private:
+  std::string file_name;
+  std::string function_name;
+  time_point<steady_clock, microseconds> timer;
+  time_point<steady_clock, microseconds> last_lapse;
+  std::stringstream output;
+  bool logging_on;
 };
 
 //// Todo: using variable argument macros try to add message as well. It does not work when there is no arguments in -std=c++11.
@@ -132,99 +140,141 @@ private:
 
 #define TRUNC_STR(X) X.substr(0, 3) + "...[" + std::to_string(X.size()) + " bytes]"
 
-
-typedef std::vector <std::string> strVec;
+typedef std::vector<std::string> strVec;
 
 typedef struct Datacenter DC;
 
-struct Server{
-    uint32_t id;
-    std::string ip;
-    uint16_t port;
-    DC* datacenter;
-    
-    Server();
-    Server(const Server& orig);
+struct Server {
+  uint32_t id;
+  std::string ip;
+  uint16_t port;
+  DC *datacenter;
+
+  Server();
+  Server(const Server &orig);
 };
 
-typedef struct Datacenter{
-    uint32_t id;
-    std::string metadata_server_ip;
-    uint32_t metadata_server_port;
-    std::vector<Server*> servers;
-    
-    Datacenter();
-    
-    Datacenter(const Datacenter& orig);
-    
-    ~Datacenter();
+typedef struct Datacenter {
+  uint32_t id;
+  std::string metadata_server_ip;
+  uint32_t metadata_server_port;
+  std::vector<Server *> servers;
+
+  Datacenter();
+
+  Datacenter(const Datacenter &orig);
+
+  ~Datacenter();
 } DC;
 
-struct Quorums{
-    std::vector<uint32_t> Q1;
-    std::vector<uint32_t> Q2;
-    std::vector<uint32_t> Q3;
-    std::vector<uint32_t> Q4;
+struct Quorums {
+  std::vector<uint32_t> Q1;
+  std::vector<uint32_t> Q2;
+  std::vector<uint32_t> Q3;
+  std::vector<uint32_t> Q4;
 };
 
-struct Placement{
-    std::string protocol;
-    std::vector<uint32_t> servers;
-    uint32_t f; // The number of failures this placement can tolerate.
-    uint32_t m; // Total number of servers
-    uint32_t k; // The number of chunks necessary for decoding data, For ABD k = 0
-    std::vector<Quorums> quorums; // It is a map from the id of datacenter to its optimized placement Todo: change it to map
-    
-    Placement();
+struct Placement {
+  std::string protocol;
+  std::vector<uint32_t> servers;
+  uint32_t f; // The number of failures this placement can tolerate.
+  uint32_t m; // Total number of servers
+  uint32_t k; // The number of chunks necessary for decoding data, For ABD k = 0
+  std::vector<Quorums>
+      quorums; // It is a map from the id of datacenter to its optimized placement Todo: change it to map
+
+  Placement();
 };
 
-struct Group{
-    uint32_t id;
-    uint32_t availability_target;
-    std::vector<double> client_dist;
-    uint32_t object_size;
-    uint64_t num_objects; // Not used in the project
-    double arrival_rate; // Combined arrival rate
-    double read_ratio;
-    std::chrono::milliseconds duration;
-    std::vector <std::string> keys;
+struct Group {
+  uint32_t id;
+  uint32_t availability_target;
+  std::vector<double> client_dist;
+  uint32_t object_size;
+  uint64_t num_objects; // Not used in the project
+  double arrival_rate; // Combined arrival rate
+  double read_ratio;
+  std::chrono::milliseconds duration;
+  std::vector<std::string> keys;
+  std::vector<uint32_t> excluded_dcs;
 
-    Placement placement;
+  Placement placement;
 };
 
-struct Group_config{
-    uint64_t timestamp; // Start time of this configuration
-    uint32_t id; // conf_id
-    std::vector<Group> groups;
+struct Group_config {
+  uint64_t timestamp; // Start time of this configuration
+  uint32_t id; // conf_id
+  std::vector<Group> groups;
 };
 
-struct Properties{
-    uint32_t local_datacenter_id;
-    uint32_t retry_attempts;
-    uint32_t metadata_server_timeout;
-    uint32_t timeout_per_request;
+struct Properties {
+  uint32_t local_datacenter_id;
+  uint32_t retry_attempts;
+  uint32_t metadata_server_timeout;
+  uint32_t timeout_per_request;
 
-    std::vector<DC*> datacenters;
-    std::vector<Group_config> group_configs;
+  std::vector<DC *> datacenters;
+  std::vector<Group_config> group_configs;
 
-    // Todo: add it to the Datacenter struct
-    std::vector<std::string> clients;
-    
-    ~Properties();
+  // Todo: add it to the Datacenter struct
+  std::vector<std::string> clients;
+
+  ~Properties();
 };
 
 template<typename T>
-inline void mydelete(T *&ptr) {
+inline void delete_ptr(T *&ptr) {
   if (ptr != nullptr) {
     delete ptr;
     ptr = nullptr;
   }
 }
 
+enum Op {
+  get = 0,
+  put
+};
+
+class OperationLogger {
+ public:
+  explicit OperationLogger(uint32_t id);
+  ~OperationLogger();
+
+  void operator()(Op op, const std::string &key, const std::string &value, uint64_t call_time,
+                  uint64_t return_time);
+
+ private:
+  std::string log_filename;
+  FILE *file;
+  uint32_t client_id;
+  uint32_t number_of_ops_to_ignore;
+};
+
+inline uint32_t get_unique_client_id(uint32_t datacenter_id, uint32_t conf_id, uint32_t grp_id, uint32_t req_idx) {
+  uint32_t id = 0;
+  if ((req_idx < (1 << 12)) && (grp_id < (1 << 7)) && (datacenter_id < (1 << 6)) && (conf_id < (1 << 7))) {
+    id = ((datacenter_id << 26) | (conf_id << 19) | (grp_id << 12) | (req_idx));
+  } else {
+    throw std::logic_error("The thread ID can be redundant. Idx exceeded its bound");
+  }
+  return id;
+}
+
+inline uint32_t ip_str_to_int(const std::string &ip) {
+  struct sockaddr_in serv_addr;
+  if (inet_pton(AF_INET, ip.c_str(), &(serv_addr.sin_addr)) <= 0) {
+    DPRINTF(true, "\nInvalid address/ Address not supported \n");
+    assert(false);
+  }
+  return serv_addr.sin_addr.s_addr;
+}
+
 uint32_t get_datacenter_index(uint32_t datacenter_id, const std::vector<DC *> &datacenters);
 
 int get_random_number_uniform(int min, int max, int seed = std::chrono::system_clock::now().time_since_epoch().count());
-double get_random_real_number_uniform(double min, double max, int seed = std::chrono::system_clock::now().time_since_epoch().count());
+double get_random_real_number_uniform(double min,
+                                      double max,
+                                      int seed = std::chrono::system_clock::now().time_since_epoch().count());
 
 #ifdef LOCAL_TEST
 #define WARM_UP_DELAY 30
@@ -236,91 +286,90 @@ double get_random_real_number_uniform(double min, double max, int seed = std::ch
 
 #define WARM_UP_MNEMONIC "__WARMUP__256844678425__"
 
-inline bool is_warmup_message(const std::string& msg){
-    std::string temp(WARM_UP_MNEMONIC);
-    return msg.substr(0, temp.size()) == temp;
+inline bool is_warmup_message(const std::string &msg) {
+  std::string temp(WARM_UP_MNEMONIC);
+  return msg.substr(0, temp.size()) == temp;
 }
 
 std::string get_random_string(uint32_t size = WARM_UP_SIZE);
 
-std::string construct_key(const std::string& key, const std::string& protocol, const uint32_t conf_id,
-        const std::string& timestamp);
+std::string construct_key(const std::string &key, const std::string &protocol, const uint32_t conf_id,
+                          const std::string &timestamp);
 
-std::string construct_key(const std::string& key, const std::string& protocol, const uint32_t conf_id);
+std::string construct_key(const std::string &key, const std::string &protocol, const uint32_t conf_id);
 
 std::string convert_ip_to_string(uint32_t ip);
 
-inline unsigned int stoui(const std::string& s){
-    unsigned long lresult = stoul(s);
-    unsigned int result = lresult;
-    if(result != lresult){ throw std::out_of_range(s); }
-    return result;
+inline unsigned int stoui(const std::string &s) {
+  unsigned long lresult = stoul(s);
+  unsigned int result = lresult;
+  if (result != lresult) { throw std::out_of_range(s); }
+  return result;
 }
 
 //string to unsigned short
-inline uint16_t stous(const std::string& s){
-    unsigned long lresult = stoul(s);
-    uint16_t result = lresult;
-    if(result != lresult){ throw std::out_of_range(s); }
-    return result;
+inline uint16_t stous(const std::string &s) {
+  unsigned long lresult = stoul(s);
+  uint16_t result = lresult;
+  if (result != lresult) { throw std::out_of_range(s); }
+  return result;
 }
 
-int socket_setup(const std::string& port, const std::string* IP = nullptr);
+int socket_setup(const std::string &port, const std::string *IP = nullptr);
 
 // Todo: use this connection throughout the project
 // socket connect upgrade
-class Connect{
-public:
-    
-    Connect(const std::string& ip, const uint16_t port);
-    
-    Connect(const std::string& ip, const std::string& port);
-    
-    Connect(const Connect& orig) = delete;
-    
-    ~Connect();
-    
-    std::string get_ip();
-    
-    uint16_t get_port();
-    
-    bool is_connected();
-    
-    int operator*();
-    
-    void close();
+class Connect {
+ public:
 
-    void unlock();
+  Connect(const std::string &ip, const uint16_t port);
 
-    static void close_all();
+  Connect(const std::string &ip, const std::string &port);
 
-private:
-    std::string ip;
-    uint16_t port;
-    int sock;
-    bool connected;
-    int idx;
-    
+  Connect(const Connect &orig) = delete;
+
+  ~Connect();
+
+  std::string get_ip();
+
+  uint16_t get_port();
+
+  bool is_connected();
+
+  int operator*();
+
+  void close();
+
+  void unlock();
+
+  static void close_all();
+
+ private:
+  std::string ip;
+  uint16_t port;
+  int sock;
+  bool connected;
+  int idx;
+
 //    static std::map<std::string, int> socks;
 //    static std::map<std::string, std::unique_ptr<std::mutex> > socks_lock;
-    static std::mutex init_lock;
+  static std::mutex init_lock;
 //    static std::map<std::string, bool> is_sock_lock;
-    static std::vector<std::pair<std::string, int> > socks;
-    static std::vector<std::pair<std::string, std::unique_ptr<std::mutex> > > socks_lock;
-    static std::vector<std::pair<std::string, bool> > is_sock_lock;
-    static uint32_t number_of_socks;
+  static std::vector<std::pair<std::string, int> > socks;
+  static std::vector<std::pair<std::string, std::unique_ptr<std::mutex> > > socks_lock;
+  static std::vector<std::pair<std::string, bool> > is_sock_lock;
+  static uint32_t number_of_socks;
 
-    void print_error(std::string const& m); // thread safe print
+  void print_error(std::string const &m); // thread safe print
 };
 
 void print_time();
 
-int ask_metadata(const std::string& metadata_server_ip, const std::string& metadata_server_port,
-        const std::string& key, const uint32_t conf_id, uint32_t& requested_conf_id, uint32_t& new_conf_id,
-        std::string& timestamp, Placement& p, uint32_t retry_attempts, uint32_t metadata_server_timeout);
+int ask_metadata(const std::string &metadata_server_ip, const std::string &metadata_server_port,
+                 const std::string &key, const uint32_t conf_id, uint32_t &requested_conf_id, uint32_t &new_conf_id,
+                 std::string &timestamp, Placement &p, uint32_t retry_attempts, uint32_t metadata_server_timeout);
 
 template<typename T>
-void set_intersection(const Placement& p, std::unordered_set <T>& res);
-
+void set_intersection(const Placement &p, std::unordered_set<T> &res);
 
 #endif /* UTIL_H */

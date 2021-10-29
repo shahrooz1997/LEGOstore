@@ -18,6 +18,7 @@ class Input_groups:
             self.SLO_write = None
             self.duration = None
             self.time_to_decode = None
+            self.excluded_dcs = []
 
     def __init__(self, confid):
         self.input_groups = []

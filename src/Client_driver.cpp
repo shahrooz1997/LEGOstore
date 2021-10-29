@@ -13,7 +13,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <thread>
-#include <arpa/inet.h>
 
 #ifdef LOCAL_TEST
 #define DEBUGGING
@@ -40,63 +39,6 @@ static uint64_t run_session_duration;
 static vector<DC *> datacenters;
 static std::vector<std::string> keys;
 
-enum Op {
-  get = 0,
-  put
-};
-
-class File_logger {
- public:
-  explicit File_logger(uint32_t id) : log_filename(string("logs/logfile_") + to_string(getpid()) + ".txt"),
-                                      file(nullptr), client_id(id) {
-    file = fopen(log_filename.c_str(), "w");
-    assert(file != nullptr);
-
-    number_of_ops_to_ignore = NUMBER_OF_OPS_TO_IGNORE;
-  }
-
-  void operator()(Op op, const std::string &key, const std::string &value, uint64_t call_time,
-                  uint64_t return_time) {
-    assert(file != 0);
-    if (number_of_ops_to_ignore > 0) {
-      number_of_ops_to_ignore--;
-      if (number_of_ops_to_ignore <= 0) {
-        DPRINTF(DEBUG_CONTROLLER, "Ignoring ops finished\n");
-      }
-      return;
-    }
-
-#ifdef DO_NOT_WRITE_VALUE_IN_LOGS
-    fprintf(file, "%u, %s, %s, %s, %lu, %lu\n", client_id, op == Op::get ? "get" : "put", key.c_str(),
-            "0", call_time, return_time);
-#else
-    fprintf(file, "%u, %s, %s, %s, %lu, %lu\n", client_id, op == Op::get ? "get" : "put", key.c_str(),
-            value.c_str(), call_time, return_time);
-#endif
-    fflush(stdout);
-  }
-
-  ~File_logger() {
-    fclose(file);
-  }
-
- private:
-  std::string log_filename;
-  FILE *file;
-  uint32_t client_id;
-  uint32_t number_of_ops_to_ignore;
-};
-
-inline uint32_t get_unique_client_id(uint32_t datacenter_id, uint32_t conf_id, uint32_t grp_id, uint32_t req_idx) {
-  uint32_t id = 0;
-  if ((req_idx < (1 << 12)) && (grp_id < (1 << 7)) && (datacenter_id < (1 << 6)) && (conf_id < (1 << 7))) {
-    id = ((datacenter_id << 26) | (conf_id << 19) | (grp_id << 12) | (req_idx));
-  } else {
-    throw std::logic_error("The thread ID can be redundant. Idx exceeded its bound");
-  }
-  return id;
-}
-
 inline int64_t next_event(const std::string &dist_process) {
   if (dist_process == "poisson") {
     std::default_random_engine generator(system_clock::now().time_since_epoch().count());
@@ -111,6 +53,38 @@ inline int64_t next_event(const std::string &dist_process) {
   } else {
     throw std::logic_error("Distribution process specified is unknown !! ");
   }
+}
+
+int read_detacenters_info(const std::string &file) {
+  std::ifstream cfg(file);
+  json j;
+  if (cfg.is_open()) {
+    cfg >> j;
+    if (j.is_null()) {
+      DPRINTF(DEBUG_CONTROLLER, "Failed to read the config file\n");
+      return -1;
+    }
+  } else {
+    DPRINTF(DEBUG_CONTROLLER, "Couldn't open the config file: %s\n", file.c_str());
+    return -1;
+  }
+  for (auto &it: j.items()) {
+    DC *dc = new DC;
+    dc->id = stoui(it.key());
+    it.value()["metadata_server"]["host"].get_to(dc->metadata_server_ip);
+    dc->metadata_server_port = stoui(it.value()["metadata_server"]["port"].get<std::string>());
+    for (auto &server: it.value()["servers"].items()) {
+      Server *sv = new Server;
+      sv->id = stoui(server.key());
+      server.value()["host"].get_to(sv->ip);
+      sv->port = stoui(server.value()["port"].get<std::string>());
+      sv->datacenter = dc;
+      dc->servers.push_back(sv);
+    }
+    datacenters.push_back(dc);
+  }
+  cfg.close();
+  return 0;
 }
 
 int read_keys(const std::string &file) {
@@ -201,20 +175,12 @@ int warm_up() {
   return S_OK;
 }
 
-inline uint32_t ip_str_to_int(const std::string &ip) {
-  struct sockaddr_in serv_addr;
-  if (inet_pton(AF_INET, ip.c_str(), &(serv_addr.sin_addr)) <= 0) {
-    DPRINTF(true, "\nInvalid address/ Address not supported \n");
-    assert(false);
-  }
-  return serv_addr.sin_addr.s_addr;
-}
-
 // This function will create a client and start sending requests.
-int run_session(uint32_t req_idx) {
+int run_session(uint32_t client_id) {
+  DPRINTF(DEBUG_CAS_Client, "client with pid %d started\n", getpid());
   auto start_point = time_point_cast<milliseconds>(system_clock::now());
   int request_counter = 0;
-  uint32_t client_id = get_unique_client_id(datacenter_id, conf_id, grp_id, req_idx);
+//  uint32_t client_id = get_unique_client_id(datacenter_id, conf_id, grp_id, req_idx);
 
   // Set up seed for random number generator.
 #ifdef DEBUGGING
@@ -233,7 +199,7 @@ int run_session(uint32_t req_idx) {
   timePoint2 += milliseconds{get_random_number_uniform(0, 2000)};
   std::this_thread::sleep_until(timePoint2);
   // Operation logger.
-  File_logger file_logger(clt.get_id());
+  OperationLogger file_logger(clt.get_id());
 #ifdef DO_WARM_UP
   // WARM UP THE SOCKETS
   auto timePoint3 += start_point + seconds(WARM_UP_DELAY);
@@ -310,11 +276,13 @@ int create_clients() {
       std::setbuf(stdout, NULL);
       close(1);
       int pid = getpid();
+      uint32_t client_id = get_unique_client_id(datacenter_id, conf_id, grp_id, static_cast<uint32_t>(i));
       std::stringstream filename;
-      filename << "client_" << pid << "_output.txt";
+//      filename << "client_" << pid << "_output.txt";
+      filename << "client_" << client_id << "_output.txt";
       FILE *out = fopen(filename.str().c_str(), "w");
       std::setbuf(out, NULL);
-      int cnt = run_session(static_cast<uint32_t>(i));
+      int cnt = run_session(client_id);
       exit(cnt);
     } else if (child_pid < -1) {
       DPRINTF(true, "Fork error with %d\n", child_pid);
@@ -345,38 +313,6 @@ int create_clients() {
             numReqs);
   }
   return avg;
-}
-
-int read_detacenters_info(const std::string &file) {
-  std::ifstream cfg(file);
-  json j;
-  if (cfg.is_open()) {
-    cfg >> j;
-    if (j.is_null()) {
-      DPRINTF(DEBUG_CONTROLLER, "Failed to read the config file\n");
-      return -1;
-    }
-  } else {
-    DPRINTF(DEBUG_CONTROLLER, "Couldn't open the config file: %s\n", file.c_str());
-    return -1;
-  }
-  for (auto &it: j.items()) {
-    DC *dc = new DC;
-    dc->id = stoui(it.key());
-    it.value()["metadata_server"]["host"].get_to(dc->metadata_server_ip);
-    dc->metadata_server_port = stoui(it.value()["metadata_server"]["port"].get<std::string>());
-    for (auto &server: it.value()["servers"].items()) {
-      Server *sv = new Server;
-      sv->id = stoui(server.key());
-      server.value()["host"].get_to(sv->ip);
-      sv->port = stoui(server.value()["port"].get<std::string>());
-      sv->datacenter = dc;
-      dc->servers.push_back(sv);
-    }
-    datacenters.push_back(dc);
-  }
-  cfg.close();
-  return 0;
 }
 
 int main(int argc, char *argv[]) {

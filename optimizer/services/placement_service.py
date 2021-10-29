@@ -10,7 +10,7 @@ from services.baselines import *
 def min_latency_abd(datacenters, group, params):
     """ Latency based greedy heuristic
     """
-    dc_ids = [int(dc.id) for dc in datacenters]
+    dc_ids = [int(dc.id) for dc in datacenters if dc.id not in group.excluded_dcs]
     mincost = 99999999999
     min_lat = 99999999999
     # min_get_lat = 99999999999
@@ -97,14 +97,14 @@ def min_latency_abd(datacenters, group, params):
     if selected_placement is None:
         return None
     selected_dcs = selected_placement[0][0]
-    iq1 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
-    iq2 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
-    # Generate iq1, iq2 
-    for i, val in enumerate(selected_placement):
-        for j in val[1]:
-            iq1[i][j] = 1
-        for j in val[2]:
-            iq2[i][j] = 1
+    # iq1 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
+    # iq2 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
+    # # Generate iq1, iq2
+    # for i, val in enumerate(selected_placement):
+    #     for j in val[1]:
+    #         iq1[i][j] = 1
+    #     for j in val[2]:
+    #         iq2[i][j] = 1
 
     return (m_g, selected_dcs, selected_full_placement_info, read_lat, write_lat,
                 selected_get_cost, selected_put_cost, storage_cost, vm_cost)
@@ -112,7 +112,7 @@ def min_latency_abd(datacenters, group, params):
 def min_latency_cas(datacenters, group, params):
     """ Latency based heuristic
     """
-    dc_ids = [int(dc.id) for dc in datacenters]
+    dc_ids = [int(dc.id) for dc in datacenters if dc.id not in group.excluded_dcs]
     mincost = 99999999999
     min_put_lat = 99999999999
     min_get_lat = 99999999999
@@ -210,26 +210,26 @@ def min_latency_cas(datacenters, group, params):
     if selected_placement is None:
         return None
     selected_dcs = selected_placement[0][0]
-    iq1 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
-    iq2 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
-    iq3 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
-    iq4 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
-    for i, val in enumerate(selected_placement):
-        for j in val[1]:
-            iq1[i][j] = 1
-        for j in val[2]:
-            iq2[i][j] = 1
-        for j in val[3]:
-            iq3[i][j] = 1
-        for j in val[4]:
-            iq4[i][j] = 1
+    # iq1 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
+    # iq2 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
+    # iq3 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
+    # iq4 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
+    # for i, val in enumerate(selected_placement):
+    #     for j in val[1]:
+    #         iq1[i][j] = 1
+    #     for j in val[2]:
+    #         iq2[i][j] = 1
+    #     for j in val[3]:
+    #         iq3[i][j] = 1
+    #     for j in val[4]:
+    #         iq4[i][j] = 1
     return (M, K, selected_dcs, selected_full_placement_info, read_lat, write_lat, \
                 selected_get_cost, selected_put_cost, storage_cost, vm_cost)
 
 def min_cost_abd(datacenters, group, params):
     """ Network cost based greedy heuristic
     """
-    dc_ids = [int(dc.id) for dc in datacenters]
+    dc_ids = [int(dc.id) for dc in datacenters if dc.id not in group.excluded_dcs]
     mincost = 99999999999
     min_get_cost = 0
     min_put_cost = 0
@@ -313,14 +313,14 @@ def min_cost_abd(datacenters, group, params):
         return min_latency_abd(datacenters, group, params)
 
     selected_dcs = selected_placement[0][0]
-    iq1 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
-    iq2 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
-    # Generate iq1, iq2 
-    for i, val in enumerate(selected_placement):
-        for j in val[1]:
-            iq1[i][j] = 1
-        for j in val[2]:
-            iq2[i][j] = 1
+    # iq1 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
+    # iq2 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
+    # # Generate iq1, iq2
+    # for i, val in enumerate(selected_placement):
+    #     for j in val[1]:
+    #         iq1[i][j] = 1
+    #     for j in val[2]:
+    #         iq2[i][j] = 1
     return (m_g, selected_dcs, selected_full_placement_info, read_lat, write_lat,
                 min_get_cost, min_put_cost, storage_cost, vm_cost)
 
@@ -328,7 +328,7 @@ def min_cost_cas(datacenters, group, params):
     """ Network cost based heuristic
     """
     # print("STart")
-    dc_ids = [int(dc.id) for dc in datacenters]
+    dc_ids = [int(dc.id) for dc in datacenters if dc.id not in group.excluded_dcs]
     mincost = 99999999999
     min_get_cost = 0
     min_put_cost = 0
@@ -443,20 +443,20 @@ def min_cost_cas(datacenters, group, params):
         return min_latency_cas(datacenters, group, params)
 
     selected_dcs = selected_placement[0][0]
-    iq1 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
-    iq2 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
-    iq3 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
-    iq4 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
-    # Generate iq1, iq2 
-    for i, val in enumerate(selected_placement):
-        for j in val[1]:
-            iq1[i][j] = 1
-        for j in val[2]:
-            iq2[i][j] = 1
-        for j in val[3]:
-            iq3[i][j] = 1
-        for j in val[4]:
-            iq4[i][j] = 1
+    # iq1 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
+    # iq2 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
+    # iq3 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
+    # iq4 = [[0]*len(dc_ids) for _ in range(len(dc_ids))]
+    # # Generate iq1, iq2 
+    # for i, val in enumerate(selected_placement):
+    #     for j in val[1]:
+    #         iq1[i][j] = 1
+    #     for j in val[2]:
+    #         iq2[i][j] = 1
+    #     for j in val[3]:
+    #         iq3[i][j] = 1
+    #     for j in val[4]:
+    #         iq4[i][j] = 1
     return (M, K, selected_dcs, selected_full_placement_info, read_lat, write_lat, \
                 min_get_cost, min_put_cost, storage_cost, vm_cost)
 

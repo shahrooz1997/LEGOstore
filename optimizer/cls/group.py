@@ -13,3 +13,4 @@ class Group:
         self.duration = None
         self.beta = None
         self.time_to_decode = None
+        self.excluded_dcs = []

@@ -657,7 +657,7 @@ int Reconfig::send_reconfig_finish(const Group& old_config, uint32_t old_conf_id
         DPRINTF(DEBUG_ABD_Client, "calling failure_support_optimized.\n");
         EASY_LOG_M("calling failure_support_optimized.");
         op_status = ABD_helper_recon::failure_support_optimized("finish_reconfig", key, ts->get_string(), to_string(new_conf_id), this->retry_attempts,
-                                                                old_config.placement.servers.size(), old_config.placement.servers, old_config.placement.m,
+                                                                old_config.placement.servers.size() - old_config.placement.f, old_config.placement.servers, old_config.placement.m,
                                                                 this->datacenters, old_config.placement.protocol, old_conf_id,
                                                                 this->timeout_per_request, ret);
 
@@ -682,7 +682,7 @@ int Reconfig::send_reconfig_finish(const Group& old_config, uint32_t old_conf_id
         DPRINTF(DEBUG_CAS_Client, "calling failure_support_optimized.\n");
         EASY_LOG_M("calling failure_support_optimized.");
         op_status = CAS_helper_recon::failure_support_optimized("finish_reconfig", key, ts->get_string(), vector<string>(old_config.placement.m, to_string(new_conf_id)), this->retry_attempts,
-                                                                old_config.placement.servers.size(), old_config.placement.servers, old_config.placement.m, this->datacenters,
+                                                                old_config.placement.servers.size() - old_config.placement.f, old_config.placement.servers, old_config.placement.m, this->datacenters,
                                                                 old_config.placement.protocol, old_conf_id,
                                                                 this->timeout_per_request, ret);
 

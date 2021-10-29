@@ -36,8 +36,8 @@ private:
     int read_placement_one_config(const std::string& file, uint32_t confid);
     int read_placements(const std::string& file);
 
-
     int run_client(uint32_t datacenter_id, uint32_t conf_id, uint32_t group_id);
+    int kill_datacenter(uint32_t datacenter_id);
 };
 
 

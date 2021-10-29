@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+# Required packages: numpy matplotlib
+
+
 import command
 import subprocess
 from subprocess import PIPE
@@ -17,8 +20,11 @@ from pylab import *
 
 # Todo: I know read_operation_for_key is not optimized at all... It's late night and I am too tired to think of a better solution! (:
 
-# path = "data/CAS_NOF"
-path = "data/LAST_RES/CAS_NOF_O->LO"
+# path = "data/CAS_NOF_1"
+path = "data/CAS_NOF"
+# path = "data/CAS_NOF_ex2"
+# path = "data/CAS_NOF_ex0_2"
+# path = "data/LAST_RES/CAS_NOF_O->LO"
 # path = "data/CAS_NOF_C"
 # path = "data/arrival_rate/HR/CAS_NOF"
 # path = "data/object_number/RW/CAS_NOF"
@@ -34,12 +40,26 @@ path
 keys = ["20", "21", "22", "23", "24", "25", "26", "27", "28", "29"] #["2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010"]#, "222222", "222223"]
 servers = ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]
 
-def read_operation_for_key(key, log_path, clients):
+def read_operation_for_key(key, log_path, clients=None):
     log_files_names = [os.path.join(log_path, f) for f in os.listdir(log_path) if os.path.isfile(os.path.join(log_path, f))]
     get_operations = []
     put_operations = []
 
+    if clients == None:
+        clients = []
+        for file in log_files_names:
+            log = open(file, 'r')
+            lines = log.readlines()
+            words = lines[0].split()
+            clients.append(words[0][:-1])
+            log.close()
+    else:
+        for c in clients:
+            get_operations.append([])
+            put_operations.append([])
+
     start_timepoint = float("inf")
+
 
     for c in clients:
         get_operations.append([])
@@ -97,7 +117,7 @@ def read_operation_for_key(key, log_path, clients):
     get_operations = get_operations_t
     put_operations = put_operations_t
 
-    return get_operations, put_operations
+    return get_operations, put_operations, clients
 
 def mean_server_response_time(server):
     log_path = os.path.join(path, server)
@@ -170,12 +190,12 @@ def standardize_clients(clients):
 
 def plot_latencies(key):
 
-    server = "s8"
+    server = "s1"
     log_path = os.path.join(path, server)
     log_path = os.path.join(log_path, "logs")
-    clients = [537395292, 537395252, 537395201, 537395278, 537395273] #537395211
+    clients = [524289, 524288, 524290, 524291] #537395211
     clients = standardize_clients(clients)
-    get_operations, put_operations = read_operation_for_key(key, log_path, clients)
+    get_operations, put_operations, clients = read_operation_for_key(key, log_path)
 
     plots = []
     plt.rcParams.update({'font.size': 38})
@@ -184,24 +204,24 @@ def plot_latencies(key):
     ax2 = fig.add_axes([0.09, 0.1, .88, .35])
     area = 500
 
-    ax.plot([0, 600], [400, 400], "-", color="r", linewidth=4.0, label="Latency SLO")
-    ax2.plot([0, 600], [400, 400], "-", color="r", linewidth=4.0, label="Latency SLO")
+    # ax.plot([0, 60], [400, 400], "-", color="r", linewidth=4.0, label="Latency SLO")
+    # ax2.plot([0, 60], [400, 400], "-", color="r", linewidth=4.0, label="Latency SLO")
 
     for client_index, client in enumerate(clients):
         x = np.array([(a[0]) / 1000 for a in get_operations[client_index]]) / 1000.
         y = [a[1] for a in get_operations[client_index]]
         ax.scatter(x, y, label="Client " + str(client_index + 1), s=.5 * area)
 
-    server = "s7"
+    server = "s2"
     log_path = os.path.join(path, server)
     log_path = os.path.join(log_path, "logs")
     clients = [470810667, 470810704, 470810674, 470810712, 470810640]
     clients = standardize_clients(clients)
-    get_operations, put_operations = read_operation_for_key(key, log_path, clients)
+    get_operations, put_operations, clients = read_operation_for_key(key, log_path)
 
     for client_index, client in enumerate(clients):
         # x = np.array([(a[0]) / 1000 for a in get_operations[client_index]]) / 1000.
-        x = (np.array([(a[0]) / 1000 for a in get_operations[client_index]]) + 300000) / 1000.
+        x = (np.array([(a[0]) / 1000 for a in get_operations[client_index]])) / 1000.
         y = [a[1] for a in get_operations[client_index]]
         ax2.scatter(x, y, label="Client " + str(client_index + 1 + 5), s=.5 * area)
 
@@ -212,8 +232,8 @@ def plot_latencies(key):
     ax2.grid(True)
     ax.set_ylim(0, 1050)  # outlier 2
     ax2.set_ylim(0, 1000)
-    ax2.set_xlim(0, 600)
-    ax.set_xlim(0, 600)
+    ax2.set_xlim(0, 60)
+    ax.set_xlim(0, 60)
     major_ticks = np.arange(0, 1001, 250)
     minor_ticks = np.arange(0, 601, 25)
     ax.set_yticks(major_ticks)
@@ -229,10 +249,10 @@ def plot_latencies(key):
     ax.spines['top'].set_visible(False)
     ax.tick_params(labeltop=False)
     ax.tick_params(labelbottom=False)
-    ax.set_title("GET Operations from Oregon users")
-    ax2.set_title("GET Operations from LA users")
-    ax.legend()
-    ax2.legend()
+    ax.set_title("GET Operations from Sydney users")
+    ax2.set_title("GET Operations from Singapore users")
+    # ax.legend()
+    # ax2.legend()
 
 
 
@@ -241,12 +261,12 @@ def plot_latencies(key):
 
 
     # put
-    server = "s8"
+    server = "s1"
     log_path = os.path.join(path, server)
     log_path = os.path.join(log_path, "logs")
     clients = [537395250, 537395220, 537395284, 537395277, 537395204]
     clients = standardize_clients(clients)
-    get_operations, put_operations = read_operation_for_key(key, log_path, clients)
+    get_operations, put_operations, clients = read_operation_for_key(key, log_path)
 
     plots = []
     plt.rcParams.update({'font.size': 38})
@@ -264,15 +284,15 @@ def plot_latencies(key):
         y = [a[1] for a in put_operations[client_index]]
         ax.scatter(x, y, label="Client " + str(client_index + 1 + 10), s=.5 * area)
 
-    server = "s7"
+    server = "s2"
     log_path = os.path.join(path, server)
     log_path = os.path.join(log_path, "logs")
     clients = [470810670, 470810723, 470810693, 470810633, 470810666]
     clients = standardize_clients(clients)
-    get_operations, put_operations = read_operation_for_key(key, log_path, clients)
+    get_operations, put_operations, clients = read_operation_for_key(key, log_path)
 
     for client_index, client in enumerate(clients):
-        x = (np.array([(a[0]) / 1000 for a in put_operations[client_index]]) + 300000) / 1000.
+        x = (np.array([(a[0]) / 1000 for a in put_operations[client_index]])) / 1000.
         y = [a[1] for a in put_operations[client_index]]
         ax2.scatter(x, y, label="Client " + str(client_index + 1 + 15), s=.5 * area)
 
@@ -303,8 +323,8 @@ def plot_latencies(key):
     ax.tick_params(labelbottom=False)
     ax.set_title("PUT Operations from Oregon users")
     ax2.set_title("PUT Operations from LA users")
-    ax.legend()
-    ax2.legend()
+    # ax.legend()
+    # ax2.legend()
 
 
 
@@ -627,7 +647,7 @@ if __name__ == "__main__":
     # main()
 
     # for i in range(10):
-    plot_latencies(keys[4])
+    plot_latencies("10")
 
     # plot_reconfiguration_latencies()
 

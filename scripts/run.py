@@ -13,7 +13,7 @@ import run_optimizer as optimizer
 from collections import OrderedDict
 import json
 
-server_type = "custom-1-1024"  # "n1-standard-1" # "f1-micro" #"e2-standard-2"
+server_type = "e2-standard-2" #"custom-1-1024"  # "n1-standard-1" # "f1-micro" #"e2-standard-2"
 client_type = "e2-standard-8"
 controller_type = "e2-standard-2"
 
@@ -548,7 +548,7 @@ class Controller(Machine):
         self.created = True
         return self.created
 
-    def add_access_to_clients(self, clients):
+    def add_access_to_clients(self, clients, servers=OrderedDict()):
         self.is_created()
         stdout, stderr = self.execute("ls ../access_added")
         if stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1:
@@ -556,13 +556,15 @@ class Controller(Machine):
             self.execute("ssh-keygen -q -t rsa -N '' <<< \"\"$'\n'\"y\" 2>&1 >/dev/null")
             stdout, stderr = self.execute("cat .ssh/id_rsa.pub")
             Machine.execute_on_all(clients, "echo '" + stdout + "' >>.ssh/authorized_keys")
+            if servers:
+                Machine.execute_on_all(servers, "echo '" + stdout + "' >>.ssh/authorized_keys")
             self.execute("sudo touch ../access_added")
         self.add_access_done = True
 
-    def run(self, clients):
+    def run(self, clients, servers):
         self.is_created()
         if not self.add_access_done:
-            self.add_access_to_clients(clients)
+            self.add_access_to_clients(clients, servers)
         self.config()
         self.execute("cd project/; make cleandb >/dev/null 2>&1")
         print("Controller is running on " + self.name)
@@ -616,7 +618,7 @@ def main(args):
 
     if not args.only_create:
         Machine.run_all(servers, clients)
-        controller.run(clients)
+        controller.run(clients, servers)
         print("Project execution finished.\nPlease wait while I am stopping all the machines and gathering the logs...")
         os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
         Machine.stop_all(machines)

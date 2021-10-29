@@ -14,7 +14,7 @@
 // for open/close pair
 #include "Util.h"
 #include "../inc/Util.h"
-#include "Data_Transfer.h"
+#include "../inc/Data_Transfer.h"
 #include <cstring>
 #include <arpa/inet.h>
 #include <inttypes.h>
@@ -38,107 +38,105 @@ bool DEBUG_METADATA_SERVER = true;
 bool DEBUG_UTIL = true;
 #endif
 
+void print_time() {
+  auto timenow = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+  std::cout << ctime(&timenow) << std::endl;
 
-void print_time(){
-    auto timenow = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    std::cout << ctime(&timenow) << std::endl;
-    
 }
 
-std::string convert_ip_to_string(uint32_t ip){
-    ip = htonl(ip);
-    unsigned char* p = (unsigned char*)(&ip);
-    std::string ret;
-    for(int i = 0; i < 4; i++){
-        ret += std::to_string(*(p++));
-        if(i != 3){
-            ret += '.';
-        }
+std::string convert_ip_to_string(uint32_t ip) {
+  ip = htonl(ip);
+  unsigned char *p = (unsigned char *) (&ip);
+  std::string ret;
+  for (int i = 0; i < 4; i++) {
+    ret += std::to_string(*(p++));
+    if (i != 3) {
+      ret += '.';
     }
-    return ret;
+  }
+  return ret;
 }
 
 // Used for creating server sockets
 // Returns the socket FD after creation, binding and listening
 // nullptr in IP implies the use of local IP
-int socket_setup(const std::string& port, const std::string* IP){
-    
-    struct addrinfo hint, * res, * ptr;
-    int status = 0, enable = 1;
-    int socketfd;
-    memset(&hint, 0, sizeof(hint));
-    hint.ai_family = AF_INET;
-    hint.ai_socktype = SOCK_STREAM;
-    
-    if(IP == nullptr){
-        hint.ai_flags = AI_PASSIVE;
-        status = getaddrinfo(NULL, port.c_str(), &hint, &res);
+int socket_setup(const std::string &port, const std::string *IP) {
+
+  struct addrinfo hint, *res, *ptr;
+  int status = 0, enable = 1;
+  int socketfd;
+  memset(&hint, 0, sizeof(hint));
+  hint.ai_family = AF_INET;
+  hint.ai_socktype = SOCK_STREAM;
+
+  if (IP == nullptr) {
+    hint.ai_flags = AI_PASSIVE;
+    status = getaddrinfo(NULL, port.c_str(), &hint, &res);
+  } else {
+    status = getaddrinfo((*IP).c_str(), port.c_str(), &hint, &res);
+  }
+
+  if (status != 0) {
+    fprintf(stdout, "getaddrinfo: %s\n", gai_strerror(status));
+    assert(0);
+  }
+
+  // Loop through all the options, unless one succeeds
+  for (ptr = res; res != NULL; ptr = ptr->ai_next) {
+
+    if ((socketfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol)) == -1) {
+      perror("server -> socket");
+      continue;
     }
-    else{
-        status = getaddrinfo((*IP).c_str(), port.c_str(), &hint, &res);
+
+    if (setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1) {
+      perror("server -> set socket options");
+      continue;
     }
-    
-    if(status != 0){
-        fprintf(stdout, "getaddrinfo: %s\n", gai_strerror(status));
-        assert(0);
+
+    // enable = 0;
+    // uint size_enable = sizeof(enable);
+    // getsockopt(socketfd, SOL_SOCKET, SO_RCVBUF, &enable, &size_enable);
+    // printf(" Size of the receive buffer is %u\n", enable);
+    //
+    //
+    // enable = 212992;
+    // if( setsockopt(socketfd, SOL_SOCKET, SO_RCVBUF, &enable, sizeof(enable)) == -1){
+    // 	perror("server -> set socket options");
+    // 	continue;
+    // }
+
+
+    // struct linger sock_linger;
+    // sock_linger.l_onoff = 1;
+    // sock_linger.l_linger = MAX_LINGER_BEFORE_SOCK_CLOSE;
+    // if( setsockopt(socketfd, SOL_SOCKET, SO_LINGER, &sock_linger, sizeof(sock_linger)) == -1){
+    //     perror("server -> set socket options");
+    //     continue;
+    // }
+
+    if (bind(socketfd, ptr->ai_addr, ptr->ai_addrlen) == -1) {
+      close(socketfd);
+      perror("server -> bind");
+      continue;
     }
-    
-    // Loop through all the options, unless one succeeds
-    for(ptr = res; res != NULL; ptr = ptr->ai_next){
-        
-        if((socketfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol)) == -1){
-            perror("server -> socket");
-            continue;
-        }
-        
-        if(setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1){
-            perror("server -> set socket options");
-            continue;
-        }
-        
-        // enable = 0;
-        // uint size_enable = sizeof(enable);
-        // getsockopt(socketfd, SOL_SOCKET, SO_RCVBUF, &enable, &size_enable);
-        // printf(" Size of the receive buffer is %u\n", enable);
-        //
-        //
-        // enable = 212992;
-        // if( setsockopt(socketfd, SOL_SOCKET, SO_RCVBUF, &enable, sizeof(enable)) == -1){
-        // 	perror("server -> set socket options");
-        // 	continue;
-        // }
-        
-        
-        // struct linger sock_linger;
-        // sock_linger.l_onoff = 1;
-        // sock_linger.l_linger = MAX_LINGER_BEFORE_SOCK_CLOSE;
-        // if( setsockopt(socketfd, SOL_SOCKET, SO_LINGER, &sock_linger, sizeof(sock_linger)) == -1){
-        //     perror("server -> set socket options");
-        //     continue;
-        // }
-        
-        if(bind(socketfd, ptr->ai_addr, ptr->ai_addrlen) == -1){
-            close(socketfd);
-            perror("server -> bind");
-            continue;
-        }
-        
-        break;
-    }
-    
-    freeaddrinfo(res);
-    
-    if(ptr == NULL){
-        fprintf(stderr, "Socket failed to bind\n");
-        assert(0);
-    }
-    
-    if(listen(socketfd, BACKLOG) == -1){
-        perror("server -> listen");
-        assert(0);
-    }
-    
-    return socketfd;
+
+    break;
+  }
+
+  freeaddrinfo(res);
+
+  if (ptr == NULL) {
+    fprintf(stderr, "Socket failed to bind\n");
+    assert(0);
+  }
+
+  if (listen(socketfd, BACKLOG) == -1) {
+    perror("server -> listen");
+    assert(0);
+  }
+
+  return socketfd;
 }
 
 //Returns 0 on success
@@ -192,40 +190,83 @@ int socket_setup(const std::string& port, const std::string* IP){
 //    return S_OK;
 //}
 
-int get_random_number_uniform(int min, int max, int seed){
-    static bool seed_set = false;
-    static std::default_random_engine generator;
-    if(!seed_set){
-        generator = std::default_random_engine(seed);
-        seed_set = true;
-    }
-
-    std::uniform_int_distribution<int> distribution(min, max);
-
-    return distribution(generator);
+OperationLogger::OperationLogger(uint32_t id) : log_filename(
+//    std::string("logs/logfile_") + std::to_string(getpid()) + ".txt"),
+                                                std::string("logs/logfile_") + std::to_string(id) + ".txt"),
+                                                file(nullptr), client_id(id) {
+  file = fopen(log_filename.c_str(), "w");
+  assert(file != nullptr);
+  number_of_ops_to_ignore = NUMBER_OF_OPS_TO_IGNORE;
 }
 
-double get_random_real_number_uniform(double min, double max, int seed){
-    static bool seed_set = false;
-    static std::default_random_engine generator;
-    if(!seed_set){
-        generator = std::default_random_engine(seed);
-        seed_set = true;
-    }
-
-    std::uniform_real_distribution<double> distribution(min, max);
-
-    return distribution(generator);
+OperationLogger::~OperationLogger() {
+  fclose(file);
 }
 
-std::string get_random_string(uint32_t size){
-    std::string value;
-    // First figure should not be zero
-    value += get_random_number_uniform(0, 8) + '1';
-    while(value.size() < size){
-        value += std::to_string(get_random_number_uniform(0, 9));
+void OperationLogger::operator()(Op op, const std::string &key, const std::string &value, uint64_t call_time,
+                                 uint64_t return_time) {
+  assert(file != 0);
+  if (number_of_ops_to_ignore > 0) {
+    number_of_ops_to_ignore--;
+    if (number_of_ops_to_ignore <= 0) {
+      DPRINTF(DEBUG_CONTROLLER, "Ignoring ops finished\n");
     }
-    return value;
+    return;
+  }
+
+#ifdef DO_NOT_WRITE_VALUE_IN_LOGS
+  fprintf(file, "%u, %s, %s, %s, %lu, %lu\n", client_id, op == Op::get ? "get" : "put", key.c_str(),
+          "0", call_time, return_time);
+#else
+  fprintf(file, "%u, %s, %s, %s, %lu, %lu\n", client_id, op == Op::get ? "get" : "put", key.c_str(),
+            value.c_str(), call_time, return_time);
+#endif
+  fflush(stdout);
+}
+
+uint32_t get_datacenter_index(uint32_t datacenter_id, const std::vector<DC *> &datacenters) {
+  for (uint32_t i = 0; i < datacenters.size(); i++) {
+    if (datacenters[i]->id == datacenter_id) {
+      return i;
+    }
+  }
+  DPRINTF(true, "No datacenter with id %u found\n", datacenter_id);
+  assert(false);
+  return -1;
+}
+
+int get_random_number_uniform(int min, int max, int seed) {
+  static bool seed_set = false;
+  static std::default_random_engine generator;
+  if (!seed_set) {
+    generator = std::default_random_engine(seed);
+    seed_set = true;
+  }
+  std::uniform_int_distribution<int> distribution(min, max);
+  return distribution(generator);
+}
+
+double get_random_real_number_uniform(double min, double max, int seed) {
+  static bool seed_set = false;
+  static std::default_random_engine generator;
+  if (!seed_set) {
+    generator = std::default_random_engine(seed);
+    seed_set = true;
+  }
+
+  std::uniform_real_distribution<double> distribution(min, max);
+
+  return distribution(generator);
+}
+
+std::string get_random_string(uint32_t size) {
+  std::string value;
+  // First figure should not be zero
+  value += get_random_number_uniform(0, 8) + '1';
+  while (value.size() < size) {
+    value += std::to_string(get_random_number_uniform(0, 9));
+  }
+  return value;
 }
 
 //std::map<std::string, int> Connect::socks;
@@ -237,40 +278,40 @@ std::vector<std::pair<std::string, std::unique_ptr<std::mutex> > > Connect::sock
 std::vector<std::pair<std::string, bool> > Connect::is_sock_lock(1024);
 uint32_t Connect::number_of_socks = 0;
 
-template <typename T, typename U>
-int vecpair_find(const std::vector<std::pair<T, U> >& vec, const T& search_val, uint32_t number_of_socks = 1024){
-    int ret = -1;
-    for(uint i = 0; i < number_of_socks; i++){
-        if(vec[i].first == search_val){
-            ret = i;
-        }
+template<typename T, typename U>
+int vecpair_find(const std::vector<std::pair<T, U> > &vec, const T &search_val, uint32_t number_of_socks = 1024) {
+  int ret = -1;
+  for (uint i = 0; i < number_of_socks; i++) {
+    if (vec[i].first == search_val) {
+      ret = i;
     }
-    return ret;
+  }
+  return ret;
 }
 
-Connect::Connect(const std::string& ip, const uint16_t port) : ip(ip), port(port), sock(0), connected(false){
+Connect::Connect(const std::string &ip, const uint16_t port) : ip(ip), port(port), sock(0), connected(false) {
 
-    std::string ip_port = ip + "!" + std::to_string(port);
+  std::string ip_port = ip + "!" + std::to_string(port);
 //    DPRINTF(DEBUG_UTIL, "tloed: IP: %s Port: %d\n", ip.c_str(), port);
-    init_lock.lock();
+  init_lock.lock();
 //    DPRINTF(DEBUG_UTIL, "loied: IP: %s Port: %d\n", ip.c_str(), port);
-    idx = vecpair_find(this->socks_lock, ip_port, number_of_socks);
-    if(idx == -1){
-        try {
-            this->socks_lock[number_of_socks] = std::make_pair(ip_port, std::unique_ptr<std::mutex>(new std::mutex));
-            this->socks[number_of_socks] = std::make_pair(ip_port, -1);
-            this->is_sock_lock[number_of_socks] = std::make_pair(ip_port, false);
-        }
-        catch (std::bad_alloc &ba) {
-            std::string err_msg = "bad_alloc caught: ";
-            err_msg += ba.what();
-            print_error(err_msg);
-        }
-        idx = number_of_socks;
-        number_of_socks++;
-//        DPRINTF(DEBUG_UTIL, "tloed: INIT: pointer is %p\n", this->socks_lock[idx].second.get());
+  idx = vecpair_find(this->socks_lock, ip_port, number_of_socks);
+  if (idx == -1) {
+    try {
+      this->socks_lock[number_of_socks] = std::make_pair(ip_port, std::unique_ptr<std::mutex>(new std::mutex));
+      this->socks[number_of_socks] = std::make_pair(ip_port, -1);
+      this->is_sock_lock[number_of_socks] = std::make_pair(ip_port, false);
     }
-    init_lock.unlock();
+    catch (std::bad_alloc &ba) {
+      std::string err_msg = "bad_alloc caught: ";
+      err_msg += ba.what();
+      print_error(err_msg);
+    }
+    idx = number_of_socks;
+    number_of_socks++;
+//        DPRINTF(DEBUG_UTIL, "tloed: INIT: pointer is %p\n", this->socks_lock[idx].second.get());
+  }
+  init_lock.unlock();
 
 
 
@@ -293,97 +334,109 @@ Connect::Connect(const std::string& ip, const uint16_t port) : ip(ip), port(port
 //    }
 //    init_lock.unlock();
 //    DPRINTF(DEBUG_UTIL, "tloed: pointer is %p\n", this->socks_lock[idx].second.get());
-    this->socks_lock[idx].second.get()->lock();
+  this->socks_lock[idx].second.get()->lock();
 //    DPRINTF(DEBUG_UTIL, "loed: IP: %s Port: %d\n", ip.c_str(), port);
-    is_sock_lock[idx].second = true;
+  is_sock_lock[idx].second = true;
 
 //    DPRINTF(DEBUG_UTIL, "afloed: IP_Port is: %s , and the value of this->is_sock_lock[ip_port] is %x\n", ip_port.c_str(), this->is_sock_lock[ip_port]);
 
-    if(this->socks[idx].second == -1){
-        bool error = false;
-        struct sockaddr_in serv_addr;
-        if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-            print_error("Socket creation error");
-            error = true;
-        }
+  if (this->socks[idx].second == -1) {
+    bool error = false;
+    struct sockaddr_in serv_addr;
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+      print_error("Socket creation error");
+      error = true;
+    }
 
 #ifdef USE_TCP_NODELAY
-        if(!error){
-            int yes = 1;
-            int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*) &yes, sizeof(int));
-            if(result < 0){
-                print_error("setsockopt TCP_NODELAY error");
-                error = true;
-            }
-        }
+    if (!error) {
+      int yes = 1;
+      int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *) &yes, sizeof(int));
+      if (result < 0) {
+        print_error("setsockopt TCP_NODELAY error");
+        error = true;
+      }
+    }
 #endif
 
-        if(!error){
-            int yes = 1;
-            int result = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char*) &yes, sizeof(int));
-            if(result < 0){
-                print_error("setsockopt SO_KEEPALIVE error");
-                error = true;
-            }
-        }
-    
-        if(!error){
-            serv_addr.sin_family = AF_INET;
-            serv_addr.sin_port = htons(this->port);
-            std::string ip_str = ip;
-        
-            if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
-                print_error("Invalid address/ Address not supported");
-                error = true;
-            }
-        }
-    
-        if(!error){
-            if(connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
-                print_error("Connection Failed");
-                error = true;
-            }
-        }
-    
-        if(!error){
-            this->socks[idx].second = this->sock;
-            connected = true;
-        }
+    if (!error) {
+      int yes = 1;
+      int result = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char *) &yes, sizeof(int));
+      if (result < 0) {
+        print_error("setsockopt SO_KEEPALIVE error");
+        error = true;
+      }
     }
-    else{
-        this->sock = this->socks[idx].second;
-        this->connected = true;
+
+    if (!error) {
+      serv_addr.sin_family = AF_INET;
+      serv_addr.sin_port = htons(this->port);
+      std::string ip_str = ip;
+
+      if (inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0) {
+        print_error("Invalid address/ Address not supported");
+        error = true;
+      }
     }
+
+    if (!error) {
+      if (connect(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+        print_error("Connection Failed");
+        error = true;
+      }
+    }
+
+    if (!error) {
+      this->socks[idx].second = this->sock;
+      connected = true;
+
+      // Send dummy data to warm up the socket.
+      DPRINTF(true, "Warming up connection\n");
+      std::string temp = std::string(WARM_UP_MNEMONIC) + get_random_string();
+      DataTransfer::sendMsg(this->sock, temp);
+      std::string recvd;
+      if (DataTransfer::recvMsg(this->sock, recvd) == 1) {
+        if (!is_warmup_message(recvd)) {
+          assert(false);
+        }
+      } else {
+        assert(false);
+      }
+    }
+  } else {
+    this->sock = this->socks[idx].second;
+    this->connected = true;
+  }
 }
 
-Connect::Connect(const std::string& ip, const std::string& port) : ip(ip), sock(0), connected(false){
+Connect::Connect(const std::string &ip, const std::string &port) : ip(ip), sock(0), connected(false) {
 
-    std::string ip_port = ip + "!" + port;
+  std::string ip_port = ip + "!" + port;
 //    DPRINTF(DEBUG_UTIL, "tloed: IP: %s Port: %s\n", ip.c_str(), port.c_str());
-    init_lock.lock();
+  init_lock.lock();
 //    DPRINTF(DEBUG_UTIL, "loied: IP: %s Port: %s\n", ip.c_str(), port.c_str());
-    idx = vecpair_find(this->socks_lock, ip_port, number_of_socks);
-    if(idx == -1){
-        try {
-            this->socks_lock[number_of_socks] = std::make_pair(ip_port, std::unique_ptr<std::mutex>(new std::mutex));
-            this->socks[number_of_socks] = std::make_pair(ip_port, -1);
-            this->is_sock_lock[number_of_socks] = std::make_pair(ip_port, false);
-        }
-        catch (std::bad_alloc &ba) {
-            std::string err_msg = "bad_alloc caught: ";
-            err_msg += ba.what();
-            print_error(err_msg);
-        }
-        idx = number_of_socks;
-        number_of_socks++;
-//        DPRINTF(DEBUG_UTIL, "tloed: INIT: pointer is %p\n", this->socks_lock[idx].second.get());
+  idx = vecpair_find(this->socks_lock, ip_port, number_of_socks);
+  if (idx == -1) {
+    try {
+      this->socks_lock[number_of_socks] = std::make_pair(ip_port, std::unique_ptr<std::mutex>(new std::mutex));
+      this->socks[number_of_socks] = std::make_pair(ip_port, -1);
+      this->is_sock_lock[number_of_socks] = std::make_pair(ip_port, false);
     }
-    init_lock.unlock();
+    catch (std::bad_alloc &ba) {
+      std::string err_msg = "bad_alloc caught: ";
+      err_msg += ba.what();
+      print_error(err_msg);
+    }
+    idx = number_of_socks;
+    number_of_socks++;
+//        DPRINTF(DEBUG_UTIL, "tloed: INIT: pointer is %p\n", this->socks_lock[idx].second.get());
+  }
+  init_lock.unlock();
 
 //    DPRINTF(DEBUG_UTIL, "tloed: pointer is %p\n", this->socks_lock[idx].second.get());
-    this->socks_lock[idx].second.get()->lock();
+  this->socks_lock[idx].second.get()->lock();
 //    DPRINTF(DEBUG_UTIL, "loed: IP: %s Port: %s\n", ip.c_str(), port.c_str());
-    is_sock_lock[idx].second = true;
+  is_sock_lock[idx].second = true;
 
 
 //    std::string ip_port = ip + "!" + port;
@@ -414,176 +467,187 @@ Connect::Connect(const std::string& ip, const std::string& port) : ip(ip), sock(
 //    DPRINTF(DEBUG_UTIL, "loed2: IP: %s Port: %s\n", ip.c_str(), port.c_str());
 //    is_sock_lock[ip_port] = true;
 
-    if(this->socks[idx].second == -1){
-        // Convert string to uint16_t
-        connected = false;
-        bool error = false;
-        char* end;
-        errno = 0;
-        intmax_t val = strtoimax(port.c_str(), &end, 10);
-        if(errno == ERANGE || val < 0 || val > UINT16_MAX || end == port.c_str() || *end != '\0'){
-            error = true;
-        }
+  if (this->socks[idx].second == -1) {
+    // Convert string to uint16_t
+    connected = false;
+    bool error = false;
+    char *end;
+    errno = 0;
+    intmax_t val = strtoimax(port.c_str(), &end, 10);
+    if (errno == ERANGE || val < 0 || val > UINT16_MAX || end == port.c_str() || *end != '\0') {
+      error = true;
+    }
 //        DPRINTF(DEBUG_UTIL, "loed: Port: %d\n", (uint16_t)val);
-    
-        struct sockaddr_in serv_addr;
-    
-        if(!error){
-            this->port = (uint16_t)val;
-            if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-                print_error("Socket creation error");
-                error = true;
-            }
-        }
+
+    struct sockaddr_in serv_addr;
+
+    if (!error) {
+      this->port = (uint16_t) val;
+      if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        print_error("Socket creation error");
+        error = true;
+      }
+    }
 
 #ifdef USE_TCP_NODELAY
-        if(!error){
-            int yes = 1;
-            int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*)&yes, sizeof(int));
-            if(result < 0){
-                print_error("setsockopt error");
-                error = true;
-            }
-        }
+    if (!error) {
+      int yes = 1;
+      int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *) &yes, sizeof(int));
+      if (result < 0) {
+        print_error("setsockopt error");
+        error = true;
+      }
+    }
 #endif
 
-        if(!error){
-            int yes = 1;
-            int result = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char*) &yes, sizeof(int));
-            if(result < 0){
-                print_error("setsockopt SO_KEEPALIVE error");
-                error = true;
-            }
-        }
-    
-        if(!error){
-            serv_addr.sin_family = AF_INET;
-            serv_addr.sin_port = htons(this->port);
-            std::string ip_str = ip;
-        
-            if(inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0){
-                print_error("Invalid address/ Address not supported");
-                error = true;
-            }
-        }
-    
-        if(!error){
-            if(connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
-                print_error("Connection Failed");
-                error = true;
-            }
-        }
-    
-        if(!error){
-            this->socks[idx].second = this->sock;
-            connected = true;
-        }
+    if (!error) {
+      int yes = 1;
+      int result = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char *) &yes, sizeof(int));
+      if (result < 0) {
+        print_error("setsockopt SO_KEEPALIVE error");
+        error = true;
+      }
     }
-    else{
-        char* end;
-        intmax_t val = strtoimax(port.c_str(), &end, 10);
-        this->port = (uint16_t)val;
-        this->sock = this->socks[idx].second;
-        this->connected = true;
+
+    if (!error) {
+      serv_addr.sin_family = AF_INET;
+      serv_addr.sin_port = htons(this->port);
+      std::string ip_str = ip;
+
+      if (inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0) {
+        print_error("Invalid address/ Address not supported");
+        error = true;
+      }
     }
+
+    if (!error) {
+      if (connect(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+        print_error("Connection Failed");
+        error = true;
+      }
+    }
+
+    if (!error) {
+      this->socks[idx].second = this->sock;
+      connected = true;
+
+      // Send dummy data to warm up the socket.
+      DPRINTF(true, "Warming up connection\n");
+      std::string temp = std::string(WARM_UP_MNEMONIC) + get_random_string();
+      DataTransfer::sendMsg(this->sock, temp);
+      std::string recvd;
+      if (DataTransfer::recvMsg(this->sock, recvd) == 1) {
+        if (!is_warmup_message(recvd)) {
+          assert(false);
+        }
+      } else {
+        assert(false);
+      }
+    }
+  } else {
+    char *end;
+    intmax_t val = strtoimax(port.c_str(), &end, 10);
+    this->port = (uint16_t) val;
+    this->sock = this->socks[idx].second;
+    this->connected = true;
+  }
 }
 
-Connect::~Connect(){
+Connect::~Connect() {
 //    ::close(sock);
 //    DPRINTF(DEBUG_UTIL, "loed: destructor called. IP: %s Port: %d\n", ip.c_str(), port);
-    this->unlock();
+  this->unlock();
 }
 
-void Connect::unlock(){
-    std::string ip_port = this->ip + "!" + std::to_string(port);
+void Connect::unlock() {
+  std::string ip_port = this->ip + "!" + std::to_string(port);
 //    DPRINTF(DEBUG_UTIL, "unloed: IP_Port is: %s , and the value of this->is_sock_lock[ip_port] is %x\n", ip_port.c_str(), this->is_sock_lock[idx].second);
-    if(this->is_sock_lock[idx].second) {
-        this->is_sock_lock[idx].second = false;
+  if (this->is_sock_lock[idx].second) {
+    this->is_sock_lock[idx].second = false;
 //        DPRINTF(DEBUG_UTIL, "unloed: IP: %s Port: %d\n", ip.c_str(), port);
-        this->socks_lock[idx].second.get()->unlock();
-    }
+    this->socks_lock[idx].second.get()->unlock();
+  }
 }
 
-std::string Connect::get_ip(){
-    return ip;
+std::string Connect::get_ip() {
+  return ip;
 }
 
-uint16_t Connect::get_port(){
-    return port;
+uint16_t Connect::get_port() {
+  return port;
 }
 
-bool Connect::is_connected(){
-    return connected;
+bool Connect::is_connected() {
+  return connected;
 }
 
-int Connect::operator*(){
-    if(is_connected()){
-        return this->sock;
-    }
-    else{
-        print_error("Trying to get the fd of a socket which is not connected.");
-        return -1;
-    }
+int Connect::operator*() {
+  if (is_connected()) {
+    return this->sock;
+  } else {
+    print_error("Trying to get the fd of a socket which is not connected.");
+    return -1;
+  }
 }
 
 //void Connect::close(){
 //    ::close(sock);
 //}
 
-void Connect::close_all(){
-    for(auto it = socks.begin(); it != socks.end(); it++){
-        ::close(it->second);
+void Connect::close_all() {
+  for (auto it = socks.begin(); it != socks.end(); it++) {
+    ::close(it->second);
+  }
+}
+
+void Connect::print_error(std::string const &m) {
+  std::stringstream msg; // Make it thread safe
+  msg << "ip=" << this->ip << ", port=" << this->port << ": ERROR SOCKET CONNECTION, ";
+  msg << m << std::endl;
+  std::cout << msg.str();
+}
+
+Server::Server() {
+  this->id = -1;
+  this->port = 0;
+  this->datacenter = nullptr;
+}
+
+Server::Server(const Server &orig) {
+  this->id = orig.id;
+  this->ip = orig.ip;
+  this->port = orig.port;
+  this->datacenter = orig.datacenter;
+}
+
+Datacenter::Datacenter() {
+  this->id = -1;
+  this->metadata_server_port = 0;
+}
+
+Datacenter::Datacenter(const Datacenter &orig) {
+  this->id = orig.id;
+  this->metadata_server_ip = orig.metadata_server_ip;
+  this->metadata_server_port = orig.metadata_server_port;
+  for (auto s: orig.servers) {
+    Server *s_temp = new Server(*s);
+    s_temp->datacenter = this;
+    this->servers.push_back(s_temp);
+  }
+}
+
+Datacenter::~Datacenter() {
+  for (auto &it: servers) {
+    if (it != nullptr) {
+      delete it;
+      it = nullptr;
     }
+  }
+  this->servers.clear();
 }
 
-void Connect::print_error(std::string const& m){
-    std::stringstream msg; // Make it thread safe
-    msg << "ip=" << this->ip << ", port=" << this->port << ": ERROR SOCKET CONNECTION, ";
-    msg << m << std::endl;
-    std::cout << msg.str();
-}
-
-Server::Server(){
-    this->id = -1;
-    this->port = 0;
-    this->datacenter = nullptr;
-}
-
-Server::Server(const Server& orig){
-    this->id = orig.id;
-    this->ip = orig.ip;
-    this->port = orig.port;
-    this->datacenter = orig.datacenter;
-}
-
-Datacenter::Datacenter(){
-    this->id = -1;
-    this->metadata_server_port = 0;
-}
-
-Datacenter::Datacenter(const Datacenter& orig){
-    this->id = orig.id;
-    this->metadata_server_ip = orig.metadata_server_ip;
-    this->metadata_server_port = orig.metadata_server_port;
-    for(auto s: orig.servers){
-        Server* s_temp = new Server(*s);
-        s_temp->datacenter = this;
-        this->servers.push_back(s_temp);
-    }
-}
-
-Datacenter::~Datacenter(){
-    for(auto& it: servers) {
-        if (it != nullptr){
-            delete it;
-            it = nullptr;
-        }
-    }
-    this->servers.clear();
-}
-
-Placement::Placement(){
-    m = 0;
+Placement::Placement() {
+  m = 0;
 }
 
 //WorkloadConfig::~WorkloadConfig(){
@@ -641,14 +705,14 @@ Placement::Placement(){
 //    this->grp_config.clear();
 //}
 
-Properties::~Properties(){
-    for(auto& it: datacenters) {
-        if(it != nullptr){
-            delete it;
-            it = nullptr;
-        }
+Properties::~Properties() {
+  for (auto &it: datacenters) {
+    if (it != nullptr) {
+      delete it;
+      it = nullptr;
     }
-    this->datacenters.clear();
+  }
+  this->datacenters.clear();
 }
 
 //Reconfig_key_info::Reconfig_key_info(){
@@ -839,90 +903,91 @@ Properties::~Properties(){
 //    }
 //}
 
-std::string construct_key(const std::string& key, const std::string& protocol, const uint32_t conf_id,
-        const std::string& timestamp){
-    std::string ret;
-    ret += key;
-    ret += "!";
-    ret += protocol;
-    ret += "!";
-    ret += std::to_string(conf_id);
-    ret += "!";
-    ret += timestamp;
-    return ret;
+std::string construct_key(const std::string &key, const std::string &protocol, const uint32_t conf_id,
+                          const std::string &timestamp) {
+  std::string ret;
+  ret += key;
+  ret += "!";
+  ret += protocol;
+  ret += "!";
+  ret += std::to_string(conf_id);
+  ret += "!";
+  ret += timestamp;
+  return ret;
 }
 
-std::string construct_key(const std::string& key, const std::string& protocol, const uint32_t conf_id){
-    std::string ret;
-    ret += key;
-    ret += "!";
-    ret += protocol;
-    ret += "!";
-    ret += std::to_string(conf_id);
-    return ret;
+std::string construct_key(const std::string &key, const std::string &protocol, const uint32_t conf_id) {
+  std::string ret;
+  ret += key;
+  ret += "!";
+  ret += protocol;
+  ret += "!";
+  ret += std::to_string(conf_id);
+  return ret;
 }
 
 #ifndef LIBRASURE_ONLY
 
-int ask_metadata(const std::string& metadata_server_ip, const std::string& metadata_server_port,
-        const std::string& key, const uint32_t conf_id, uint32_t& requested_conf_id, uint32_t& new_conf_id,
-        std::string& timestamp, Placement& p, uint32_t retry_attempts, uint32_t metadata_server_timeout){
-    DPRINTF(DEBUG_CLIENT_NODE, "started\n");
-    int ret = 0;
-    std::string status, msg;
+int ask_metadata(const std::string &metadata_server_ip, const std::string &metadata_server_port,
+                 const std::string &key, const uint32_t conf_id, uint32_t &requested_conf_id, uint32_t &new_conf_id,
+                 std::string &timestamp, Placement &p, uint32_t retry_attempts, uint32_t metadata_server_timeout) {
+  DPRINTF(DEBUG_CLIENT_NODE, "started\n");
+  int ret = 0;
+  std::string status, msg;
 
-    DPRINTF(DEBUG_CLIENT_NODE, "metadata_server_ip port is %s %s\n", metadata_server_ip.c_str(), metadata_server_port.c_str());
-    Connect c(metadata_server_ip, metadata_server_port);
-    if(!c.is_connected()){
-        DPRINTF(DEBUG_CLIENT_NODE, "connection error\n");
-        return -1;
-    }
+  DPRINTF(DEBUG_CLIENT_NODE,
+          "metadata_server_ip port is %s %s\n",
+          metadata_server_ip.c_str(),
+          metadata_server_port.c_str());
+  Connect c(metadata_server_ip, metadata_server_port);
+  if (!c.is_connected()) {
+    DPRINTF(DEBUG_CLIENT_NODE, "connection error\n");
+    return -1;
+  }
 
-    std::string recvd;
-    uint32_t RAs = retry_attempts;
-    std::chrono::milliseconds span(metadata_server_timeout);
-    bool flag = false;
-    while(RAs--){
-        std::promise<std::string> data_set;
-        std::future<std::string> data_set_fut = data_set.get_future();
-        DataTransfer::sendMsg(*c, DataTransfer::serializeMDS("ask", "", key, conf_id));
-        std::future<int> fut = std::async(std::launch::async, DataTransfer::recvMsg_async, *c, std::move(data_set));
+  std::string recvd;
+  uint32_t RAs = retry_attempts;
+  std::chrono::milliseconds span(metadata_server_timeout);
+  bool flag = false;
+  while (RAs--) {
+    std::promise<std::string> data_set;
+    std::future<std::string> data_set_fut = data_set.get_future();
+    DataTransfer::sendMsg(*c, DataTransfer::serializeMDS("ask", "", key, conf_id));
+    std::future<int> fut = std::async(std::launch::async, DataTransfer::recvMsg_async, *c, std::move(data_set));
 
-        if(data_set_fut.valid()){
+    if (data_set_fut.valid()) {
 //            DPRINTF(DEBUG_CLIENT_NODE, "data_set_fut is valid\n");
-            std::future_status aaa = data_set_fut.wait_for(span);
-            if(aaa == std::future_status::ready){
-                int ret = fut.get();
+      std::future_status aaa = data_set_fut.wait_for(span);
+      if (aaa == std::future_status::ready) {
+        int ret = fut.get();
 //                DPRINTF(DEBUG_CLIENT_NODE, "Future ret value is %d\n", ret);
-                if(ret == 1){
-                    flag = true;
-                    recvd = data_set_fut.get();
-                    break;
-                }
-            }
+        if (ret == 1) {
+          flag = true;
+          recvd = data_set_fut.get();
+          break;
+        }
+      }
 //            DPRINTF(DEBUG_CLIENT_NODE, "aaaa is %d and to is %d\n", aaa, std::future_status::timeout);
-        }
-        else{
-            DPRINTF(DEBUG_CLIENT_NODE, "data_set_fut is not valid\n");
-        }
+    } else {
+      DPRINTF(DEBUG_CLIENT_NODE, "data_set_fut is not valid\n");
     }
+  }
 
-    if(flag){
-        status.clear();
-        msg.clear();
-        std::string rec_key;
+  if (flag) {
+    status.clear();
+    msg.clear();
+    std::string rec_key;
 
-        p = DataTransfer::deserializeMDS(recvd, status, msg, rec_key, requested_conf_id, new_conf_id, timestamp);
+    p = DataTransfer::deserializeMDS(recvd, status, msg, rec_key, requested_conf_id, new_conf_id, timestamp);
 
-        assert(key == rec_key);
-        assert(status == "OK" || status == "WARN");
-    }
-    else{
-        ret = -2;
-        DPRINTF(DEBUG_CLIENT_NODE, "Metadata server timeout for request: %s\n", msg.c_str());
-    }
-    
-    return ret;
+    assert(key == rec_key);
+    assert(status == "OK" || status == "WARN");
+  } else {
+    ret = -2;
+    DPRINTF(DEBUG_CLIENT_NODE, "Metadata server timeout for request: %s\n", msg.c_str());
+  }
+
+  return ret;
 }
 
 #endif
@@ -938,46 +1003,54 @@ int ask_metadata(const std::string& metadata_server_ip, const std::string& metad
 //
 //template void set_intersection(const Placement& p, std::unordered_set <unsigned int>& res);
 
-Logger::Logger(const std::string& file_name, const std::string& function_name, const int& line_number, bool logging_on) :
-                        file_name(file_name), function_name(function_name), logging_on(logging_on){
-    output << "Time " << std::setw(10) << time(nullptr) << " - Thread: " << pthread_self() << " : [" << this->file_name << "]"
-            << "[" << this->function_name << "]:\n";
+Logger::Logger(const std::string &file_name, const std::string &function_name, const int &line_number, bool logging_on)
+    :
+    file_name(file_name), function_name(function_name), logging_on(logging_on) {
+  output << "Time " << std::setw(10) << time(nullptr) << " - Thread: " << pthread_self() << " : [" << this->file_name
+         << "]"
+         << "[" << this->function_name << "]:\n";
 
-    timer = time_point_cast<microseconds>(steady_clock::now());
-    last_lapse = timer;
+  timer = time_point_cast<microseconds>(steady_clock::now());
+  last_lapse = timer;
 
-    output << "    " << std::setw(10) << 0 << ":" << std::setfill('0') << std::setw(4) << line_number << ": started\n" << std::setfill(' ');
+  output << "    " << std::setw(10) << 0 << ":" << std::setfill('0') << std::setw(4) << line_number << ": started\n"
+         << std::setfill(' ');
 }
 
-Logger::Logger(const std::string& file_name, const std::string& function_name, const int& line_number,
-               const std::string& msg, bool logging_on) : file_name(file_name), function_name(function_name), logging_on(logging_on){
-    output << "Time " << std::setw(10) << time(nullptr) << " - Thread: " << pthread_self() << " : [" << this->file_name << "]"
-           << "[" << this->function_name << "]:\n";
+Logger::Logger(const std::string &file_name, const std::string &function_name, const int &line_number,
+               const std::string &msg, bool logging_on)
+    : file_name(file_name), function_name(function_name), logging_on(logging_on) {
+  output << "Time " << std::setw(10) << time(nullptr) << " - Thread: " << pthread_self() << " : [" << this->file_name
+         << "]"
+         << "[" << this->function_name << "]:\n";
 
-    timer = time_point_cast<microseconds>(steady_clock::now());
-    last_lapse = timer;
+  timer = time_point_cast<microseconds>(steady_clock::now());
+  last_lapse = timer;
 
-    output << "    " << std::setw(10) << 0 << ":" << std::setfill('0') << std::setw(4) << line_number << ": started, ";
-    output << msg << "\n" << std::setfill(' ');
+  output << "    " << std::setw(10) << 0 << ":" << std::setfill('0') << std::setw(4) << line_number << ": started, ";
+  output << msg << "\n" << std::setfill(' ');
 }
 
-Logger::~Logger(){
-    time_point<steady_clock, microseconds> new_lapse = time_point_cast<microseconds>(steady_clock::now());
-    output << "    " << std::setw(10) << (new_lapse - last_lapse).count() << ": finished, " << "elapsed time = " << (new_lapse - timer).count() << "micros\n";
+Logger::~Logger() {
+  time_point<steady_clock, microseconds> new_lapse = time_point_cast<microseconds>(steady_clock::now());
+  output << "    " << std::setw(10) << (new_lapse - last_lapse).count() << ": finished, " << "elapsed time = "
+         << (new_lapse - timer).count() << "micros\n";
 
-    if(logging_on){
-        std::cout << output.str() << std::flush;
-    }
+  if (logging_on) {
+    std::cout << output.str() << std::flush;
+  }
 }
 
-void Logger::operator()(const int& line_number){
-    time_point<steady_clock, microseconds> new_lapse = time_point_cast<microseconds>(steady_clock::now());
-    output << "    " << std::setw(10) << (new_lapse - last_lapse).count() << ":" << std::setfill('0') << std::setw(4) << line_number << "\n" << std::setfill(' ');
-    last_lapse = new_lapse;
+void Logger::operator()(const int &line_number) {
+  time_point<steady_clock, microseconds> new_lapse = time_point_cast<microseconds>(steady_clock::now());
+  output << "    " << std::setw(10) << (new_lapse - last_lapse).count() << ":" << std::setfill('0') << std::setw(4)
+         << line_number << "\n" << std::setfill(' ');
+  last_lapse = new_lapse;
 }
 
-void Logger::operator()(const int& line_number, const std::string& msg){
-    time_point<steady_clock, microseconds> new_lapse = time_point_cast<microseconds>(steady_clock::now());
-    output << "    " << std::setw(10) << (new_lapse - last_lapse).count() << ":" << std::setfill('0') << std::setw(4) << line_number << ": " << msg << "\n" << std::setfill(' ');
-    last_lapse = new_lapse;
+void Logger::operator()(const int &line_number, const std::string &msg) {
+  time_point<steady_clock, microseconds> new_lapse = time_point_cast<microseconds>(steady_clock::now());
+  output << "    " << std::setw(10) << (new_lapse - last_lapse).count() << ":" << std::setfill('0') << std::setw(4)
+         << line_number << ": " << msg << "\n" << std::setfill(' ');
+  last_lapse = new_lapse;
 }

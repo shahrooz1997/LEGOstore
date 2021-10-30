@@ -1,5 +1,5 @@
 #include <thread>
-#include "Data_Server.h"
+#include "../inc/Data_Server.h"
 #include "Data_Transfer.h"
 #include <sys/ioctl.h>
 #include <unordered_set>
@@ -50,12 +50,12 @@ void message_handler(int connection, DataServer& dataserver, int portid, std::st
     std::string& method = data[0];
 
     if(method == "put"){
-        EASY_LOG_M(string("put, The key is ") + data[1] + " ts: " + data[2] + " value_size: " + to_string(data[3].size()) + " class: " + data[4]);
+        EASY_LOG_M(string("put, The key is ") + data[1] + " ts: " + data[2] + " value_size: " + to_string(data[3].size()) + " class: " + data[4] + " conf_id: " + data[5]);
         result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[3], data[2], data[4], stoul(data[5])));
         EASY_LOG_M("put finished");
     }
     else if(method == "get"){
-        EASY_LOG_M(string("get, The key is ") + data[1] + " ts: " + data[2] + " class: " + data[3]);
+        EASY_LOG_M(string("get, The key is ") + data[1] + " ts: " + data[2] + " class: " + data[3] + " conf_id: " + data[4]);
         if(data[3] == CAS_PROTOCOL_NAME){
             result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3], stoul(data[4])));
         }
@@ -66,12 +66,12 @@ void message_handler(int connection, DataServer& dataserver, int portid, std::st
         EASY_LOG_M("get finished");
     }
     else if(method == "get_timestamp"){
-        EASY_LOG_M(string("get_timestamp, The key is ") + data[1] + " class: " + data[2]);
+        EASY_LOG_M(string("get_timestamp, The key is ") + data[1] + " class: " + data[2] + " conf_id: " + data[3]);
         result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2], stoul(data[3])));
         EASY_LOG_M("get_timestamp finished");
     }
     else if(method == "put_fin"){
-        EASY_LOG_M("put_fin");
+        EASY_LOG_M(string("put_fin, The key is ") + data[1] + " ts: " + data[2] + " class: " + data[3] + " conf_id: " + data[4]);
         result = DataTransfer::sendMsg(connection, dataserver.put_fin(data[1], data[2], data[3], stoul(data[4])));
         EASY_LOG_M("put_fin finished");
     }
@@ -110,8 +110,10 @@ void message_handler(int connection, DataServer& dataserver, int portid, std::st
     }
 }
 
-void server_connection(int connection, DataServer& dataserver, int portid){
-
+void server_connection(int connection, DataServer& dataserver, int portid, const string client_ip = "NULL"){
+  if (client_ip != "NULL") {
+    DPRINTF(DEBUG_METADATA_SERVER, "Incoming connection from %s\n", client_ip.c_str());
+  }
 #ifdef USE_TCP_NODELAY
     int yes = 1;
     int result = setsockopt(connection, IPPROTO_TCP, TCP_NODELAY, (char*) &yes, sizeof(int));
@@ -162,12 +164,17 @@ void runServer(std::string& db_name, std::string& socket_port){
     DataServer* ds = new DataServer(db_name, socket_setup(socket_port));
     int portid = stoi(socket_port);
     while(1){
-        int new_sock = accept(ds->getSocketDesc(), NULL, 0);
+        struct sockaddr_in client_address;
+        socklen_t client_address_size = sizeof(client_address);
+        int new_sock = accept(ds->getSocketDesc(), (struct sockaddr *)&client_address, &client_address_size);
         if(new_sock < 0){
             DPRINTF(DEBUG_CAS_Client, "Error: accept: %d, errno is %d\n", new_sock, errno);
         }
         else{
-            std::thread cThread([&ds, new_sock, portid](){ server_connection(new_sock, *ds, portid); });
+            char str_temp[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, &(client_address.sin_addr), str_temp, INET_ADDRSTRLEN);
+            string client_ip(str_temp);
+            std::thread cThread([&ds, new_sock, portid, client_ip](){ server_connection(new_sock, *ds, portid, client_ip); });
             cThread.detach();
         }
     }
@@ -180,12 +187,17 @@ void runServer(const std::string& db_name, const std::string& socket_port, const
             metadata_server_port);
     int portid = stoi(socket_port);
     while(1){
-        int new_sock = accept(ds->getSocketDesc(), NULL, 0);
+        struct sockaddr_in client_address;
+        socklen_t client_address_size = sizeof(client_address);
+        int new_sock = accept(ds->getSocketDesc(), (struct sockaddr *)&client_address, &client_address_size);
         if(new_sock < 0){
             DPRINTF(DEBUG_CAS_Client, "Error: accept: %d, errno is %d\n", new_sock, errno);
         }
         else{
-            std::thread cThread([&ds, new_sock, portid](){ server_connection(new_sock, *ds, portid); });
+            char str_temp[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, &(client_address.sin_addr), str_temp, INET_ADDRSTRLEN);
+            string client_ip(str_temp);
+            std::thread cThread([&ds, new_sock, portid, client_ip](){ server_connection(new_sock, *ds, portid, client_ip); });
             cThread.detach();
         }
     }

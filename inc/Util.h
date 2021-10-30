@@ -54,6 +54,7 @@ using namespace std::chrono;
 //#define LOCAL_TEST
 #define USE_TCP_NODELAY
 //#define DO_WARM_UP
+#define RETRY_CONNECT_TIMES 4
 
 #ifdef LOCAL_TEST
 #define NUMBER_OF_OPS_FOR_WARM_UP 2
@@ -64,7 +65,7 @@ using namespace std::chrono;
 #define DO_NOT_WRITE_VALUE_IN_LOGS
 
 #define WARM_UP_TIME_SECONDS 20
-#define WARM_UP_NUM_OP  10
+#define WARM_UP_NUM_OP  2
 
 //#define CHANGE_THREAD_PRIORITY
 #endif

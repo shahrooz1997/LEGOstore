@@ -22,18 +22,24 @@ namespace CAS_helper {
 void _send_one_server(const string operation, promise<strVec> &&prm, const string key,
                       const Server server, const string current_class, const uint32_t conf_id, const string value = "",
                       const string timestamp = "") {
+  DPRINTF(DEBUG_CAS_Client,
+          "%s\n",
+          (string("started to do ") + operation + " on key " + key + " with conf_id " + to_string(conf_id)
+              + " on server " + server.ip).c_str());
 
-  DPRINTF(DEBUG_CAS_Client, "started.\n");
-
-  EASY_LOG_INIT_M(string("to do ") + operation + " on key " + key + " with conf_id " + to_string(conf_id),
-                  DEBUG_CAS_Client);
+  EASY_LOG_INIT_M(
+      string("to do ") + operation + " on key " + key + " with conf_id " + to_string(conf_id) + " on server "
+          + server.ip, DEBUG_CAS_Client);
 
   strVec data;
   Connect c(server.ip, server.port);
   if (!c.is_connected()) {
+    EASY_LOG_M("connection failed");
     prm.set_value(move(data));
     return;
   }
+
+  DPRINTF(DEBUG_CAS_Client, "%s\n", (string("Connected to ") + server.ip + ":" + to_string(server.port)).c_str());
 
   EASY_LOG_M(string("Connected to ") + server.ip + ":" + to_string(server.port));
 
@@ -56,17 +62,39 @@ void _send_one_server(const string operation, promise<strVec> &&prm, const strin
   data.push_back(current_class);
   data.push_back(to_string(conf_id));
 
-  DataTransfer::sendMsg(*c, DataTransfer::serialize(data));
-
+  if (DataTransfer::sendMsg(*c, DataTransfer::serialize(data)) != 1) {
+    DPRINTF(DEBUG_CAS_Client, "request failed\n");
+    EASY_LOG_M("request failed");
+    data.clear();
+    prm.set_value(move(data));
+    return;
+  }
+  DPRINTF(DEBUG_CAS_Client, "request sent\n");
   EASY_LOG_M("request sent");
 
   data.clear();
   string recvd;
-  if (DataTransfer::recvMsg(*c, recvd) == 1) {
-    data = DataTransfer::deserialize(recvd);
-    EASY_LOG_M(string("response received with status: ") + data[0]);
-    prm.set_value(move(data));
-  } else {
+  bool success = false;
+  int retry_times = RETRY_CONNECT_TIMES;
+  while (!success && retry_times > 0) {
+    int ret_val = DataTransfer::recvMsg(*c, recvd);
+    if (ret_val == 1) { // Success
+      data = DataTransfer::deserialize(recvd);
+      EASY_LOG_M(string("response received with status: ") + data[0]);
+      success = true;
+      prm.set_value(move(data));
+      break;
+    } else if (ret_val == -1) { // Error
+      data.clear();
+      EASY_LOG_M(string("response failed with error ") + to_string(ret_val));
+      prm.set_value(move(data));
+      break;
+    }
+    // Retry connection
+    EASY_LOG_M("connection closed. Retrying...");
+    retry_times--;
+  }
+  if (!success) {
     data.clear();
     EASY_LOG_M("response failed");
     prm.set_value(move(data));
@@ -660,7 +688,7 @@ int CAS_Client::asyc_propagate(const std::string key, const std::string timestam
 
   vector<strVec> ret;
   vector<uint32_t> remaining_servers;
-  for (auto& s: p.servers) {
+  for (auto &s: p.servers) {
     if (find(p.quorums[this->local_datacenter_id].Q3.begin(), p.quorums[this->local_datacenter_id].Q3.end(), s)
         == p.quorums[this->local_datacenter_id].Q3.end()) {
       remaining_servers.push_back(s);

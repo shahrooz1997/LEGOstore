@@ -69,15 +69,30 @@ namespace CAS_helper_recon{
 
         data.clear();
         string recvd;
-        if(DataTransfer::recvMsg(*c, recvd) == 1){
+        bool success = false;
+        int retry_times = RETRY_CONNECT_TIMES;
+        while (!success && retry_times > 0) {
+          int ret_val = DataTransfer::recvMsg(*c, recvd);
+          if (ret_val == 1) { // Success
             data = DataTransfer::deserialize(recvd);
             EASY_LOG_M(string("response received with status: ") + data[0]);
+            success = true;
             prm.set_value(move(data));
-        }
-        else{
+            break;
+          } else if (ret_val == -1) { // Error
             data.clear();
-            EASY_LOG_M("response failed");
+            EASY_LOG_M(string("response failed with error ") + to_string(ret_val));
             prm.set_value(move(data));
+            break;
+          }
+          // Retry connection
+          EASY_LOG_M("connection closed. Retrying...");
+          retry_times--;
+        }
+        if (!success) {
+          data.clear();
+          EASY_LOG_M("response failed");
+          prm.set_value(move(data));
         }
 
         DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %u\n", server.port);
@@ -212,15 +227,30 @@ namespace ABD_helper_recon{
 
         data.clear();
         string recvd;
-        if(DataTransfer::recvMsg(*c, recvd) == 1){
+        bool success = false;
+        int retry_times = RETRY_CONNECT_TIMES;
+        while (!success && retry_times > 0) {
+          int ret_val = DataTransfer::recvMsg(*c, recvd);
+          if (ret_val == 1) { // Success
             data = DataTransfer::deserialize(recvd);
             EASY_LOG_M(string("response received with status: ") + data[0]);
+            success = true;
             prm.set_value(move(data));
-        }
-        else{
+            break;
+          } else if (ret_val == -1) { // Error
             data.clear();
-            EASY_LOG_M("response failed");
+            EASY_LOG_M(string("response failed with error ") + to_string(ret_val));
             prm.set_value(move(data));
+            break;
+          }
+          // Retry connection
+          EASY_LOG_M("connection closed. Retrying...");
+          retry_times--;
+        }
+        if (!success) {
+          data.clear();
+          EASY_LOG_M("response failed");
+          prm.set_value(move(data));
         }
 
         DPRINTF(DEBUG_CAS_Client, "finished successfully. with port: %u\n", server.port);

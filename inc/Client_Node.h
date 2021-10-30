@@ -31,6 +31,7 @@ public:
     const Placement& get_placement(const std::string& key, const bool force_update = false, const uint32_t conf_id = 0);
     const Placement& get_placement(const std::string& key, const bool force_update, const std::string& conf_id);
     const uint32_t& get_conf_id(const std::string& key);
+    void reset_placement_info();
     
     // getters
     const uint32_t& get_id() const;

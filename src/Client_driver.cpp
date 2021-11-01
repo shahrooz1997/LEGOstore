@@ -202,7 +202,10 @@ int run_session(uint32_t client_id) {
 
   // Create Persistent sockets to the servers.
   for (auto dc_p: datacenters) {
-    Connect c(dc_p->servers[0]->ip, dc_p->servers[0]->port);
+    if(dc_p->id == 0 || dc_p->id == 1 || dc_p->id == 2 || dc_p->id == 5 || dc_p->id == 8) {
+      DPRINTF(DEBUG_CAS_Client, "WARM_UP creating persistent connection with %s\n", dc_p->servers[0]->ip.c_str());
+      Connect c(dc_p->servers[0]->ip, dc_p->servers[0]->port);
+    }
   }
   // Run warm up operations.
   for (int i = 0; i < WARM_UP_NUM_OP; i++) {

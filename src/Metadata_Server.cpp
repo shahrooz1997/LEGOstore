@@ -67,16 +67,24 @@ inline std::string construct_confid_timestamp(const std::string& confid, const s
     return confid + "!" + timestamp;
 }
 
+Value newest_conf(const string& key) {
+  uint32_t confid = 0; // Default confid.
+  while(key_info[construct_key_metadata(key, confid)].newconfid != confid) {
+    confid = key_info[construct_key_metadata(key, confid)].newconfid;
+  }
+  return key_info[construct_key_metadata(key, confid)];
+}
+
 string ask(const string& key, const string& confid){ // respond with (requested_confid!new_confid!timestamp, p)
     DPRINTF(DEBUG_METADATA_SERVER, "started. key: %s, confid: %s\n", key.c_str(), confid.c_str());
     
     if(confid == "0"){ // exception case.
-        auto it = key_info.find(construct_key_metadata(key, confid));
+//        auto it = key_info.find(construct_key_metadata(key, confid));
+//        uint32_t saved_conf_id = it->second.newconfid; //stoui(it->second.first.substr(0, it->second.first.find("!")));
+//        auto it2 = key_info.find(construct_key_metadata(key, saved_conf_id));
 
-        uint32_t saved_conf_id = it->second.newconfid; //stoui(it->second.first.substr(0, it->second.first.find("!")));
-
-        auto it2 = key_info.find(construct_key_metadata(key, saved_conf_id));
-        return DataTransfer::serializeMDS("OK", "", key, saved_conf_id, it2->second.newconfid, it2->second.timestamp, it2->second.placement);
+        auto val = newest_conf(key);
+        return DataTransfer::serializeMDS("OK", "", key, val.newconfid, val.newconfid, val.timestamp, val.placement);
     }
     
     auto it = key_info.find(construct_key_metadata(key, confid));

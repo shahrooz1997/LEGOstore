@@ -345,6 +345,8 @@ class Connect {
 
   void close();
 
+  void reset();
+
   void unlock();
 
   static void close_all();
@@ -366,6 +368,7 @@ class Connect {
   static uint32_t number_of_socks;
 
   void print_error(std::string const &m); // thread safe print
+  void connect_helper(const std::string &ip, const uint16_t port);
 };
 
 void print_time();

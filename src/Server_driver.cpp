@@ -43,39 +43,61 @@ void increase_thread_priority(bool increase=true){ // true: increase the priorit
 }
 
 void message_handler(int connection, DataServer& dataserver, int portid, std::string& recvd){
+    DPRINTF(DEBUG_METADATA_SERVER, "started\n");
     EASY_LOG_INIT_M(string("started") + " with port " + to_string(portid));
     int result = 1;
 
     strVec data = DataTransfer::deserialize(recvd);
+  DPRINTF(DEBUG_METADATA_SERVER, "6666666666 %lu\n", data.size());
+    if (data.size() < 3) {
+      DPRINTF(DEBUG_METADATA_SERVER, "Bad message\n");
+      EASY_LOG_M("Bad message");
+      DataTransfer::sendMsg(connection, DataTransfer::serialize({"Badmessage", "Message is not interpretable"}));
+      return;
+    }
     std::string& method = data[0];
+  DPRINTF(DEBUG_METADATA_SERVER, "method is %s\n", method.c_str());
 
     if(method == "put"){
+      DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
+      DPRINTF(DEBUG_METADATA_SERVER, "%s\n", (string("put, The key is ") + data[1] + " ts: " + data[2] + " value_size: " + to_string(data[3].size()) + " class: " + data[4] + " conf_id: " + data[5]).c_str());
         EASY_LOG_M(string("put, The key is ") + data[1] + " ts: " + data[2] + " value_size: " + to_string(data[3].size()) + " class: " + data[4] + " conf_id: " + data[5]);
         result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[3], data[2], data[4], stoul(data[5])));
         EASY_LOG_M("put finished");
     }
     else if(method == "get"){
-        EASY_LOG_M(string("get, The key is ") + data[1] + " ts: " + data[2] + " class: " + data[3] + " conf_id: " + data[4]);
+      DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
+
         if(data[3] == CAS_PROTOCOL_NAME){
+          DPRINTF(DEBUG_METADATA_SERVER, "%s\n", (string("get, The key is ") + data[1] + " ts: " + data[2] + " class: " + data[3] + " conf_id: " + data[4]).c_str());
+          EASY_LOG_M(string("get, The key is ") + data[1] + " ts: " + data[2] + " class: " + data[3] + " conf_id: " + data[4]);
             result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3], stoul(data[4])));
         }
         else{
+          DPRINTF(DEBUG_METADATA_SERVER, "%s\n", (string("get, The key is ") + data[1] + " class: " + data[2] + " conf_id: " + data[3]).c_str());
+          EASY_LOG_M(string("get, The key is ") + data[1] + " class: " + data[2] + " conf_id: " + data[3]);
             std::string phony_timestamp;
             result = DataTransfer::sendMsg(connection, dataserver.get(data[1], phony_timestamp, data[2], stoul(data[3])));
         }
         EASY_LOG_M("get finished");
     }
     else if(method == "get_timestamp"){
+      DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
+      DPRINTF(DEBUG_METADATA_SERVER, "%s\n", (string("get_timestamp, The key is ") + data[1] + " class: " + data[2] + " conf_id: " + data[3]).c_str());
         EASY_LOG_M(string("get_timestamp, The key is ") + data[1] + " class: " + data[2] + " conf_id: " + data[3]);
         result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2], stoul(data[3])));
         EASY_LOG_M("get_timestamp finished");
     }
     else if(method == "put_fin"){
+      DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
+      DPRINTF(DEBUG_METADATA_SERVER, "%s\n", (string("put_fin, The key is ") + data[1] + " ts: " + data[2] + " class: " + data[3] + " conf_id: " + data[4]).c_str());
         EASY_LOG_M(string("put_fin, The key is ") + data[1] + " ts: " + data[2] + " class: " + data[3] + " conf_id: " + data[4]);
         result = DataTransfer::sendMsg(connection, dataserver.put_fin(data[1], data[2], data[3], stoul(data[4])));
         EASY_LOG_M("put_fin finished");
     }
     else if(method == "reconfig_query"){
+      DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
+      DPRINTF(DEBUG_METADATA_SERVER, "%s\n", (string("reconfig_query") + data[1] + " class: " + data[2] + " conf_id: " + data[3]).c_str());
         EASY_LOG_M("reconfig_query");
 #ifdef CHANGE_THREAD_PRIORITY
         increase_thread_priority();
@@ -83,15 +105,21 @@ void message_handler(int connection, DataServer& dataserver, int portid, std::st
         result = DataTransfer::sendMsg(connection, dataserver.reconfig_query(data[1], data[2], stoul(data[3])));
         EASY_LOG_M("reconfig_query finished");
     }else if(method == "reconfig_finalize"){
+      DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
+      DPRINTF(DEBUG_METADATA_SERVER, "%s\n", (string("reconfig_finalize, The key is ") + data[1] + " ts: " + data[2] + " class: " + data[3] + " conf_id: " + data[4]).c_str());
         EASY_LOG_M("reconfig_finalize");
         result = DataTransfer::sendMsg(connection, dataserver.reconfig_finalize(data[1], data[2], data[3], stoul(data[4])));
         EASY_LOG_M("reconfig_finalize finished");
     }else if(method == "reconfig_write"){
+      DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
+      DPRINTF(DEBUG_METADATA_SERVER, "%s\n", (string("reconfig_write, The key is ") + data[1] + " ts: " + data[2] + " value_size: " + to_string(data[3].size()) + " class: " + data[4] + " conf_id: " + data[5]).c_str());
         EASY_LOG_M("reconfig_write");
         result = DataTransfer::sendMsg(connection, dataserver.reconfig_write(data[1], data[3], data[2], data[4], stoul(data[5])));
         EASY_LOG_M("reconfig_write finished");
     }else if(method == "finish_reconfig"){
-        EASY_LOG_M("finish_reconfig");
+      DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
+      DPRINTF(DEBUG_METADATA_SERVER, "%s\n", (string("finish_reconfig, The key is ") + data[1] + " ts: " + data[2] + " new confid: " + data[3] + " class: " + data[4] + " conf_id: " + data[5]).c_str());
+      EASY_LOG_M("finish_reconfig");
         result = DataTransfer::sendMsg(connection, dataserver.finish_reconfig(data[1], data[2], data[3], data[4], stoul(data[5])));
 #ifdef CHANGE_THREAD_PRIORITY
         increase_thread_priority(false);
@@ -99,15 +127,19 @@ void message_handler(int connection, DataServer& dataserver, int portid, std::st
         EASY_LOG_M("finish_reconfig finished");
     }
     else{
+      DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
+      DPRINTF(DEBUG_METADATA_SERVER, "MethodNotFound\n");
         EASY_LOG_M("MethodNotFound");
         DataTransfer::sendMsg(connection, DataTransfer::serialize({"MethodNotFound", "Unknown method is called"}));
         EASY_LOG_M("MethodNotFound sent");
     }
 
     if(result != 1){
+      DPRINTF(DEBUG_METADATA_SERVER, "sending data failed\n");
         DataTransfer::sendMsg(connection, DataTransfer::serialize({"Failure", "Server Response failed"}));
         EASY_LOG_M("Failure: Server Response failed");
     }
+  DPRINTF(DEBUG_METADATA_SERVER, "END\n");
 }
 
 void server_connection(int connection, DataServer& dataserver, int portid, const string client_ip = "NULL"){
@@ -132,6 +164,7 @@ void server_connection(int connection, DataServer& dataserver, int portid, const
             return;
         }
         if(is_warmup_message(recvd)){
+            DPRINTF(DEBUG_METADATA_SERVER, "warmup message received\n");
             std::string temp = std::string(WARM_UP_MNEMONIC) + get_random_string();
             result = DataTransfer::sendMsg(connection, temp);
             if(result != 1){

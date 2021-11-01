@@ -72,18 +72,23 @@ int DataTransfer::recvAll(int sock, void* buf, int data_size){
 }
 
 strVec DataTransfer::deserialize(const std::string& data){
-    
+  DPRINTF(DEBUG_CAS_Client, "111111111111\n");
     packet::msg dec;
     strVec out_data;
-    
+  DPRINTF(DEBUG_CAS_Client, "222222222\n");
     dec.ParseFromString(data);
-    
+  DPRINTF(DEBUG_CAS_Client, "33333333333\n");
     int val_size = dec.value_size();
-    
+  DPRINTF(DEBUG_CAS_Client, "444444444444\n");
     for(int i = 0; i < val_size; i++){
+      DPRINTF(DEBUG_CAS_Client, "dec.value(i) %s.\n", dec.value(i).c_str());
         out_data.push_back(dec.value(i));
     }
-    
+  for(uint i = 0; i < out_data.size(); i++){
+    DPRINTF(DEBUG_CAS_Client, "out_data(i) %s.\n", out_data[i].c_str());
+  }
+    DPRINTF(DEBUG_CAS_Client, "555555555555555\n");
+
     return out_data;
 }
 
@@ -108,6 +113,8 @@ int DataTransfer::recvMsg(int sock, std::string& data){
         return result;
       }
     }
+  } else if (result == -1) {
+    return result;
   }
   if (data.empty()) {
     DPRINTF(DEBUG_UTIL, "data.empty() returned\n");

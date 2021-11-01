@@ -196,6 +196,17 @@ int run_session(uint32_t client_id) {
   Client_Node clt(client_id, datacenter_id, retry_attempts_number, metadata_server_timeout, timeout_per_request,
                   datacenters);
 
+  auto timePoint22 = time_point_cast<milliseconds>(system_clock::now());
+  timePoint22 += milliseconds{get_random_number_uniform(0, 2000)};
+  std::this_thread::sleep_until(timePoint22);
+
+  // Create Persistent sockets to the servers.
+  for (auto dc_p: datacenters) {
+    if(dc_p->id == 0 || dc_p->id == 1 || dc_p->id == 2 || dc_p->id == 5 || dc_p->id == 8) {
+      DPRINTF(DEBUG_CAS_Client, "WARM_UP creating persistent connection with %s\n", dc_p->servers[0]->ip.c_str());
+      Connect c(dc_p->servers[0]->ip, dc_p->servers[0]->port);
+    }
+  }
   // Run warm up operations.
   for (int i = 0; i < WARM_UP_NUM_OP; i++) {
     uint key_idx = 0;
@@ -230,6 +241,7 @@ int run_session(uint32_t client_id) {
               std::string(TRUNC_STR(val)).c_str());
     }
   }
+  clt.reset_placement_info();
   std::this_thread::sleep_until(warm_up_end_time);
   // Randomly delay the first request of clients.
   auto timePoint2 = time_point_cast<milliseconds>(system_clock::now());
@@ -291,7 +303,7 @@ int run_session(uint32_t client_id) {
 #ifdef LOCAL_TEST
   std::this_thread::sleep_for(seconds(1));
 #else
-  std::this_thread::sleep_for(seconds(10));
+  std::this_thread::sleep_for(seconds(30));
 #endif
   return request_counter;
 }

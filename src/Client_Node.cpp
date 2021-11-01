@@ -137,6 +137,10 @@ const uint32_t& Client_Node::get_conf_id(const std::string& key){
     }
 }
 
+void Client_Node::reset_placement_info() {
+  keys_info.clear();
+}
+
 int Client_Node::put(const std::string& key, const std::string& value){
     const Placement& p = get_placement(key);
     if(p.protocol == CAS_PROTOCOL_NAME){

@@ -290,11 +290,34 @@ int vecpair_find(const std::vector<std::pair<T, U> > &vec, const T &search_val, 
 }
 
 Connect::Connect(const std::string &ip, const uint16_t port) : ip(ip), port(port), sock(0), connected(false) {
+  connect_helper(ip, port);
+}
 
+Connect::Connect(const std::string &ip, const std::string &port) : ip(ip), sock(0), connected(false) {
+  char *end;
+  bool error = false;
+  errno = 0;
+  intmax_t val = strtoimax(port.c_str(), &end, 10);
+  if (errno == ERANGE || val < 0 || val > UINT16_MAX || end == port.c_str() || *end != '\0') {
+    error = true;
+  }
+  if (!error) {
+    this->port = (uint16_t) val;
+  }
+  connect_helper(ip, this->port);
+}
+
+Connect::~Connect() {
+//    ::close(sock);
+    DPRINTF(DEBUG_UTIL, "loed: destructor called. IP: %s Port: %d\n", ip.c_str(), port);
+  this->unlock();
+}
+
+void Connect::connect_helper(const std::string &ip, const uint16_t port) {
   std::string ip_port = ip + "!" + std::to_string(port);
-//    DPRINTF(DEBUG_UTIL, "tloed: IP: %s Port: %d\n", ip.c_str(), port);
+  DPRINTF(DEBUG_UTIL, "tloed: IP: %s Port: %d\n", ip.c_str(), port);
   init_lock.lock();
-//    DPRINTF(DEBUG_UTIL, "loied: IP: %s Port: %d\n", ip.c_str(), port);
+  DPRINTF(DEBUG_UTIL, "loied: IP: %s Port: %d\n", ip.c_str(), port);
   idx = vecpair_find(this->socks_lock, ip_port, number_of_socks);
   if (idx == -1) {
     try {
@@ -309,7 +332,7 @@ Connect::Connect(const std::string &ip, const uint16_t port) : ip(ip), port(port
     }
     idx = number_of_socks;
     number_of_socks++;
-//        DPRINTF(DEBUG_UTIL, "tloed: INIT: pointer is %p\n", this->socks_lock[idx].second.get());
+    DPRINTF(DEBUG_UTIL, "tloed: INIT: pointer is %p\n", this->socks_lock[idx].second.get());
   }
   init_lock.unlock();
 
@@ -333,12 +356,12 @@ Connect::Connect(const std::string &ip, const uint16_t port) : ip(ip), port(port
 //        DPRINTF(DEBUG_UTIL, "tloed: INIT: pointer is %p\n", this->socks_lock[ip_port].get());
 //    }
 //    init_lock.unlock();
-//    DPRINTF(DEBUG_UTIL, "tloed: pointer is %p\n", this->socks_lock[idx].second.get());
+  DPRINTF(DEBUG_UTIL, "tloed: pointer is %p\n", this->socks_lock[idx].second.get());
   this->socks_lock[idx].second.get()->lock();
-//    DPRINTF(DEBUG_UTIL, "loed: IP: %s Port: %d\n", ip.c_str(), port);
+  DPRINTF(DEBUG_UTIL, "loed: IP: %s Port: %d\n", ip.c_str(), port);
   is_sock_lock[idx].second = true;
 
-//    DPRINTF(DEBUG_UTIL, "afloed: IP_Port is: %s , and the value of this->is_sock_lock[ip_port] is %x\n", ip_port.c_str(), this->is_sock_lock[ip_port]);
+//  DPRINTF(DEBUG_UTIL, "afloed: IP_Port is: %s , and the value of this->is_sock_lock[ip_port] is %x\n", ip_port.c_str(), this->is_sock_lock[ip_port]);
 
   if (this->socks[idx].second == -1) {
     bool error = false;
@@ -380,8 +403,9 @@ Connect::Connect(const std::string &ip, const uint16_t port) : ip(ip), port(port
     }
 
     if (!error) {
-      if (connect(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-        print_error("Connection Failed");
+      int tt;
+      if ((tt = connect(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) < 0) {
+        print_error("Connection Failed" + std::to_string(tt));
         error = true;
       }
     }
@@ -407,164 +431,14 @@ Connect::Connect(const std::string &ip, const uint16_t port) : ip(ip), port(port
     this->sock = this->socks[idx].second;
     this->connected = true;
   }
-}
-
-Connect::Connect(const std::string &ip, const std::string &port) : ip(ip), sock(0), connected(false) {
-
-  std::string ip_port = ip + "!" + port;
-//    DPRINTF(DEBUG_UTIL, "tloed: IP: %s Port: %s\n", ip.c_str(), port.c_str());
-  init_lock.lock();
-//    DPRINTF(DEBUG_UTIL, "loied: IP: %s Port: %s\n", ip.c_str(), port.c_str());
-  idx = vecpair_find(this->socks_lock, ip_port, number_of_socks);
-  if (idx == -1) {
-    try {
-      this->socks_lock[number_of_socks] = std::make_pair(ip_port, std::unique_ptr<std::mutex>(new std::mutex));
-      this->socks[number_of_socks] = std::make_pair(ip_port, -1);
-      this->is_sock_lock[number_of_socks] = std::make_pair(ip_port, false);
-    }
-    catch (std::bad_alloc &ba) {
-      std::string err_msg = "bad_alloc caught: ";
-      err_msg += ba.what();
-      print_error(err_msg);
-    }
-    idx = number_of_socks;
-    number_of_socks++;
-//        DPRINTF(DEBUG_UTIL, "tloed: INIT: pointer is %p\n", this->socks_lock[idx].second.get());
-  }
-  init_lock.unlock();
-
-//    DPRINTF(DEBUG_UTIL, "tloed: pointer is %p\n", this->socks_lock[idx].second.get());
-  this->socks_lock[idx].second.get()->lock();
-//    DPRINTF(DEBUG_UTIL, "loed: IP: %s Port: %s\n", ip.c_str(), port.c_str());
-  is_sock_lock[idx].second = true;
-
-
-//    std::string ip_port = ip + "!" + port;
-//    DPRINTF(DEBUG_UTIL, "tloed2: IP: %s Port: %s\n", ip.c_str(), port.c_str());
-
-//    if(this->socks_lock.find(ip_port) == this->socks_lock.end()){
-//        init_lock.lock();
-//        if(this->socks_lock.find(ip_port) == this->socks_lock.end()){ // This if is necessary to improve performance
-//            try {
-//                this->socks_lock[ip_port] = std::unique_ptr<std::mutex>(new std::mutex);
-//                this->socks[ip_port] = -1;
-//                this->is_sock_lock[ip_port] = false;
-//            }
-//            catch (std::bad_alloc &ba) {
-//                std::string err_msg = "bad_alloc caught: ";
-//                err_msg += ba.what();
-//                print_error(err_msg);
-//            }
-//        }
-//        init_lock.unlock();
-//        DPRINTF(DEBUG_UTIL, "tloed: INIT: pointer is %p\n", this->socks_lock[ip_port].get());
-////        DPRINTF(DEBUG_UTIL, "tloed: INIT: pointer is %p\n", mu_temp);
-//    }
-////    init_lock.unlock();
-//    DPRINTF(DEBUG_UTIL, "tloed2: pointer is %p\n", this->socks_lock[ip_port].get());
-////    DPRINTF(DEBUG_UTIL, "tloed2: pointer is %p\n", mu_temp);
-//    this->socks_lock[ip_port].get()->lock();
-//    DPRINTF(DEBUG_UTIL, "loed2: IP: %s Port: %s\n", ip.c_str(), port.c_str());
-//    is_sock_lock[ip_port] = true;
-
-  if (this->socks[idx].second == -1) {
-    // Convert string to uint16_t
-    connected = false;
-    bool error = false;
-    char *end;
-    errno = 0;
-    intmax_t val = strtoimax(port.c_str(), &end, 10);
-    if (errno == ERANGE || val < 0 || val > UINT16_MAX || end == port.c_str() || *end != '\0') {
-      error = true;
-    }
-//        DPRINTF(DEBUG_UTIL, "loed: Port: %d\n", (uint16_t)val);
-
-    struct sockaddr_in serv_addr;
-
-    if (!error) {
-      this->port = (uint16_t) val;
-      if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        print_error("Socket creation error");
-        error = true;
-      }
-    }
-
-#ifdef USE_TCP_NODELAY
-    if (!error) {
-      int yes = 1;
-      int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *) &yes, sizeof(int));
-      if (result < 0) {
-        print_error("setsockopt error");
-        error = true;
-      }
-    }
-#endif
-
-    if (!error) {
-      int yes = 1;
-      int result = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char *) &yes, sizeof(int));
-      if (result < 0) {
-        print_error("setsockopt SO_KEEPALIVE error");
-        error = true;
-      }
-    }
-
-    if (!error) {
-      serv_addr.sin_family = AF_INET;
-      serv_addr.sin_port = htons(this->port);
-      std::string ip_str = ip;
-
-      if (inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0) {
-        print_error("Invalid address/ Address not supported");
-        error = true;
-      }
-    }
-
-    if (!error) {
-      if (connect(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-        print_error("Connection Failed");
-        error = true;
-      }
-    }
-
-    if (!error) {
-      this->socks[idx].second = this->sock;
-      connected = true;
-
-      // Send dummy data to warm up the socket.
-      DPRINTF(true, "Warming up connection\n");
-      std::string temp = std::string(WARM_UP_MNEMONIC) + get_random_string();
-      DataTransfer::sendMsg(this->sock, temp);
-      std::string recvd;
-      if (DataTransfer::recvMsg(this->sock, recvd) == 1) {
-        if (!is_warmup_message(recvd)) {
-          assert(false);
-        }
-      } else {
-        assert(false);
-      }
-    }
-  } else {
-    char *end;
-    intmax_t val = strtoimax(port.c_str(), &end, 10);
-    this->port = (uint16_t) val;
-    this->sock = this->socks[idx].second;
-    this->connected = true;
-  }
-}
-
-Connect::~Connect() {
-//    ::close(sock);
-//    DPRINTF(DEBUG_UTIL, "loed: destructor called. IP: %s Port: %d\n", ip.c_str(), port);
-  this->unlock();
 }
 
 void Connect::unlock() {
   std::string ip_port = this->ip + "!" + std::to_string(port);
-//    DPRINTF(DEBUG_UTIL, "unloed: IP_Port is: %s , and the value of this->is_sock_lock[ip_port] is %x\n", ip_port.c_str(), this->is_sock_lock[idx].second);
+    DPRINTF(DEBUG_UTIL, "unloed: IP_Port is: %s , and the value of this->is_sock_lock[ip_port] is %x\n", ip_port.c_str(), this->is_sock_lock[idx].second);
   if (this->is_sock_lock[idx].second) {
     this->is_sock_lock[idx].second = false;
-//        DPRINTF(DEBUG_UTIL, "unloed: IP: %s Port: %d\n", ip.c_str(), port);
+        DPRINTF(DEBUG_UTIL, "unloed: IP: %s Port: %d\n", ip.c_str(), port);
     this->socks_lock[idx].second.get()->unlock();
   }
 }
@@ -590,9 +464,38 @@ int Connect::operator*() {
   }
 }
 
-//void Connect::close(){
-//    ::close(sock);
-//}
+void Connect::close(){
+  std::string ip_port = ip + "!" + std::to_string(port);
+    DPRINTF(DEBUG_UTIL, "tloed: IP: %s Port: %hu\n", ip.c_str(), port);
+  init_lock.lock();
+    DPRINTF(DEBUG_UTIL, "loied: IP: %s Port: %hu\n", ip.c_str(), port);
+  idx = vecpair_find(this->socks_lock, ip_port, number_of_socks);
+  if (idx == -1) {
+    return;
+  }
+  this->socks_lock[idx].second.get()->lock();
+  ::close(sock);
+  this->socks[idx].second = -1;
+  init_lock.unlock();
+  this->socks_lock[idx].second.get()->unlock();
+}
+
+void Connect::reset() {
+  std::string ip_port = ip + "!" + std::to_string(port);
+  DPRINTF(DEBUG_UTIL, "tloed: IP: %s Port: %hu\n", ip.c_str(), port);
+  init_lock.lock();
+  DPRINTF(DEBUG_UTIL, "loied: IP: %s Port: %hu\n", ip.c_str(), port);
+  idx = vecpair_find(this->socks_lock, ip_port, number_of_socks);
+  if (idx == -1) {
+    return;
+  }
+  init_lock.unlock();
+  this->socks_lock[idx].second.get()->lock();
+  ::close(sock);
+  this->socks[idx].second = -1;
+  this->socks_lock[idx].second.get()->unlock();
+  connect_helper(this->ip, this->port);
+}
 
 void Connect::close_all() {
   for (auto it = socks.begin(); it != socks.end(); it++) {

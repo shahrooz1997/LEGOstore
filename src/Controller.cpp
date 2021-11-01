@@ -764,7 +764,7 @@ int Controller::run_reconfigurer() { //Todo: make it more reliable
   time_point<system_clock, milliseconds> timePoint;
   for (uint i = 1; i < properties.group_configs.size(); i++) {
     auto &gc = properties.group_configs[i];
-    timePoint = startPoint + milliseconds{gc.timestamp * 1000};
+    timePoint = startPoint + seconds(gc.timestamp + 10);
     // if server excluded in the next gc, kill it 10 secs before
 //    if (i + 1 < properties.group_configs.size()) {
 //      auto &next_gc = gc; //properties.group_configs[i + 1];
@@ -776,7 +776,7 @@ int Controller::run_reconfigurer() { //Todo: make it more reliable
         }
       }
     }
-    this_thread::sleep_until(timePoint - seconds(gc.timestamp / 2));
+    this_thread::sleep_until(timePoint - seconds(50));
     for (auto dc_id: excluded_dcs) {
       DPRINTF(DEBUG_RECONFIG_CONTROL, "Kill datacenter %u\n", dc_id);
       kill_datacenter(dc_id);

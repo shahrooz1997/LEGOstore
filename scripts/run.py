@@ -359,7 +359,7 @@ class Machine:
         if stdout.find("No such file or directory") != -1 or stderr.find("No such file or directory") != -1:
             print("Installing prerequisites on machine", self.name + "...")
             self.execute(
-                "sudo apt-get install -y build-essential autoconf automake libtool zlib1g-dev git protobuf-compiler pkg-config psmisc bc aria2 libgflags-dev cmake librocksdb-dev >/dev/null 2>&1")
+                "sudo apt-get install -y build-essential autoconf automake libtool zlib1g-dev git protobuf-compiler pkg-config psmisc bc aria2 libgflags-dev cmake librocksdb-dev valgrind >/dev/null 2>&1")
             self.execute("git clone https://github.com/openstack/liberasurecode.git >/dev/null 2>&1")
             if self.type in weak_vm_types:
                 self.execute(
@@ -450,6 +450,10 @@ class Machine:
         self.execute("cd project/; sudo make cleandb >/dev/null 2>&1")
         server_thread = threading.Thread(target=Machine.execute, args=[self, "cd project/; ./Server " + \
                                                                        self.internal_ip + " 10000 db " + self.internal_ip + " 30000 >server_output.txt 2>&1"])
+        # server_thread = threading.Thread(target=Machine.execute,
+        #                                  args=[self, "cd project/; valgrind --leak-check=full ./Server " + \
+        #                                        self.internal_ip + " 10000 db " + self.internal_ip + " 30000 >server_output.txt 2>&1"])
+
         server_thread.daemon = True
         server_thread.start()
         metadata_server_thread = threading.Thread(target=Machine.execute,
@@ -633,11 +637,11 @@ def main(args):
         print("Please wait while I am gathering the logs...")
         # os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
         Machine.stop_all(machines)
-        # Machine.gather_summary_all(clients)
-        # summarize()
+        Machine.gather_summary_all(clients)
+        summarize()
         # if should_gather_outputs(controller):
         #     print("WARN: There has been an error in at least on client. Gathering logs...")
-        Machine.gather_logs_all(machines)
+        # Machine.gather_logs_all(machines)
 
 
 def arrival_rate_test(args):

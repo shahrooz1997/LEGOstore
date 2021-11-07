@@ -72,12 +72,12 @@ message Operation {
     failure = 1;
     put = 2;
     get = 3;
-    getTimestamp = 4;
-    putFin = 5;
-    reconfigQuery = 6;
-    reconfigFinalize = 7;
-    reconfigWrite = 8;
-    reconfigFinish = 9;
+    get_timestamp = 4;
+    put_fin = 5;
+    reconfig_query = 6;
+    reconfig_finalize = 7;
+    reconfig_write = 8;
+    reconfig_finish = 9;
   };
   enum AlgorithmName {
     ABD = 0;
@@ -89,7 +89,7 @@ message Operation {
   string key = 4;
   string timestamp = 5;
   string value = 6;
-  AlgorithmName algorithmName = 7;
-  uint32 confId = 8;
-  uint32 newConfId = 9;
+  AlgorithmName algorithm_name = 7;
+  uint32 conf_id = 8;
+  uint32 new_conf_id = 9;
 }

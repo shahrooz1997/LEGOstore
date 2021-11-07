@@ -1,101 +1,99 @@
 #include "../inc/Data_Transfer.h"
 #include <cstring>
+#include <memory>
 
-int DataTransfer::sendAll(int sock, const void* data, int data_size){
-    
-    const char* iter = static_cast<const char*>(data);
-    int bytes_sent = 0;
+int DataTransfer::sendAll(int sock, const void *data, int data_size) {
 
-    while(data_size > 0){
-        if((bytes_sent = send(sock, iter, data_size, 0)) < 1){
-            if(bytes_sent == -1){
-                DPRINTF(DEBUG_CAS_Client, "WARN: error in host socket.\n");
-            }
-            else if(bytes_sent == 0){
-                DPRINTF(DEBUG_CAS_Client, "WARN: error in remote socket.\n");
-            }
-            return bytes_sent;
-        }
-        data_size -= bytes_sent;
-        iter += bytes_sent;
+  const char *iter = static_cast<const char *>(data);
+  int bytes_sent = 0;
+
+  while (data_size > 0) {
+    if ((bytes_sent = send(sock, iter, data_size, 0)) < 1) {
+      if (bytes_sent == -1) {
+        DPRINTF(DEBUG_CAS_Client, "WARN: error in host socket.\n");
+      } else if (bytes_sent == 0) {
+        DPRINTF(DEBUG_CAS_Client, "WARN: error in remote socket.\n");
+      }
+      return bytes_sent;
     }
-    
-    return 1;
+    data_size -= bytes_sent;
+    iter += bytes_sent;
+  }
+
+  return 1;
 }
 
-std::string DataTransfer::serialize(const strVec& data){
-    
-    packet::msg enc;
-    for(auto it : data){
-        enc.add_value(it);
-    }
-    std::string out_str;
-    enc.SerializeToString(&out_str);
-    return out_str;
-}
+std::string DataTransfer::serialize(const strVec &data) {
 
+  packet::msg enc;
+  for (auto it: data) {
+    enc.add_value(it);
+  }
+  std::string out_str;
+  enc.SerializeToString(&out_str);
+  return out_str;
+}
 
 //Called after socket connection established
 //sends it across the socket
 // Return 1 on SUCCESS
-int DataTransfer::sendMsg(int sock, const std::string& out_str){
+int DataTransfer::sendMsg(int sock, const std::string &out_str) {
 
-    assert(!out_str.empty());
-    uint32_t _size = htonl(out_str.size());
+  assert(!out_str.empty());
+  uint32_t _size = htonl(out_str.size());
 
-    int result = sendAll(sock, &_size, sizeof(_size));
-    if(result == 1){
-        result = sendAll(sock, out_str.c_str(), out_str.size());
-    }
-    return result;
+  int result = sendAll(sock, &_size, sizeof(_size));
+  if (result == 1) {
+    result = sendAll(sock, out_str.c_str(), out_str.size());
+  }
+  return result;
 }
 
-int DataTransfer::recvAll(int sock, void* buf, int data_size){
-    char* iter = static_cast<char*>(buf);
-    int bytes_read = 0;
-    
-    while(data_size > 0){
-        if((bytes_read = recv(sock, iter, data_size, 0)) < 1){
-            if(bytes_read == -1){
-                DPRINTF(DEBUG_CAS_Client, "Error: host socket, errno is %d\n", errno);
-            }
-            else if(bytes_read == 0){
-                DPRINTF(DEBUG_CAS_Client, "Warn: remote socket closed\n");
-            }
-            return bytes_read;
-        }
-        iter += bytes_read;
-        data_size -= bytes_read;
+int DataTransfer::recvAll(int sock, void *buf, int data_size) {
+  char *iter = static_cast<char *>(buf);
+  int bytes_read = 0;
+
+  while (data_size > 0) {
+    if ((bytes_read = recv(sock, iter, data_size, 0)) < 1) {
+      if (bytes_read == -1) {
+        DPRINTF(DEBUG_CAS_Client, "Error: host socket, errno is %d\n", errno);
+      } else if (bytes_read == 0) {
+        DPRINTF(DEBUG_CAS_Client, "Warn: remote socket closed\n");
+      }
+      return bytes_read;
     }
-    
-    return 1;
+    iter += bytes_read;
+    data_size -= bytes_read;
+  }
+
+  return 1;
 }
 
-strVec DataTransfer::deserialize(const std::string& data){
+strVec DataTransfer::deserialize(const std::string &data) {
   DPRINTF(DEBUG_CAS_Client, "111111111111\n");
-    packet::msg dec;
-    strVec out_data;
+  packet::msg dec;
+  strVec out_data;
   DPRINTF(DEBUG_CAS_Client, "222222222\n");
-    dec.ParseFromString(data);
+  dec.ParseFromString(data);
   DPRINTF(DEBUG_CAS_Client, "33333333333\n");
-    int val_size = dec.value_size();
+  int val_size = dec.value_size();
   DPRINTF(DEBUG_CAS_Client, "444444444444\n");
-    for(int i = 0; i < val_size; i++){
-      DPRINTF(DEBUG_CAS_Client, "dec.value(i) %s.\n", dec.value(i).c_str());
-        out_data.push_back(dec.value(i));
-    }
-  for(uint i = 0; i < out_data.size(); i++){
+  for (int i = 0; i < val_size; i++) {
+    DPRINTF(DEBUG_CAS_Client, "dec.value(i) %s.\n", dec.value(i).c_str());
+    out_data.push_back(dec.value(i));
+  }
+  for (uint i = 0; i < out_data.size(); i++) {
     DPRINTF(DEBUG_CAS_Client, "out_data(i) %s.\n", out_data[i].c_str());
   }
-    DPRINTF(DEBUG_CAS_Client, "555555555555555\n");
+  DPRINTF(DEBUG_CAS_Client, "555555555555555\n");
 
-    return out_data;
+  return out_data;
 }
 
 //Pass an empty Vector to it
 // Decodes the msg and populates the vector
 //Returns 1 on SUCCESS
-int DataTransfer::recvMsg(int sock, std::string& data){
+int DataTransfer::recvMsg(int sock, std::string &data) {
   uint32_t size = 0;
   int result;
   data.clear();
@@ -123,21 +121,20 @@ int DataTransfer::recvMsg(int sock, std::string& data){
   return 1;
 }
 
-int DataTransfer::recvMsg_async(const int sock, std::promise <std::string>&& data_set){
-    std::string data_temp;
-    int result = DataTransfer::recvMsg(sock, data_temp);
-    
-    if(result == 1){
+int DataTransfer::recvMsg_async(const int sock, std::promise<std::string> &&data_set) {
+  std::string data_temp;
+  int result = DataTransfer::recvMsg(sock, data_temp);
+
+  if (result == 1) {
 //        DPRINTF(DEBUG_UTIL, "result is 1\n");
-        data_set.set_value(data_temp);
-    }
-    else{
-        DPRINTF(DEBUG_UTIL, "ERROR: result is %d\n", result);
-        data_temp = "ERROR";
-        data_set.set_value(data_temp);
-    }
-    
-    return result;
+    data_set.set_value(data_temp);
+  } else {
+    DPRINTF(DEBUG_UTIL, "ERROR: result is %d\n", result);
+    data_temp = "ERROR";
+    data_set.set_value(data_temp);
+  }
+
+  return result;
 }
 
 //std::string DataTransfer::serializePrp(const Properties& properties_p){
@@ -465,48 +462,52 @@ int DataTransfer::recvMsg_async(const int sock, std::promise <std::string>&& dat
 //    return plc;
 //}
 
-std::string DataTransfer::serializeMDS(const std::string& status, const std::string& msg, const std::string& key,
-                                       const uint32_t& curr_conf_id, const uint32_t& new_conf_id, const std::string& timestamp,
-                                       const Placement& placement){
-    packet::MetaDataServer mds;
-    mds.set_status(status);
-    mds.set_msg(msg);
-    mds.set_key(key);
-    mds.set_curr_conf_id(curr_conf_id);
-    mds.set_new_conf_id(new_conf_id);
-    mds.set_timestamp(timestamp);
-    
+std::string DataTransfer::serializeMDS(const std::string &status,
+                                       const std::string &msg,
+                                       const std::string &key,
+                                       const uint32_t &curr_conf_id,
+                                       const uint32_t &new_conf_id,
+                                       const std::string &timestamp,
+                                       const Placement &placement) {
+  packet::MetaDataServer mds;
+  mds.set_status(status);
+  mds.set_msg(msg);
+  mds.set_key(key);
+  mds.set_curr_conf_id(curr_conf_id);
+  mds.set_new_conf_id(new_conf_id);
+  mds.set_timestamp(timestamp);
+
 //    if(placement != nullptr){
-    packet::Placement* mds_placement = mds.mutable_placement();
+  packet::Placement *mds_placement = mds.mutable_placement();
 //    const Placement& pp = *placement;
 
-    mds_placement->set_protocol(placement.protocol);
-    mds_placement->set_m(placement.m);
-    mds_placement->set_k(placement.k);
-    mds_placement->set_f(placement.f);
+  mds_placement->set_protocol(placement.protocol);
+  mds_placement->set_m(placement.m);
+  mds_placement->set_k(placement.k);
+  mds_placement->set_f(placement.f);
 
-    for(auto s: placement.servers){
-        mds_placement->add_servers(s);
+  for (auto s: placement.servers) {
+    mds_placement->add_servers(s);
+  }
+
+  for (auto &quo: placement.quorums) {
+    packet::Quorums *quorums = mds_placement->add_quorums();
+    for (auto q: quo.Q1) {
+      quorums->add_q1(q);
     }
 
-    for(auto& quo: placement.quorums){
-        packet::Quorums* quorums = mds_placement->add_quorums();
-        for(auto q : quo.Q1){
-            quorums->add_q1(q);
-        }
-
-        for(auto q : quo.Q2){
-            quorums->add_q2(q);
-        }
-
-        for(auto q : quo.Q3){
-            quorums->add_q3(q);
-        }
-
-        for(auto q : quo.Q4){
-            quorums->add_q4(q);
-        }
+    for (auto q: quo.Q2) {
+      quorums->add_q2(q);
     }
+
+    for (auto q: quo.Q3) {
+      quorums->add_q3(q);
+    }
+
+    for (auto q: quo.Q4) {
+      quorums->add_q4(q);
+    }
+  }
 //    }
 //    else{
 //        packet::Placement* placement_p = mds.mutable_placement_p();
@@ -516,74 +517,132 @@ std::string DataTransfer::serializeMDS(const std::string& status, const std::str
 //        placement_p->set_k(0);
 //        placement_p->set_f(0);
 //    }
-    
-    std::string str_out;
-    if(!mds.SerializeToString(&str_out)){
-        throw std::logic_error("Failed to serialize the message ! ");
-    }
-    return str_out;
+
+  std::string str_out;
+  if (!mds.SerializeToString(&str_out)) {
+    throw std::logic_error("Failed to serialize the message ! ");
+  }
+  return str_out;
 }
 
-std::string DataTransfer::serializeMDS(const std::string& status, const std::string& msg, const std::string& key,
-                                const uint32_t& curr_conf_id, const uint32_t& new_conf_id, const std::string& timestamp){
-    Placement p;
-    return DataTransfer::serializeMDS(status, msg, key, curr_conf_id, new_conf_id, timestamp, p);
+std::string DataTransfer::serializeMDS(const std::string &status,
+                                       const std::string &msg,
+                                       const std::string &key,
+                                       const uint32_t &curr_conf_id,
+                                       const uint32_t &new_conf_id,
+                                       const std::string &timestamp) {
+  Placement p;
+  return DataTransfer::serializeMDS(status, msg, key, curr_conf_id, new_conf_id, timestamp, p);
 }
 
-Placement DataTransfer::deserializeMDS(const std::string& data, std::string& status, std::string& msg, std::string& key,
-                                        uint32_t& curr_conf_id, uint32_t& new_conf_id, std::string& timestamp){
-    Placement p;
-    packet::MetaDataServer mds;        // Nomenclature: add 'g' in front of gRPC variables
-    if(!mds.ParseFromString(data)){
-        throw std::logic_error("Failed to Parse the input received ! ");
-    }
-    
-    status = mds.status();
-    msg = mds.msg();
-    key = mds.key();
-    curr_conf_id = mds.curr_conf_id();
-    new_conf_id = mds.new_conf_id();
-    timestamp = mds.timestamp();
-    
+Placement DataTransfer::deserializeMDS(const std::string &data, std::string &status, std::string &msg, std::string &key,
+                                       uint32_t &curr_conf_id, uint32_t &new_conf_id, std::string &timestamp) {
+  Placement p;
+  packet::MetaDataServer mds;        // Nomenclature: add 'g' in front of gRPC variables
+  if (!mds.ParseFromString(data)) {
+    throw std::logic_error("Failed to Parse the input received ! ");
+  }
+
+  status = mds.status();
+  msg = mds.msg();
+  key = mds.key();
+  curr_conf_id = mds.curr_conf_id();
+  new_conf_id = mds.new_conf_id();
+  timestamp = mds.timestamp();
+
 //    if(!(status == "ERROR" || status == "WARN" || (status == "OK" && msg == "key updated"))){
 //    p = new Placement;
 
-    const packet::Placement& gp = mds.placement();
+  const packet::Placement &gp = mds.placement();
 
-    p.protocol = gp.protocol();
-    p.m = gp.m();
-    p.k = gp.k();
-    p.f = gp.f();
+  p.protocol = gp.protocol();
+  p.m = gp.m();
+  p.k = gp.k();
+  p.f = gp.f();
 
-    for(auto s: gp.servers()){
-        p.servers.push_back(s);
+  for (auto s: gp.servers()) {
+    p.servers.push_back(s);
+  }
+
+  for (auto &quo: gp.quorums()) {
+    p.quorums.emplace_back();
+    for (auto q: quo.q1()) {
+      p.quorums.back().Q1.push_back(q);
     }
-
-    for(auto& quo: gp.quorums()){
-        p.quorums.emplace_back();
-        for(auto q: quo.q1()){
-            p.quorums.back().Q1.push_back(q);
-        }
-        for(auto q: quo.q2()){
-            p.quorums.back().Q2.push_back(q);
-        }
-        for(auto q: quo.q3()){
-            p.quorums.back().Q3.push_back(q);
-        }
-        for(auto q: quo.q4()){
-            p.quorums.back().Q4.push_back(q);
-        }
+    for (auto q: quo.q2()) {
+      p.quorums.back().Q2.push_back(q);
     }
+    for (auto q: quo.q3()) {
+      p.quorums.back().Q3.push_back(q);
+    }
+    for (auto q: quo.q4()) {
+      p.quorums.back().Q4.push_back(q);
+    }
+  }
 
 //    }
-    
-    return p;
+
+  return p;
 }
 
-Placement DataTransfer::deserializeMDS(const std::string& data, std::string& status, std::string& msg){
-    std::string key;
-    uint32_t curr_conf_id;
-    uint32_t new_conf_id;
-    std::string timestamp;
-    return DataTransfer::deserializeMDS(data, status, msg, key, curr_conf_id, new_conf_id, timestamp);
+Placement DataTransfer::deserializeMDS(const std::string &data, std::string &status, std::string &msg) {
+  std::string key;
+  uint32_t curr_conf_id;
+  uint32_t new_conf_id;
+  std::string timestamp;
+  return DataTransfer::deserializeMDS(data, status, msg, key, curr_conf_id, new_conf_id, timestamp);
+}
+
+int DataTransfer::deserializeOperation(const std::string &str_in,
+                                std::unique_ptr<packet::Operation::MethodType> &method_p,
+                                std::unique_ptr<std::vector<std::string>> &data_p,
+                                std::unique_ptr<std::string> &msg_p,
+                                std::unique_ptr<std::string> &key_p,
+                                std::unique_ptr<std::string> &timestamp_p,
+                                std::unique_ptr<std::string> &value_p,
+                                std::unique_ptr<packet::Operation::AlgorithmName> &algorithm_name_p,
+                                std::unique_ptr<uint32_t> &conf_id_p,
+                                std::unique_ptr<uint32_t> &new_conf_id_p) {
+  packet::Operation operation;
+  operation.ParseFromString(str_in);
+  method_p.reset(new packet::Operation::MethodType(operation.method()));
+  data_p.reset(new std::vector<std::string>());
+  for (int i = 0; i < operation.data_size(); i++) {
+    data_p->emplace_back(std::move(*operation.mutable_data(i)));
+  }
+  msg_p.reset(new std::string(std::move(*operation.mutable_msg())));
+  key_p.reset(new std::string(std::move(*operation.mutable_key())));
+  timestamp_p.reset(new std::string(std::move(*operation.mutable_timestamp())));
+  value_p.reset(new std::string(std::move(*operation.mutable_value())));
+
+  algorithm_name_p.reset(new packet::Operation::AlgorithmName(operation.algorithm_name()));
+
+  conf_id_p.reset(new uint32_t(operation.conf_id()));
+  new_conf_id_p.reset(new uint32_t(operation.new_conf_id()));
+
+  return 0;
+}
+
+int DataTransfer::serializeToOperation(const packet::Operation::MethodType &method,
+                                const std::vector<std::string> &data,
+                                const std::string &msg,
+                                const std::string &key,
+                                const std::string &timestamp,
+                                const std::string &value,
+                                const packet::Operation::AlgorithmName &algorithm_name,
+                                const uint32_t &conf_id,
+                                const uint32_t &new_conf_id,
+                                packet::Operation &operation) {
+  operation.set_method(method);
+  for(auto& d: data) {
+    *operation.add_data() = d;
+  }
+  operation.set_msg(msg);
+  operation.set_key(key);
+  operation.set_timestamp(timestamp);
+  operation.set_value(value);
+  operation.set_algorithm_name(algorithm_name);
+  operation.set_conf_id(conf_id);
+  operation.set_new_conf_id(new_conf_id);
+  return 0;
 }

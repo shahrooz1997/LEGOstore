@@ -2,31 +2,31 @@ syntax = "proto3";
 
 package packet;
 
-message msg{
+message msg {
 	repeated bytes value = 1;
 }
 
-message Server{
+message Server {
 	uint32 id = 1;
 	string ip = 2;
 	uint32 port = 3;
 }
 
-message Datacenter{
+message Datacenter {
 	uint32 id = 1;
 	string metadata_server_ip = 2;
 	uint32 metadata_server_port = 3;
 	repeated Server servers = 4;
 }
 
-message Quorums{
+message Quorums {
 	repeated uint32 q1 = 1;
 	repeated uint32 q2 = 2;
 	repeated uint32 q3 = 3;
 	repeated uint32 q4 = 4;
 }
 
-message Placement{
+message Placement {
 	string protocol = 1;
 	repeated uint32 servers = 2;
 	uint32 f = 3;
@@ -35,7 +35,7 @@ message Placement{
 	repeated Quorums quorums = 6;
 }
 
-message Group{
+message Group {
 	uint32 id = 1;
 	uint32 availability_target = 2;
 	repeated double client_dist = 3;
@@ -50,13 +50,13 @@ message Group{
 
 }
 
-message Group_config{
+message Group_config {
 	uint64 timestamp = 1;
 	uint32 id = 2;
 	repeated Group groups = 3;
 }
 
-message MetaDataServer{
+message MetaDataServer {
 	bytes status = 1;
 	bytes msg = 2;
 	bytes key = 3;
@@ -64,4 +64,32 @@ message MetaDataServer{
 	uint32 new_conf_id = 5;
 	bytes timestamp = 6;
 	Placement placement = 7;
+}
+
+message Operation {
+  enum MethodType {
+    success = 0;
+    failure = 1;
+    put = 2;
+    get = 3;
+    getTimestamp = 4;
+    putFin = 5;
+    reconfigQuery = 6;
+    reconfigFinalize = 7;
+    reconfigWrite = 8;
+    reconfigFinish = 9;
+  };
+  enum AlgorithmName {
+    ABD = 0;
+    CAS = 1;
+  }
+  MethodType method = 1;
+  repeated bytes data = 2;
+  string msg = 3;
+  string key = 4;
+  string timestamp = 5;
+  string value = 6;
+  AlgorithmName algorithmName = 7;
+  uint32 confId = 8;
+  uint32 newConfId = 9;
 }

@@ -20,6 +20,8 @@
 #include <inttypes.h>
 #include <netinet/tcp.h>
 
+const char* algorithmNames[] = { ABD_PROTOCOL_NAME, CAS_PROTOCOL_NAME, "NOT_DEFINED" };
+
 #ifdef DEVELOPMENT
 bool DEBUG_CAS_Client = true;
 bool DEBUG_ABD_Client = true;
@@ -35,6 +37,7 @@ bool DEBUG_ABD_Server = true;
 bool DEBUG_RECONFIG_CONTROL = true;
 bool DEBUG_CONTROLLER = true;
 bool DEBUG_METADATA_SERVER = true;
+bool DEBUG_SERVER = true;
 bool DEBUG_UTIL = true;
 #endif
 
@@ -956,4 +959,30 @@ void Logger::operator()(const int &line_number, const std::string &msg) {
   output << "    " << std::setw(10) << (new_lapse - last_lapse).count() << ":" << std::setfill('0') << std::setw(4)
          << line_number << ": " << msg << "\n" << std::setfill(' ');
   last_lapse = new_lapse;
+}
+
+void increase_thread_priority(bool increase) { // true: increase the priority of the caller thread, false: priority default
+  static int default_policy;
+  static sched_param default_sch_params;
+  static bool default_set = false;
+
+  if (!default_set) {
+    default_set = true;
+    assert(pthread_getschedparam(pthread_self(), &default_policy, &default_sch_params) == 0);
+  }
+
+  if (increase) {
+    sched_param sch_params;
+    int policy = SCHED_FIFO;
+    sch_params.sched_priority = 2;
+    assert(pthread_setschedparam(pthread_self(), policy, &sch_params) == 0);
+  } else {
+    assert(pthread_setschedparam(pthread_self(), default_policy, &default_sch_params) == 0);
+  }
+}
+
+const char* getAlgorithmName(packet::Operation::AlgorithmName algorithmName) {
+  int index = static_cast<int>(algorithmName);
+  assert(0 <= index && index < static_cast<int>(sizeof(algorithmNames) / sizeof(char*)));
+  return algorithmNames[index];
 }

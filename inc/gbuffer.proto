@@ -82,6 +82,7 @@ message Operation {
   enum AlgorithmName {
     ABD = 0;
     CAS = 1;
+    NOT_DEFINED = 2;
   }
   MethodType method = 1;
   repeated bytes data = 2;

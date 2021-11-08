@@ -36,6 +36,7 @@
 #include <memory>
 #include <random>
 #include <arpa/inet.h>
+#include "gbuffer.pb.h"
 
 using namespace std::chrono;
 
@@ -76,9 +77,10 @@ using namespace std::chrono;
 
 #define MAX_KEY_NUMBER 10000
 
-#define CAS_PROTOCOL_NAME "CAS"
 #define ABD_PROTOCOL_NAME "ABD"
+#define CAS_PROTOCOL_NAME "CAS"
 #define MIX_PROTOCOL_NAME "MIX"
+extern const char* algorithmNames[];
 
 //#define DEVELOPMENT
 
@@ -90,6 +92,7 @@ extern bool DEBUG_ABD_Server;
 extern bool DEBUG_RECONFIG_CONTROL;
 extern bool DEBUG_CONTROLLER;
 extern bool DEBUG_METADATA_SERVER;
+extern bool DEBUG_SERVER;
 extern bool DEBUG_UTIL;
 
 //#define LOGGING_ON
@@ -143,7 +146,7 @@ class Logger {
 //#define EASY_LOG_INIT_M(M) Logger EASY_LOGGER_INSTANCE_NAME(__FILE__, __func__, __LINE__, M)
 #define EASY_LOG_M(M) EASY_LOGGER_INSTANCE_NAME(__LINE__, M)
 
-#define TRUNC_STR(X) X.substr(0, 3) + "...[" + std::to_string(X.size()) + " bytes]"
+#define TRUNC_STR(X) (X).substr(0, 3) + "...[" + std::to_string((X).size()) + " bytes]"
 
 typedef std::vector<std::string> strVec;
 
@@ -379,5 +382,9 @@ int ask_metadata(const std::string &metadata_server_ip, const std::string &metad
 
 template<typename T>
 void set_intersection(const Placement &p, std::unordered_set<T> &res);
+
+void increase_thread_priority(bool increase = true);
+
+const char* getAlgorithmName(packet::Operation::AlgorithmName algorithmName);
 
 #endif /* UTIL_H */

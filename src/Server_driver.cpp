@@ -1,6 +1,6 @@
 #include <thread>
 #include "../inc/Data_Server.h"
-#include "Data_Transfer.h"
+#include "../inc/Data_Transfer.h"
 #include <sys/ioctl.h>
 #include <unordered_set>
 #include <sys/types.h>
@@ -11,163 +11,126 @@
 #include "../inc/Util.h"
 #include <iostream>
 #include <atomic>
+#include <sys/wait.h>
 
-using std::string;
-using std::to_string;
-using std::unique_lock;
-using std::mutex;
+using namespace std;
 
-mutex concurrent_counter_mu;
-int concurrent_counter;
-int max_concurrent_counter;
+static vector<string> ports = {"10000", "10001", "10002", "10003", "10004", "10005", "10006", "10007", "10008"};
+static vector<string>
+    db_names = {"db1.temp", "db2.temp", "db3.temp", "db4.temp", "db5.temp", "db6.temp", "db7.temp", "db8.temp",
+                "db9.temp"};
 
-void increase_thread_priority(bool increase = true) { // true: increase the priority of the caller thread, false: priority default
-  static int default_policy;
-  static sched_param default_sch_params;
-  static bool default_set = false;
-
-  if (!default_set) {
-    default_set = true;
-    assert(pthread_getschedparam(pthread_self(), &default_policy, &default_sch_params) == 0);
-  }
-
-  if (increase) {
-    sched_param sch_params;
-    int policy = SCHED_FIFO;
-    sch_params.sched_priority = 2;
-    assert(pthread_setschedparam(pthread_self(), policy, &sch_params) == 0);
-  } else {
-    assert(pthread_setschedparam(pthread_self(), default_policy, &default_sch_params) == 0);
-  }
-}
-
-void message_handler(int connection, DataServer &dataserver, int portid, std::string &recvd) {
-  DPRINTF(DEBUG_METADATA_SERVER, "started\n");
-  EASY_LOG_INIT_M(string("started") + " with port " + to_string(portid));
+void message_handler(int connection, DataServer &dataserver, string &recvd) {
+  DPRINTF(DEBUG_SERVER, "started\n");
+  EASY_LOG_INIT_M(string("started"));
   int result = 1;
+  unique_ptr<packet::Operation::MethodType> method_p;
+  unique_ptr<vector<string>> data_p;
+  unique_ptr<string> msg_p;
+  unique_ptr<string> key_p;
+  unique_ptr<string> timestamp_p;
+  unique_ptr<string> value_p;
+  unique_ptr<packet::Operation::AlgorithmName> algorithm_name_p;
+  unique_ptr<uint32_t> conf_id_p;
+  unique_ptr<uint32_t> new_conf_id_p;
 
-  strVec data = DataTransfer::deserialize(recvd);
-  DPRINTF(DEBUG_METADATA_SERVER, "6666666666 %lu\n", data.size());
-  if (data.size() < 3) {
-    DPRINTF(DEBUG_METADATA_SERVER, "Bad message\n");
-    EASY_LOG_M("Bad message");
-    DataTransfer::sendMsg(connection, DataTransfer::serialize({"Badmessage", "Message is not interpretable"}));
-    return;
-  }
-  std::string &method = data[0];
-  DPRINTF(DEBUG_METADATA_SERVER, "method is %s\n", method.c_str());
+  assert(DataTransfer::deserializeOperation(recvd,
+                                            method_p,
+                                            data_p,
+                                            msg_p,
+                                            key_p,
+                                            timestamp_p,
+                                            value_p,
+                                            algorithm_name_p,
+                                            conf_id_p,
+                                            new_conf_id_p) == 0);
 
-  if (method == "put") {
-    DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
-    DPRINTF(DEBUG_METADATA_SERVER,
-            "%s\n",
-            (string("put, The key is ") + data[1] + " ts: " + data[2] + " value_size: " + to_string(data[3].size())
-                + " class: " + data[4] + " conf_id: " + data[5]).c_str());
-    EASY_LOG_M(string("put, The key is ") + data[1] + " ts: " + data[2] + " value_size: " + to_string(data[3].size())
-                   + " class: " + data[4] + " conf_id: " + data[5]);
-    result = DataTransfer::sendMsg(connection, dataserver.put(data[1], data[3], data[2], data[4], stoul(data[5])));
-    EASY_LOG_M("put finished");
-  } else if (method == "get") {
-    DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
+  const char *algorithm_name = getAlgorithmName(*algorithm_name_p);
 
-    if (data[3] == CAS_PROTOCOL_NAME) {
-      DPRINTF(DEBUG_METADATA_SERVER,
-              "%s\n",
-              (string("get, The key is ") + data[1] + " ts: " + data[2] + " class: " + data[3] + " conf_id: "
-                  + data[4]).c_str());
-      EASY_LOG_M(
-          string("get, The key is ") + data[1] + " ts: " + data[2] + " class: " + data[3] + " conf_id: " + data[4]);
-      result = DataTransfer::sendMsg(connection, dataserver.get(data[1], data[2], data[3], stoul(data[4])));
-    } else {
-      DPRINTF(DEBUG_METADATA_SERVER,
-              "%s\n",
-              (string("get, The key is ") + data[1] + " class: " + data[2] + " conf_id: " + data[3]).c_str());
-      EASY_LOG_M(string("get, The key is ") + data[1] + " class: " + data[2] + " conf_id: " + data[3]);
-      std::string phony_timestamp;
-      result = DataTransfer::sendMsg(connection, dataserver.get(data[1], phony_timestamp, data[2], stoul(data[3])));
-    }
-    EASY_LOG_M("get finished");
-  } else if (method == "get_timestamp") {
-    DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
-    DPRINTF(DEBUG_METADATA_SERVER,
-            "%s\n",
-            (string("get_timestamp, The key is ") + data[1] + " class: " + data[2] + " conf_id: " + data[3]).c_str());
-    EASY_LOG_M(string("get_timestamp, The key is ") + data[1] + " class: " + data[2] + " conf_id: " + data[3]);
-    result = DataTransfer::sendMsg(connection, dataserver.get_timestamp(data[1], data[2], stoul(data[3])));
-    EASY_LOG_M("get_timestamp finished");
-  } else if (method == "put_fin") {
-    DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
-    DPRINTF(DEBUG_METADATA_SERVER,
-            "%s\n",
-            (string("put_fin, The key is ") + data[1] + " ts: " + data[2] + " class: " + data[3] + " conf_id: "
-                + data[4]).c_str());
-    EASY_LOG_M(
-        string("put_fin, The key is ") + data[1] + " ts: " + data[2] + " class: " + data[3] + " conf_id: " + data[4]);
-    result = DataTransfer::sendMsg(connection, dataserver.put_fin(data[1], data[2], data[3], stoul(data[4])));
-    EASY_LOG_M("put_fin finished");
-  } else if (method == "reconfig_query") {
-    DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
-    DPRINTF(DEBUG_METADATA_SERVER,
-            "%s\n",
-            (string("reconfig_query") + data[1] + " class: " + data[2] + " conf_id: " + data[3]).c_str());
-    EASY_LOG_M("reconfig_query");
+  DPRINTF(DEBUG_SERVER,
+          "%s\n",
+          (string("method is ") + to_string(*method_p) + ", data size is " + to_string(data_p->size()) + ", msg is "
+              + *msg_p + ", key is " + *key_p + ", ts is " + *timestamp_p + ", value is " + TRUNC_STR(*value_p)
+              + ", class is " + algorithm_name
+              + ", conf_id is " + to_string(*conf_id_p) + ", new_conf_id is " + to_string(*new_conf_id_p)).c_str());
+  EASY_LOG_M(string("method is ") + to_string(*method_p) + ", data size is " + to_string(data_p->size()) + ", msg is "
+                 + *msg_p + ", key is " + *key_p + ", ts is " + *timestamp_p + ", value is " + TRUNC_STR(*value_p)
+                 + ", class is " + algorithm_name
+                 + ", conf_id is " + to_string(*conf_id_p) + ", new_conf_id is " + to_string(*new_conf_id_p));
+
+  switch (*method_p) {
+    case packet::Operation_MethodType_put:
+      result = DataTransfer::sendMsg(connection,
+                                     dataserver.put(*key_p, *value_p, *timestamp_p, algorithm_name, *conf_id_p));
+      break;
+    case packet::Operation_MethodType_get:
+      result = DataTransfer::sendMsg(connection,
+                                     dataserver.get(*key_p,
+                                                    *timestamp_p,
+                                                    algorithm_name,
+                                                    *conf_id_p));
+      break;
+    case packet::Operation_MethodType_get_timestamp:
+      result = DataTransfer::sendMsg(connection,
+                                     dataserver.get_timestamp(*key_p,
+                                                              algorithm_name,
+                                                              *conf_id_p));
+      break;
+    case packet::Operation_MethodType_put_fin:
+      result =
+          DataTransfer::sendMsg(connection, dataserver.put_fin(*key_p, *timestamp_p, algorithm_name, *conf_id_p));
+      break;
+    case packet::Operation_MethodType_reconfig_query:
 #ifdef CHANGE_THREAD_PRIORITY
-    increase_thread_priority();
+      increase_thread_priority();
 #endif
-    result = DataTransfer::sendMsg(connection, dataserver.reconfig_query(data[1], data[2], stoul(data[3])));
-    EASY_LOG_M("reconfig_query finished");
-  } else if (method == "reconfig_finalize") {
-    DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
-    DPRINTF(DEBUG_METADATA_SERVER,
-            "%s\n",
-            (string("reconfig_finalize, The key is ") + data[1] + " ts: " + data[2] + " class: " + data[3]
-                + " conf_id: " + data[4]).c_str());
-    EASY_LOG_M("reconfig_finalize");
-    result = DataTransfer::sendMsg(connection, dataserver.reconfig_finalize(data[1], data[2], data[3], stoul(data[4])));
-    EASY_LOG_M("reconfig_finalize finished");
-  } else if (method == "reconfig_write") {
-    DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
-    DPRINTF(DEBUG_METADATA_SERVER,
-            "%s\n",
-            (string("reconfig_write, The key is ") + data[1] + " ts: " + data[2] + " value_size: "
-                + to_string(data[3].size()) + " class: " + data[4] + " conf_id: " + data[5]).c_str());
-    EASY_LOG_M("reconfig_write");
-    result = DataTransfer::sendMsg(connection,
-                                   dataserver.reconfig_write(data[1], data[3], data[2], data[4], stoul(data[5])));
-    EASY_LOG_M("reconfig_write finished");
-  } else if (method == "finish_reconfig") {
-    DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
-    DPRINTF(DEBUG_METADATA_SERVER,
-            "%s\n",
-            (string("finish_reconfig, The key is ") + data[1] + " ts: " + data[2] + " new confid: " + data[3]
-                + " class: " + data[4] + " conf_id: " + data[5]).c_str());
-    EASY_LOG_M("finish_reconfig");
-    result = DataTransfer::sendMsg(connection,
-                                   dataserver.finish_reconfig(data[1], data[2], data[3], data[4], stoul(data[5])));
+      result = DataTransfer::sendMsg(connection, dataserver.reconfig_query(*key_p, algorithm_name, *conf_id_p));
+      break;
+    case packet::Operation_MethodType_reconfig_finalize:
+      result = DataTransfer::sendMsg(connection,
+                                     dataserver.reconfig_finalize(*key_p, *timestamp_p, algorithm_name, *conf_id_p));
+      break;
+    case packet::Operation_MethodType_reconfig_write:
+      result = DataTransfer::sendMsg(connection,
+                                     dataserver.reconfig_write(*key_p,
+                                                               *value_p,
+                                                               *timestamp_p,
+                                                               algorithm_name,
+                                                               *conf_id_p));
+      break;
+    case packet::Operation_MethodType_reconfig_finish:
+      result = DataTransfer::sendMsg(connection,
+                                     dataserver.finish_reconfig(*key_p,
+                                                                *timestamp_p,
+                                                                to_string(*new_conf_id_p),
+                                                                algorithm_name,
+                                                                *conf_id_p));
 #ifdef CHANGE_THREAD_PRIORITY
-    increase_thread_priority(false);
+      increase_thread_priority(false);
 #endif
-    EASY_LOG_M("finish_reconfig finished");
-  } else {
-    DPRINTF(DEBUG_METADATA_SERVER, "7777777 %lu\n", data.size());
-    DPRINTF(DEBUG_METADATA_SERVER, "MethodNotFound\n");
-    EASY_LOG_M("MethodNotFound");
-    DataTransfer::sendMsg(connection, DataTransfer::serialize({"MethodNotFound", "Unknown method is called"}));
-    EASY_LOG_M("MethodNotFound sent");
+      break;
+    default:DPRINTF(DEBUG_SERVER, "Method Not Found\n");
+      EASY_LOG_M("Method Not Found");
+      DataTransfer::sendMsg(connection,
+                            DataTransfer::serializeToOperation(packet::Operation_MethodType_failure,
+                                                               "Unknown method is called"));
   }
 
   if (result != 1) {
-    DPRINTF(DEBUG_METADATA_SERVER, "sending data failed\n");
-    DataTransfer::sendMsg(connection, DataTransfer::serialize({"Failure", "Server Response failed"}));
+    DPRINTF(DEBUG_SERVER, "Failure: Server Response failed\n");
     EASY_LOG_M("Failure: Server Response failed");
   }
-  DPRINTF(DEBUG_METADATA_SERVER, "END\n");
+
+  EASY_LOG_M("Finished");
+  DPRINTF(DEBUG_SERVER, "END\n");
 }
 
-void server_connection(int connection, DataServer &dataserver, int portid, const string client_ip = "NULL") {
+void connection_handler(int connection, DataServer &dataserver, int portid, const string client_ip = "NULL") {
+  DPRINTF(DEBUG_SERVER, "started with port %d\n", portid);
   if (client_ip != "NULL") {
     DPRINTF(DEBUG_METADATA_SERVER, "Incoming connection from %s\n", client_ip.c_str());
   }
+
 #ifdef USE_TCP_NODELAY
   int yes = 1;
   int result = setsockopt(connection, IPPROTO_TCP, TCP_NODELAY, (char *) &yes, sizeof(int));
@@ -177,20 +140,20 @@ void server_connection(int connection, DataServer &dataserver, int portid, const
 #endif
 
   while (true) {
-    std::string recvd;
+    string recvd;
     int result = DataTransfer::recvMsg(connection, recvd);
     if (result != 1) {
-//            DataTransfer::sendMsg(connection, DataTransfer::serializeMDS("ERROR", "Error in receiving"));
       close(connection);
       DPRINTF(DEBUG_METADATA_SERVER, "one connection closed.\n");
       return;
     }
     if (is_warmup_message(recvd)) {
       DPRINTF(DEBUG_METADATA_SERVER, "warmup message received\n");
-      std::string temp = std::string(WARM_UP_MNEMONIC) + get_random_string();
+      string temp = string(WARM_UP_MNEMONIC) + get_random_string();
       result = DataTransfer::sendMsg(connection, temp);
       if (result != 1) {
-        DataTransfer::sendMsg(connection, DataTransfer::serialize({"Failure", "Server Response failed"}));
+        close(connection);
+        DPRINTF(DEBUG_METADATA_SERVER, "one connection closed.\n");
       }
       continue;
     }
@@ -204,7 +167,7 @@ void server_connection(int connection, DataServer &dataserver, int portid, const
 //        }
 //        ccm.unlock();
 
-    message_handler(connection, dataserver, portid, recvd);
+    message_handler(connection, dataserver, recvd);
 
     // Counting the max concurrent ops
 //        ccm.lock();
@@ -213,31 +176,10 @@ void server_connection(int connection, DataServer &dataserver, int portid, const
   }
 }
 
-void runServer(std::string &db_name, std::string &socket_port) {
-
-  DataServer *ds = new DataServer(db_name, socket_setup(socket_port));
-  int portid = stoi(socket_port);
-  while (1) {
-    struct sockaddr_in client_address;
-    socklen_t client_address_size = sizeof(client_address);
-    int new_sock = accept(ds->getSocketDesc(), (struct sockaddr *) &client_address, &client_address_size);
-    if (new_sock < 0) {
-      DPRINTF(DEBUG_CAS_Client, "Error: accept: %d, errno is %d\n", new_sock, errno);
-    } else {
-      char str_temp[INET_ADDRSTRLEN];
-      inet_ntop(AF_INET, &(client_address.sin_addr), str_temp, INET_ADDRSTRLEN);
-      string client_ip(str_temp);
-      std::thread
-          cThread([&ds, new_sock, portid, client_ip]() { server_connection(new_sock, *ds, portid, client_ip); });
-      cThread.detach();
-    }
-  }
-}
-
-void runServer(const std::string &db_name, const std::string &socket_port, const std::string &socket_ip,
-               const std::string &metadata_server_ip, const std::string &metadata_server_port) {
-
-  DataServer *ds = new DataServer(db_name, socket_setup(socket_port, &socket_ip), metadata_server_ip,
+void run_server(const string &db_name, const string &socket_port, const string *socket_ip = nullptr,
+                const string &metadata_server_ip = "127.0.0.1", const string &metadata_server_port = "30000") {
+  DPRINTF(DEBUG_SERVER, "started.\n");
+  DataServer *ds = new DataServer(db_name, socket_setup(socket_port, socket_ip), metadata_server_ip,
                                   metadata_server_port);
   int portid = stoi(socket_port);
   while (1) {
@@ -250,96 +192,74 @@ void runServer(const std::string &db_name, const std::string &socket_port, const
       char str_temp[INET_ADDRSTRLEN];
       inet_ntop(AF_INET, &(client_address.sin_addr), str_temp, INET_ADDRSTRLEN);
       string client_ip(str_temp);
-      std::thread
-          cThread([&ds, new_sock, portid, client_ip]() { server_connection(new_sock, *ds, portid, client_ip); });
+      thread
+          cThread([&ds, new_sock, portid, client_ip]() { connection_handler(new_sock, *ds, portid, client_ip); });
       cThread.detach();
     }
   }
 
 }
 
+void fork_server(vector<pid_t> &children,
+                 const string &db_name,
+                 const string &socket_port,
+                 const string *socket_ip = nullptr,
+                 const string &metadata_server_ip = "127.0.0.1",
+                 const string &metadata_server_port = "30000") {
+  fflush(stdout);
+  pid_t child_pid = fork();
+  if (child_pid == 0) {
+    setbuf(stdout, NULL);
+    close(1);
+    int pid = getpid();
+    stringstream filename;
+    filename << "server_" << pid << "_output.txt";
+    FILE *out = fopen(filename.str().c_str(), "w");
+    setbuf(out, NULL);
+    run_server(db_name, socket_port, socket_ip, metadata_server_ip, metadata_server_port);
+    exit(0);
+  } else if (child_pid < -1) {
+    DPRINTF(true, "Fork error with %d\n", child_pid);
+    exit(-1);
+  } else {
+    children.push_back(child_pid);
+  }
+}
+
 int main(int argc, char **argv) {
-
   signal(SIGPIPE, SIG_IGN);
-
-  concurrent_counter = 0;
-  max_concurrent_counter = 0;
-
-  std::vector<std::string> socket_port;
-  std::vector<std::string> db_list;
+  vector<pid_t> children;
 
   if (argc == 1) {
-    socket_port = {"10000", "10001", "10002", "10003", "10004", "10005", "10006", "10007", "10008"};
-    db_list = {"db1.temp", "db2.temp", "db3.temp", "db4.temp", "db5.temp", "db6.temp", "db7.temp", "db8.temp",
-               "db9.temp"};
-    for (uint i = 0; i < socket_port.size(); i++) {
-//        if(socket_port[i] == "10004" || socket_port[i] == "10005"){
+    for (uint i = 0; i < ports.size(); i++) {
+//        if(ports[i] == "10004" || ports[i] == "10005"){
 //            continue;
 //        }
-      fflush(stdout);
-      if (fork() == 0) {
-        std::setbuf(stdout, NULL);
-        close(1);
-        int pid = getpid();
-        std::stringstream filename;
-        filename << "server_" << pid << "_output.txt";
-        FILE *out = fopen(filename.str().c_str(), "w");
-        std::setbuf(out, NULL);
-        runServer(db_list[i], socket_port[i]);
-        exit(0);
-      }
+      fork_server(children, db_names[i], ports[i]);
     }
   } else if (argc == 3) {
-    socket_port.push_back(argv[1]);
-    db_list.push_back(std::string(argv[2]) + ".temp");
-//        for(uint i = 0; i < socket_port.size(); i++){
-//        if(socket_port[i] == "10004" || socket_port[i] == "10005"){
-//            continue;
-//        }
-    fflush(stdout);
-    if (fork() == 0) {
-
-      close(1);
-      int pid = getpid();
-      std::stringstream filename;
-      filename << "server_" << pid << "_output.txt";
-      fopen(filename.str().c_str(), "w");
-      runServer(db_list[0], socket_port[0]);
-    }
-//        }
+    fork_server(children, string(argv[2]) + ".temp", argv[1]);
   } else if (argc == 6) {
-    socket_port.push_back(argv[2]);
-    db_list.push_back(std::string(argv[3]) + ".temp");
-//        for(uint i = 0; i < socket_port.size(); i++){
-//        if(socket_port[i] == "10004" || socket_port[i] == "10005"){
-//            continue;
-//        }
-    fflush(stdout);
-    if (fork() == 0) {
-
-      close(1);
-      int pid = getpid();
-      std::stringstream filename;
-      filename << "server_" << pid << "_output.txt";
-      fopen(filename.str().c_str(), "w");
-      runServer(db_list[0], socket_port[0], argv[1], argv[4], argv[5]);
-    }
-//        }
+    string ip_str(argv[1]);
+    fork_server(children, std::string(argv[3]) + ".temp", argv[2], &ip_str, argv[4], argv[5]);
   } else {
-    std::cout << "Enter the correct number of arguments :  ./Server <port_no> <db_name>" << std::endl;
-    std::cout << "Or : ./Server <ext_ip> <port_no> <db_name> <metadate_server_ip> <metadata_server_port>" <<
-              std::endl;
-    return 0;
+    cout << "Enter the correct number of arguments :  ./Server <port_no> <db_name>" << endl;
+    cout << "Or : ./Server <ext_ip> <port_no> <db_name> <metadate_server_ip> <metadata_server_port>" <<
+         endl;
+    return -1;
   }
 
-  std::string ch;
-  //Enter quit to exit the thread
-  while (ch != "quit") {
-    std::cin >> ch;
+  cout << "Server forked the children." << endl;
+  int ret_val = 0;
+  for (auto &pid: children) {
+    if (waitpid(pid, &ret_val, 0) != -1) {
+      std::cout << "Child " << pid << " temination status " << WIFEXITED(ret_val) << "  Rate receved is "
+                << WEXITSTATUS(ret_val) << " : " << WIFSIGNALED(ret_val) << " : " << WTERMSIG(ret_val) << std::endl;
+      assert(WEXITSTATUS(ret_val) == 0);
+    } else {
+      DPRINTF(true, "waitpid error\n");
+    }
   }
-
-//    std::cout << "Waiting for all detached threads to terminate!" << std::endl;
-//    std::this_thread::sleep_for(std::chrono::seconds(5));
 
   return 0;
 }

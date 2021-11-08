@@ -86,6 +86,23 @@ class DataTransfer {
                                   const uint32_t &conf_id,
                                   const uint32_t &new_conf_id,
                                   packet::Operation &operation);
+
+  static std::string serializeToOperation(const packet::Operation::MethodType &method,
+                                  const std::vector<std::string> &data,
+                                  const std::string &msg,
+                                  const std::string &key,
+                                  const std::string &timestamp,
+                                  const std::string &value,
+                                  const packet::Operation::AlgorithmName &algorithm_name,
+                                  const uint32_t &conf_id,
+                                  const uint32_t &new_conf_id);
+
+  static int serializeToOperation(const packet::Operation::MethodType &method,
+                                  const std::string &msg,
+                                  packet::Operation &operation);
+
+  static std::string serializeToOperation(const packet::Operation::MethodType &method,
+                                  const std::string &msg);
 };
 
 #endif

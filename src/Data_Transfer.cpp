@@ -594,15 +594,15 @@ Placement DataTransfer::deserializeMDS(const std::string &data, std::string &sta
 }
 
 int DataTransfer::deserializeOperation(const std::string &str_in,
-                                std::unique_ptr<packet::Operation::MethodType> &method_p,
-                                std::unique_ptr<std::vector<std::string>> &data_p,
-                                std::unique_ptr<std::string> &msg_p,
-                                std::unique_ptr<std::string> &key_p,
-                                std::unique_ptr<std::string> &timestamp_p,
-                                std::unique_ptr<std::string> &value_p,
-                                std::unique_ptr<packet::Operation::AlgorithmName> &algorithm_name_p,
-                                std::unique_ptr<uint32_t> &conf_id_p,
-                                std::unique_ptr<uint32_t> &new_conf_id_p) {
+                                       std::unique_ptr<packet::Operation::MethodType> &method_p,
+                                       std::unique_ptr<std::vector<std::string>> &data_p,
+                                       std::unique_ptr<std::string> &msg_p,
+                                       std::unique_ptr<std::string> &key_p,
+                                       std::unique_ptr<std::string> &timestamp_p,
+                                       std::unique_ptr<std::string> &value_p,
+                                       std::unique_ptr<packet::Operation::AlgorithmName> &algorithm_name_p,
+                                       std::unique_ptr<uint32_t> &conf_id_p,
+                                       std::unique_ptr<uint32_t> &new_conf_id_p) {
   packet::Operation operation;
   operation.ParseFromString(str_in);
   method_p.reset(new packet::Operation::MethodType(operation.method()));
@@ -624,17 +624,17 @@ int DataTransfer::deserializeOperation(const std::string &str_in,
 }
 
 int DataTransfer::serializeToOperation(const packet::Operation::MethodType &method,
-                                const std::vector<std::string> &data,
-                                const std::string &msg,
-                                const std::string &key,
-                                const std::string &timestamp,
-                                const std::string &value,
-                                const packet::Operation::AlgorithmName &algorithm_name,
-                                const uint32_t &conf_id,
-                                const uint32_t &new_conf_id,
-                                packet::Operation &operation) {
+                                       const std::vector<std::string> &data,
+                                       const std::string &msg,
+                                       const std::string &key,
+                                       const std::string &timestamp,
+                                       const std::string &value,
+                                       const packet::Operation::AlgorithmName &algorithm_name,
+                                       const uint32_t &conf_id,
+                                       const uint32_t &new_conf_id,
+                                       packet::Operation &operation) {
   operation.set_method(method);
-  for(auto& d: data) {
+  for (auto &d: data) {
     *operation.add_data() = d;
   }
   operation.set_msg(msg);
@@ -645,4 +645,35 @@ int DataTransfer::serializeToOperation(const packet::Operation::MethodType &meth
   operation.set_conf_id(conf_id);
   operation.set_new_conf_id(new_conf_id);
   return 0;
+}
+
+std::string DataTransfer::serializeToOperation(const packet::Operation::MethodType &method,
+                                               const std::vector<std::string> &data,
+                                               const std::string &msg,
+                                               const std::string &key,
+                                               const std::string &timestamp,
+                                               const std::string &value,
+                                               const packet::Operation::AlgorithmName &algorithm_name,
+                                               const uint32_t &conf_id,
+                                               const uint32_t &new_conf_id) {
+  packet::Operation operation;
+  assert(serializeToOperation(method, data, msg, key, timestamp, value, algorithm_name, conf_id, new_conf_id, operation)
+             == 0);
+  return operation.SerializeAsString();
+}
+
+int DataTransfer::serializeToOperation(const packet::Operation::MethodType &method,
+                                       const std::string &msg,
+                                       packet::Operation &operation) {
+  operation.set_method(method);
+  operation.set_msg(msg);
+  return 0;
+}
+
+std::string DataTransfer::serializeToOperation(const packet::Operation::MethodType &method,
+                                 const std::string &msg) {
+  packet::Operation operation;
+  assert(serializeToOperation(method, msg, operation)
+             == 0);
+  return operation.SerializeAsString();
 }

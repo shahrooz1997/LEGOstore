@@ -17,7 +17,10 @@ obj3 = $(filter-out obj/Client_driver.o obj/Server_driver.o obj/Metadata_Server.
 obj4 = $(filter-out obj/Client_driver.o obj/Server_driver.o obj/Controller.o obj/gbuffer.pb.o, $(obj))
 
 .PHONY: all
-all: obj client server controller metadata_Server
+all: logs obj client server controller metadata_Server
+
+logs:
+	mkdir logs
 
 .PHONY: debug
 debug: CXXFLAGS += -g -O0 -D_GLIBCXX_DEBUG # debug flags
@@ -72,6 +75,6 @@ cleandb:
 	rm -rf client*_output.txt
 	rm -rf cont_output_*.txt
 	rm -rf logfile_*.txt
-	rm -rf logs/*
+	rm -rf logs/
 	rm -rf cont_logs/*
 	rm -rf knossos

@@ -53,6 +53,15 @@ using namespace std::chrono;
 #define LOCAL_TEST
 #define USE_TCP_NODELAY
 //#define DO_WARM_UP
+// Enables storage to gcs
+// #define GCS
+
+#ifdef GCS
+#define GCS_PROJECT_ID "personal-use-316018"
+// Note below can be configured to be datacenter specific
+// TODO: Rajveer
+#define GCS_STORAGE_LOCATION "us-east1"
+#endif
 
 #ifdef LOCAL_TEST
 #define NUMBER_OF_OPS_FOR_WARM_UP 2

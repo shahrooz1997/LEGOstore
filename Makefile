@@ -26,6 +26,10 @@ logs:
 debug: CXXFLAGS += -g -O0 -D_GLIBCXX_DEBUG # debug flags
 debug: all
 
+.PHONY: gcs
+gcs: LDFLAGS += /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libgoogle_cloud_cpp_storage.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libabsl_str_format_internal.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libgoogle_cloud_cpp_common.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libabsl_time.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libabsl_strings.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libabsl_strings_internal.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libabsl_throw_delegate.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libabsl_base.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libabsl_spinlock_wait.a -lrt /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libabsl_int128.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libabsl_civil_time.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libabsl_time_zone.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libabsl_bad_variant_access.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libabsl_bad_optional_access.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libabsl_raw_logging_internal.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libabsl_log_severity.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libcrc32c.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libcurl-d.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libssl.a /home/rajveer/devspace/vcpkg/installed/x64-linux/debug/lib/libcrypto.a /home/rajveer/devspace/vcpkg/installed/x64-linux/lib/libz.a
+gcs: all
+
 LEGOStore: $(obj) 
 	$(CXX) -o $@ $^ $(LDFLAGS)
 

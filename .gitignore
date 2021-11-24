@@ -13,3 +13,4 @@ Metadata_Server
 logs/*
 knossos
 .idea
+.vscode

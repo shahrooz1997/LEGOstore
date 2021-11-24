@@ -13,6 +13,33 @@ Persistent::Persistent(const std::string& directory){
     options.create_if_missing = true;
     rocksdb::Status status = rocksdb::DB::Open(options, directory, &db);
     assert(status.ok());
+
+    #ifdef GCS
+    {
+        // Initializes GCS client
+        // Note: For local test, path to service account json file needs to be exported as environment variable.
+        gcs_client = ::google::cloud::storage::Client();
+
+        // Remove .temp from directory
+        std::size_t found_index = directory.find(".temp");
+        assert(found_index!=std::string::npos);
+        bucket_name = std::string(directory.substr(0,found_index));
+        for(int i=0;i<15;i++)
+            bucket_name += directory[found_index-1];
+        // std::cerr << "Bucket name is " << bucket_name << std::endl;
+        using ::google::cloud::StatusOr;
+        namespace gcs = ::google::cloud::storage;
+        // Create bucket
+        auto bucket_metadata = gcs_client.CreateBucketForProject(bucket_name,GCS_PROJECT_ID,gcs::BucketMetadata().set_location(GCS_STORAGE_LOCATION));
+        // Check if bucket was created successfully
+        if (!bucket_metadata) {
+            throw std::runtime_error(bucket_metadata.status().message());
+        }
+
+        std::cerr << "Bucket " << bucket_metadata->name() << " created."
+            << "\nFull Metadata: " << *bucket_metadata << "\n";
+    }
+    #endif
 }
 
 Persistent::~Persistent(){
@@ -24,6 +51,22 @@ std::vector<std::string> Persistent::get(const std::string& key){
     std::string value;
     rocksdb::Status s = db->Get(rocksdb::ReadOptions(), key, &value);
     
+    #ifdef GCS
+    {
+        namespace gcs = ::google::cloud::storage;
+        auto reader = gcs_client.ReadObject(bucket_name, key);
+
+        // In case, read fails
+        if (!reader)
+            std::cerr << "Error reading object: " << reader.status() << "\n";
+        else
+        {
+            std::string contents{std::istreambuf_iterator<char>{reader}, {}};
+            std::cerr << "CONTENTS: " << contents << "\n";
+        }
+    }
+    #endif
+
     if(s.IsNotFound()){
         DPRINTF(DEBUG_CAS_Server, "persisttent get VALUE NOT FOUND! key is %s\n", key.c_str());
         return std::vector<std::string>();
@@ -59,6 +102,24 @@ void Persistent::put(const std::string& key, const std::vector<std::string>& val
 //        std::cerr << s.ToString() << std::endl;
         assert(s.ok());
     }
+
+    #ifdef GCS
+    {
+        namespace gcs = ::google::cloud::storage;
+        using ::google::cloud::StatusOr;
+        // Create stream object to write serialized data to.
+        auto writer = gcs_client.WriteObject(bucket_name, key);
+        
+        // Write data to stream.
+        writer << out_str;
+        
+        writer.Close();
+        if (writer.metadata())
+            std::cerr << "Successfully created object: " << *writer.metadata() << std::endl;
+        else 
+            std::cerr << "Error creating object: " << writer.metadata().status() << std::endl;
+    }
+    #endif
 }
 
 void Persistent::merge(const std::string& key, const std::vector<std::string>& value){

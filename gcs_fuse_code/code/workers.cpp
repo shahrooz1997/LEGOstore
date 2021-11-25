@@ -1,3 +1,8 @@
+/*
+
+For information about this program check README.md in the same directory as this file.
+
+*/
 #include "workers.h"
 #include <rocksdb/env.h>
 #include <rocksdb/options.h>
@@ -11,7 +16,7 @@ static void * writer(void *thread_args)
 	
 	long int rounds = random();
 	
-	// Don't want more than that many rounds
+	// Don't want more than 50 rounds
 	rounds %= 50;
 
 	printf("Rounds chosen for Thread %lu is %lu\n", pthread_self(), rounds);
@@ -63,6 +68,7 @@ int main(int argc, char *argv[])
 		printf("\n\n\
 				\nMissing number of threads:\
 				\ntry: ./writer <total_threads> <key to use> --critical-debug [false|true]\
+				\nExample: ./writer 10 34 --critical-debug false\
 				\n\n");
 		return 1;
 	}
@@ -73,7 +79,11 @@ int main(int argc, char *argv[])
 	rocksdb::DB* db;
 	rocksdb::Options options;
 	options.create_if_missing = true;
-	rocksdb::Status status = rocksdb::DB::Open(options, "../gcs_mount/", &db);
+	
+	// Directory where you want to mount rocksdb as your database 
+	std::string rocksdb_mount_path = "../gcs_mount/";
+
+	rocksdb::Status status = rocksdb::DB::Open(options, rocksdb_mount_path, &db);
 	printf("Open db status: code = %d subcode = %d\n", status.code(), status.subcode());
 	assert(status.ok());
 	

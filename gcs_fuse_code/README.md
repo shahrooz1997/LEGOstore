@@ -1,3 +1,11 @@
+WHat does GCSFUSE do?
+
+It mounts a GCS bucket in a directory as a user space file-system.
+
+How did we use it?
+
+We used it to make rocksdb use the GCSFUSE directory to make data durable i.e. in case of VM failure data can be obtained from GCS. But, this idea failed because rocksdb relies on POSIX style interface and [GCSFUSE is not POSIX compatible](https://cloud.google.com/storage/docs/gcs-fuse#notes). Specifically, it failed when rocksdb used [access()](https://man7.org/linux/man-pages/man2/access.2.html) on a file path which is in GCSFUSE directory in our code base.
+
 0. Assuming you have downloaded curl, if not run:
     ```
     sudo apt-get install curl

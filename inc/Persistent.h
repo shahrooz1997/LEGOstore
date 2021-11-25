@@ -5,10 +5,7 @@
 #include <rocksdb/merge_operator.h>
 #include <cassert>
 #include "Util.h"
-
-#ifdef GCS
-#include "google/cloud/storage/client.h"
-#endif
+#include "../inc/GCS_Persistent.h"
 
 class Persistent{
 
@@ -25,7 +22,7 @@ private:
     rocksdb::DB* db;
     #ifdef GCS
     // gcs Client
-    google::cloud::storage::Client gcs_client;
+    ::google::cloud::storage::Client gcs_client;
     // Directory is used as bucket name.
     std::string bucket_name;
     #endif

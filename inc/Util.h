@@ -35,7 +35,7 @@
 #include <mutex>
 #include <memory>
 #include <random>
-#include "gcs_config.h"
+#include "GCS_Config.h"
 
 using namespace std::chrono;
 

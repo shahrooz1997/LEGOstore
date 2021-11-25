@@ -1,4 +1,4 @@
-#include "gcs_config.h"
+#include "GCS_Config.h"
 #include "google/cloud/storage/client.h"
 
 #ifdef GCS

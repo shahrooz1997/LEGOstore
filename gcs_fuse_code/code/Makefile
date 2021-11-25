@@ -1,18 +1,13 @@
 .ONESHELL:
 SHELL := /bin/bash
 
-all: workers.cpp workers.h check.cpp
-	g++ -o workers workers.cpp -lpthread -lrocksdb;
-	g++ -o check check.cpp;
-cleanall:
-	rm workers check;
-check: check.cpp
-	g++ -o check check.cpp;
-workers: workers.cpp workers.h
+all: workers.cpp workers.h
 	g++ -o workers workers.cpp -lpthread -lrocksdb;
 clean: 
 	rm workers;
 
+# Below are specific to Rajveer's system
+# You can configure it by cloning rocksdb and "make"ing it in debug mode and adding the path as below
 DEBUG_HEADER_LOCATION = /home/rajveer/devspace/rocksdb/include
 DEBUG_LIBRARY_LOCATION = /home/rajveer/devspace/rocksdb
 

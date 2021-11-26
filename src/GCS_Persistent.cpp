@@ -46,9 +46,6 @@ void GCS_Put(::google::cloud::storage::Client &gcs_client, std::string &bucket_n
     if (!writer.metadata())
         std::cout << "[GCS_WRITER] status: " << writer.metadata().status() << std::endl;
     else 
-        std::cout << "[GCS_WRITER] created key: " << key << std::endl;
-    
-    std::string test;
-    GCS_Get(gcs_client, bucket_name, key, test);
+        std::cout << "[GCS_WRITER] created key: " << key << std::endl;    
 }
 #endif

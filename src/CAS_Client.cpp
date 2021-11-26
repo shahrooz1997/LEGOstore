@@ -142,6 +142,7 @@ namespace CAS_helper{
                 else{
                     // Access all the servers and wait for Q1.size() of them.
                     op_status = -1; // You should access all the server.
+                    assert(false);
                     break;
                 }
             }
@@ -149,6 +150,7 @@ namespace CAS_helper{
             if(chrono::system_clock::now() > end){
                 // Access all the servers and wait for Q1.size() of them.
                 op_status = -1; // You should access all the server.
+                assert(false);
                 break;
             }
 
@@ -203,6 +205,7 @@ namespace CAS_helper{
                     // Access all the servers and wait for Q1.size() of them.
                     EASY_LOG_M("Responses collected, FAILURE");
                     op_status = -1; // You should access all the server.
+                    assert(false);
                     break;
                 }
 

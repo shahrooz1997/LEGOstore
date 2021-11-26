@@ -105,33 +105,37 @@ namespace CAS_helper{
 
         int op_status = 0;    // 0: Success, -1: timeout, -2: operation_fail(reconfiguration)
         RAs--;
-        for(auto it = quorom.begin(); it != quorom.end(); it++){
+        for(const auto &server_id : quorom){
             promise<strVec> prm;
-            responses.emplace(*it, prm.get_future());
-            thread(&_send_one_server, operation, move(prm), key, *(datacenters[*it]->servers[0]),
-                        current_class, conf_id, values[*it], timestamp).detach();
+            responses.emplace(server_id, prm.get_future());
+            thread(&_send_one_server, operation, move(prm), key, *(datacenters[server_id]->servers[0]),
+                        current_class, conf_id, values[server_id], timestamp).detach();
         }
 
         EASY_LOG_M(string("requests were sent to Quorum with size of ") + to_string(quorom.size()));
 
         chrono::system_clock::time_point end = chrono::system_clock::now() +
                                                     chrono::milliseconds(timeout_per_request);
-        auto it = responses.begin();
+        auto response = responses.begin();
         while(true){
-            if(done[it->first]){
-                it++;
-                if(it == responses.end())
-                    it = responses.begin();
+            
+            const uint32_t &server_id = response->first;
+            future<strVec> &server_response = response->second;
+            
+            if(done[server_id]){
+                response++;
+                if(response == responses.end())
+                    response = responses.begin();
 //                DPRINTF(DEBUG_CAS_Client, "one done skipped.\n");
                 continue;
             }
 
 //            DPRINTF(DEBUG_CAS_Client, "try one done.\n");
-            if(it->second.valid() && it->second.wait_for(chrono::milliseconds(1)) == future_status::ready){
-                strVec data = it->second.get();
+            if(server_response.valid() && server_response.wait_for(chrono::milliseconds(1)) == future_status::ready){
+                strVec data = server_response.get();
                 if(data.size() != 0){
                     ret.push_back(data);
-                    done[it->first] = true;
+                    done[server_id] = true;
                     DPRINTF(DEBUG_CAS_Client, "one done.\n");
                     if(number_of_received_responses(done) == quorom.size()){
                         EASY_LOG_M("Responses collected successfully");
@@ -154,9 +158,9 @@ namespace CAS_helper{
                 break;
             }
 
-            it++;
-            if(it == responses.end())
-                it = responses.begin();
+            response++;
+            if(response == responses.end())
+                response = responses.begin();
             continue;
         }
 
@@ -165,34 +169,38 @@ namespace CAS_helper{
         while(op_status == -1 && RAs--) { // Todo: RAs cannot be more than 2 with this implementation
             EASY_LOG_M("at least one request failed. Try again...");
             op_status = 0;
-            for (auto it = servers.begin(); it != servers.end(); it++) { // request to all servers
-                if (responses.find(*it) != responses.end()) {
+            for (const auto &server_id : servers) { // request to all servers
+                if (responses.find(server_id) != responses.end()) {
                     continue;
                 }
                 promise<strVec> prm;
-                responses.emplace(*it, prm.get_future());
-                thread(&_send_one_server, operation, move(prm), key, *(datacenters[*it]->servers[0]),
-                            current_class, conf_id, values[*it], timestamp).detach();
+                responses.emplace(server_id, prm.get_future());
+                thread(&_send_one_server, operation, move(prm), key, *(datacenters[server_id]->servers[0]),
+                            current_class, conf_id, values[server_id], timestamp).detach();
             }
             EASY_LOG_M(string("requests were sent to all servers. Number of servers: ") + to_string(servers.size()));
 
             chrono::system_clock::time_point end = chrono::system_clock::now() +
                                                         chrono::milliseconds(timeout_per_request);
-            auto it = responses.begin();
+            auto response = responses.begin();
             while (true){
-                if (done[it->first]){
-                    it++;
-                    if(it == responses.end())
-                        it = responses.begin();
+
+                uint32_t server_id = response->first;
+                future<strVec> &server_response = response->second;
+                
+                if (done[server_id]){
+                    response++;
+                    if(response == responses.end())
+                        response = responses.begin();
                     continue;
                 }
 
-                if(it->second.valid() &&
-                   it->second.wait_for(chrono::milliseconds(1)) == future_status::ready){
-                    strVec data = it->second.get();
+                if(server_response.valid() &&
+                   server_response.wait_for(chrono::milliseconds(1)) == future_status::ready){
+                    strVec data = server_response.get();
                     if(data.size() != 0){
                         ret.push_back(data);
-                        done[it->first] = true;
+                        done[server_id] = true;
                         if(number_of_received_responses(done) == quorom.size()){
                             EASY_LOG_M("Responses collected successfully");
                             op_status = 0;
@@ -209,9 +217,9 @@ namespace CAS_helper{
                     break;
                 }
 
-                it++;
-                if(it == responses.end())
-                    it = responses.begin();
+                response++;
+                if(response == responses.end())
+                    response = responses.begin();
                 continue;
             }
         }

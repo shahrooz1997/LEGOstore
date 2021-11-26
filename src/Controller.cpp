@@ -687,7 +687,14 @@ int Controller::warm_up(){
 int main(){
 
 #ifdef LOCAL_TEST
-    Controller master(2, 10000, 10000, "./config/local_config.json",
+    #ifdef GCS
+    uint32_t metadata_timeout_per_request = 100000;
+    uint32_t timeout_per_request = 100000;
+    #else
+    uint32_t metadata_timeout_per_request = 10000;
+    uint32_t timeout_per_request = 10000;
+    #endif
+    Controller master(2, metadata_timeout_per_request, timeout_per_request, "./config/local_config.json",
                       "./config/auto_test/input_workload.json", "./config/auto_test/optimizer_output.json");
 #else
     Controller master(2, 10000, 10000, "./config/auto_test/datacenters_access_info.json",

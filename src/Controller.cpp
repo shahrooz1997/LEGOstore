@@ -688,8 +688,9 @@ int main(){
 
 #ifdef LOCAL_TEST
     #ifdef GCS
-    uint32_t metadata_timeout_per_request = 100000;
-    uint32_t timeout_per_request = 100000;
+    // Below timeout's for GCS could be improved on a dedicated system. 
+    uint32_t metadata_timeout_per_request = 30000;
+    uint32_t timeout_per_request = 30000;
     #else
     uint32_t metadata_timeout_per_request = 10000;
     uint32_t timeout_per_request = 10000;

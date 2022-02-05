@@ -50,11 +50,11 @@ int DataTransfer::sendMsg(int sock, const std::string &out_str) {
 }
 
 int DataTransfer::recvAll(int sock, void *buf, int data_size) {
-  char *iter = static_cast<char *>(buf);
+  char *buffer_iter = static_cast<char *>(buf);
   int bytes_read = 0;
 
   while (data_size > 0) {
-    if ((bytes_read = recv(sock, iter, data_size, 0)) < 1) {
+    if ((bytes_read = recv(sock, buffer_iter, data_size, 0)) < 1) {
       if (bytes_read == -1) {
         DPRINTF(DEBUG_CAS_Client, "Error: host socket, errno is %d\n", errno);
       } else if (bytes_read == 0) {
@@ -62,7 +62,7 @@ int DataTransfer::recvAll(int sock, void *buf, int data_size) {
       }
       return bytes_read;
     }
-    iter += bytes_read;
+    buffer_iter += bytes_read;
     data_size -= bytes_read;
   }
 
@@ -90,8 +90,8 @@ strVec DataTransfer::deserialize(const std::string &data) {
   return out_data;
 }
 
-//Pass an empty Vector to it
-// Decodes the msg and populates the vector
+//Pass an empty string to it
+// Decodes the msg and populates the string
 //Returns 1 on SUCCESS
 int DataTransfer::recvMsg(int sock, std::string &data) {
   uint32_t size = 0;

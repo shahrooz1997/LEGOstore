@@ -52,7 +52,11 @@ using namespace std::chrono;
 
 //#define No_GET_OPTIMIZED
 //#define LOCAL_TEST
+
+// Below option is used to disallow buffering of TCP requests when they are small, 
+// essentially disabling Nagle's algorithm.
 #define USE_TCP_NODELAY
+
 //#define DO_WARM_UP
 #define RETRY_CONNECT_TIMES 4
 

@@ -178,6 +178,7 @@ void server_connection(int connection, int portid){
 //        assert(false);
 //    }
 
+// Setup TCP no delay option
 #ifdef USE_TCP_NODELAY
     int yes = 1;
     int result = setsockopt(connection, IPPROTO_TCP, TCP_NODELAY, (char*) &yes, sizeof(int));

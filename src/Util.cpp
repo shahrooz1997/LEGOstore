@@ -367,7 +367,7 @@ void Connect::connect_helper(const std::string &ip, const uint16_t port) {
     bool error = false;
     struct sockaddr_in serv_addr;
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-      print_error("Socket creation error");
+      print_error("Socket creation error" + std::to_string(errno));
       error = true;
     }
 
@@ -376,7 +376,7 @@ void Connect::connect_helper(const std::string &ip, const uint16_t port) {
       int yes = 1;
       int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *) &yes, sizeof(int));
       if (result < 0) {
-        print_error("setsockopt TCP_NODELAY error");
+        print_error("setsockopt TCP_NODELAY error" + std::to_string(errno));
         error = true;
       }
     }
@@ -386,7 +386,7 @@ void Connect::connect_helper(const std::string &ip, const uint16_t port) {
       int yes = 1;
       int result = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char *) &yes, sizeof(int));
       if (result < 0) {
-        print_error("setsockopt SO_KEEPALIVE error");
+        print_error("setsockopt SO_KEEPALIVE error" + std::to_string(errno));
         error = true;
       }
     }
@@ -397,7 +397,7 @@ void Connect::connect_helper(const std::string &ip, const uint16_t port) {
       std::string ip_str = ip;
 
       if (inet_pton(AF_INET, ip_str.c_str(), &serv_addr.sin_addr) <= 0) {
-        print_error("Invalid address/ Address not supported");
+        print_error("Invalid address/ Address not supported" + std::to_string(errno));
         error = true;
       }
     }
@@ -405,7 +405,7 @@ void Connect::connect_helper(const std::string &ip, const uint16_t port) {
     if (!error) {
       int tt;
       if ((tt = connect(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) < 0) {
-        print_error("Connection Failed" + std::to_string(tt));
+        print_error("Connection Failed ret: " + std::to_string(tt) + ", errno: " + std::to_string(errno));
         error = true;
       }
     }

@@ -1,0 +1,576 @@
+{
+  "workload_config": [
+    {
+      "timestamp": 22,
+      "id": 1,
+      "grp_workload": [
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 81.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 20.1678,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 0,
+          "keys": [
+            "A0"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 27471.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 16.5064,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 1,
+          "keys": [
+            "A1"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 21310.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 16.0944,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 2,
+          "keys": [
+            "A2"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 103.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 16.0447,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 3,
+          "keys": [
+            "A3"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 4255.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 15.9578,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 4,
+          "keys": [
+            "A4"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 257.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 14.32,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 5,
+          "keys": [
+            "A5"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 11.3006,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 6,
+          "keys": [
+            "A6"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 11.1572,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 7,
+          "keys": [
+            "A7"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1299.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 11.1539,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 8,
+          "keys": [
+            "A8"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1311.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 11.0722,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 9,
+          "keys": [
+            "A9"
+          ]
+        }
+      ]
+    },
+    {
+      "timestamp": 622,
+      "id": 2,
+      "grp_workload": [
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 81.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 49.5528,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 0,
+          "keys": [
+            "A0"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 27471.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 40.1467,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 1,
+          "keys": [
+            "A1"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 21310.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 34.5981,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 2,
+          "keys": [
+            "A2"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 103.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 34.49,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 3,
+          "keys": [
+            "A3"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 4255.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 34.4328,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 4,
+          "keys": [
+            "A4"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 257.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 32.3797,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 5,
+          "keys": [
+            "A5"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 26.2472,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 6,
+          "keys": [
+            "A6"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 25.965,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 7,
+          "keys": [
+            "A7"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1299.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 26.2253,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 8,
+          "keys": [
+            "A8"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1311.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 25.8953,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 9,
+          "keys": [
+            "A9"
+          ]
+        }
+      ]
+    }
+  ]
+}

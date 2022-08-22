@@ -637,6 +637,7 @@ def main(args):
         print("Please wait while I am gathering the logs...")
         # os.system("rm -rf /home/shahrooz/Desktop/PSU/Research/LEGOstore/scripts/data/CAS_NOF")
         Machine.stop_all(machines)
+        Machine.gather_logs_all(machines)
         Machine.gather_summary_all(clients)
         summarize()
         # if should_gather_outputs(controller):

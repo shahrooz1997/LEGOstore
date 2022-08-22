@@ -51,7 +51,7 @@ using namespace std::chrono;
 #define MAX_LINGER_BEFORE_SOCK_CLOSE 50
 
 //#define No_GET_OPTIMIZED
-#define LOCAL_TEST
+//#define LOCAL_TEST
 #define USE_TCP_NODELAY
 //#define DO_WARM_UP
 #define RETRY_CONNECT_TIMES 4

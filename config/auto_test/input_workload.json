@@ -5,100 +5,5609 @@
       "id": 1,
       "grp_workload": [
         {
-          "id": 0,
           "availability_target": 1,
           "client_dist": [
-              0.3,
-              0.3,
-              0.3,
-              0.1,
-              0.0,
-              0.0,
-              0.0,
-              0.0,
-              0.0
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
           ],
-          "object_size": 1024,
-          "metadata_size": 9.313225746154785e-08,
-          "num_objects": 1073741824.0,
-          "arrival_rate": 100,
-          "read_ratio": 0.5,
-          "write_ratio": 0.5,
-          "SLO_read": 700,
-          "SLO_write": 700,
-          "duration": 200,
+          "object_size": 81.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 20.1678,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
           "time_to_decode": 0.00028,
+          "id": 0,
           "keys": [
-            "10", "11", "12", "13", "14", "15", "16", "17", "18", "19"
+            "0"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 27471.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 16.5064,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 1,
+          "keys": [
+            "1"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 21310.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 16.0944,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 2,
+          "keys": [
+            "2"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 103.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 16.0447,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 3,
+          "keys": [
+            "3"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 4255.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 15.9578,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 4,
+          "keys": [
+            "4"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 257.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 14.32,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 5,
+          "keys": [
+            "5"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 11.3006,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 6,
+          "keys": [
+            "6"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 11.1572,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 7,
+          "keys": [
+            "7"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1299.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 11.1539,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 8,
+          "keys": [
+            "8"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1311.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 11.0722,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 9,
+          "keys": [
+            "9"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1260.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 10.9494,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 10,
+          "keys": [
+            "10"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 10.8281,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 11,
+          "keys": [
+            "11"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 70.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 9.53556,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 12,
+          "keys": [
+            "12"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 9.02139,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 13,
+          "keys": [
+            "13"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1365.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 8.90667,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 14,
+          "keys": [
+            "14"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1293.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 8.71028,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 15,
+          "keys": [
+            "15"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1293.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 8.51278,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 16,
+          "keys": [
+            "16"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 8.41306,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 17,
+          "keys": [
+            "17"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 906.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 8.22,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 18,
+          "keys": [
+            "18"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1299.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 8.20056,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 19,
+          "keys": [
+            "19"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 19147.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 7.30694,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 20,
+          "keys": [
+            "20"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 38.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 7.29639,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 21,
+          "keys": [
+            "21"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 2532.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 7.29056,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 22,
+          "keys": [
+            "22"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 347.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 7.14333,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 23,
+          "keys": [
+            "23"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 2734.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 6.80694,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 24,
+          "keys": [
+            "24"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 57.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 6.37528,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 25,
+          "keys": [
+            "25"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1326.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 6.37389,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 26,
+          "keys": [
+            "26"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 2299.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 6.37111,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 27,
+          "keys": [
+            "27"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 15355.000000000002,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 6.36861,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 28,
+          "keys": [
+            "28"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 51003.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 5.92472,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 29,
+          "keys": [
+            "29"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 314.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 5.77778,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 30,
+          "keys": [
+            "30"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1311.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 5.63444,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 31,
+          "keys": [
+            "31"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1299.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 5.60861,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 32,
+          "keys": [
+            "32"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 5.60028,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 33,
+          "keys": [
+            "33"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1311.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 5.57139,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 34,
+          "keys": [
+            "34"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 5.5175,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 35,
+          "keys": [
+            "35"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 5.44528,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 36,
+          "keys": [
+            "36"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.65472,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 37,
+          "keys": [
+            "37"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 14784.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.64639,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 38,
+          "keys": [
+            "38"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1365.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.23583,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 39,
+          "keys": [
+            "39"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1299.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.22833,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 40,
+          "keys": [
+            "40"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1293.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.22444,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 41,
+          "keys": [
+            "41"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.22167,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 42,
+          "keys": [
+            "42"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.20222,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 43,
+          "keys": [
+            "43"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.19639,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 44,
+          "keys": [
+            "44"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1311.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.18611,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 45,
+          "keys": [
+            "45"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1311.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.14806,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 46,
+          "keys": [
+            "46"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.09528,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 47,
+          "keys": [
+            "47"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.08944,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 48,
+          "keys": [
+            "48"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1293.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.96611,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 49,
+          "keys": [
+            "49"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.89861,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 50,
+          "keys": [
+            "50"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 2851.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.65028,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 51,
+          "keys": [
+            "51"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 525.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.57194,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 52,
+          "keys": [
+            "52"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1299.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.38972,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 53,
+          "keys": [
+            "53"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 85502.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.35306,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 54,
+          "keys": [
+            "54"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 3109.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.18306,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 55,
+          "keys": [
+            "55"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1050.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.16111,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 56,
+          "keys": [
+            "56"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 27471.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.12056,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 57,
+          "keys": [
+            "57"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1403.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.00528,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 58,
+          "keys": [
+            "58"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1365.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.97611,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 59,
+          "keys": [
+            "59"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.9625,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 60,
+          "keys": [
+            "60"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 81.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.92917,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 61,
+          "keys": [
+            "61"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 2264.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.91611,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 62,
+          "keys": [
+            "62"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 2851.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.905,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 63,
+          "keys": [
+            "63"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1834.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.90333,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 64,
+          "keys": [
+            "64"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1293.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.88639,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 65,
+          "keys": [
+            "65"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1293.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.8525,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 66,
+          "keys": [
+            "66"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.79917,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 67,
+          "keys": [
+            "67"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 2054.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.76361,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 68,
+          "keys": [
+            "68"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 3052.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.73444,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 69,
+          "keys": [
+            "69"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 272.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.70333,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 70,
+          "keys": [
+            "70"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1311.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.64889,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 71,
+          "keys": [
+            "71"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 2276.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.62639,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 72,
+          "keys": [
+            "72"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 2749.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.58083,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 73,
+          "keys": [
+            "73"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1401.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.57,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 74,
+          "keys": [
+            "74"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 2550.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.55417,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 75,
+          "keys": [
+            "75"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 18.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.52306,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 76,
+          "keys": [
+            "76"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1340.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.49889,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 77,
+          "keys": [
+            "77"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1299.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.45167,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 78,
+          "keys": [
+            "78"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1881.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.4375,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 79,
+          "keys": [
+            "79"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 4099.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.42667,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 80,
+          "keys": [
+            "80"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 216.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.42056,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 81,
+          "keys": [
+            "81"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 53113.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.40083,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 82,
+          "keys": [
+            "82"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 952.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.29,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 83,
+          "keys": [
+            "83"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 74594.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.23111,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 84,
+          "keys": [
+            "84"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1311.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.22083,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 85,
+          "keys": [
+            "85"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 904.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.20194,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 86,
+          "keys": [
+            "86"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 322.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.19306,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 87,
+          "keys": [
+            "87"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1263.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.18222,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 88,
+          "keys": [
+            "88"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 70.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.145,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 89,
+          "keys": [
+            "89"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1326.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.04056,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 90,
+          "keys": [
+            "90"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1812.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 1.99361,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 91,
+          "keys": [
+            "91"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 834.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 1.98556,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 92,
+          "keys": [
+            "92"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 904.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 1.95389,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 93,
+          "keys": [
+            "93"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 1.92639,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 94,
+          "keys": [
+            "94"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 2734.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 1.92056,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 95,
+          "keys": [
+            "95"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 1.88806,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 96,
+          "keys": [
+            "96"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 1.86861,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 97,
+          "keys": [
+            "97"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 82259.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 1.86333,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 98,
+          "keys": [
+            "98"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0,
+            0,
+            0,
+            0
+          ],
+          "object_size": 102358.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 1.86167,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 99,
+          "keys": [
+            "99"
           ]
         }
       ]
     },
     {
-      "timestamp": 220,
+      "timestamp": 622,
       "id": 2,
       "grp_workload": [
         {
-          "id": 0,
           "availability_target": 1,
           "client_dist": [
-              0.3,
-              0.3,
-              0.3,
-              0.1,
-              0.0,
-              0.0,
-              0.0,
-              0.0,
-              0.0
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
           ],
-          "object_size": 1024,
-          "metadata_size": 9.313225746154785e-08,
-          "num_objects": 1073741824.0,
-          "arrival_rate": 400,
-          "read_ratio": 0.5,
-          "write_ratio": 0.5,
-          "SLO_read": 700,
-          "SLO_write": 700,
-          "duration": 200,
+          "object_size": 81.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 49.5528,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
           "time_to_decode": 0.00028,
+          "id": 0,
           "keys": [
-            "10", "11", "12", "13", "14", "15", "16", "17", "18", "19"
+            "0"
           ]
-        }
-      ]
-    },
-    {
-      "timestamp": 420,
-      "id": 3,
-      "grp_workload": [
+        },
         {
-          "id": 0,
           "availability_target": 1,
           "client_dist": [
-              0.3,
-              0.3,
-              0.3,
-              0.1,
-              0.0,
-              0.0,
-              0.0,
-              0.0,
-              0.0
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
           ],
-          "object_size": 1024,
-          "metadata_size": 9.313225746154785e-08,
-          "num_objects": 1073741824.0,
-          "arrival_rate": 400,
-          "read_ratio": 0.5,
-          "write_ratio": 0.5,
-          "SLO_read": 700,
-          "SLO_write": 700,
-          "duration": 200,
+          "object_size": 27471.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 40.1467,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
           "time_to_decode": 0.00028,
-          "excluded_dcs": [2],
+          "id": 1,
           "keys": [
-            "10", "11", "12", "13", "14", "15", "16", "17", "18", "19"
+            "1"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 21310.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 34.5981,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 2,
+          "keys": [
+            "2"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 103.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 34.49,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 3,
+          "keys": [
+            "3"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 4255.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 34.4328,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 4,
+          "keys": [
+            "4"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 257.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 32.3797,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 5,
+          "keys": [
+            "5"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 26.2472,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 6,
+          "keys": [
+            "6"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 25.965,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 7,
+          "keys": [
+            "7"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1299.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 26.2253,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 8,
+          "keys": [
+            "8"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1311.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 25.8953,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 9,
+          "keys": [
+            "9"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1260.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 27.3481,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 10,
+          "keys": [
+            "10"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 25.5542,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 11,
+          "keys": [
+            "11"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 70.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 1.68944,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 12,
+          "keys": [
+            "12"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 22.9219,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 13,
+          "keys": [
+            "13"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1365.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 22.8111,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 14,
+          "keys": [
+            "14"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1293.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 22.6658,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 15,
+          "keys": [
+            "15"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1293.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 22.2228,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 16,
+          "keys": [
+            "16"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 22.2522,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 17,
+          "keys": [
+            "17"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 906.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 23.3119,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 18,
+          "keys": [
+            "18"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1299.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 21.3378,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 19,
+          "keys": [
+            "19"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 19147.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.926111,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 20,
+          "keys": [
+            "20"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 38.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.897222,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 21,
+          "keys": [
+            "21"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 2532.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.946944,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 22,
+          "keys": [
+            "22"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 347.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.919167,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 23,
+          "keys": [
+            "23"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 2734.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 17.735,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 24,
+          "keys": [
+            "24"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 57.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.04861,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 25,
+          "keys": [
+            "25"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1326.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 16.1167,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 26,
+          "keys": [
+            "26"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 2299.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.17278,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 27,
+          "keys": [
+            "27"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 15355.000000000002,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.22833,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 28,
+          "keys": [
+            "28"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 71968.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.67139,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 29,
+          "keys": [
+            "29"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 314.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.89028,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 30,
+          "keys": [
+            "30"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1311.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 10.3714,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 31,
+          "keys": [
+            "31"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1299.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.814722,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 32,
+          "keys": [
+            "32"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.8225,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 33,
+          "keys": [
+            "33"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1311.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.808056,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 34,
+          "keys": [
+            "34"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.7925,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 35,
+          "keys": [
+            "35"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.814722,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 36,
+          "keys": [
+            "36"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 9.40167,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 37,
+          "keys": [
+            "37"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 14784.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 5.01861,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 38,
+          "keys": [
+            "38"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1365.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.79,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 39,
+          "keys": [
+            "39"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1299.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.57222,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 40,
+          "keys": [
+            "40"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1293.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.761667,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 41,
+          "keys": [
+            "41"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.61861,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 42,
+          "keys": [
+            "42"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.811111,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 43,
+          "keys": [
+            "43"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.65944,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 44,
+          "keys": [
+            "44"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1311.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.53889,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 45,
+          "keys": [
+            "45"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1311.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.473611,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 46,
+          "keys": [
+            "46"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.48972,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 47,
+          "keys": [
+            "47"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.480833,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 48,
+          "keys": [
+            "48"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1293.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.709722,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 49,
+          "keys": [
+            "49"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.684167,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 50,
+          "keys": [
+            "50"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 2851.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 9.36417,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 51,
+          "keys": [
+            "51"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 525.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 8.95833,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 52,
+          "keys": [
+            "52"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1299.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.613889,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 53,
+          "keys": [
+            "53"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 85247.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 6.48306,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 54,
+          "keys": [
+            "54"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 3109.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 7.37306,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 55,
+          "keys": [
+            "55"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1050.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 8.4225,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 56,
+          "keys": [
+            "56"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 27471.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.36917,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 57,
+          "keys": [
+            "57"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1403.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 6.68917,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 58,
+          "keys": [
+            "58"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1365.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.23056,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 59,
+          "keys": [
+            "59"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.28972,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 60,
+          "keys": [
+            "60"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 81.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 5.73333,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 61,
+          "keys": [
+            "61"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 2264.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 6.45611,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 62,
+          "keys": [
+            "62"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 2851.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 1.67889,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 63,
+          "keys": [
+            "63"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1834.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 7.09194,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 64,
+          "keys": [
+            "64"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1293.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.34417,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 65,
+          "keys": [
+            "65"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1293.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.2625,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 66,
+          "keys": [
+            "66"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1287.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.17167,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 67,
+          "keys": [
+            "67"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 2054.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 6.41111,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 68,
+          "keys": [
+            "68"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 3052.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 6.32583,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 69,
+          "keys": [
+            "69"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 272.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 7.95333,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 70,
+          "keys": [
+            "70"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1311.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 7.8425,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 71,
+          "keys": [
+            "71"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 2276.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 6.01444,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 72,
+          "keys": [
+            "72"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 2749.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 6.85889,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 73,
+          "keys": [
+            "73"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1401.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 6.20889,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 74,
+          "keys": [
+            "74"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 2550.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 5.82722,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 75,
+          "keys": [
+            "75"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 18.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 5.28028,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 76,
+          "keys": [
+            "76"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1340.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 5.2525,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 77,
+          "keys": [
+            "77"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1299.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.90472,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 78,
+          "keys": [
+            "78"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1881.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 5.68222,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 79,
+          "keys": [
+            "79"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 4099.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.55694,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 80,
+          "keys": [
+            "80"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 216.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.60917,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 81,
+          "keys": [
+            "81"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 53113.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.60861,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 82,
+          "keys": [
+            "82"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 952.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.504722,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 83,
+          "keys": [
+            "83"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 74594.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 5.45611,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 84,
+          "keys": [
+            "84"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1311.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 1.00056,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 85,
+          "keys": [
+            "85"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 904.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.712778,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 86,
+          "keys": [
+            "86"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 322.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.38028,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 87,
+          "keys": [
+            "87"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1263.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 5.76667,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 88,
+          "keys": [
+            "88"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 70.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 3.08861,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 89,
+          "keys": [
+            "89"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1326.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.31222,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 90,
+          "keys": [
+            "90"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1812.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 4.32833,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 91,
+          "keys": [
+            "91"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 834.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.54139,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 92,
+          "keys": [
+            "92"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 904.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.39722,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 93,
+          "keys": [
+            "93"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.856667,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 94,
+          "keys": [
+            "94"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 2734.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.68361,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 95,
+          "keys": [
+            "95"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.23083,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 96,
+          "keys": [
+            "96"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 1296.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 2.15889,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 97,
+          "keys": [
+            "97"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 82114.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 1.33167,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 98,
+          "keys": [
+            "98"
+          ]
+        },
+        {
+          "availability_target": 1,
+          "client_dist": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111
+          ],
+          "object_size": 103099.0,
+          "metadata_size": 1e-09,
+          "num_objects": 1,
+          "arrival_rate": 0.29,
+          "read_ratio": 0.99999,
+          "write_ratio": 1e-05,
+          "SLO_read": 1000,
+          "SLO_write": 1000,
+          "duration": 600,
+          "time_to_decode": 0.00028,
+          "id": 99,
+          "keys": [
+            "99"
           ]
         }
       ]
